@@ -57,30 +57,32 @@ Leia integralmente: [F3.6](docs/tasks/active/F3.6.md), a
 [DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md) e o plano da Fase 3.
 
 F3.6 exige nova autorização explícita; a pausa após F3.4 foi cumprida e a autorização nominal para
-iniciar F3.6 foi observada em `2026-08-08T15:48:28-03:00`. A autorização cobre gate e implementação
-local congelada, mas não inclui push, PR, merge nem efeitos F3.5/F3.7/F3.8.
+iniciar F3.6 foi observada em `2026-08-08T15:48:28-03:00`. A autorização separada para publicar a
+branch e abrir o PR único também foi observada; ela não inclui merge nem efeitos F3.5/F3.7/F3.8.
 
 | Campo | Valor |
 |---|---|
 | **Objetivo** | criar worktree Git externo real por execução, validar SHA/branch/raiz e fornecer `PathGuard` canônico |
 | **Escopo** | `workspace/git_worktree.py`, exports, documentação e testes reais em repositórios temporários |
 | **Proibido** | terminal, adapters/registrations, edição, commit candidato, promoção, cherry-pick, runtime/CLI, dependências, schemas e CI |
-| **Estado local** | commits `2771f93`, `3816ece`, `122bbba` e `9432f29`; todos os gates verdes; fechamento local neste checkpoint |
-| **Estado remoto** | branch somente local; nenhum push ou PR autorizado |
+| **Estado local** | commits `2771f93`, `3816ece`, `122bbba`, `9432f29` e `5f6c234`; todos os gates verdes; esta reconciliação apenas registra fatos remotos observados |
+| **Estado remoto** | branch publicada; PR #26 aberto para `main`; head inicial `5f6c234c8b11bfa6c6aed3ca53ab6ecabded34d9`; run inicial `31274365301`, 11/11 verde e sem conflitos |
 
 ## 6. Bloqueios atuais
 
-Não há implementação ativa. A F3.6 concluiu todos os critérios locais e aguarda autorização própria
-para push/PR. F3.5, F3.7, F3.8, integração com o tool loop e merge continuam bloqueados.
+Não há implementação ativa. A F3.6 concluiu todos os critérios locais, foi publicada somente após
+autorização e permanece no PR #26. F3.5, F3.7, F3.8, integração com o tool loop e merge continuam
+bloqueados; esta publicação não concede autorização de merge.
 
 ## 7. Próxima ação exata
 
 ```text
 PAUSAR EM `COMPLETED_LOCAL / PROMOTION_PENDING`:
-1. Não publicar branch nem abrir PR sem autorização explícita própria.
-2. Após autorização, publicar somente `task/f3.6-git-worktree` e abrir um único PR para `main`.
-3. Observar todos os checks do head final; check pendente, ausente ou falho bloqueia merge.
-4. Não executar merge nem iniciar F3.5 sem autorizações explícitas próprias.
+1. Publicar esta reconciliação no mesmo PR #26, sem nova branch, tag, PR ou ampliação de escopo.
+2. Observar todos os 11 checks do novo head; check pendente, ausente ou falho bloqueia merge.
+3. Mesmo com o head final verde e sem conflitos, não executar merge sem autorização explícita própria.
+4. Após eventual merge autorizado, validar a CI `push` no SHA exato de `main` e pausar novamente.
+5. Não iniciar F3.5 sem promoção completa da F3.6 e nova autorização explícita nominal.
 ```
 
 ## 8. Retomada após perda de contexto
