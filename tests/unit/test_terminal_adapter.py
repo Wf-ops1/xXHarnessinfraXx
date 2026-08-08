@@ -234,6 +234,51 @@ def test_timeout_kills_the_spawned_process_tree(tmp_path: Path) -> None:
     assert not marker.exists()
 
 
+def test_timeout_tree_remains_contained_under_repetition_and_multiple_children(
+    tmp_path: Path,
+) -> None:
+    environment = _controlled_environment()
+    adapter = TerminalAdapter(
+        path_guard=PathGuard(tmp_path),
+        executables={"python": Path(sys.executable).resolve(strict=True)},
+        environment=environment,
+    )
+    child_code = (
+        "import sys, time; from pathlib import Path; "
+        "time.sleep(0.45); Path(sys.argv[1]).write_text('escaped', encoding='utf-8')"
+    )
+    parent_code = (
+        "import subprocess, sys, time; child = sys.argv[1]; "
+        "[subprocess.Popen([sys.executable, '-c', child, marker]) "
+        "for marker in sys.argv[2:]]; time.sleep(30)"
+    )
+
+    for attempt in range(5):
+        markers = tuple(
+            tmp_path / f"attempt-{attempt}-child-{child_index}.txt"
+            for child_index in range(4)
+        )
+        result = adapter.execute(
+            CommandRequest(
+                argv=(
+                    "python",
+                    "-c",
+                    parent_code,
+                    child_code,
+                    *(str(marker) for marker in markers),
+                ),
+                cwd=".",
+                timeout_seconds=0.15,
+                env_allowlist=_base_environment_names(environment),
+            )
+        )
+        time.sleep(0.55)
+
+        assert result.timed_out
+        assert result.exit_code != 0
+        assert not any(marker.exists() for marker in markers)
+
+
 def test_legacy_shell_string_api_fails_closed(tmp_path: Path) -> None:
     marker = tmp_path / "legacy-marker.txt"
 

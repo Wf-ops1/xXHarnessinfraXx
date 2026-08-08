@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import os
 import re
 import signal
@@ -11,7 +12,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, BinaryIO, cast
+from typing import Any, BinaryIO, Protocol, cast
 
 from ai_engineering_harness.security import PathGuard, Redactor
 
@@ -48,6 +49,11 @@ _ENVIRONMENT_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _READ_CHUNK_BYTES = 64 * 1024
 _DRAIN_JOIN_SECONDS = 5.0
 _REAP_SECONDS = 10.0
+_CREATE_SUSPENDED = 0x00000004
+_CREATE_NEW_PROCESS_GROUP = 0x00000200
+_JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9
+_JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
+_TIMEOUT_EXIT_CODE = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,16 +120,238 @@ class _BoundedBytes:
             self.truncated = True
 
 
+class _JobObjectBasicLimitInformation(ctypes.Structure):
+    _fields_ = [
+        ("PerProcessUserTimeLimit", ctypes.c_int64),
+        ("PerJobUserTimeLimit", ctypes.c_int64),
+        ("LimitFlags", ctypes.c_uint32),
+        ("MinimumWorkingSetSize", ctypes.c_size_t),
+        ("MaximumWorkingSetSize", ctypes.c_size_t),
+        ("ActiveProcessLimit", ctypes.c_uint32),
+        ("Affinity", ctypes.c_size_t),
+        ("PriorityClass", ctypes.c_uint32),
+        ("SchedulingClass", ctypes.c_uint32),
+    ]
+
+
+class _JobObjectIoCounters(ctypes.Structure):
+    _fields_ = [
+        ("ReadOperationCount", ctypes.c_uint64),
+        ("WriteOperationCount", ctypes.c_uint64),
+        ("OtherOperationCount", ctypes.c_uint64),
+        ("ReadTransferCount", ctypes.c_uint64),
+        ("WriteTransferCount", ctypes.c_uint64),
+        ("OtherTransferCount", ctypes.c_uint64),
+    ]
+
+
+class _JobObjectExtendedLimitInformation(ctypes.Structure):
+    _fields_ = [
+        ("BasicLimitInformation", _JobObjectBasicLimitInformation),
+        ("IoInfo", _JobObjectIoCounters),
+        ("ProcessMemoryLimit", ctypes.c_size_t),
+        ("JobMemoryLimit", ctypes.c_size_t),
+        ("PeakProcessMemoryUsed", ctypes.c_size_t),
+        ("PeakJobMemoryUsed", ctypes.c_size_t),
+    ]
+
+
+class _ProcessTreeController(Protocol):
+    def terminate(self, process: subprocess.Popen[bytes]) -> None:
+        """Terminate every process in the controlled tree."""
+
+    def close(self) -> None:
+        """Release containment, killing any lingering descendants."""
+
+
+@dataclass(slots=True)
+class _SpawnedProcess:
+    process: subprocess.Popen[bytes]
+    tree: _ProcessTreeController
+
+
+class _WindowsJobController:
+    """Own a kill-on-close Job Object configured before process resume."""
+
+    __slots__ = (
+        "_assign_process",
+        "_close_handle",
+        "_handle",
+        "_resume_process",
+        "_terminate_job",
+    )
+
+    def __init__(
+        self,
+        *,
+        handle: int,
+        assign_process: Any,
+        close_handle: Any,
+        resume_process: Any,
+        terminate_job: Any,
+    ) -> None:
+        self._handle: int | None = handle
+        self._assign_process = assign_process
+        self._close_handle = close_handle
+        self._resume_process = resume_process
+        self._terminate_job = terminate_job
+
+    @classmethod
+    def create(cls) -> _WindowsJobController:
+        windll_factory = getattr(ctypes, "WinDLL", None)
+        if windll_factory is None:
+            raise TerminalConfigurationError("Windows Job Object APIs are unavailable")
+        try:
+            kernel32 = windll_factory("kernel32", use_last_error=True)
+            ntdll = windll_factory("ntdll", use_last_error=True)
+        except (OSError, ValueError) as exc:
+            raise TerminalConfigurationError("Windows process containment could not initialize") from exc
+
+        create_job = kernel32.CreateJobObjectW
+        create_job.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        create_job.restype = ctypes.c_void_p
+        set_job_information = kernel32.SetInformationJobObject
+        set_job_information.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+        ]
+        set_job_information.restype = ctypes.c_int
+        assign_process = kernel32.AssignProcessToJobObject
+        assign_process.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        assign_process.restype = ctypes.c_int
+        terminate_job = kernel32.TerminateJobObject
+        terminate_job.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        terminate_job.restype = ctypes.c_int
+        close_handle = kernel32.CloseHandle
+        close_handle.argtypes = [ctypes.c_void_p]
+        close_handle.restype = ctypes.c_int
+        resume_process = ntdll.NtResumeProcess
+        resume_process.argtypes = [ctypes.c_void_p]
+        resume_process.restype = ctypes.c_long
+
+        raw_handle = create_job(None, None)
+        if not raw_handle:
+            raise TerminalConfigurationError("Windows Job Object could not be created")
+        handle = int(raw_handle)
+        limits = _JobObjectExtendedLimitInformation()
+        limits.BasicLimitInformation.LimitFlags = _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        configured = set_job_information(
+            handle,
+            _JOB_OBJECT_EXTENDED_LIMIT_INFORMATION,
+            ctypes.byref(limits),
+            ctypes.sizeof(limits),
+        )
+        if not configured:
+            close_handle(handle)
+            raise TerminalConfigurationError(
+                "Windows Job Object kill-on-close policy could not be configured"
+            )
+        return cls(
+            handle=handle,
+            assign_process=assign_process,
+            close_handle=close_handle,
+            resume_process=resume_process,
+            terminate_job=terminate_job,
+        )
+
+    def assign_and_resume(self, process: subprocess.Popen[bytes]) -> None:
+        handle = self._require_handle()
+        raw_process_handle = getattr(process, "_handle", None)
+        if raw_process_handle is None:
+            self._abort_suspended_process(process)
+            raise CommandExecutionError("Windows process handle is unavailable")
+        try:
+            process_handle = int(raw_process_handle)
+        except (TypeError, ValueError) as exc:
+            self._abort_suspended_process(process)
+            raise CommandExecutionError("Windows process handle is unavailable") from exc
+
+        if not self._assign_process(handle, process_handle):
+            self._abort_suspended_process(process)
+            raise CommandExecutionError("process could not be assigned to the Windows Job Object")
+        resume_status = int(self._resume_process(process_handle))
+        if resume_status != 0:
+            self._abort_suspended_process(process)
+            raise CommandExecutionError("contained Windows process could not be resumed")
+
+    def terminate(self, process: subprocess.Popen[bytes]) -> None:
+        handle = self._require_handle()
+        if self._terminate_job(handle, _TIMEOUT_EXIT_CODE):
+            return
+
+        try:
+            self.close()
+        finally:
+            if process.poll() is None:
+                process.kill()
+        raise CommandExecutionError("Windows Job Object could not terminate the process tree")
+
+    def close(self) -> None:
+        handle = self._handle
+        if handle is None:
+            return
+        self._handle = None
+        if not self._close_handle(handle):
+            raise CommandExecutionError("Windows Job Object handle could not be closed safely")
+
+    def _abort_suspended_process(self, process: subprocess.Popen[bytes]) -> None:
+        try:
+            self.close()
+        except CommandExecutionError:
+            pass
+        if process.poll() is None:
+            process.kill()
+        try:
+            process.wait(timeout=_REAP_SECONDS)
+        except subprocess.TimeoutExpired:
+            pass
+
+    def _require_handle(self) -> int:
+        if self._handle is None:
+            raise CommandExecutionError("Windows Job Object is already closed")
+        return self._handle
+
+
+class _PosixProcessGroupController:
+    """Control the process group created atomically by start_new_session."""
+
+    __slots__ = ()
+
+    def terminate(self, process: subprocess.Popen[bytes]) -> None:
+        kill_process_group = getattr(os, "killpg", None)
+        kill_signal = getattr(signal, "SIGKILL", signal.SIGTERM)
+        if kill_process_group is None:
+            if process.poll() is None:
+                process.kill()
+            raise CommandExecutionError("POSIX process-group termination is unavailable")
+        try:
+            kill_process_group(process.pid, kill_signal)
+        except ProcessLookupError:
+            if process.poll() is None:
+                process.kill()
+                raise CommandExecutionError(
+                    "POSIX process group disappeared while its leader remained alive"
+                )
+        except (PermissionError, OSError) as exc:
+            if process.poll() is None:
+                process.kill()
+            raise CommandExecutionError("POSIX process group could not be terminated safely") from exc
+
+    def close(self) -> None:
+        return
+
+
 class TerminalAdapter:
     """Execute only explicitly authorized executables under one path guard."""
 
-    __slots__ = ("_environment", "_environment_keys", "_executables", "_path_guard", "_taskkill")
+    __slots__ = ("_environment", "_environment_keys", "_executables", "_path_guard")
 
     _environment: Mapping[str, str]
     _environment_keys: Mapping[str, str]
     _executables: Mapping[str, Path]
     _path_guard: PathGuard
-    _taskkill: Path | None
 
     def __init__(
         self,
@@ -142,12 +370,6 @@ class TerminalAdapter:
         normalized_environment, environment_keys = self._normalize_environment(environment)
         object.__setattr__(self, "_environment", MappingProxyType(normalized_environment))
         object.__setattr__(self, "_environment_keys", MappingProxyType(environment_keys))
-        taskkill = self._resolve_taskkill(normalized_environment)
-        if os.name == "nt" and taskkill is None:
-            raise TerminalConfigurationError(
-                "Windows process-tree termination requires an authorized SYSTEMROOT"
-            )
-        object.__setattr__(self, "_taskkill", taskkill)
 
     def execute(self, request: CommandRequest) -> CommandResult:
         """Validate policy immediately before spawning one argv-based subprocess."""
@@ -173,11 +395,12 @@ class TerminalAdapter:
         stderr_bytes = _BoundedBytes.create(capture_limit)
         argv_for_process = [os.fspath(executable), *request.argv[1:]]
 
-        process = self._spawn(
+        spawned = self._spawn(
             argv=argv_for_process,
             cwd=guarded_cwd.absolute_path,
             environment=selected_environment,
         )
+        process = spawned.process
         assert process.stdout is not None
         assert process.stderr is not None
 
@@ -194,13 +417,16 @@ class TerminalAdapter:
             process.wait(timeout=request.timeout_seconds)
         except subprocess.TimeoutExpired:
             timed_out = True
-            self._terminate_process_tree(process)
+            spawned.tree.terminate(process)
             try:
                 process.wait(timeout=_REAP_SECONDS)
             except subprocess.TimeoutExpired as exc:
                 raise CommandExecutionError("timed-out process could not be reaped safely") from exc
         finally:
-            self._finish_drains(process, stdout_thread, stderr_thread)
+            try:
+                spawned.tree.close()
+            finally:
+                self._finish_drains(process, stdout_thread, stderr_thread)
 
         if drain_errors:
             raise CommandExecutionError("subprocess output could not be drained safely") from drain_errors[0]
@@ -287,23 +513,6 @@ class TerminalAdapter:
             normalized[name] = value
         return normalized, lookup
 
-    @staticmethod
-    def _resolve_taskkill(environment: Mapping[str, str]) -> Path | None:
-        if os.name != "nt":
-            return None
-        system_root = next(
-            (value for key, value in environment.items() if key.casefold() == "systemroot"),
-            None,
-        )
-        if not system_root:
-            return None
-        candidate = Path(system_root) / "System32" / "taskkill.exe"
-        try:
-            resolved = candidate.resolve(strict=True)
-        except (OSError, RuntimeError, ValueError):
-            return None
-        return resolved if resolved.is_file() else None
-
     def _authorized_executable(self, alias: str) -> Path:
         executable = self._executables.get(alias)
         if executable is None:
@@ -333,19 +542,19 @@ class TerminalAdapter:
         argv: list[str],
         cwd: Path,
         environment: Mapping[str, str],
-    ) -> subprocess.Popen[bytes]:
+    ) -> _SpawnedProcess:
         platform_options: dict[str, Any]
+        tree: _ProcessTreeController
         if os.name == "nt":
-            creation_flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", None)
-            if not isinstance(creation_flags, int):
-                raise CommandExecutionError(
-                    "Windows process-group creation is unavailable"
-                )
-            platform_options = {"creationflags": creation_flags}
+            tree = _WindowsJobController.create()
+            platform_options = {
+                "creationflags": _CREATE_NEW_PROCESS_GROUP | _CREATE_SUSPENDED,
+            }
         else:
+            tree = _PosixProcessGroupController()
             platform_options = {"start_new_session": True}
         try:
-            return subprocess.Popen(
+            process = subprocess.Popen(
                 argv,
                 shell=False,
                 cwd=cwd,
@@ -357,7 +566,11 @@ class TerminalAdapter:
                 **platform_options,
             )
         except (OSError, ValueError, subprocess.SubprocessError) as exc:
+            tree.close()
             raise CommandExecutionError("authorized subprocess could not be started") from exc
+        if isinstance(tree, _WindowsJobController):
+            tree.assign_and_resume(process)
+        return _SpawnedProcess(process=process, tree=tree)
 
     @staticmethod
     def _start_drain(
@@ -392,45 +605,6 @@ class TerminalAdapter:
                 thread.join(timeout=_DRAIN_JOIN_SECONDS)
         if stdout_thread.is_alive() or stderr_thread.is_alive():
             raise CommandExecutionError("subprocess output pipes did not close safely")
-
-    def _terminate_process_tree(self, process: subprocess.Popen[bytes]) -> None:
-        if os.name == "nt":
-            terminated = False
-            if self._taskkill is not None:
-                try:
-                    completed = subprocess.run(
-                        [os.fspath(self._taskkill), "/PID", str(process.pid), "/T", "/F"],
-                        shell=False,
-                        env={
-                            key: value
-                            for key, value in self._environment.items()
-                            if key.casefold() in {"path", "systemroot"}
-                        },
-                        stdin=subprocess.DEVNULL,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        check=False,
-                        timeout=_DRAIN_JOIN_SECONDS,
-                    )
-                    terminated = completed.returncode == 0
-                except (OSError, ValueError, subprocess.SubprocessError):
-                    terminated = False
-            if not terminated and process.poll() is None:
-                process.kill()
-            if not terminated:
-                raise CommandExecutionError("timed-out Windows process tree could not be terminated")
-            return
-
-        kill_process_group = getattr(os, "killpg", None)
-        kill_signal = getattr(signal, "SIGKILL", signal.SIGTERM)
-        try:
-            if kill_process_group is None:
-                raise OSError("process-group termination is unavailable")
-            kill_process_group(process.pid, kill_signal)
-        except (ProcessLookupError, PermissionError, OSError):
-            if process.poll() is None:
-                process.kill()
-
 
 def _normalize_argv(argv: Sequence[str]) -> tuple[str, ...]:
     if isinstance(argv, (str, bytes)):
