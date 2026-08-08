@@ -20,6 +20,26 @@ from ai_engineering_harness.security import (
 )
 
 
+def _create_directory_link(link: Path, target: Path) -> None:
+    if os.name == "nt":
+        created = subprocess.run(
+            ["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        assert created.returncode == 0, created.stderr or created.stdout
+        return
+    link.symlink_to(target, target_is_directory=True)
+
+
+def _remove_directory_link(link: Path) -> None:
+    if os.name == "nt":
+        link.rmdir()
+    else:
+        link.unlink()
+
+
 def test_internal_paths_return_canonical_absolute_and_posix_journal_path(tmp_path: Path) -> None:
     root = tmp_path / "worktree"
     target = root / "nested" / "file.txt"
@@ -80,47 +100,39 @@ def test_absolute_external_path_is_rejected(tmp_path: Path) -> None:
         guard.guard_read(outside.resolve())
 
 
-def test_symlink_escape_is_rejected_for_read_and_future_write(tmp_path: Path) -> None:
+def test_platform_directory_link_escape_is_rejected_for_read_and_future_write(tmp_path: Path) -> None:
     root = tmp_path / "worktree"
     outside = tmp_path / "outside"
     root.mkdir()
     outside.mkdir()
     (outside / "secret.txt").write_text("secret", encoding="utf-8")
     link = root / "escape"
-    try:
-        link.symlink_to(outside, target_is_directory=True)
-    except OSError as exc:
-        pytest.skip(f"directory symlinks unavailable on this runner: {exc}")
+    _create_directory_link(link, outside)
     guard = PathGuard(root)
 
-    with pytest.raises(PathOutsideRootError):
-        guard.guard_read(link / "secret.txt")
-    with pytest.raises(PathOutsideRootError):
-        guard.guard_write(link / "future.txt", size_bytes=1)
+    try:
+        with pytest.raises(PathOutsideRootError):
+            guard.guard_read(link / "secret.txt")
+        with pytest.raises(PathOutsideRootError):
+            guard.guard_write(link / "future.txt", size_bytes=1)
+    finally:
+        _remove_directory_link(link)
 
 
-@pytest.mark.skipif(os.name != "nt", reason="Windows junction-specific confinement proof")
-def test_windows_junction_escape_is_rejected(tmp_path: Path) -> None:
+def test_directory_link_escape_is_rejected_for_nonexistent_write_target(tmp_path: Path) -> None:
     root = tmp_path / "worktree"
     outside = tmp_path / "outside"
     junction = root / "junction"
     root.mkdir()
     outside.mkdir()
-    created = subprocess.run(
-        ["cmd.exe", "/d", "/c", "mklink", "/J", str(junction), str(outside)],
-        capture_output=True,
-        check=False,
-        text=True,
-    )
-    assert created.returncode == 0, created.stderr or created.stdout
+    _create_directory_link(junction, outside)
     guard = PathGuard(root)
 
     try:
         with pytest.raises(PathOutsideRootError):
             guard.guard_write(junction / "future.txt", size_bytes=1)
     finally:
-        if junction.exists():
-            junction.rmdir()
+        _remove_directory_link(junction)
 
 
 @pytest.mark.parametrize("candidate", [".git/config", ".GIT/index", "nested/.Git/objects/new"])
@@ -187,19 +199,19 @@ def test_missing_read_and_non_text_paths_fail_with_typed_resolution_error(tmp_pa
         guard.guard_read(b"bytes-path")  # type: ignore[arg-type]
 
 
-def test_internal_symlink_is_normalized_to_its_canonical_relative_target(tmp_path: Path) -> None:
+def test_internal_directory_link_is_normalized_to_its_canonical_relative_target(tmp_path: Path) -> None:
     root = tmp_path / "worktree"
     real = root / "real"
     alias = root / "alias"
     real.mkdir(parents=True)
     (real / "file.txt").write_text("safe", encoding="utf-8")
-    try:
-        alias.symlink_to(real, target_is_directory=True)
-    except OSError as exc:
-        pytest.skip(f"directory symlinks unavailable on this runner: {exc}")
+    _create_directory_link(alias, real)
     guard = PathGuard(root)
 
-    result = guard.guard_read(alias / "file.txt")
+    try:
+        result = guard.guard_read(alias / "file.txt")
+    finally:
+        _remove_directory_link(alias)
 
     assert result.relative_path == "real/file.txt"
     assert result.absolute_path == (real / "file.txt").resolve(strict=True)
