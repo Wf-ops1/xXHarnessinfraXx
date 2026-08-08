@@ -6,8 +6,8 @@ O AI Engineering Harness é hoje uma base Python instalável para experimentar u
 agentic local-first. O repositório já possui empacotamento reproduzível, compilador único e
 determinístico, execução dirigida pelas arestas do artefato, persistência concorrente, FSM por eventos
 e retomada canônica com aprovação, cancelamento e retry limitado por contexto real e redigido. A
-execução autônoma segura sobre um repositório externo ainda não está pronta: a base de providers,
-roteamento e tool loop existe, mas está sob realinhamento corretivo; ferramentas com efeito,
+  execução autônoma segura sobre um repositório externo ainda não está pronta: providers, roteamento,
+  continuação de model-turn e durabilidade/policy do tool loop passaram pelo realinhamento; ferramentas com efeito,
 isolamento Git, promoção, rollback e governança operacional permanecem incompletos ou simulados.
 
 Não use `harness run`, `harness doctor` ou `harness rollback` como garantia de segurança em um
@@ -41,8 +41,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
-| Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva, validam egress, restringem fallback transitório e conectam usage ao budget | Integração live é opt-in; Anthropic falha como não implementado; continuação nativa de tools, consistência de usage/JSON e evidência de todos os model turns estão no gate corretivo F3.C1 | Providers adicionais somente após contrato e testes equivalentes |
-| Tool loop | Policy compilada e schemas operacionais passam por preflight; lote é validado antes do dispatch; limite, budget, cancelamento e records redigidos possuem testes | A continuação F3.3 ainda usa transcript textual e a durabilidade/policy do efeito requer F3.C1/F3.C2 antes de tools reais | Path guard, terminal, worktree, promoção e edição em F3.4–F3.8 |
+| Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
+| Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2 | Registry operacional é vazio; aprovação vinculada ao conteúdo e tools reais ainda não existem | Path guard, terminal, worktree, promoção e edição em F3.4–F3.8 |
 | Serena e Codebase-Memory | Interfaces/adapters existem | Serena apenas cria/toca arquivo; memória retorna `mock_ast` | Transporte MCP real ou adapter local explicitamente configurado |
 | Verificação e auditoria | Subprocessos de gates e hash chain local possuem testes | Há caminhos de gate vazio e garantias ainda incompletas | Gates fail-closed, redaction e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
@@ -57,9 +57,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 - **Fase 2 concluída:** record atômico, storage concorrente, execução por grafo, FSM por eventos,
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
-- **Fase 3 em realinhamento:** F3.1–F3.3 foram promovidas, mas a auditoria pós-merge bloqueou F3.4.
-  F3.C1 corrige integridade de model-turn; F3.C2 corrigirá durabilidade/policy de efeitos. Somente
-  depois, com pausas e autorizações explícitas, seguem path guard, terminal, worktree, promoção e edição.
+- **Fase 3 em execução:** F3.1–F3.3 e as corretivas F3.C1/F3.C2 foram promovidas. O realinhamento
+  encerrou sem achado blocker/high no gate F3.4; path guard está ativo, enquanto terminal, worktree,
+  promoção e edição continuam tarefas futuras isoladas e sujeitas a novas pausas/autorização.
 
 ## Dívidas técnicas críticas
 
@@ -68,9 +68,9 @@ operacionais:
 
 - [adapters de modelos](src/ai_engineering_harness/models/adapters/) OpenAI/local já usam transporte
   real e Anthropic falha explicitamente; o [roteamento de modelos](src/ai_engineering_harness/models/router.py)
-  já usa configuração efetiva, egress, fallback transitório e budget, mas o
-  [tool loop](src/ai_engineering_harness/runtime/tool_loop.py) ainda precisa de continuação nativa e
-  evidência completa de todos os model turns em F3.C1;
+  usa configuração efetiva, egress, fallback transitório e budget; o
+  [tool loop](src/ai_engineering_harness/runtime/tool_loop.py) já preserva continuação nativa, todos os
+  model turns e eventos de tool duráveis, mas não possui tools operacionais registradas;
 - [SerenaAdapter](src/ai_engineering_harness/tools/adapters/serena.py) não abre conexão MCP nem aplica
   edição semântica;
 - [CodebaseMemoryAdapter](src/ai_engineering_harness/indexer/codebase_memory_adapter.py) persiste uma

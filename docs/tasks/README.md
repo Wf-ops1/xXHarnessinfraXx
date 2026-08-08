@@ -47,6 +47,7 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 | F3 | F3.2 | [Configuração e roteamento de modelos](completed/F3.2.md) | PR #21 / merge `3956f16` / pós-merge `31231730863` |
 | F3 | F3.3 | [Loop de tool calls](completed/F3.3.md) | PR #22 / merge `0e64a88` / pós-merge `31232731611` |
 | F3 | F3.C1 | [Integridade de modelo e model-turn](completed/F3.C1.md) | PR #23 / merge `5616fc5` / pós-merge `31240455344` |
+| F3 | F3.C2 | [Execução durável de tools e policy](completed/F3.C2.md) | PR #24 / merge `d2502b0` / pós-merge `31266993044` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
@@ -67,3 +68,4 @@ Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` 
 | DEC-010 | Painel curto; dossiê detalhado por tarefa; histórico concluído imutável e indexado. |
 | DEC-011 | Gate detalhado no plano; promoção certificada no gate seguinte, sem PR recursivo de fechamento. |
 | DEC-012 | Realinhamento da Fase 3 em F3.C1/F3.C2, com pausa humana obrigatória e autorização nova entre tarefas. |
+| DEC-013 | F3.4 cria guard parametrizado sem efeitos; F3.6 fornece worktree; F3.5/F3.8 integram consumidores depois de ambos. |

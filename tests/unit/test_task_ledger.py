@@ -12,6 +12,7 @@ TASK_PANEL = ROOT / "TASK.md"
 AGENT_RULES = ROOT / ".agents" / "AGENTS.md"
 IMPLEMENTATION_PLAN = ROOT / "docs" / "plano_implementacao_harness_operacional.md"
 PHASE3_REALIGNMENT = ROOT / "docs" / "fase3_realignamento_operacional.md"
+PHASE3_ORDER_DECISION = ROOT / "docs" / "decisions" / "DEC-013-fase3-ordem-operacional.md"
 TASKS_ROOT = ROOT / "docs" / "tasks"
 TASKS_INDEX = TASKS_ROOT / "README.md"
 ACTIVE_ROOT = TASKS_ROOT / "active"
@@ -187,11 +188,19 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     plan = _read(IMPLEMENTATION_PLAN)
     task_index = _read(TASKS_INDEX)
     realignment = _read(PHASE3_REALIGNMENT)
+    order_decision = _read(PHASE3_ORDER_DECISION)
 
     assert "DEC-012" in panel
     assert "DEC-012" in plan
     assert "DEC-012" in task_index
+    assert "DEC-013" in panel
+    assert "DEC-013" in plan
+    assert "DEC-013" in task_index
     assert "F3.C1 → F3.C2 → F3.4" in plan
+    assert "F3.4 → F3.6 → F3.5 → F3.8" in plan
+    assert "raiz autorizada explícita" in order_decision
+    assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "F3.C2 exige nova autorização explícita" in panel
+    assert "F3.4 exige nova autorização explícita" in panel
+    assert "Não restou achado blocker/high" in realignment
