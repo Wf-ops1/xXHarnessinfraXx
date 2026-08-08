@@ -336,7 +336,12 @@ class TerminalAdapter:
     ) -> subprocess.Popen[bytes]:
         platform_options: dict[str, Any]
         if os.name == "nt":
-            platform_options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+            creation_flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", None)
+            if not isinstance(creation_flags, int):
+                raise CommandExecutionError(
+                    "Windows process-group creation is unavailable"
+                )
+            platform_options = {"creationflags": creation_flags}
         else:
             platform_options = {"start_new_session": True}
         try:
