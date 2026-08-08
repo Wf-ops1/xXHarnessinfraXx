@@ -1,42 +1,42 @@
-"""Avaliador de comandos de verificação mapeados por linguagem."""
+"""Avaliador de argumentos de verificação mapeados por linguagem."""
 
 from typing import ClassVar
 
 
 class VerificationEvaluator:
-    """Mapeia os tipos abstratos de gate para os comandos nativos da stack."""
+    """Mapeia tipos abstratos de gate para argv estático e auditável."""
 
-    _commands_by_language: ClassVar[dict[str, dict[str, str]]] = {
+    _argv_by_language: ClassVar[dict[str, dict[str, tuple[str, ...]]]] = {
         "python": {
-            "typecheck": "mypy .",
-            "lint": "ruff check .",
-            "unit_test": "pytest",
-            "build": "python -m build"
+            "typecheck": ("mypy", "."),
+            "lint": ("ruff", "check", "."),
+            "unit_test": ("pytest",),
+            "build": ("python", "-m", "build"),
         },
         "typescript/javascript": {
-            "typecheck": "tsc",
-            "lint": "eslint .",
-            "unit_test": "vitest run",
-            "build": "npm run build"
+            "typecheck": ("tsc",),
+            "lint": ("eslint", "."),
+            "unit_test": ("vitest", "run"),
+            "build": ("npm", "run", "build"),
         },
         "go": {
-            "typecheck": "go vet ./...",
-            "lint": "golangci-lint run",
-            "unit_test": "go test ./...",
-            "build": "go build ./..."
+            "typecheck": ("go", "vet", "./..."),
+            "lint": ("golangci-lint", "run"),
+            "unit_test": ("go", "test", "./..."),
+            "build": ("go", "build", "./..."),
         },
         "rust": {
-            "typecheck": "cargo check",
-            "lint": "cargo clippy",
-            "unit_test": "cargo test",
-            "build": "cargo build"
+            "typecheck": ("cargo", "check"),
+            "lint": ("cargo", "clippy"),
+            "unit_test": ("cargo", "test"),
+            "build": ("cargo", "build"),
         },
         "java": {
-            "typecheck": "mvn compile",
-            "lint": "mvn checkstyle:check",
-            "unit_test": "mvn test",
-            "build": "mvn package"
-        }
+            "typecheck": ("mvn", "compile"),
+            "lint": ("mvn", "checkstyle:check"),
+            "unit_test": ("mvn", "test"),
+            "build": ("mvn", "package"),
+        },
     }
 
     _aliases: ClassVar[dict[str, str]] = {
@@ -46,12 +46,21 @@ class VerificationEvaluator:
         "javascript": "typescript/javascript",
         "typescript": "typescript/javascript",
         "node": "typescript/javascript",
-        "golang": "go"
+        "golang": "go",
     }
 
     @classmethod
-    def get_command(cls, language: str, gate_type: str) -> str | None:
+    def get_argv(cls, language: str, gate_type: str) -> tuple[str, ...] | None:
+        """Return immutable argv for one applicable gate."""
+
         lang_key = language.lower().strip()
         lang_key = cls._aliases.get(lang_key, lang_key)
-        lang_gates = cls._commands_by_language.get(lang_key, {})
+        lang_gates = cls._argv_by_language.get(lang_key, {})
         return lang_gates.get(gate_type)
+
+    @classmethod
+    def get_command(cls, language: str, gate_type: str) -> str | None:
+        """Return the legacy display-only representation used in evidence."""
+
+        argv = cls.get_argv(language, gate_type)
+        return " ".join(argv) if argv is not None else None

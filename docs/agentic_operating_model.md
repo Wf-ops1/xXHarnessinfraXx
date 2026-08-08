@@ -72,7 +72,8 @@ sequenceDiagram
 - contratos Pydantic, defaults e versionamento de schemas;
 - FSM e arquivos locais de contexto, plano, estado e evidência;
 - `ExternalWorktreeManager` com `git worktree` real, referência durável e path guard canônico;
-- execução de subprocessos de verificação;
+- execução de subprocessos de verificação por `argv`, com executável autorizado, cwd confinado,
+  ambiente seletivo, timeout da árvore de processos e saída limitada/redigida;
 - hash chain local para o diário de eventos.
 
 ## Lacunas que impedem uso seguro
@@ -82,7 +83,7 @@ sequenceDiagram
 - `doctor` não mede saúde;
 - o worktree Git real ainda não está ligado ao lifecycle e às tools operacionais;
 - promoção e rollback não possuem o protocolo Git final;
-- terminal aceita comando como string com shell implícito;
+- terminal seguro ainda não está registrado no tool loop nem ligado ao lifecycle/worktree provisionado;
 - persistência, recovery, budgets, secrets e políticas ainda não controlam todo o caminho crítico.
 
 O plano concreto para fechar essas lacunas está em

@@ -82,6 +82,10 @@ contracts: []
     assert "retry_policy" in str(exc_info.value)
 
 def test_verification_evaluator_polyglot():
+    assert VerificationEvaluator.get_argv("python", "unit_test") == ("pytest",)
+    assert VerificationEvaluator.get_argv("ts", "lint") == ("eslint", ".")
+    assert VerificationEvaluator.get_argv("golang", "typecheck") == ("go", "vet", "./...")
+
     py_cmd = VerificationEvaluator.get_command("python", "unit_test")
     assert py_cmd == "pytest"
 
