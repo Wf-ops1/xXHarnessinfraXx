@@ -38,7 +38,7 @@ flowchart TD
 | Verificação | `verification/` | Experimental | Gates reais existem, mas fail-closed e matriz completa ainda faltam |
 | Governança/segurança | `governance/`, `security/` | Experimental | Enforcement não cobre todo side effect |
 | Auditoria | `observability/audit.py` | Experimental | Hash chain local não prova efeitos externos nem recovery |
-| Workspace Git | `workspace/` | Simulada | Cria diretório e referência; não cria worktree Git |
+| Workspace Git | `workspace/` | Implementada como primitivo | Cria/valida worktree Git externo e guard canônico; integração com lifecycle/tools ainda falta |
 
 ## 4. Separação Harness vs. produto
 
@@ -46,7 +46,8 @@ flowchart TD
 - **Configuração do produto:** `.harness/agents/`, `.harness/graphs/specs/`,
   `.harness/policies/` e `.harness/tools/`.
 - **Estado local:** `.harness/state/` e `.harness/artifacts/`.
-- **Isolamento futuro:** worktree externo associado a `execution_id`; ainda não implementado.
+- **Isolamento disponível como primitivo:** worktree Git externo associado a `execution_id`; uso pelo
+  lifecycle e pelas tools continua pendente.
 
 `harness init` cria/copia a estrutura local, mas isso não torna o repositório governado ou seguro por
 si só.

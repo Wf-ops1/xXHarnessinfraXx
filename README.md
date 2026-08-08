@@ -6,9 +6,10 @@ O AI Engineering Harness é hoje uma base Python instalável para experimentar u
 agentic local-first. O repositório já possui empacotamento reproduzível, compilador único e
 determinístico, execução dirigida pelas arestas do artefato, persistência concorrente, FSM por eventos
 e retomada canônica com aprovação, cancelamento e retry limitado por contexto real e redigido. A
-  execução autônoma segura sobre um repositório externo ainda não está pronta: providers, roteamento,
-  continuação de model-turn e durabilidade/policy do tool loop passaram pelo realinhamento; ferramentas com efeito,
-isolamento Git, promoção, rollback e governança operacional permanecem incompletos ou simulados.
+execução autônoma segura sobre um repositório externo ainda não está pronta: providers, roteamento,
+continuação de model-turn e durabilidade/policy do tool loop passaram pelo realinhamento; o primitivo
+de worktree Git já é real, mas sua integração com tools, promoção, rollback e governança operacional
+permanece incompleta.
 
 Não use `harness run`, `harness doctor` ou `harness rollback` como garantia de segurança em um
 repositório valioso. Embora a Fase 2 esteja implementada, as Fases 3–7 ainda não estão concluídas;
@@ -42,11 +43,11 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
-| Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2 | Registry operacional é vazio; aprovação vinculada ao conteúdo e tools reais ainda não existem | Path guard, terminal, worktree, promoção e edição em F3.4–F3.8 |
+| Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2 | Registry operacional é vazio; aprovação vinculada ao conteúdo e tools reais ainda não existem | Terminal, promoção e edição reais nas F3.5/F3.7/F3.8 |
 | Serena e Codebase-Memory | Interfaces/adapters existem | Serena apenas cria/toca arquivo; memória retorna `mock_ast` | Transporte MCP real ou adapter local explicitamente configurado |
 | Verificação e auditoria | Subprocessos de gates e hash chain local possuem testes | Há caminhos de gate vazio e garantias ainda incompletas | Gates fail-closed, redaction e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
-| Worktree, promoção e rollback | Estruturas e comandos prototípicos existem | Worktree é diretório comum; promoção usa dry-run/SHA sintético; rollback é parcial | `git worktree`, candidate commit, cherry-pick e `git revert` reais |
+| Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
 
 ## Estado do roadmap
@@ -57,9 +58,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 - **Fase 2 concluída:** record atômico, storage concorrente, execução por grafo, FSM por eventos,
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
-- **Fase 3 em execução:** F3.1–F3.3 e as corretivas F3.C1/F3.C2 foram promovidas. O realinhamento
-  encerrou sem achado blocker/high no gate F3.4; path guard está ativo, enquanto terminal, worktree,
-  promoção e edição continuam tarefas futuras isoladas e sujeitas a novas pausas/autorização.
+- **Fase 3 em execução:** F3.1–F3.4 e as corretivas F3.C1/F3.C2 foram promovidas. A F3.6 entrega
+  localmente o worktree Git externo real ligado ao path guard; terminal, integração de edição e
+  promoção continuam tarefas futuras isoladas e sujeitas a novas pausas/autorização.
 
 ## Dívidas técnicas críticas
 
@@ -79,8 +80,8 @@ operacionais:
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em
   dry-run e possui fallback sintético no caminho live;
-- [ExternalWorktreeManager](src/ai_engineering_harness/workspace/git_worktree.py) cria diretório, não
-  um worktree Git;
+- [ExternalWorktreeManager](src/ai_engineering_harness/workspace/git_worktree.py) cria e valida o
+  worktree Git real, mas ainda não é consumido pelo lifecycle nem por tools operacionais;
 - [TerminalAdapter](src/ai_engineering_harness/tools/adapters/terminal.py) recebe string e usa
   `shell=True`, contrário ao contrato final de segurança.
 
