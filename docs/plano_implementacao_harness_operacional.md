@@ -904,6 +904,13 @@ obrigatória**; a próxima tarefa só começa por autorização explícita nova.
 
 ### Tarefa F3.4 — Criar path guard
 
+**Decisão de ordem — DEC-013**
+
+F3.4 entrega uma primitiva independente, construída sempre com raiz autorizada explícita; não cria
+worktree nem habilita adapter. F3.6 fornecerá a raiz canônica do worktree real. Terminal e edição só
+podem ser ligados depois de F3.4 + F3.6. A ordem restante e a justificativa estão em
+[`DEC-013-fase3-ordem-operacional.md`](decisions/DEC-013-fase3-ordem-operacional.md).
+
 Toda ferramenta que recebe path deverá:
 
 1. resolver path absoluto;
@@ -1593,20 +1600,24 @@ Requisitos:
 | 2 | F1.1 | schema do grafo | F0 |
 | 3 | F1.2–F1.5 | compilador único | F1.1 |
 | 4 | F2.1–F2.2 | estado e storage | F0 |
-| 5 | F3.6 | worktree Git real | F2.1 |
-| 6 | F2.3–F2.6 | executor, FSM e resume | F1, F2.1, F2.2 |
-| 7 | F3.4–F3.5 | path guard e terminal seguro | F3.6 |
-| 8 | F3.1–F3.3 | provider e tool loop | F2.3, F3.4 |
-| 9 | F4.1–F4.4 | contexto e plano reais | F2, F3 |
-| 10 | F4.5–F4.8 | gates e repair loop | F3.5, F4.4 |
-| 11 | F3.7 | promoção segura | F3.6, F4.7 |
-| 12 | F5.1–F5.7 | governança integrada | F2–F4 |
-| 13 | F6.1–F6.7 | operação, auditoria e recovery | F2–F5 |
-| 14 | F7.1–F7.5 | E2E e release candidate | F0–F6 |
-| 15 | F8 | expansão de infraestrutura | F7 |
+| 5 | F2.3–F2.6 | executor, FSM e resume | F1, F2.1, F2.2 |
+| 6 | F3.1–F3.3 | provider e tool loop com registry operacional vazio | F2.3 |
+| 7 | F3.C1–F3.C2 | integridade de model-turn e efeitos duráveis/policy | F3.1–F3.3 |
+| 8 | F3.4 | path guard parametrizado por raiz autorizada | F3.C1–F3.C2 |
+| 9 | F3.6 | worktree Git real e raiz canônica | F2.1, F3.4 |
+| 10 | F3.5 | terminal seguro confinado | F3.4, F3.6 |
+| 11 | F3.8 | edição real confinada | F3.4–F3.6 |
+| 12 | F4.1–F4.4 | contexto e plano reais | F2, F3.1–F3.3 |
+| 13 | F4.5–F4.8 | gates e repair loop | F3.5, F4.4 |
+| 14 | F3.7 | promoção segura | F3.6, F4.7 |
+| 15 | F5.1–F5.7 | governança integrada | F2–F4 |
+| 16 | F6.1–F6.7 | operação, auditoria e recovery | F2–F5 |
+| 17 | F7.1–F7.5 | E2E e release candidate | F0–F6 |
+| 18 | F8 | expansão de infraestrutura | F7 |
 
-DEC-012 impõe uma precedência operacional adicional: F3.C1 → F3.C2 → F3.4. A ordem conceitual da
-tabela não autoriza executar nenhuma tarefa restante da Fase 3 antes das duas corretivas promovidas.
+DEC-012 impõe F3.C1 → F3.C2 → F3.4. DEC-013 resolve a ordem restante como
+F3.4 → F3.6 → F3.5 → F3.8; F3.7 permanece depois de F4.7. Entregas já promovidas não habilitam
+adapters reais retroativamente: o registry operacional continua vazio até os gates consumidores.
 
 ---
 

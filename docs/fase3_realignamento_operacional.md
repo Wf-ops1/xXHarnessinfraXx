@@ -1,7 +1,7 @@
 # Realinhamento operacional da Fase 3
 
 > **Decisão:** DEC-012
-> **Estado:** normativo para a Fase 3 até o gate de saída
+> **Estado:** gate de saída certificado no primeiro commit de F3.4; preservado como norma histórica
 > **Baseline auditada:** `0e64a88fbe1ca28b8da6a4598a4f4391ba916dd1`
 > **Autorizado em:** `2026-08-07T23:48:49-03:00`
 
@@ -139,3 +139,18 @@ O realinhamento só termina quando F3.C1 e F3.C2 estiverem `PROMOTED`, seus CIs 
 com os respectivos SHAs e uma auditoria no primeiro commit de F3.4 comprovar que não resta achado
 blocker/high deste documento. Depois disso, a Fase 3 continua normalmente a partir de F3.4; o gate de
 saída original da fase permanece inalterado.
+
+## 9. Saída certificada no gate F3.4
+
+No primeiro commit documental de F3.4 foram observados:
+
+- F3.C1 `PROMOTED`, merge `5616fc5`, CI pós-merge `31240455344` no SHA exato;
+- F3.C2 `PROMOTED`, merge `d2502b0`, CI pós-merge `31266993044` no SHA exato;
+- `main == origin/main == d2502b0`, worktree limpa antes da branch F3.4;
+- 172 testes focados e 6 subtests verdes cobrindo R3-01–R3-06;
+- ausência de `tool_loop_transcript` em código de produção, registry operacional vazio e nenhuma
+  alteração/habilitação das fronteiras F3.4–F3.8 durante as corretivas.
+
+Não restou achado blocker/high deste documento. A ambiguidade entre F3.4 e F3.6 foi resolvida pela
+[DEC-013](decisions/DEC-013-fase3-ordem-operacional.md): F3.4 cria somente o guard parametrizado;
+F3.6 cria o worktree real e consumidores posteriores fazem a integração.
