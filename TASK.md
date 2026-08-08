@@ -58,30 +58,32 @@ Leia integralmente: [F3.5](docs/tasks/active/F3.5.md), a
 
 F3.5 exige nova autorização explícita; a promoção F3.6 foi certificada e a autorização nominal para
 iniciar F3.5 foi observada em `2026-08-08T18:47:32-03:00`. Ela autoriza congelamento, checkpoint e
-implementação local da F3.5, mas não autoriza push, abertura de PR, merge ou início de F3.8.
+implementação local da F3.5. A autorização separada para publicar a branch e abrir o PR único foi
+observada em `2026-08-08T19:26:53-03:00`; ela não inclui merge, tags remotas ou início de F3.8.
 
 | Campo | Valor |
 |---|---|
 | **Objetivo** | substituir execução por shell string por contrato tipado, confinado, limitado e redigido |
 | **Escopo** | terminal adapter, consumidor determinístico de verificação, documentação e testes F3.5 |
 | **Proibido** | registrar tool operacional, tool loop/runtime/lifecycle, GitAdapter, edição, promoção, dependências, schemas e CI |
-| **Checkpoint** | `checkpoint/f3.5-ready` em `866124d`; criar `checkpoint/f3.5-complete` neste fechamento |
-| **Estado remoto** | não existe branch remota ou PR F3.5; publicação permanece sem autorização |
+| **Checkpoint** | `checkpoint/f3.5-ready` em `866124d`; `checkpoint/f3.5-complete` em `47435c0`; tags apenas locais |
+| **Estado remoto** | branch publicada; PR #27 aberto para `main`; head técnico `8ad7fac`; run `31281583994`, 11/11 verde e sem conflitos antes desta reconciliação |
 
 ## 6. Bloqueios atuais
 
-A implementação e todos os gates locais terminaram verdes no commit `43a9d45`. F3.7, F3.8, registro
-do terminal no tool loop, push, PR e merge continuam bloqueados por escopo e/ou autorização separada.
+A implementação e todos os gates locais terminaram verdes; a correção portátil `8ad7fac` também
+passou mypy Windows/Linux, Ruff, testes focados e CI 11/11. F3.7, F3.8, registro do terminal no tool
+loop e merge continuam bloqueados por escopo e/ou autorização separada.
 
 ## 7. Próxima ação exata
 
 ```text
 PAUSAR EM COMPLETED_LOCAL / PROMOTION_PENDING:
-1. Registrar este fechamento e a tag local checkpoint/f3.5-complete, sem publicar nada.
-2. Não fazer push, abrir PR, publicar tag, fazer merge ou iniciar F3.8.
-3. Próxima autorização nominal necessária:
-   “Autorizo publicar a branch task/f3.5-safe-terminal e abrir o PR único da F3.5 para main.”
-4. Essa autorização futura não incluirá merge, publicação de tags ou início de F3.8.
+1. Publicar esta reconciliação no mesmo PR #27, sem nova branch, PR ou tag.
+2. Observar os 11 checks no novo head; pendência, ausência ou falha bloqueia merge.
+3. Mesmo com o head final verde e sem conflitos, não executar merge sem autorização explícita própria.
+4. Não iniciar F3.8; após eventual merge autorizado, validar CI push no SHA exato de main e pausar.
+5. Próxima autorização nominal necessária depois do head final verde: “Autorizo o merge do PR #27.”
 ```
 
 ## 8. Retomada após perda de contexto
