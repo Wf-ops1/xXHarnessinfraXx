@@ -33,7 +33,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | `F3.6` — worktree Git externo real e raiz autorizada |
-| **Gate** | `READY`; `ACTIVE` |
+| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.6-git-worktree`, criada de `8fac2d061e3b1a88d2683fab41af73a202091843` |
@@ -65,22 +65,22 @@ local congelada, mas não inclui push, PR, merge nem efeitos F3.5/F3.7/F3.8.
 | **Objetivo** | criar worktree Git externo real por execução, validar SHA/branch/raiz e fornecer `PathGuard` canônico |
 | **Escopo** | `workspace/git_worktree.py`, exports, documentação e testes reais em repositórios temporários |
 | **Proibido** | terminal, adapters/registrations, edição, commit candidato, promoção, cherry-pick, runtime/CLI, dependências, schemas e CI |
-| **Estado local** | gate documental em preparação; nenhum arquivo de implementação F3.6 alterado antes do checkpoint `READY` |
+| **Estado local** | commits `2771f93`, `3816ece`, `122bbba` e `9432f29`; todos os gates verdes; fechamento local neste checkpoint |
 | **Estado remoto** | branch somente local; nenhum push ou PR autorizado |
 
 ## 6. Bloqueios atuais
 
-Somente a implementação local congelada da F3.6 está autorizada. F3.5, F3.7, F3.8, integração com o
-tool loop e qualquer publicação remota continuam bloqueados.
+Não há implementação ativa. A F3.6 concluiu todos os critérios locais e aguarda autorização própria
+para push/PR. F3.5, F3.7, F3.8, integração com o tool loop e merge continuam bloqueados.
 
 ## 7. Próxima ação exata
 
 ```text
-EXECUTAR SOMENTE O ESCOPO CONGELADO DA F3.6:
-1. Criar o checkpoint documental `checkpoint/f3.6-ready` antes de implementação.
-2. Implementar e testar worktree Git real, referência durável, validação e cleanup explícito.
-3. Executar todos os critérios congelados e auditar o diff contra o checkpoint.
-4. Fechar localmente em `COMPLETED_LOCAL / PROMOTION_PENDING` e pausar antes de push/PR.
+PAUSAR EM `COMPLETED_LOCAL / PROMOTION_PENDING`:
+1. Não publicar branch nem abrir PR sem autorização explícita própria.
+2. Após autorização, publicar somente `task/f3.6-git-worktree` e abrir um único PR para `main`.
+3. Observar todos os checks do head final; check pendente, ausente ou falho bloqueia merge.
+4. Não executar merge nem iniciar F3.5 sem autorizações explícitas próprias.
 ```
 
 ## 8. Retomada após perda de contexto
