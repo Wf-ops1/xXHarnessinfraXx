@@ -33,7 +33,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | `F3.5` — terminal seguro por `argv` |
-| **Gate** | `READY`; `ACTIVE / IMPLEMENTATION_AUTHORIZED` |
+| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.5-safe-terminal`, criada de `6757fbf3b0a72a07080a7a7b45e5ae34f9bc3b86` |
@@ -65,22 +65,23 @@ implementação local da F3.5, mas não autoriza push, abertura de PR, merge ou 
 | **Objetivo** | substituir execução por shell string por contrato tipado, confinado, limitado e redigido |
 | **Escopo** | terminal adapter, consumidor determinístico de verificação, documentação e testes F3.5 |
 | **Proibido** | registrar tool operacional, tool loop/runtime/lifecycle, GitAdapter, edição, promoção, dependências, schemas e CI |
-| **Checkpoint** | criar `checkpoint/f3.5-ready` no primeiro commit documental antes do código |
+| **Checkpoint** | `checkpoint/f3.5-ready` em `866124d`; criar `checkpoint/f3.5-complete` neste fechamento |
 | **Estado remoto** | não existe branch remota ou PR F3.5; publicação permanece sem autorização |
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio para a implementação local estritamente congelada. F3.7, F3.8, registro do terminal
-no tool loop, push, PR e merge continuam bloqueados por escopo e/ou autorização separada.
+A implementação e todos os gates locais terminaram verdes no commit `43a9d45`. F3.7, F3.8, registro
+do terminal no tool loop, push, PR e merge continuam bloqueados por escopo e/ou autorização separada.
 
 ## 7. Próxima ação exata
 
 ```text
-1. Criar o primeiro commit documental e a tag local checkpoint/f3.5-ready.
-2. Implementar somente o contrato e os arquivos congelados no dossiê F3.5.
-3. Executar todo o aceite congelado, registrar evidência e fechar localmente.
-4. Pausar em COMPLETED_LOCAL / PROMOTION_PENDING.
-5. Não fazer push, abrir PR, publicar tag, fazer merge ou iniciar F3.8 sem autorização própria.
+PAUSAR EM COMPLETED_LOCAL / PROMOTION_PENDING:
+1. Registrar este fechamento e a tag local checkpoint/f3.5-complete, sem publicar nada.
+2. Não fazer push, abrir PR, publicar tag, fazer merge ou iniciar F3.8.
+3. Próxima autorização nominal necessária:
+   “Autorizo publicar a branch task/f3.5-safe-terminal e abrir o PR único da F3.5 para main.”
+4. Essa autorização futura não incluirá merge, publicação de tags ou início de F3.8.
 ```
 
 ## 8. Retomada após perda de contexto
