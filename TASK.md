@@ -33,7 +33,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | `F3.4` — path guard confinado à raiz autorizada |
-| **Gate** | `READY`; implementação local autorizada após checkpoint documental |
+| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.4-path-guard`, criada de `d2502b091941089d1c70a67dc2f8e7c0973cf9c4` |
@@ -65,24 +65,23 @@ não inclui push, PR, merge nem efeitos F3.5–F3.8.
 | **Objetivo** | validar paths contra raiz explícita, bloquear traversal/escape/`.git`/tamanho e produzir path relativo para journal |
 | **Escopo** | nova primitiva em `security/path_guard.py`, export público, documentação e testes focados |
 | **Proibido** | adapters, registrations, terminal, worktree, subprocesso/Git, promoção e edição F3.5–F3.8; dependências, schemas e CI |
-| **Estado local** | gate documental `READY`; nenhum arquivo de implementação alterado antes do checkpoint |
+| **Estado local** | commits `7aa087f`, `4f06004` e `4fe9dd7`; todos os gates verdes; fechamento documental/tag complete neste checkpoint |
 | **Estado remoto** | somente `main` promovida foi observada; branch F3.4 ainda não publicada e PR inexistente |
 
 ## 6. Bloqueios atuais
 
-O realinhamento DEC-012 foi auditado sem achado blocker/high e encerrado neste gate. A implementação
-F3.4 pode começar somente depois do primeiro commit documental/tag `checkpoint/f3.4-ready`. F3.5–F3.8
-e qualquer habilitação de efeitos continuam bloqueados.
+Não há implementação ativa. A F3.4 concluiu todos os gates locais e deve permanecer pausada antes de
+push/PR. F3.5–F3.8 e qualquer habilitação de efeitos continuam bloqueados.
 
 ## 7. Próxima ação exata
 
 ```text
-EXECUTAR SOMENTE F3.4 LOCAL:
-1. Criar o primeiro commit documental e a tag `checkpoint/f3.4-ready`.
-2. Implementar somente o path guard e testes do allowlist congelado.
-3. Executar aceite focado, compatibilidade, documentação, regressão, quality, package e escopo.
-4. Registrar `COMPLETED_LOCAL / PROMOTION_PENDING` e pausar antes de push/PR.
-5. Push e PR único da F3.4 exigem autorização explícita própria depois dos gates locais verdes.
+PAUSAR EM `COMPLETED_LOCAL / PROMOTION_PENDING`:
+1. Não executar push nem abrir PR sem autorização explícita própria.
+2. Depois de autorizado, publicar somente `task/f3.4-path-guard` e abrir um PR único para `main`.
+3. Observar todos os checks do head final; merge exige autorização explícita posterior.
+4. Após merge, validar CI de `push` no SHA exato de `main` e sincronizar o repositório.
+5. F3.6 exige promoção completa da F3.4 e nova autorização explícita; não avançar automaticamente.
 ```
 
 ## 8. Retomada após perda de contexto
