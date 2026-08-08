@@ -33,7 +33,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | `F3.5` — terminal seguro por `argv` |
-| **Gate** | `READY`; `REPAIR_ACTIVE / PROMOTION_BLOCKED` |
+| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.5-safe-terminal`, criada de `6757fbf3b0a72a07080a7a7b45e5ae34f9bc3b86` |
@@ -66,26 +66,26 @@ observada em `2026-08-08T19:26:53-03:00`; ela não inclui merge, tags remotas ou
 | **Objetivo** | substituir execução por shell string por contrato tipado, confinado, limitado e redigido |
 | **Escopo** | terminal adapter, consumidor determinístico de verificação, documentação e testes F3.5 |
 | **Proibido** | registrar tool operacional, tool loop/runtime/lifecycle, GitAdapter, edição, promoção, dependências, schemas e CI |
-| **Checkpoint** | `checkpoint/f3.5-ready` em `866124d`; `checkpoint/f3.5-complete` em `47435c0`; criar `checkpoint/f3.5-timeout-repair-ready` antes do reparo |
-| **Estado remoto** | PR #27 aberto; head `b8db591`; run `31281757984`, 11/11 verde e sem conflitos, mas promoção bloqueada por falha local posterior |
+| **Checkpoint** | `checkpoint/f3.5-ready` em `866124d`; `checkpoint/f3.5-complete` em `47435c0`; `checkpoint/f3.5-timeout-repair-ready` em `3248a73`, criado antes do código do reparo |
+| **Estado remoto** | PR #27 aberto; head remoto ainda `b8db591`; reparo local concluído em `95175f8` mais este fechamento documental, ainda não publicados; run anterior `31281757984`, 11/11 verde e sem conflitos |
 
 ## 6. Bloqueios atuais
 
-A auditoria pós-publicação reproduziu uma corrida real: o teste de timeout retornou processo pai
-encerrado, mas o filho sobreviveu e criou `child-survived.txt`. Três repetições seguintes passaram,
-confirmando flakiness em uma garantia de segurança. A CI verde não supera esse achado; merge, F3.7,
-F3.8 e registro do terminal no tool loop permanecem bloqueados.
+O blocker local da corrida no timeout foi corrigido e todo o aceite repetido ficou verde. A promoção
+continua pendente, não por falha conhecida, mas porque os commits do reparo ainda precisam ser
+publicados no mesmo PR #27 e o novo head precisa obter 11/11 checks finais sem conflitos. Merge, F3.7,
+F3.8 e registro do terminal no tool loop permanecem bloqueados até a autorização/gate próprios.
 
 ## 7. Próxima ação exata
 
 ```text
-REPARAR NO MESMO GATE/PR, SEM MERGE:
-1. Criar o checkpoint local checkpoint/f3.5-timeout-repair-ready antes do código.
-2. Substituir o encerramento Windows sujeito a corrida por controle determinístico da árvore e tornar
-   falha POSIX fail-closed; manter argv, shell=False, confinamento, limites e redaction intactos.
-3. Preservar o teste que falhou, adicionar estresse repetido/múltiplos filhos e executar todo o aceite.
-4. Registrar resultado, publicar somente no PR #27 e exigir 11/11 no novo head sem conflitos.
-5. Somente então pausar novamente para a autorização nominal “Autorizo o merge do PR #27.”
+ATUALIZAR E VALIDAR O MESMO PR, SEM MERGE:
+1. Publicar os commits documentais/técnicos do reparo somente em task/f3.5-safe-terminal/PR #27,
+   sem force e sem tags remotas.
+2. Confirmar o SHA exato do novo head, ausência de conflitos e todos os 11 checks finais verdes,
+   incluindo CI required; qualquer falha reabre o gate e deve ser corrigida sem enfraquecer critérios.
+3. Sincronizar e comprovar o estado local/remoto limpo.
+4. Somente então pausar para a autorização nominal “Autorizo o merge do PR #27.”
 ```
 
 ## 8. Retomada após perda de contexto
