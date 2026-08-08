@@ -6,7 +6,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. [Dossiê ativo](docs/tasks/active/F3.4.md): problema, evidência, escopo, aceite e rollback.
+2. [Dossiê ativo](docs/tasks/active/F3.6.md): problema, evidência, escopo, aceite e rollback.
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -32,12 +32,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
-| **Tarefa ativa** | `F3.4` — path guard confinado à raiz autorizada |
-| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Tarefa ativa** | `F3.6` — worktree Git externo real e raiz autorizada |
+| **Gate** | `READY`; `ACTIVE` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f3.4-path-guard`, criada de `d2502b091941089d1c70a67dc2f8e7c0973cf9c4` |
-| **Última main comprovada** | `d2502b091941089d1c70a67dc2f8e7c0973cf9c4`; run `31266993044`, 11/11 verde |
+| **Branch** | `task/f3.6-git-worktree`, criada de `8fac2d061e3b1a88d2683fab41af73a202091843` |
+| **Última main comprovada** | `8fac2d061e3b1a88d2683fab41af73a202091843`; run `31272502445`, 11/11 verde |
 | **Python** | `C:\Users\walla\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32; nenhuma dependência nova autorizada |
 
@@ -45,43 +45,42 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa anterior | `F3.C2`, agora `PROMOTED` e arquivada neste primeiro commit do gate F3.4 |
-| PR | #24; head `bf38d31b391352308b0e2b53e586b0cf493a2471`; merge `d2502b091941089d1c70a67dc2f8e7c0973cf9c4` |
-| CI do PR | run `31242510166`, evento `pull_request`, 11/11 jobs verdes incluindo `CI required` |
-| CI pós-merge | run `31266993044`, evento `push` em `main`, SHA exato do merge, 11/11 jobs verdes |
-| Linha comprovada | `main == origin/main == d2502b091941089d1c70a67dc2f8e7c0973cf9c4` antes desta branch |
+| Tarefa anterior | `F3.4`, agora `PROMOTED` e arquivada neste primeiro commit do gate F3.6 |
+| PR | #25; head `4d95d1a56513cf0ce8d027a0c250bd2bb4a8ae97`; merge `8fac2d061e3b1a88d2683fab41af73a202091843` |
+| CI do PR | run `31271445092`, evento `pull_request`, 11/11 jobs verdes incluindo `CI required` |
+| CI pós-merge | run `31272502445`, evento `push` em `main`, SHA exato do merge, 11/11 jobs verdes |
+| Linha comprovada | `main == origin/main == 8fac2d061e3b1a88d2683fab41af73a202091843` antes desta branch |
 
 ## 5. Tarefa ativa
 
-Leia integralmente: [F3.4](docs/tasks/active/F3.4.md), a
+Leia integralmente: [F3.6](docs/tasks/active/F3.6.md), a
 [DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md) e o plano da Fase 3.
 
-F3.4 exige nova autorização explícita; a pausa após F3.C2 foi cumprida e `continue`, respondido
-diretamente ao próximo passo auditado, foi observado em `2026-08-08T14:45:06-03:00`. A autorização
-não inclui push, PR, merge nem efeitos F3.5–F3.8.
+F3.6 exige nova autorização explícita; a pausa após F3.4 foi cumprida e a autorização nominal para
+iniciar F3.6 foi observada em `2026-08-08T15:48:28-03:00`. A autorização cobre gate e implementação
+local congelada, mas não inclui push, PR, merge nem efeitos F3.5/F3.7/F3.8.
 
 | Campo | Valor |
 |---|---|
-| **Objetivo** | validar paths contra raiz explícita, bloquear traversal/escape/`.git`/tamanho e produzir path relativo para journal |
-| **Escopo** | nova primitiva em `security/path_guard.py`, export público, documentação e testes focados |
-| **Proibido** | adapters, registrations, terminal, worktree, subprocesso/Git, promoção e edição F3.5–F3.8; dependências, schemas e CI |
-| **Estado local** | commits `7aa087f`, `4f06004`, `4fe9dd7` e `bc517d3`; todos os gates verdes; reconciliação remota neste checkpoint |
-| **Estado remoto** | PR [#25](https://github.com/Wf-ops1/Harnessinfra/pull/25) aberto contra `main`; run inicial `31271380745` em execução; merge não autorizado |
+| **Objetivo** | criar worktree Git externo real por execução, validar SHA/branch/raiz e fornecer `PathGuard` canônico |
+| **Escopo** | `workspace/git_worktree.py`, exports, documentação e testes reais em repositórios temporários |
+| **Proibido** | terminal, adapters/registrations, edição, commit candidato, promoção, cherry-pick, runtime/CLI, dependências, schemas e CI |
+| **Estado local** | gate documental em preparação; nenhum arquivo de implementação F3.6 alterado antes do checkpoint `READY` |
+| **Estado remoto** | branch somente local; nenhum push ou PR autorizado |
 
 ## 6. Bloqueios atuais
 
-Não há implementação ativa. Branch e PR #25 foram publicados com autorização; os checks do head final
-devem ficar integralmente verdes antes de pedir autorização de merge. F3.5–F3.8 e qualquer habilitação
-de efeitos continuam bloqueados.
+Somente a implementação local congelada da F3.6 está autorizada. F3.5, F3.7, F3.8, integração com o
+tool loop e qualquer publicação remota continuam bloqueados.
 
 ## 7. Próxima ação exata
 
 ```text
-PAUSAR EM `COMPLETED_LOCAL / PROMOTION_PENDING`:
-1. Publicar esta reconciliação no mesmo PR #25 e observar todos os checks do novo head.
-2. Não executar merge sem autorização explícita própria depois da CI verde.
-3. Após merge autorizado, validar CI de `push` no SHA exato de `main` e sincronizar o repositório.
-4. F3.6 exige promoção completa da F3.4 e nova autorização explícita; não avançar automaticamente.
+EXECUTAR SOMENTE O ESCOPO CONGELADO DA F3.6:
+1. Criar o checkpoint documental `checkpoint/f3.6-ready` antes de implementação.
+2. Implementar e testar worktree Git real, referência durável, validação e cleanup explícito.
+3. Executar todos os critérios congelados e auditar o diff contra o checkpoint.
+4. Fechar localmente em `COMPLETED_LOCAL / PROMOTION_PENDING` e pausar antes de push/PR.
 ```
 
 ## 8. Retomada após perda de contexto
