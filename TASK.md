@@ -65,23 +65,23 @@ não inclui push, PR, merge nem efeitos F3.5–F3.8.
 | **Objetivo** | validar paths contra raiz explícita, bloquear traversal/escape/`.git`/tamanho e produzir path relativo para journal |
 | **Escopo** | nova primitiva em `security/path_guard.py`, export público, documentação e testes focados |
 | **Proibido** | adapters, registrations, terminal, worktree, subprocesso/Git, promoção e edição F3.5–F3.8; dependências, schemas e CI |
-| **Estado local** | commits `7aa087f`, `4f06004` e `4fe9dd7`; todos os gates verdes; fechamento documental/tag complete neste checkpoint |
-| **Estado remoto** | somente `main` promovida foi observada; branch F3.4 ainda não publicada e PR inexistente |
+| **Estado local** | commits `7aa087f`, `4f06004`, `4fe9dd7` e `bc517d3`; todos os gates verdes; reconciliação remota neste checkpoint |
+| **Estado remoto** | PR [#25](https://github.com/Wf-ops1/Harnessinfra/pull/25) aberto contra `main`; run inicial `31271380745` em execução; merge não autorizado |
 
 ## 6. Bloqueios atuais
 
-Não há implementação ativa. A F3.4 concluiu todos os gates locais e deve permanecer pausada antes de
-push/PR. F3.5–F3.8 e qualquer habilitação de efeitos continuam bloqueados.
+Não há implementação ativa. Branch e PR #25 foram publicados com autorização; os checks do head final
+devem ficar integralmente verdes antes de pedir autorização de merge. F3.5–F3.8 e qualquer habilitação
+de efeitos continuam bloqueados.
 
 ## 7. Próxima ação exata
 
 ```text
 PAUSAR EM `COMPLETED_LOCAL / PROMOTION_PENDING`:
-1. Não executar push nem abrir PR sem autorização explícita própria.
-2. Depois de autorizado, publicar somente `task/f3.4-path-guard` e abrir um PR único para `main`.
-3. Observar todos os checks do head final; merge exige autorização explícita posterior.
-4. Após merge, validar CI de `push` no SHA exato de `main` e sincronizar o repositório.
-5. F3.6 exige promoção completa da F3.4 e nova autorização explícita; não avançar automaticamente.
+1. Publicar esta reconciliação no mesmo PR #25 e observar todos os checks do novo head.
+2. Não executar merge sem autorização explícita própria depois da CI verde.
+3. Após merge autorizado, validar CI de `push` no SHA exato de `main` e sincronizar o repositório.
+4. F3.6 exige promoção completa da F3.4 e nova autorização explícita; não avançar automaticamente.
 ```
 
 ## 8. Retomada após perda de contexto
