@@ -46,6 +46,20 @@ def test_documents_do_not_claim_current_operational_readiness() -> None:
             assert pattern.search(content) is None, (document, pattern.pattern)
 
 
+def test_current_docs_recognize_real_worktree_without_claiming_full_integration() -> None:
+    readme = _read(ROOT / "README.md")
+    operating_model = _read(ROOT / "docs" / "agentic_operating_model.md")
+    architecture = _read(ROOT / "docs" / "harness_architecture_spec.md")
+
+    assert "Worktree é diretório comum" not in readme
+    assert "cria diretório, não" not in readme
+    assert "não chama `git worktree`" not in operating_model
+    assert "| Workspace Git | `workspace/` | Simulada" not in architecture
+    assert "worktree real ainda não está integrado" in readme.casefold()
+    assert "worktree git real ainda não está ligado" in operating_model.casefold()
+    assert "Cria/valida worktree Git externo" in architecture
+
+
 def test_markdown_links_are_relative_and_resolve() -> None:
     for document in MARKDOWN_FILES:
         for match in MARKDOWN_LINK.finditer(_read(document)):

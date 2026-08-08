@@ -71,6 +71,7 @@ sequenceDiagram
 - empacotamento e ambiente de desenvolvimento reproduzíveis;
 - contratos Pydantic, defaults e versionamento de schemas;
 - FSM e arquivos locais de contexto, plano, estado e evidência;
+- `ExternalWorktreeManager` com `git worktree` real, referência durável e path guard canônico;
 - execução de subprocessos de verificação;
 - hash chain local para o diário de eventos.
 
@@ -79,7 +80,7 @@ sequenceDiagram
 - providers LLM não fazem chamadas externas ou locais reais;
 - Serena e Codebase-Memory não se conectam a MCP;
 - `doctor` não mede saúde;
-- `ExternalWorktreeManager` não chama `git worktree`;
+- o worktree Git real ainda não está ligado ao lifecycle e às tools operacionais;
 - promoção e rollback não possuem o protocolo Git final;
 - terminal aceita comando como string com shell implícito;
 - persistência, recovery, budgets, secrets e políticas ainda não controlam todo o caminho crítico.
