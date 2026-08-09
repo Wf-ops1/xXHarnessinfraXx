@@ -65,8 +65,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   pós-merge `31316853244` concluiu 11/11 checks verdes. A correção transversal do PR #31 foi
   incorporada no merge `e4292ca`, com CI pós-merge `31319202731` também 11/11 verde. A F4.1 foi
   promovida pelo PR #32 no merge `12ce3b7`, e a CI pós-merge `31323952381` concluiu 11/11 checks
-  verdes; sua reconciliação administrativa foi publicada no PR #33 e aguarda checks. F3.7 continua
-  dependente da F4.7 e de gate separado.
+  verdes; sua reconciliação administrativa entrou em `main` pelo PR #33 no merge `571a8eb`, com CI
+  pós-merge `31329231458` também 11/11 verde. A F4.2 possui gate local `READY` para implementar o
+  indexador AST do commit exato; F3.7 continua dependente da F4.7 e de gate separado.
 
 ## Dívidas técnicas críticas
 
