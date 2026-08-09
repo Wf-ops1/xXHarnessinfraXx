@@ -187,20 +187,22 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f3_8_closeout_is_certified_and_f4_1_has_its_own_ready_gate() -> None:
+def test_f3_8_closeout_and_f4_1_promotion_are_certified() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
     dossier = _read(COMPLETED_ROOT / "F3.8.md")
+    f4_1_dossier = _read(COMPLETED_ROOT / "F4.1.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
     assert not (ACTIVE_ROOT / "F3.8.md").exists()
+    assert not (ACTIVE_ROOT / "F4.1.md").exists()
     assert (COMPLETED_ROOT / "F3.8.md").is_file()
-    assert "docs/tasks/completed/F3.8.md" in panel
-    assert "F4.1 — concluída localmente; promoção pendente" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "docs/tasks/active/F4.1.md" in panel
+    assert (COMPLETED_ROOT / "F4.1.md").is_file()
+    assert "docs/tasks/completed/F4.1.md" in panel
+    assert "Nenhuma tarefa ativa; F4.2 não iniciada" in panel
+    assert "F4.1 `PROMOTED`" in panel
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
@@ -217,16 +219,12 @@ def test_f3_8_closeout_is_certified_and_f4_1_has_its_own_ready_gate() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "task/f4.1-index-storage" in panel
-    assert "PR #29" in panel
-    assert "PR administrativo #30" in panel
+    assert "docs/promote-f4.1" in panel
     assert "CI required" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
     assert "Autorizo o merge do PR #30" not in panel
     assert "Autorizo iniciar a F4.1" not in panel
-    assert "e4292ca52456708af7c2afe4e4471b1a721676a6" in panel
-    assert "31319202731" in panel
     assert "05f54dd8690f060008acb95cf3de5d6a3c12b9a0" in dossier
     assert "PR administrativo #30" in dossier
     assert "bd0bda9385db850208f125e69757118ee9fe2b27" in dossier
@@ -242,6 +240,13 @@ def test_f3_8_closeout_is_certified_and_f4_1_has_its_own_ready_gate() -> None:
     assert "31285547886" in f3_5_dossier
     assert "completed/F3.5.md" in task_index
     assert "completed/F3.8.md" in task_index
+    assert "completed/F4.1.md" in task_index
+    assert "> **Lifecycle:** `PROMOTED`" in f4_1_dossier
+    assert "3ba0e254d9d7425113ffcbcd6d22b5c663d7255e" in f4_1_dossier
+    assert "31322494169" in f4_1_dossier
+    assert "12ce3b7360a6035fb354326261fc409de15e29ec" in f4_1_dossier
+    assert "31323952381" in f4_1_dossier
+    assert "checkpoint/f4.1-promotion-sync-ready" in f4_1_dossier
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
@@ -301,7 +306,7 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "docs/tasks/completed/F3.8.md" in panel
+    assert "docs/tasks/completed/F4.1.md" in panel
     assert "F4.1" in panel
     assert "F3.7 permanece depois" in panel
     assert "Não restou achado blocker/high" in realignment
