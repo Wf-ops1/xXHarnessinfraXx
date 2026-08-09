@@ -36,10 +36,10 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.1 — concluída localmente; promoção pendente |
-| **Gate** | F4.1 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Gate** | F4.1 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #32 aberto com checks pendentes |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.1-index-storage`, criada diretamente da `main` sincronizada |
+| **Branch** | `task/f4.1-index-storage`, publicada e rastreando `origin/task/f4.1-index-storage` |
 | **Baseline promovido** | `main == origin/main == e4292ca`; run `31319202731`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -66,22 +66,23 @@ servir snapshots. O indexador Python real, rebuild e descoberta de símbolos per
 
 O baseline inclui o fechamento pelo PR administrativo #30 e a correção transversal já incorporada
 pelo PR #31 no merge `e4292ca`, cuja CI de `push` concluiu 11/11 verde no SHA exato de `main`.
-Nenhum push, PR, merge ou tag da F4.1 foi autorizado.
+A branch F4.1 foi publicada e o PR #32 aberto; merge, tags e exclusão de refs não foram autorizados.
 F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
 Não há bloqueio técnico local conhecido: aceite, regressão, quality, build, smoke e escopo estão verdes.
 A ausência de snapshot real permanece comportamento esperado até F4.2 e agora falha explicitamente.
-O bloqueio corrente é administrativo: push/PR exigem nova autorização; F4.2 não pode iniciar antes de
-merge, CI pós-merge e reconciliação administrativa da F4.1.
+O bloqueio corrente é o CI pendente do PR #32. Merge exige todos os checks verdes e autorização nova;
+F4.2 não pode iniciar antes de merge, CI pós-merge e reconciliação administrativa da F4.1.
 
 ## 7. Próxima ação exata
 
 ```text
-PERMANECER PAUSADO. A próxima autorização nominal possível é publicar `task/f4.1-index-storage` e
-abrir seu único PR para `main`. F4.2, F3.7, merge, tags e exclusão de refs não estão autorizados
-implicitamente; depois de eventual merge será obrigatória a reconciliação `docs/promote-f4.1`.
+AGUARDAR E REVALIDAR TODOS OS CHECKS DO HEAD FINAL DO PR #32, INCLUINDO `CI required`. Somente se
+todos ficarem verdes, solicitar autorização nominal separada para o merge. F4.2, F3.7, merge, tags e
+exclusão de refs não estão autorizados implicitamente; depois de eventual merge será obrigatória a
+reconciliação `docs/promote-f4.1`.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -103,4 +104,4 @@ implicitamente; depois de eventual merge será obrigatória a reconciliação `d
 
 ---
 
-*Atualizado em: 2026-08-09T12:25:34-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T12:55:45-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*

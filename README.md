@@ -64,7 +64,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   verde; a reconciliação administrativa foi incorporada pelo PR #30 no merge `c2aa89b`, e a CI
   pós-merge `31316853244` concluiu 11/11 checks verdes. A correção transversal do PR #31 foi
   incorporada no merge `e4292ca`, com CI pós-merge `31319202731` também 11/11 verde. A F4.1 está
-  concluída localmente e aguarda publicação/PR próprios; F3.7 continua dependente da F4.7 e de gate separado.
+  concluída localmente e possui o PR #32 aberto com checks pendentes; F3.7 continua dependente da F4.7
+  e de gate separado.
 
 ## Dívidas técnicas críticas
 
