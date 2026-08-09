@@ -187,41 +187,54 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f3_5_is_certified_and_f3_8_waits_for_authorized_merge() -> None:
+def test_f3_8_is_certified_and_f4_1_waits_for_admin_reconciliation() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
-    dossier = _read(COMPLETED_ROOT / "F3.5.md")
-    active_dossier = _read(ACTIVE_ROOT / "F3.8.md")
+    f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
+    dossier = _read(COMPLETED_ROOT / "F3.8.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
-    assert (ACTIVE_ROOT / "F3.8.md").is_file()
-    assert "docs/tasks/active/F3.8.md" in panel
-    assert "`READY`; `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
-    assert "task/f3.8-real-editing" in panel
-    assert "> **Gate:** `READY`" in active_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in active_dossier
-    assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in active_dossier
-    assert "623 passed, 2 skipped, 6 subtests passed" in active_dossier
-    assert "checkpoint/f3.8-complete" in panel
-    assert "31289781573" in active_dossier
-    assert "31290430138" in active_dossier
-    assert "31290644133" in active_dossier
-    assert "3576a0495fd0d02a4413a131ec9848bfd24652ea" in active_dossier
-    assert "checkpoint/f3.8-r2-docs-ready" in active_dossier
-    assert "21 passed, 6 subtests passed" in active_dossier
+    assert not (ACTIVE_ROOT / "F3.8.md").exists()
+    assert (COMPLETED_ROOT / "F3.8.md").is_file()
+    assert "docs/tasks/completed/F3.8.md" in panel
+    assert "Nenhuma tarefa ativa" in panel
+    assert "nenhum gate `READY`" in panel
+    assert "docs/promote-f3.8" in panel
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
+    assert "623 passed, 2 skipped, 6 subtests passed" in dossier
+    assert "checkpoint/f3.8-complete" in dossier
+    assert "31289781573" in dossier
+    assert "31290430138" in dossier
+    assert "31290644133" in dossier
+    assert "3576a0495fd0d02a4413a131ec9848bfd24652ea" in dossier
+    assert "checkpoint/f3.8-r2-docs-ready" in dossier
+    assert "21 passed, 6 subtests passed" in dossier
+    assert "f941c89fd0ec112aca82621ab9e11244f05962aa" in dossier
+    assert "31292195340" in dossier
+    assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
+    assert "31295594376" in dossier
+    assert "checkpoint/f3.8-promotion-sync-ready" in dossier
     assert "docs/promote-f3.8" in panel
     assert "PR #29" in panel
+    assert "PR administrativo #30" in panel
     assert "CI required" in panel
-    assert "Autorizo o merge do PR #29" in panel
+    assert "Autorizo o merge do PR #29" not in panel
+    assert "Autorizo publicar a branch" not in panel
+    assert "Autorizo o merge do PR #30" in panel
+    assert "05f54dd8690f060008acb95cf3de5d6a3c12b9a0" in dossier
+    assert "PR administrativo #30" in dossier
     assert "PR #27 aberto" not in panel
     assert "Autorizo o merge do PR #27" not in panel
-    assert "> **Lifecycle:** `PROMOTED`" in dossier
-    assert "e6d947a2713e61c0700154cb7453f8bc0a7c342f" in dossier
-    assert "b6a4a24179271a8caa22252f71d08c35e13e7a41" in dossier
-    assert "31284043501" in dossier
-    assert "31285547886" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f3_5_dossier
+    assert "e6d947a2713e61c0700154cb7453f8bc0a7c342f" in f3_5_dossier
+    assert "b6a4a24179271a8caa22252f71d08c35e13e7a41" in f3_5_dossier
+    assert "31284043501" in f3_5_dossier
+    assert "31285547886" in f3_5_dossier
     assert "completed/F3.5.md" in task_index
+    assert "completed/F3.8.md" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
@@ -231,7 +244,7 @@ def test_negative_evidence_precedes_positive_state_until_recertification() -> No
     plan = _read(IMPLEMENTATION_PLAN)
     decision = _read(POST_MERGE_DECISION)
     dossier = _read(COMPLETED_ROOT / "F3.5.md")
-    active_dossier = _read(ACTIVE_ROOT / "F3.8.md")
+    f3_8_dossier = _read(COMPLETED_ROOT / "F3.8.md")
 
     for source in (panel, rules, plan, decision):
         assert "evidência negativa" in source.casefold()
@@ -247,16 +260,17 @@ def test_negative_evidence_precedes_positive_state_until_recertification() -> No
     assert 0 <= dossier.rfind("31281757984") < certified_at
     assert dossier.rfind("31284043501") > certified_at
     assert dossier.rfind("31285547886") > certified_at
-    assert "evidência negativa do PR #29" in panel
-    f3_8_r1_blocked_at = active_dossier.find("> **Estado:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`")
-    f3_8_r1_recertified_at = active_dossier.find("### Recertificação do reparo R1")
-    f3_8_r2_blocked_at = active_dossier.find("## R2 — Recongelamento")
-    f3_8_r2_recertified_at = active_dossier.find("### Recertificação do reparo R2")
+    assert "## R1 — CI do PR #29 reabre portabilidade e promoção" in f3_8_dossier
+    assert "Essa evidência negativa não invalida os checks técnicos anteriores" in f3_8_dossier
+    f3_8_r1_blocked_at = f3_8_dossier.find("> **Estado:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`")
+    f3_8_r1_recertified_at = f3_8_dossier.find("### Recertificação do reparo R1")
+    f3_8_r2_blocked_at = f3_8_dossier.find("## R2 — Recongelamento")
+    f3_8_r2_recertified_at = f3_8_dossier.find("### Recertificação do reparo R2")
     assert f3_8_r1_blocked_at >= 0
     assert f3_8_r1_recertified_at > f3_8_r1_blocked_at
     assert f3_8_r2_blocked_at > f3_8_r1_recertified_at
     assert f3_8_r2_recertified_at > f3_8_r2_blocked_at
-    assert "Falha histórica, diagnóstico e tentativas inválidas permanecem explícitos" in active_dossier
+    assert "Falha histórica, diagnóstico e tentativas inválidas permanecem explícitos" in f3_8_dossier
 
 
 def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> None:
@@ -280,6 +294,7 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "docs/tasks/active/F3.8.md" in panel
-    assert "checkpoint/f3.8-ready" in panel
+    assert "docs/tasks/completed/F3.8.md" in panel
+    assert "F4.1" in panel
+    assert "F3.7 permanece depois" in panel
     assert "Não restou achado blocker/high" in realignment

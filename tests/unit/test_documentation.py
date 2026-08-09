@@ -103,13 +103,15 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     walkthrough_audit = " ".join(walkthrough_audit.split())
     historical_audit = " ".join(historical_audit.split())
 
-    assert "PR #29 aberto" in readme
-    assert "A próxima implementação planejada é F4.1" in readme
-    assert "F3.7 permanece dependente da F4.7" in readme
+    assert "PR #29" in readme
+    assert "e6b5b84" in readme
+    assert "31295594376" in readme
+    assert "próxima implementação planejada, F4.1" in readme
+    assert "F3.7 continua dependente da F4.7" in readme
     assert "aguarda autorização própria para publicação" not in readme
 
-    assert "A DEC-014 exige então branch `docs/promote-f3.8`" in panel
-    assert "não usar o primeiro commit do gate seguinte" in panel.casefold()
+    assert "branch `docs/promote-f3.8`" in panel
+    assert "nenhum gate `READY`" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
     assert "docs/promote-f3.8" in panel
 
