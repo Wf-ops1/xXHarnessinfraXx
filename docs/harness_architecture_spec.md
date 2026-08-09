@@ -9,8 +9,10 @@ O produto pretende ser uma infraestrutura local-first instalável por CLI ou IDE
 externo deverá receber configuração leve em `.harness/`, enquanto execução, ferramentas, Git,
 políticas e evidências permanecerão controlados pelo motor instalado.
 
-No estado atual, essa visão está parcialmente materializada como harness de testes e contratos. O
-projeto ainda não oferece isolamento ou autonomia suficientes para uso cotidiano sem supervisão.
+No estado atual, essa visão está parcialmente materializada como harness de testes, contratos e
+primitivas operacionais reais. O isolamento por worktree, terminal e edição existe de forma injetável,
+mas o produto ainda não os compõe automaticamente no lifecycle e não oferece autonomia suficiente
+para uso cotidiano sem supervisão.
 
 ## 2. Arquitetura-alvo
 
@@ -31,9 +33,9 @@ flowchart TD
 | Camada | Base existente | Estado | Limite principal |
 |---|---|---|---|
 | Package e defaults | `pyproject.toml`, `uv.lock`, `src/ai_engineering_harness/defaults/` | Implementada como base | Distribuição de produto e compatibilidade externa ainda não fechadas |
-| Contratos | `src/ai_engineering_harness/contracts/` | Implementada como modelos internos | Modelos canônicos GraphSpec/PolicySpec/CompiledArtifact ainda serão unificados |
-| Compilação | `compiler/` e `src/ai_engineering_harness/compiler/` | Experimental | Dois compiladores e validações incompletas |
-| Runtime | `src/ai_engineering_harness/runtime/` | Experimental | Ordem fixa, adapters simulados e promoção dry-run |
+| Contratos | `src/ai_engineering_harness/contracts/` | Implementada como modelos internos | Evolução/migração compatível dos schemas ainda não está fechada |
+| Compilação | `src/ai_engineering_harness/compiler/` com wrapper legado em `compiler/` | Implementada como pipeline canônico | Distribuição e migração externa dos contratos ainda não estão fechadas |
+| Runtime | `src/ai_engineering_harness/runtime/` | Implementado como núcleo injetável | Percorre arestas, persiste e retoma; wiring padrão não fornece executores/tools operacionais nem promoção |
 | Ferramentas/modelos | `tools/`, `models/`, `indexer/` | Experimental | Edição confinada, terminal, Git somente leitura e Serena MCP possuem registry opt-in; integração automática e memória real ainda faltam |
 | Verificação | `verification/` | Experimental | Gates estáticos usam o terminal confinado; fail-closed integral e matriz completa ainda faltam |
 | Governança/segurança | `governance/`, `security/` | Experimental | Enforcement não cobre todo side effect |

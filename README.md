@@ -59,9 +59,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 - **Fase 2 concluída:** record atômico, storage concorrente, execução por grafo, FSM por eventos,
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
-- **Fase 3 em execução:** F3.1–F3.6 e as corretivas F3.C1/F3.C2 aplicáveis foram promovidas; a F3.8
-  está concluída localmente e aguarda autorização própria para publicação da branch e abertura do PR.
-  F3.7 permanece dependente da F4.7 e exige gate e autorização próprios.
+- **Fase 3 em execução:** F3.1–F3.6 e as corretivas F3.C1/F3.C2 aplicáveis foram promovidas. A F3.8
+  está em `COMPLETED_LOCAL / PROMOTION_PENDING`, com a branch publicada e o PR #29 aberto; merge e
+  reconciliação administrativa pós-merge ainda exigem autorizações próprias. A próxima implementação
+  planejada é F4.1; F3.7 permanece dependente da F4.7 e de gate separado.
 
 ## Dívidas técnicas críticas
 

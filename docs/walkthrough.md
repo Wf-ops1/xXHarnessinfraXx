@@ -1,6 +1,6 @@
 # Walkthrough da Estrutura e dos Fluxos Atuais
 
-> **Status: mapa do protótipo em 4 de agosto de 2026**
+> **Status: mapa do protótipo em 8 de agosto de 2026**
 
 Este walkthrough mostra a organização real do repositório e distingue o que é código executável do
 que é arquitetura futura. O [dashboard HTML](walkthrough_dashboard.html) é um artefato visual
@@ -63,40 +63,34 @@ manifesto de versão e rollback de inicialização previstos na F7.
 ```mermaid
 flowchart TD
     A["CLI cria execution_id"] --> B["Localiza ou auto-compila grafo"]
-    B --> C["ContextAssembler grava context.json"]
-    C --> D["Planner grava plan.json"]
-    D --> E["AgentExecutor chama provider simulado"]
-    E --> F["VerificationEngine executa gates selecionados"]
-    F --> G{"Gates passaram?"}
-    G -->|Não| H["FAILED_RETRY_EXHAUSTED"]
-    G -->|Sim| I{"Aprovação exigida?"}
-    I -->|Sim| J["AWAITING_APPROVAL e retorno"]
-    I -->|Não| K["PromotionManager dry-run"]
-    K --> L["Mock AST e knowledge sync local"]
-    L --> M["evidence.json e COMPLETED"]
+    B --> C["ExecutionLifecycleService persiste bundle canônico"]
+    C --> D["GraphExecutor valida e percorre arestas compiladas"]
+    D --> E["NodeExecutorRegistry exige backend do nó"]
+    E --> F{"Executor explicitamente injetado?"}
+    F -->|Não, padrão da CLI| G["Erro tipado e estado fail-closed"]
+    F -->|Sim, testes/integração| H["Execução, pausa e resume persistidos"]
 ```
 
 Limitações importantes:
 
-- o runtime carrega o artefato, mas não percorre nós/arestas como contrato único de execução;
-- o modelo não produz patch real;
-- o `ToolRouter` não é chamado pelo caminho normal para editar a história;
-- gate vazio pode ser considerado aprovado;
-- promoção, indexação e parte da evidência são sintéticas;
-- não existe worktree Git na sequência.
+- o runtime percorre nós/arestas pelo `GraphExecutor`, mas a CLI constrói um registry de executores
+  deliberadamente vazio e falha antes de efeitos;
+- providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
+- o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
+- promoção e indexação permanecem legadas/sintéticas e fora do lifecycle canônico;
+- o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.
 
 ## Fluxo de verificação
 
-O `VerificationEngine` possui runners que executam processos reais e normalizam resultados. No
-runtime atual, os gates ativos vêm de política local; um diretório sem marcador de projeto recebe
-lista vazia. A F4 deverá transformar gate obrigatório ausente em erro e cobrir a matriz de linguagens
-com comandos configurados, timeouts e redaction.
+O `VerificationEngine` possui runners que executam processos reais pelo terminal tipado, com `argv`,
+cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. A F4 deverá ligar gates
+obrigatórios ao planejamento/runtime, bloquear ausência de gate e cobrir a matriz configurada.
 
 ## Fluxo de auditoria e rollback
 
-O diário append-only e sua hash chain são implementações locais testadas. O rollback registra eventos
-e pode chamar `git revert`, mas não possui o worktree/candidate commit do contrato final e o adapter
-Git usa o terminal baseado em string. Portanto, o fluxo serve para testes do protocolo, não para
+O diário append-only e sua hash chain são implementações locais testadas. O rollback registra eventos,
+mas ainda usa um adapter Git legado incompatível com o terminal tipado e não recebe o worktree real,
+candidate commit ou gates pós-reversão. Portanto, o fluxo serve para testes do protocolo, não para
 recuperação confiável de um produto.
 
 ## Onde acompanhar

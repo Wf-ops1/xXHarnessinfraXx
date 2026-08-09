@@ -36,7 +36,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | F3.8 — edição real confinada e Serena MCP explícito |
-| **Gate** | `READY`; `REPAIR_ACTIVE / PROMOTION_BLOCKED` por divergência documental pré-merge |
+| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` após recertificação documental R2 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.8-real-editing`, publicada em `origin`; PR único #29 aberto para `main` |
@@ -67,6 +67,11 @@ gate; os commits `4505cf4` e `3576a04` registraram e repararam as divergências 
 O run `31290430138`, no head técnico exato `3576a0495fd0d02a4413a131ec9848bfd24652ea`,
 recertificou os 11/11 checks, incluindo `CI required`.
 
+A auditoria R2 recongelou e corrigiu claims públicos que ainda confundiam primitivas reais com sua
+integração automática ausente. README, painel, modelo operacional, arquitetura, guia, walkthroughs e
+auditorias agora concordam com o código e com a DEC-014; regressões semânticas impedem o retorno das
+afirmações falsas. O próximo passo técnico do roadmap é F4.1; F3.7 permanece depois da F4.7.
+
 Os checkpoints `checkpoint/f3.8-ready` e `checkpoint/f3.8-complete` permanecem históricos e imóveis;
 o estado positivo corrente é provado pelos reparos, pelo aceite repetido e pela CI remota posterior.
 
@@ -75,22 +80,20 @@ continuam fora do escopo e não foram implicitamente habilitados.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido no código da F3.8: o head `b898d88` obteve 11/11 checks no run
-`31290644133`. A auditoria pré-merge, porém, encontrou claims documentais correntes que ainda descrevem
-a branch como não publicada, aplicam a regra pós-merge substituída da DEC-011 ou tratam primitivas já
-reais como ausentes/simuladas. Essa evidência negativa reabre somente o gate documental e proíbe merge
-até correção, regressão semântica, recertificação e nova CI completa no head final.
+Não há bloqueio local conhecido no escopo da F3.8/R2. A correção é exclusivamente documental/testes;
+código, dependências, schemas, defaults e CI estão byte-idênticos ao checkpoint R2. O merge permanece
+proibido até o fechamento R2 ser publicado no mesmo PR #29, todos os 11 checks do novo head ficarem
+verdes e o usuário fornecer autorização nominal separada. Tags não serão publicadas.
 
 ## 7. Próxima ação exata
 
 ```text
-REPARAR E RECERTIFICAR O ALINHAMENTO DOCUMENTAL PRÉ-MERGE NO PR #29:
-1. Recongelar a ampliação exclusivamente documental e preservar todas as evidências anteriores.
-2. Corrigir painel, README e documentos públicos que conflitam com código, Git ou DEC-014.
-3. Fixar regressões para distinguir primitivas reais de integração automática ainda ausente.
-4. Repetir documentação/encoding, quality, escopo e a CI completa no novo head do mesmo PR.
-5. Somente depois de 11/11 verdes, pausar para “Autorizo o merge do PR #29.”
-6. Não fazer merge, publicar tags, configurar Serena live ou iniciar F4.1/F3.7.
+PERMANECER PAUSADO; O MERGE CONTINUA PROIBIDO ATÉ A CI DO HEAD FINAL DO PR #29 FICAR 11/11.
+Quando essa condição for observada, a próxima autorização nominal será: “Autorizo o merge do PR #29.”
+Depois do merge autorizado: validar CI push no SHA exato de main, sincronizar e pausar. A DEC-014 exige
+então branch `docs/promote-f3.8` e PR administrativo exclusivamente documental, com autorizações
+próprias, antes de iniciar F4.1. Não usar o primeiro commit do gate seguinte para certificar a F3.8.
+F3.7 permanece depois da F4.7. Não publicar tags nem iniciar outra tarefa implicitamente.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -111,4 +114,4 @@ REPARAR E RECERTIFICAR O ALINHAMENTO DOCUMENTAL PRÉ-MERGE NO PR #29:
 
 ---
 
-*Atualizado em: 2026-08-08 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*

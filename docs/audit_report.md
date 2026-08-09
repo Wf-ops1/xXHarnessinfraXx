@@ -3,6 +3,14 @@
 > **Data da revisão:** 4 de agosto de 2026
 > **Status: Protótipo / Em desenvolvimento**
 > **Fonte de evidência:** código, testes e Git local; sem inferir capacidade por nome de classe
+> **Natureza:** snapshot histórico da F0.5; não representa o estado corrente após as Fases 1–3
+
+Os achados abaixo registram o baseline observado em 4 de agosto e são preservados para auditoria. Não
+devem ser usados como painel atual: providers OpenAI/local, worktree Git, terminal por `argv`, edição
+confinada e Serena MCP explícito foram implementados posteriormente como primitivas testadas. A
+integração automática dessas primitivas ao lifecycle, promoção, memória, doctor e recovery continua
+incompleta. Para estado corrente, consulte [`TASK.md`](../TASK.md), o
+[`README.md`](../README.md) e a [auditoria do ciclo](agentic_lifecycle_audit.md).
 
 ## Resumo executivo
 
@@ -15,7 +23,7 @@ O baseline F0.4 foi comprovado com 65 testes e 6 subtests, além de empacotament
 lint, tipos e build validados anteriormente. Essa evidência sustenta a base de desenvolvimento; não
 sustenta claims de providers, MCP, worktree, promoção ou rollback reais.
 
-## Achados comprovados
+## Achados comprovados no checkpoint F0.5
 
 | ID | Achado | Evidência no código | Consequência |
 |---|---|---|---|
