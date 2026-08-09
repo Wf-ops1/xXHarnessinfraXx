@@ -36,10 +36,10 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.2 — indexador Python AST local e vinculado ao commit |
-| **Gate** | F4.2 `READY`; lifecycle `ACTIVE`; implementação local autorizada |
+| **Gate** | F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; aceite local integral verde |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.2-python-ast-indexer`, somente local; checkpoint `checkpoint/f4.2-ready` pendente do primeiro commit |
+| **Branch** | `task/f4.2-python-ast-indexer`, somente local; checkpoint `checkpoint/f4.2-ready` em `abedc34`; implementação em `7702396` |
 | **Baseline promovido** | `main == origin/main == 571a8eb`; run `31329231458`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -57,26 +57,27 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 ## 5. Tarefa ativa
 
-A F4.2 está `READY` no [dossiê ativo](docs/tasks/active/F4.2.md). O baseline comprovou que
-`harness index` apenas procura snapshot pré-existente e falha no SHA atual; não existe backend AST, e
-testes de fase ainda gravam snapshots vazios manualmente.
+A F4.2 está `COMPLETED_LOCAL / PROMOTION_PENDING` no
+[dossiê ativo](docs/tasks/active/F4.2.md). `PythonAstIndexer` agora faz rebuild completo dos blobs `.py`
+do commit Git exato usando `ast`, produz módulos, classes, funções/métodos e imports no contrato
+F4.1, e `harness index` tornou-se o produtor explícito que recarrega o snapshot antes do sucesso.
 
-O escopo congelado implementa rebuild completo dos blobs `.py` do commit Git exato usando `ast`,
-produz módulos, classes, funções/métodos e imports no contrato F4.1 e torna `harness index` o produtor
-explícito. Working tree, incrementalidade, MCP, suficiência F4.3 e F3.7 permanecem fora do escopo.
-F3.7 permanece depois da F4.7.
+Working tree sujo, arquivos não rastreados e symlinks foram comprovadamente excluídos; falhas de
+Git, path, objeto, decode ou sintaxe não publicam resultado parcial. Incrementalidade, MCP,
+suficiência F4.3 e F3.7 permanecem fora do escopo. F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido. O baseline focado passou `32 passed`; o gate está congelado e a
-implementação local pode começar depois do checkpoint. Push, PR, merge, tags e exclusão de refs não
-foram autorizados. Qualquer ampliação fora da allowlist exige pausa e recongelamento.
+Não há bloqueio técnico conhecido. O aceite final passou `643 passed, 2 skipped, 6 subtests passed`,
+quality Windows/Linux, build e smoke isolado do wheel. A única pendência é administrativa: push e
+abertura do PR exigem autorização nominal nova. Merge, tags remotas e exclusão de refs continuam não
+autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O COMMIT/TAG LOCAL `checkpoint/f4.2-ready` E IMPLEMENTAR SOMENTE O INDEXADOR AST CONGELADO,
-CLI, TESTES E DOCUMENTAÇÃO AFETADA. Não iniciar F4.3/F3.7 nem publicar branch/tag, abrir/mesclar PR
+PAUSAR COM A F4.2 CONCLUÍDA SOMENTE LOCALMENTE. A PRÓXIMA AUTORIZAÇÃO EXATA É PUBLICAR
+`task/f4.2-python-ast-indexer` E ABRIR O PR DA F4.2. Não iniciar F4.3/F3.7, mesclar PR, publicar tag
 ou excluir refs sem autorização nominal própria.
 ```
 
@@ -99,4 +100,4 @@ ou excluir refs sem autorização nominal própria.
 
 ---
 
-*Atualizado em: 2026-08-09T16:06:14-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T16:27:57-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
