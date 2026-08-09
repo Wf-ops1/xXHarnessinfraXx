@@ -21,6 +21,8 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 - uma branch e um PR por tarefa, sempre a partir de `main` sincronizada e verde;
 - nenhum merge antes de todos os checks do PR, incluindo `CI required`, terminarem verdes;
 - nenhuma tarefa seguinte antes do merge anterior e da CI pós-merge verde em `main`;
+- evidência negativa prevalece sobre sucesso anterior e bloqueia o próximo gate até recertificação;
+- estados positivos usam somente fatos observados; atraso documental deve ser declarado como pendência;
 - sem mocks ou sucesso sintético em produção; integração indisponível falha explicitamente;
 - paths e efeitos confinados; comandos por `argv` e `shell=False`;
 - secrets redigidos antes de persistência; estado necessário para retomar deve ser durável;

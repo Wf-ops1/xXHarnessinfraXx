@@ -101,6 +101,7 @@ implementação pode ser alterado; é permitida apenas a preparação documental
 | **Critérios congelados** | Comandos exatos, resultado esperado e condição de falha definidos antes da implementação; critério não pode ser enfraquecido para passar. |
 | **Rollback executável** | Checkpoint Git existente, gatilhos para interromper/reverter, procedimento não destrutivo e verificação pós-rollback. |
 | **Responsabilidade explícita** | Executor único, data/hora da autorização, estado do gate e runtime efetivamente utilizado. |
+| **Verdade temporal** | Estado positivo sustentado pela última observação; erro/blocker posterior tem precedência, identifica fonte/horário e impede avanço até recertificação integral. |
 
 O dossiê ativo deve conter, no mínimo, o equivalente aos campos abaixo. Markdown é permitido, mas
 omitir a semântica de qualquer campo mantém o gate `BLOCKED`.
@@ -153,6 +154,14 @@ Regras de congelamento e mudança de escopo:
    PR/checks/merge/CI, marcar `PROMOTED` e arquivar o dossiê antes de criar o próximo `READY`.
 8. Um commit não antecipa prova do próprio merge. A reconciliação registra somente a promoção da tarefa
    anterior; seu PR administrativo termina a cadeia e não gera outra reconciliação recursiva.
+9. Evidência negativa posterior sempre prevalece sobre sucesso anterior. Antes do merge, mudar o estado
+   para `REPAIR_ACTIVE / PROMOTION_BLOCKED`; depois do merge, preservar `PROMOTED` como fato histórico,
+   marcar `POST_PROMOTION_BLOCKED` no estado corrente e impedir qualquer novo gate.
+10. Estado positivo só pode ser restaurado após correção sem relaxamento, repetição integral do aceite
+    aplicável e reconciliação documental com SHA, run, resultado e horário observados. Falha histórica
+    permanece registrada; nunca é apagada ou reclassificada silenciosamente como sucesso.
+11. Atraso entre evento externo e commit documental é uma pendência explícita, não um estado alinhado.
+    Painel e dossiê devem informar o último snapshot observado e a ação necessária para reconciliá-lo.
 
 Checklist mínimo de liberação:
 
@@ -163,6 +172,8 @@ Checklist mínimo de liberação:
 [ ] Critérios exatos, resultados esperados e condições de falha congelados
 [ ] Checkpoint e rollback verificável existentes
 [ ] Executor único, runtime e horário de autorização registrados
+[ ] Nenhum erro/blocker posterior contradiz o estado positivo corrente
+[ ] SHA, run, resultado e horário citados foram realmente observados
 ```
 
 ---

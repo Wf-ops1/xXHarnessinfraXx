@@ -38,6 +38,15 @@ Em caso de conflito, o pedido explícito do usuário prevalece; depois, o plano 
    dependência ou critério exige parar e recongelar o dossiê; ampliação material exige novo checkpoint.
 4. Rollback deve ser não destrutivo. `git reset --hard`, descarte amplo e sobrescrita de trabalho
    preexistente não são autorizados pelo dossiê.
+5. Evidência negativa nova sempre prevalece sobre sucesso anterior. Antes do merge, reabrir o aceite
+   como `REPAIR_ACTIVE / PROMOTION_BLOCKED`; depois do merge, preservar o fato histórico `PROMOTED`,
+   mas marcar o estado corrente `POST_PROMOTION_BLOCKED` e bloquear qualquer gate seguinte.
+6. Recertificação e restauração de estado positivo só podem ocorrer depois de corrigir sem enfraquecer
+   critérios, repetir todo o aceite aplicável e reconciliar painel/dossiê com SHA, run, resultado e
+   horário realmente observados.
+7. Antes de escrever `READY`, `COMPLETED_LOCAL`, `PROMOTION_PENDING`, `PROMOTED` ou “verde”, revalidar
+   Git/workspace, testes/aceite, CI aplicável e documentos. Intenção, execução iniciada ou amostra
+   anterior não são prova do estado corrente.
 
 ## Git e recuperação
 
@@ -113,3 +122,6 @@ verdade.
    `PROMOTION_PENDING`, mas deve declarar que não há implementação ativa. A reconciliação pós-merge
    certifica/arquiva esse dossiê imediatamente; somente depois de seu merge e CI verde o próximo gate
    pode ser criado como `READY` antes do primeiro arquivo de implementação.
+7. O painel registra o último estado realmente observado. Se houver atraso inevitável entre um evento
+   externo e seu commit documental, declarar explicitamente a pendência; nunca apresentar o snapshot
+   anterior como atual nem usar linguagem absoluta como “100% alinhado”.

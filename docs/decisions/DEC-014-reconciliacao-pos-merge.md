@@ -34,6 +34,21 @@ a próxima implementação.
 7. O PR administrativo não cria reconciliação recursiva de si mesmo. Ele certifica somente a tarefa de
    implementação anterior; seu próprio merge passa a compor o baseline Git do próximo gate.
 
+## Invariantes de verdade e precedência da evidência
+
+1. Documentos registram fatos observados, com SHA/run/resultado e horário quando aplicável. Intenção,
+   execução iniciada, autorização ou verde anterior não provam o estado corrente.
+2. Evidência negativa nova sempre prevalece sobre qualquer resposta positiva anterior. Antes do merge,
+   o aceite volta a `REPAIR_ACTIVE / PROMOTION_BLOCKED` e merge permanece proibido.
+3. Se a promoção externa já ocorreu, o fato histórico `PROMOTED` não é reescrito. O painel passa a
+   `POST_PROMOTION_BLOCKED`, registra a nova evidência e impede o próximo gate até correção própria.
+4. Corrigir a implementação não restaura automaticamente o estado positivo. Todo o aceite aplicável
+   deve ser repetido, inclusive CI remota quando houver, antes da recertificação.
+5. Falha, diagnóstico, correção e recertificação são append-only no dossiê. A evidência anterior pode
+   perder precedência operacional, mas nunca ser apagada, enfraquecida ou convertida em sucesso.
+6. Entre um evento externo e o merge da reconciliação, existe atraso documental limitado. Ele deve ser
+   declarado como pendência; o agente não pode afirmar que `main` está documentalmente alinhada.
+
 ## Consequências
 
 - O estado versionado em `main` passa a distinguir imediatamente tarefa promovida de tarefa planejada.
@@ -49,4 +64,6 @@ a próxima implementação.
 - `TASK.md` declara a próxima tarefa apenas como planejada e informa a autorização nominal necessária;
 - o dossiê promovido contém PR/checks/merge/run exatos e está indexado em `completed/`;
 - testes de ledger falham se o painel voltar a solicitar um efeito remoto já comprovadamente concluído;
+- testes falham se `PROMOTED` suceder `PROMOTION_BLOCKED` sem certificação posterior explícita;
+- regras, plano e decisão concordam que evidência negativa prevalece e exige recertificação integral;
 - o diff da reconciliação não contém `src/`, dependência, schema, default ou workflow de CI.

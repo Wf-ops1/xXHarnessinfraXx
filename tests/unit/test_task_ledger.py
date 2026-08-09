@@ -208,6 +208,30 @@ def test_f3_5_is_certified_and_no_implementation_gate_is_active() -> None:
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
+def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
+    panel = _read(TASK_PANEL)
+    rules = _read(AGENT_RULES)
+    plan = _read(IMPLEMENTATION_PLAN)
+    decision = _read(POST_MERGE_DECISION)
+    dossier = _read(COMPLETED_ROOT / "F3.5.md")
+
+    for source in (panel, rules, plan, decision):
+        assert "evidência negativa" in source.casefold()
+        assert "recertifica" in source.casefold()
+
+    assert "POST_PROMOTION_BLOCKED" in rules
+    assert "POST_PROMOTION_BLOCKED" in plan
+    assert "POST_PROMOTION_BLOCKED" in decision
+    blocked_at = dossier.rfind("PROMOTION_BLOCKED")
+    certified_at = dossier.rfind("## Certificação final de promoção")
+    assert blocked_at >= 0
+    assert certified_at > blocked_at
+    assert 0 <= dossier.rfind("31281757984") < certified_at
+    assert dossier.rfind("31284043501") > certified_at
+    assert dossier.rfind("31285547886") > certified_at
+    assert "Não há blocker técnico ou documental conhecido da F3.5" in panel
+
+
 def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> None:
     panel = _read(TASK_PANEL)
     plan = _read(IMPLEMENTATION_PLAN)
