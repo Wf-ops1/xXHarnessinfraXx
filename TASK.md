@@ -35,8 +35,8 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | F4.1 — armazenamento íntegro do índice estrutural |
-| **Gate** | F4.1 `READY / ACTIVE`; escopo e aceite congelados antes da implementação |
+| **Tarefa ativa** | F4.1 — concluída localmente; promoção pendente |
+| **Gate** | F4.1 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f4.1-index-storage`, criada diretamente da `main` sincronizada |
@@ -58,7 +58,8 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 ## 5. Tarefa ativa
 
-A F4.1 foi autorizada nominalmente e possui contrato `READY` no
+A F4.1 foi implementada e validada localmente no commit
+`b3686e0d8eaf6ae0b31cf29a2ecb75426d15da1b`, com contrato e evidências no
 [dossiê ativo](docs/tasks/active/F4.1.md). Ela corrige o path divergente entre escritor/consumidor,
 proíbe `HEAD` persistido, define schema único de símbolos e exige status/digest válidos antes de
 servir snapshots. O indexador Python real, rebuild e descoberta de símbolos permanecem na F4.2.
@@ -70,16 +71,17 @@ F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido no início da F4.1. A ausência atual de snapshot real é comportamento
-esperado até F4.2 e deverá falhar explicitamente, nunca gerar mock. Qualquer ampliação além do contrato
-congelado reabre o gate. Publicação, PR, merge e tags permanecem não autorizados.
+Não há bloqueio técnico local conhecido: aceite, regressão, quality, build, smoke e escopo estão verdes.
+A ausência de snapshot real permanece comportamento esperado até F4.2 e agora falha explicitamente.
+O bloqueio corrente é administrativo: push/PR exigem nova autorização; F4.2 não pode iniciar antes de
+merge, CI pós-merge e reconciliação administrativa da F4.1.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL `checkpoint/f4.1-ready`, IMPLEMENTAR SOMENTE O ESCOPO CONGELADO E EXECUTAR
-TODO O ACEITE. Se verde, registrar `COMPLETED_LOCAL / PROMOTION_PENDING` e permanecer pausado antes de
-push/PR. F4.2, F3.7, publicação, merge, tags e exclusão de refs não estão autorizados implicitamente.
+PERMANECER PAUSADO. A próxima autorização nominal possível é publicar `task/f4.1-index-storage` e
+abrir seu único PR para `main`. F4.2, F3.7, merge, tags e exclusão de refs não estão autorizados
+implicitamente; depois de eventual merge será obrigatória a reconciliação `docs/promote-f4.1`.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -101,4 +103,4 @@ push/PR. F4.2, F3.7, publicação, merge, tags e exclusão de refs não estão a
 
 ---
 
-*Atualizado em: 2026-08-09T11:55:45-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T12:25:34-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*

@@ -124,13 +124,13 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #30" in readme
     assert "c2aa89b" in readme
     assert "31316853244" in readme
-    assert "A F4.1 foi autorizada e está ativa" in readme
+    assert "A F4.1 está concluída localmente" in readme
     assert "F3.7 continua dependente da F4.7" in readme
     assert "permanece obrigatória antes" not in readme
     assert "aguarda autorização própria para publicação" not in readme
 
     assert "`task/f4.1-index-storage`" in panel
-    assert "F4.1 `READY / ACTIVE`" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "docs/tasks/active/F4.1.md" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
     assert "e4292ca" in panel

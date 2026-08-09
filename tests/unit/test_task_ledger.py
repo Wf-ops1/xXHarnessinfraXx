@@ -198,8 +198,8 @@ def test_f3_8_closeout_is_certified_and_f4_1_has_its_own_ready_gate() -> None:
     assert not (ACTIVE_ROOT / "F3.8.md").exists()
     assert (COMPLETED_ROOT / "F3.8.md").is_file()
     assert "docs/tasks/completed/F3.8.md" in panel
-    assert "F4.1 — armazenamento íntegro do índice estrutural" in panel
-    assert "F4.1 `READY / ACTIVE`" in panel
+    assert "F4.1 — concluída localmente; promoção pendente" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "docs/tasks/active/F4.1.md" in panel
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
