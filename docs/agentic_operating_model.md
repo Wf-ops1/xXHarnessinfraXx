@@ -74,16 +74,21 @@ sequenceDiagram
 - `ExternalWorktreeManager` com `git worktree` real, referência durável e path guard canônico;
 - execução de subprocessos de verificação por `argv`, com executável autorizado, cwd confinado,
   ambiente seletivo, timeout da árvore de processos e saída limitada/redigida;
+- edição local real por leitura, listagem, busca e patch atômico confinados, além de cliente Serena MCP
+  explícito com prova de raiz, capability e mudança;
+- factory opt-in para registrar oito tools operacionais sem relaxar a policy compilada ou deny-wins;
 - hash chain local para o diário de eventos.
 
 ## Lacunas que impedem uso seguro
 
-- providers LLM não fazem chamadas externas ou locais reais;
-- Serena e Codebase-Memory não se conectam a MCP;
+- providers OpenAI/local fazem chamadas reais quando configurados, mas nenhum backend agentic padrão
+  fecha sozinho o fluxo do produto;
+- Serena possui cliente MCP explícito e opt-in; Codebase-Memory ainda não oferece memória real;
 - `doctor` não mede saúde;
-- o worktree Git real ainda não está ligado ao lifecycle e às tools operacionais;
+- o worktree Git real ainda não está ligado automaticamente ao lifecycle e ao registry opt-in;
 - promoção e rollback não possuem o protocolo Git final;
-- terminal seguro ainda não está registrado no tool loop nem ligado ao lifecycle/worktree provisionado;
+- terminal, edição local, Git somente leitura e Serena possuem registrations opt-in, mas o lifecycle
+  ainda não constrói esse registry nem injeta o worktree provisionado;
 - persistência, recovery, budgets, secrets e políticas ainda não controlam todo o caminho crítico.
 
 O plano concreto para fechar essas lacunas está em

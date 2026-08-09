@@ -34,7 +34,7 @@ flowchart TD
 | Contratos | `src/ai_engineering_harness/contracts/` | Implementada como modelos internos | Modelos canônicos GraphSpec/PolicySpec/CompiledArtifact ainda serão unificados |
 | Compilação | `compiler/` e `src/ai_engineering_harness/compiler/` | Experimental | Dois compiladores e validações incompletas |
 | Runtime | `src/ai_engineering_harness/runtime/` | Experimental | Ordem fixa, adapters simulados e promoção dry-run |
-| Ferramentas/modelos | `tools/`, `models/`, `indexer/` | Experimental | Terminal seguro existe como primitivo, mas registry operacional, edição e memória real ainda faltam |
+| Ferramentas/modelos | `tools/`, `models/`, `indexer/` | Experimental | Edição confinada, terminal, Git somente leitura e Serena MCP possuem registry opt-in; integração automática e memória real ainda faltam |
 | Verificação | `verification/` | Experimental | Gates estáticos usam o terminal confinado; fail-closed integral e matriz completa ainda faltam |
 | Governança/segurança | `governance/`, `security/` | Experimental | Enforcement não cobre todo side effect |
 | Auditoria | `observability/audit.py` | Experimental | Hash chain local não prova efeitos externos nem recovery |
@@ -46,8 +46,8 @@ flowchart TD
 - **Configuração do produto:** `.harness/agents/`, `.harness/graphs/specs/`,
   `.harness/policies/` e `.harness/tools/`.
 - **Estado local:** `.harness/state/` e `.harness/artifacts/`.
-- **Isolamento disponível como primitivo:** worktree Git externo associado a `execution_id`; uso pelo
-  lifecycle e pelas tools continua pendente.
+- **Isolamento disponível como primitivo:** worktree Git externo associado a `execution_id`; uma
+  factory opt-in aceita seu guard explicitamente, mas a injeção pelo lifecycle continua pendente.
 
 `harness init` cria/copia a estrutura local, mas isso não torna o repositório governado ou seguro por
 si só.

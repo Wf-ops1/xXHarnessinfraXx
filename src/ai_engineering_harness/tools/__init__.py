@@ -1,5 +1,6 @@
 """Módulo Tools: Roteamento de ferramentas, permissões e adaptadores."""
 
+from .operational import build_operational_tool_router
 from .permissions import ToolPermissions
 from .router import (
     ToolDefinition,
@@ -22,4 +23,5 @@ __all__ = [
     "ToolRouterError",
     "ToolUnauthorizedError",
     "ToolUnavailableError",
+    "build_operational_tool_router",
 ]

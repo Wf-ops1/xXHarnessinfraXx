@@ -1,7 +1,29 @@
 """Adaptadores concretos de ferramentas (Serena, Terminal, Git)."""
 
 from .git import GitAdapter
-from .serena import SerenaAdapter
+from .local_editing import (
+    FileSnapshot,
+    LocalEditingAdapter,
+    LocalEditingConfigurationError,
+    LocalEditingError,
+    NoFileChangeError,
+    PatchResult,
+    PatchValidationError,
+    StaleFileError,
+    TextFileError,
+)
+from .serena import (
+    SerenaAdapter,
+    SerenaAdapterError,
+    SerenaCapabilities,
+    SerenaCapabilityError,
+    SerenaConfigurationError,
+    SerenaConnectionError,
+    SerenaEditResult,
+    SerenaMcpConfiguration,
+    SerenaToolExecutionError,
+    SerenaTransport,
+)
 from .terminal import (
     CommandExecutionError,
     CommandRequest,
@@ -22,10 +44,28 @@ __all__ = [
     "CommandValidationError",
     "EnvironmentNotAllowedError",
     "ExecutableNotAllowedError",
+    "FileSnapshot",
     "GitAdapter",
     "LegacyShellCommandError",
+    "LocalEditingAdapter",
+    "LocalEditingConfigurationError",
+    "LocalEditingError",
+    "NoFileChangeError",
+    "PatchResult",
+    "PatchValidationError",
     "SerenaAdapter",
+    "SerenaAdapterError",
+    "SerenaCapabilities",
+    "SerenaCapabilityError",
+    "SerenaConfigurationError",
+    "SerenaConnectionError",
+    "SerenaEditResult",
+    "SerenaMcpConfiguration",
+    "SerenaToolExecutionError",
+    "SerenaTransport",
+    "StaleFileError",
     "TerminalAdapter",
     "TerminalAdapterError",
     "TerminalConfigurationError",
+    "TextFileError",
 ]

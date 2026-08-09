@@ -8,8 +8,9 @@ determinístico, execução dirigida pelas arestas do artefato, persistência co
 e retomada canônica com aprovação, cancelamento e retry limitado por contexto real e redigido. A
 execução autônoma segura sobre um repositório externo ainda não está pronta: providers, roteamento,
 continuação de model-turn e durabilidade/policy do tool loop passaram pelo realinhamento; os
-primitivos de worktree Git e terminal por `argv` já são reais, mas sua integração com tools, promoção,
-rollback e governança operacional permanece incompleta.
+primitivos de worktree Git, terminal por `argv` e edição confinada já são reais. O registry das tools
+é opt-in e injetável; sua ligação automática ao lifecycle, promoção, rollback e governança operacional
+permanece incompleta.
 
 Não use `harness run`, `harness doctor` ou `harness rollback` como garantia de segurança em um
 repositório valioso. Embora a Fase 2 esteja implementada, as Fases 3–7 ainda não estão concluídas;
@@ -43,8 +44,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
-| Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; terminal seguro existe como primitivo isolado | Registry operacional é vazio; o terminal não está registrado e aprovação vinculada ao conteúdo ainda não aciona tools reais | Integração de terminal, promoção e edição nas F3.7/F3.8 e gates seguintes |
-| Serena e Codebase-Memory | Interfaces/adapters existem | Serena apenas cria/toca arquivo; memória retorna `mock_ast` | Transporte MCP real ou adapter local explicitamente configurado |
+| Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
+| Serena e Codebase-Memory | Edição local confinada e cliente Serena MCP explícito usam efeitos verificados; ausência de backend falha fechada | Serena live depende de configuração externa opt-in; memória ainda retorna `mock_ast` | Injeção pelo lifecycle, configuração plug-and-play segura e memória semântica real |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Há caminhos de gate vazio e garantias de integração ainda incompletas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -58,10 +59,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 - **Fase 2 concluída:** record atômico, storage concorrente, execução por grafo, FSM por eventos,
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
-- **Fase 3 em execução:** F3.1–F3.6 e as corretivas F3.C1/F3.C2 aplicáveis foram promovidas; a F3.5
-  acrescentou terminal seguro por `argv` ao worktree/path guard. Não há implementação ativa. F3.8 é
-  a próxima tarefa planejada, enquanto F3.7 permanece dependente da F4.7; ambas exigem gate e
-  autorização próprios.
+- **Fase 3 em execução:** F3.1–F3.6 e as corretivas F3.C1/F3.C2 aplicáveis foram promovidas; a F3.8
+  está em implementação local sobre o terminal seguro e o worktree/path guard. F3.7 permanece
+  dependente da F4.7 e exige gate e autorização próprios.
 
 ## Dívidas técnicas críticas
 
@@ -72,9 +72,11 @@ operacionais:
   real e Anthropic falha explicitamente; o [roteamento de modelos](src/ai_engineering_harness/models/router.py)
   usa configuração efetiva, egress, fallback transitório e budget; o
   [tool loop](src/ai_engineering_harness/runtime/tool_loop.py) já preserva continuação nativa, todos os
-  model turns e eventos de tool duráveis, mas não possui tools operacionais registradas;
-- [SerenaAdapter](src/ai_engineering_harness/tools/adapters/serena.py) não abre conexão MCP nem aplica
-  edição semântica;
+  model turns e eventos de tool duráveis; a factory operacional registra handlers reais somente
+  quando adapters explícitos são injetados, mas o lifecycle ainda não a constrói;
+- [SerenaAdapter](src/ai_engineering_harness/tools/adapters/serena.py) abre transporte MCP stdio ou
+  Streamable HTTP configurado, comprova capability/raiz e valida a mudança real; instalação,
+  configuração e injeção live continuam externas e opt-in;
 - [CodebaseMemoryAdapter](src/ai_engineering_harness/indexer/codebase_memory_adapter.py) persiste uma
   AST simulada;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
@@ -82,10 +84,11 @@ operacionais:
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em
   dry-run e possui fallback sintético no caminho live;
 - [ExternalWorktreeManager](src/ai_engineering_harness/workspace/git_worktree.py) cria e valida o
-  worktree Git real, mas ainda não é consumido pelo lifecycle nem por tools operacionais;
+  worktree Git real, mas o lifecycle ainda não injeta automaticamente seu guard nas tools;
 - [TerminalAdapter](src/ai_engineering_harness/tools/adapters/terminal.py) executa somente `argv`
   autorizado, com `shell=False`, cwd confinado, ambiente seletivo, timeout da árvore de processos e
-  saída limitada/redigida; permanece sem registro no tool loop e, portanto, não é uma tool agentic.
+  saída limitada/redigida; seus handlers são registrados apenas pela factory opt-in e ainda não são
+  ligados ao lifecycle como tool agentic padrão.
 
 ## Ambiente de desenvolvimento
 

@@ -55,12 +55,12 @@ def test_current_docs_recognize_real_worktree_without_claiming_full_integration(
     assert "cria diretório, não" not in readme
     assert "não chama `git worktree`" not in operating_model
     assert "| Workspace Git | `workspace/` | Simulada" not in architecture
-    assert "worktree real ainda não está integrado" in readme.casefold()
+    assert "lifecycle ainda não injeta automaticamente seu guard" in readme.casefold()
     assert "worktree git real ainda não está ligado" in operating_model.casefold()
     assert "Cria/valida worktree Git externo" in architecture
 
 
-def test_current_docs_recognize_safe_terminal_without_claiming_tool_integration() -> None:
+def test_current_docs_recognize_f3_8_tools_without_claiming_lifecycle_integration() -> None:
     readme = _read(ROOT / "README.md")
     operating_model = _read(ROOT / "docs" / "agentic_operating_model.md")
     architecture = _read(ROOT / "docs" / "harness_architecture_spec.md")
@@ -69,8 +69,21 @@ def test_current_docs_recognize_safe_terminal_without_claiming_tool_integration(
     assert "terminal aceita comando como string" not in operating_model
     assert "terminal não cumpre contrato final" not in architecture
     assert "executa somente `argv`" in readme
-    assert "terminal seguro ainda não está registrado" in operating_model.casefold()
-    assert "Terminal seguro existe como primitivo" in architecture
+    assert "factory opt-in" in readme.casefold()
+    assert "registrations opt-in" in operating_model.casefold()
+    assert "registry opt-in" in architecture.casefold()
+    assert "ainda não constrói esse registry" in operating_model.casefold()
+
+
+def test_current_docs_recognize_real_serena_without_claiming_live_default() -> None:
+    readme = _read(ROOT / "README.md")
+    operating_model = _read(ROOT / "docs" / "agentic_operating_model.md")
+
+    assert "Serena apenas cria/toca arquivo" not in readme
+    assert "Serena e Codebase-Memory não se conectam a MCP" not in operating_model
+    assert "Streamable HTTP configurado" in readme
+    assert "Serena possui cliente MCP explícito e opt-in" in operating_model
+    assert "configuração e injeção live continuam externas e opt-in" in readme
 
 
 def test_markdown_links_are_relative_and_resolve() -> None:
