@@ -219,9 +219,13 @@ def test_f3_8_is_certified_and_f4_1_waits_for_admin_reconciliation() -> None:
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
     assert "docs/promote-f3.8" in panel
     assert "PR #29" in panel
+    assert "PR administrativo #30" in panel
     assert "CI required" in panel
     assert "Autorizo o merge do PR #29" not in panel
-    assert "Autorizo publicar a branch" in panel
+    assert "Autorizo publicar a branch" not in panel
+    assert "Autorizo o merge do PR #30" in panel
+    assert "05f54dd8690f060008acb95cf3de5d6a3c12b9a0" in dossier
+    assert "PR administrativo #30" in dossier
     assert "PR #27 aberto" not in panel
     assert "Autorizo o merge do PR #27" not in panel
     assert "> **Lifecycle:** `PROMOTED`" in f3_5_dossier

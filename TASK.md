@@ -36,10 +36,10 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Pausa de reconciliação entre F3.8 promovida e F4.1 planejada |
 | **Tarefa ativa** | Nenhuma tarefa ativa; F4.1 ainda não possui gate nem branch de implementação |
-| **Gate** | F3.8 `PROMOTED`; nenhum gate `READY`; reconciliação administrativa local em curso |
+| **Gate** | F3.8 `PROMOTED`; nenhum gate `READY`; PR administrativo #30 aberto |
 | **Executor ativo** | `Codex`, único escritor da reconciliação documental |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f3.8`, local e não publicada; PR administrativo ainda não aberto |
+| **Branch** | `docs/promote-f3.8`, publicada em `origin`; PR administrativo #30 aberto para `main` |
 | **Baseline promovido** | F3.8 no merge `e6b5b84`; run pós-merge `31295594376`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -52,7 +52,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | PR | #29; head final `f941c89fd0ec112aca82621ab9e11244f05962aa`; 11/11 no run `31292195340` |
 | Merge | `e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f`, merge commit em `main` |
 | CI pós-merge | run `31295594376`, evento `push`, SHA exato do merge, 11/11 incluindo `CI required` |
-| Reconciliação | branch local `docs/promote-f3.8`; publicação e PR administrativo aguardam autorização própria |
+| Reconciliação | PR administrativo #30 aberto; head remoto inicial `05f54dd`; CI do head final ainda pendente |
 | Fronteira | branch remota de implementação preservada; nenhuma tag remota; F4.1 não foi iniciada |
 
 ## 5. Tarefa ativa
@@ -71,20 +71,20 @@ da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido na F3.8: PR, merge e CI pós-merge estão verdes. O bloqueio é
-processual e intencional: a reconciliação administrativa ainda precisa ser validada, commitada,
-publicada, revisada e mesclada com autorizações próprias. Até sua CI pós-merge verde, F4.1 permanece
-bloqueada. Tags não serão publicadas.
+Não há bloqueio técnico conhecido na F3.8: PR, merge e CI pós-merge estão verdes. A reconciliação foi
+validada localmente, commitada e publicada no PR administrativo #30. O bloqueio é processual e
+intencional: o head final desse PR ainda precisa receber 11/11 checks e seu merge exige autorização
+nominal própria. Até a CI pós-merge verde do PR #30 em `main`, F4.1 permanece bloqueada. Tags não
+serão publicadas.
 
 ## 7. Próxima ação exata
 
 ```text
-CONCLUIR E VALIDAR LOCALMENTE A RECONCILIAÇÃO `docs/promote-f3.8`; PERMANECER PAUSADO.
-Depois do commit local, a próxima autorização nominal será: “Autorizo publicar a branch
-docs/promote-f3.8 e abrir o PR administrativo.” Após 11/11 checks no head desse PR, seu merge exigirá
-outra autorização nominal. Depois do merge administrativo, validar CI `push` no SHA exato de `main`,
-sincronizar e pedir autorização nova para iniciar F4.1. F3.7 permanece depois da F4.7. Não publicar
-tags, excluir branches ou iniciar outra tarefa implicitamente.
+PERMANECER PAUSADO; AGUARDAR 11/11 CHECKS NO HEAD FINAL DO PR #30.
+Quando os checks estiverem verdes, a próxima autorização nominal será: “Autorizo o merge do PR #30.”
+Depois do merge administrativo, validar CI `push` no SHA exato de `main`, sincronizar e pedir
+autorização nova para iniciar F4.1. F3.7 permanece depois da F4.7. Não publicar tags, excluir branches
+ou iniciar outra tarefa implicitamente.
 ```
 
 ## 8. Retomada após perda de contexto
