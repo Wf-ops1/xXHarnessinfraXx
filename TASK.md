@@ -6,8 +6,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. O único dossiê ativo é [F4.1](docs/tasks/active/F4.1.md); a última promoção de implementação
-   certificada permanece no [dossiê F3.8](docs/tasks/completed/F3.8.md).
+2. Não há dossiê de implementação ativo; a última promoção certificada é a
+   [F4.1](docs/tasks/completed/F4.1.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -33,14 +33,14 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Campo | Estado observado |
 |---|---|
-| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
+| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | F4.1 — concluída localmente; promoção pendente |
-| **Gate** | F4.1 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #32 aberto com checks pendentes |
+| **Tarefa ativa** | Nenhuma tarefa ativa; F4.2 não iniciada |
+| **Gate** | F4.1 `PROMOTED`; PR administrativo #33 aberto com checks pendentes |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.1-index-storage`, publicada e rastreando `origin/task/f4.1-index-storage` |
-| **Baseline promovido** | `main == origin/main == e4292ca`; run `31319202731`, evento `push`, 11/11 verde |
+| **Branch** | `docs/promote-f4.1`, publicada e rastreando `origin/docs/promote-f4.1`; checkpoint local em `467aff6` |
+| **Baseline promovido** | `main == origin/main == 12ce3b7`; run `31323952381`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
 
@@ -48,47 +48,41 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa | `F3.8` — edição real confinada e Serena MCP explícito, promovida pelo PR #29 e arquivada |
-| PR de implementação | #29; head final `f941c89fd0ec112aca82621ab9e11244f05962aa`; 11/11 no run `31292195340` |
-| Promoção da implementação | merge `e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f`; run `31295594376`, 11/11 |
-| PR administrativo | #30; head final `bd0bda9385db850208f125e69757118ee9fe2b27`; 11/11 no run `31316549732` |
-| Fechamento administrativo | merge `c2aa89b50ad32dc90b26b70087dbd795e32f0042`; run `31316853244`, 11/11 |
-| Correção transversal | PR #31; merge `e4292ca52456708af7c2afe4e4471b1a721676a6`; run `31319202731`, 11/11 |
-| Fronteira | branch remota anterior preservada; nenhuma tag remota; F4.1 iniciada somente localmente |
+| Tarefa | `F4.1` — armazenamento íntegro do índice estrutural, promovida e arquivada |
+| PR de implementação | #32; head final `3ba0e254d9d7425113ffcbcd6d22b5c663d7255e`; 11/11 no run `31322494169` |
+| Promoção da implementação | merge `12ce3b7360a6035fb354326261fc409de15e29ec`; run `31323952381`, 11/11 |
+| Reconciliação administrativa | PR #33 aberto; head inicial `9a0733a`; run inicial `31328788064` em andamento |
+| Fronteira | branch remota de implementação preservada; nenhuma tag remota ou exclusão de ref; F4.2 não iniciada |
 
 ## 5. Tarefa ativa
 
-A F4.1 foi implementada e validada localmente no commit
-`b3686e0d8eaf6ae0b31cf29a2ecb75426d15da1b`, com contrato e evidências no
-[dossiê ativo](docs/tasks/active/F4.1.md). Ela corrige o path divergente entre escritor/consumidor,
-proíbe `HEAD` persistido, define schema único de símbolos e exige status/digest válidos antes de
-servir snapshots. O indexador Python real, rebuild e descoberta de símbolos permanecem na F4.2.
+Não há nenhuma tarefa ativa. A F4.1 foi incorporada pelo PR #32 e certificada no
+[dossiê concluído](docs/tasks/completed/F4.1.md): o head final passou 11/11 checks no run
+`31322494169`, e o merge `12ce3b7` passou outros 11/11 no run pós-merge `31323952381`.
 
-O baseline inclui o fechamento pelo PR administrativo #30 e a correção transversal já incorporada
-pelo PR #31 no merge `e4292ca`, cuja CI de `push` concluiu 11/11 verde no SHA exato de `main`.
-A branch F4.1 foi publicada e o PR #32 aberto; merge, tags e exclusão de refs não foram autorizados.
+A reconciliação exigida pela DEC-014 foi publicada no PR administrativo #33 a partir da branch
+`docs/promote-f4.1`; seus checks estão pendentes e nenhum resultado foi antecipado como sucesso.
+O indexador Python real, rebuild e descoberta de símbolos permanecem na F4.2, que não foi iniciada.
 F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico local conhecido: aceite, regressão, quality, build, smoke e escopo estão verdes.
-A ausência de snapshot real permanece comportamento esperado até F4.2 e agora falha explicitamente.
-O bloqueio corrente é o CI pendente do PR #32. Merge exige todos os checks verdes e autorização nova;
-F4.2 não pode iniciar antes de merge, CI pós-merge e reconciliação administrativa da F4.1.
+Não há bloqueio técnico local conhecido. A pendência corrente é concluir todos os checks do head final
+do PR #33, incluindo `CI required`. Merge exige autorização nominal própria; até merge e CI pós-merge
+verdes no SHA exato de `main`, F4.2 e qualquer outra implementação permanecem pausadas.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR E REVALIDAR TODOS OS CHECKS DO HEAD FINAL DO PR #32, INCLUINDO `CI required`. Somente se
-todos ficarem verdes, solicitar autorização nominal separada para o merge. F4.2, F3.7, merge, tags e
-exclusão de refs não estão autorizados implicitamente; depois de eventual merge será obrigatória a
-reconciliação `docs/promote-f4.1`.
+AGUARDAR E REVALIDAR TODOS OS CHECKS DO HEAD FINAL DO PR #33, INCLUINDO `CI required`. Somente se
+todos ficarem verdes, solicitar autorização nominal separada para o merge. Não iniciar F4.2, publicar
+tags, excluir refs ou mesclar o PR sem autorização própria.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia `docs/tasks/active/F4.1.md` integralmente.
+2. Leia `docs/tasks/completed/F4.1.md` integralmente.
 3. Leia F4.1 no plano principal e, se houver promoção, DEC-014.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e CI da `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
@@ -104,4 +98,4 @@ reconciliação `docs/promote-f4.1`.
 
 ---
 
-*Atualizado em: 2026-08-09T12:55:45-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T15:21:08-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
