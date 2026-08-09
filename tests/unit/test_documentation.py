@@ -106,14 +106,18 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #29" in readme
     assert "e6b5b84" in readme
     assert "31295594376" in readme
+    assert "PR #30" in readme
+    assert "c2aa89b" in readme
+    assert "31316853244" in readme
     assert "próxima implementação planejada, F4.1" in readme
     assert "F3.7 continua dependente da F4.7" in readme
+    assert "permanece obrigatória antes" not in readme
     assert "aguarda autorização própria para publicação" not in readme
 
-    assert "branch `docs/promote-f3.8`" in panel
+    assert "branch `docs/align-phase3-closeout`" in panel
     assert "nenhum gate `READY`" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
-    assert "docs/promote-f3.8" in panel
+    assert "docs/align-phase3-closeout" in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle
