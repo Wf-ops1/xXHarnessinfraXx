@@ -33,7 +33,7 @@ uv run python -m build
 | `harness init` | Cria `.harness/` e copia defaults disponíveis | Implementado como scaffold; testar somente em repo descartável |
 | `harness doctor` | Renderiza quatro componentes em seis estágios | Simulado: retorna saudável sem conectividade real |
 | `harness compile <yaml>` | Compila pelo `GraphCompiler` canônico do pacote | Implementado como contrato interno; estabilidade/migração externa ainda não fechadas |
-| `harness index` | Resolve o commit Git atual e valida/carrega seu snapshot estrutural | Parcial/fail-closed: exige `.harness/state/structural-index/snapshots/<sha>.json`; a F4.2 ainda implementará a geração AST |
+| `harness index` | Usa `PythonAstIndexer` para reconstruir módulos, classes, funções/métodos e imports dos blobs `.py` do commit Git atual e publica `.harness/state/structural-index/snapshots/<sha>.json` | Implementado para Python por full rebuild; working tree/untracked não entram, erro Git/encoding/sintaxe falha sem snapshot parcial |
 | `harness run <workflow>` | Compila/carrega artefato e inicia o lifecycle canônico | Fail-closed: o wiring padrão possui registry de executores vazio e não executa modelos/tools automaticamente |
 | `harness status <id>` | Lê a visão canônica do estado persistido | Implementado como leitura local |
 | `harness inspect <id>` | Exibe digests, eventos e aprovação sem secrets | Implementado como inspeção local |

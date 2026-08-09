@@ -8,8 +8,7 @@ from ai_engineering_harness.compiler.compiler import GraphCompiler
 from ai_engineering_harness.contracts.execution import ExecutionState
 from ai_engineering_harness.core.detector import StackDetector
 from ai_engineering_harness.doctor.checker import DoctorChecker
-from ai_engineering_harness.indexer.codebase_memory_adapter import CodebaseMemoryAdapter
-from ai_engineering_harness.indexer.snapshot_manager import SnapshotManager
+from ai_engineering_harness.indexer import CodebaseMemoryAdapter, PythonAstIndexer
 from ai_engineering_harness.knowledge.synchronizer import KnowledgeSynchronizer
 from ai_engineering_harness.observability.audit import AuditTrailManager
 from ai_engineering_harness.persistence import AtomicFileStateStorage
@@ -65,12 +64,21 @@ contracts: []
 def test_full_lifecycle_e2e_python(tmp_path: Path):
     # 1. Setup projeto fixture
     (tmp_path / "pyproject.toml").touch()
+    (tmp_path / "application.py").write_text(
+        "def run_application():\n    return 'ready'\n",
+        encoding="utf-8",
+    )
     subprocess.run(["git", "init", "--quiet"], cwd=tmp_path, check=True, shell=False)
     subprocess.run(["git", "config", "user.name", "Lifecycle Test"], cwd=tmp_path, check=True, shell=False)
     subprocess.run(
         ["git", "config", "user.email", "lifecycle@example.invalid"], cwd=tmp_path, check=True, shell=False
     )
-    subprocess.run(["git", "add", "pyproject.toml"], cwd=tmp_path, check=True, shell=False)
+    subprocess.run(
+        ["git", "add", "pyproject.toml", "application.py"],
+        cwd=tmp_path,
+        check=True,
+        shell=False,
+    )
     subprocess.run(["git", "commit", "--quiet", "-m", "fixture"], cwd=tmp_path, check=True, shell=False)
     commit_sha = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -99,11 +107,15 @@ def test_full_lifecycle_e2e_python(tmp_path: Path):
     assert compiled_maf.is_file()
 
     # 5. Index Structural
-    SnapshotManager(tmp_path).save_snapshot(commit_sha, [])
+    snapshot = PythonAstIndexer(tmp_path).rebuild()
     indexer = CodebaseMemoryAdapter(project_root=tmp_path)
     ast_data = indexer.query_ast("get_structure", commit_sha="HEAD")
     assert ast_data["commit_sha"] == commit_sha
-    assert ast_data["symbols"] == []
+    assert ast_data == snapshot.model_dump(mode="json")
+    assert {(symbol["kind"], symbol["qualified_name"]) for symbol in ast_data["symbols"]} == {
+        ("module", "application"),
+        ("function", "application.run_application"),
+    }
 
     # 6. Run through the canonical F2.5 lifecycle and immutable resume bundle
     execution_id = "exec-e2e-100"

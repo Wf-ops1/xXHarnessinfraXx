@@ -86,7 +86,7 @@ def test_current_docs_recognize_real_serena_without_claiming_live_default() -> N
     assert "configuração e injeção live continuam externas e opt-in" in readme
 
 
-def test_current_docs_recognize_f4_1_storage_without_claiming_f4_2_indexing() -> None:
+def test_current_docs_recognize_f4_2_indexing_without_claiming_f4_3_or_mcp() -> None:
     readme = _read(ROOT / "README.md")
     lifecycle = _read(ROOT / "docs" / "agentic_lifecycle_audit.md")
     user_guide = _read(ROOT / "docs" / "user_guide.md")
@@ -94,11 +94,12 @@ def test_current_docs_recognize_f4_1_storage_without_claiming_f4_2_indexing() ->
 
     for document in (readme, lifecycle, user_guide, walkthrough_audit):
         assert "mock_ast" not in document
-        assert "F4.2" in document
+        assert "PythonAstIndexer" in document
     assert ".harness/state/structural-index/snapshots/<sha>.json" in user_guide
-    assert "status e digest validados" in lifecycle
-    assert "falha se estiver ausente/inválido" in walkthrough_audit
-    assert "Indexador AST local na F4.2" in readme
+    assert "SHA/schema/status/digest validados" in lifecycle
+    assert "consulta ausente/inválida continua falhando" in walkthrough_audit
+    assert "Suficiência por evidência na F4.3" in readme
+    assert "backend MCP ainda não" in lifecycle
 
 
 def test_public_state_docs_distinguish_real_primitives_from_missing_composition() -> None:

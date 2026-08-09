@@ -77,7 +77,7 @@ Limitações importantes:
   deliberadamente vazio e falha antes de efeitos;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
-- promoção e indexação permanecem legadas/sintéticas e fora do lifecycle canônico;
+- promoção permanece sintética; a indexação Python é real e commit-bound, mas ambas continuam fora da composição automática do lifecycle;
 - o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.
 
 ## Fluxo de verificação
