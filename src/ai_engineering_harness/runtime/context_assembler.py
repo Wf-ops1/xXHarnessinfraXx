@@ -7,6 +7,8 @@ from typing import Any
 
 import yaml
 
+from ai_engineering_harness.indexer.snapshot_manager import SnapshotManager, resolve_git_commit
+
 
 class InsufficientContextError(ValueError):
     """Exceção lançada quando a pontuação de contexto fica abaixo do limiar da política."""
@@ -28,8 +30,10 @@ class ContextPackage:
 class ContextAssembler:
     """Monta o pacote de contexto para uma execução e avalia se atinge a política de suficiência."""
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, *, git_executable: str = "git"):
         self.project_root = project_root
+        self.git_executable = git_executable
+        self.snapshot_manager = SnapshotManager(project_root)
         self.policy_file = project_root / "src" / "ai_engineering_harness" / "defaults" / "policies" / "context_sufficiency.yaml"
         if not self.policy_file.exists():
             self.policy_file = project_root / ".harness" / "policies" / "context_sufficiency.yaml"
@@ -51,26 +55,26 @@ class ContextAssembler:
                 refs.append({"name": p.name, "path": str(p)})
         return refs
 
-    def _load_structural_snapshot(self, commit_sha: str = "HEAD") -> dict[str, Any]:
-        snapshot_file = self.project_root / ".harness" / "state" / "structural-index" / f"{commit_sha}.json"
-        if snapshot_file.exists():
-            try:
-                return json.loads(snapshot_file.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError, TypeError):
-                return {"commit_sha": commit_sha, "symbols": []}
-        return {"commit_sha": commit_sha, "symbols": []}
+    def _load_structural_snapshot(self, revision: str = "HEAD") -> dict[str, Any]:
+        commit_sha = resolve_git_commit(
+            self.project_root,
+            revision,
+            git_executable=self.git_executable,
+        )
+        snapshot = self.snapshot_manager.require_snapshot(commit_sha)
+        return snapshot.model_dump(mode="json")
 
     def _evaluate_confidence(self, context_data: dict[str, Any]) -> float:
         score = 0.85
         return round(max(0.0, min(1.0, score)), 2)
 
     def assemble(self, execution_id: str, intent: str = "", force_confidence: float | None = None) -> ContextPackage:
+        knw_refs = self._load_knowledge_references()
+        snapshot = self._load_structural_snapshot()
+
         exec_dir = self.project_root / ".harness" / "state" / "executions" / execution_id
         exec_dir.mkdir(parents=True, exist_ok=True)
         context_file = exec_dir / "context.json"
-
-        knw_refs = self._load_knowledge_references()
-        snapshot = self._load_structural_snapshot()
 
         raw_ctx = {
             "knowledge_refs": knw_refs,

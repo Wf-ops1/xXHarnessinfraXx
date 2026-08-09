@@ -1,6 +1,7 @@
 """Testes unitários para a narrativa agent-centric e componentes do novo ciclo."""
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,7 @@ import pytest
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.compiler.compiler import GraphCompiler
 from ai_engineering_harness.contracts.execution import ExecutionState
+from ai_engineering_harness.indexer import SnapshotManager, SnapshotNotFoundError
 from ai_engineering_harness.models.registry import ProviderConfiguration, ProviderRegistry
 from ai_engineering_harness.models.router import ModelRouter, ModelRoutingConfigurationError
 from ai_engineering_harness.observability.audit import AuditTrailManager
@@ -24,6 +26,32 @@ from ai_engineering_harness.runtime.state_machine import (
     WorkflowStateMachine,
 )
 from ai_engineering_harness.tools.router import ToolRouter
+
+
+def _prepare_structural_snapshot(project_root: Path, *, persist: bool = True) -> str:
+    subprocess.run(["git", "init", "--quiet"], cwd=project_root, check=True, shell=False)
+    subprocess.run(["git", "config", "user.name", "Context Test"], cwd=project_root, check=True, shell=False)
+    subprocess.run(
+        ["git", "config", "user.email", "context@example.invalid"],
+        cwd=project_root,
+        check=True,
+        shell=False,
+    )
+    (project_root / "tracked.py").write_text("def tracked():\n    return True\n", encoding="utf-8")
+    subprocess.run(["git", "add", "tracked.py"], cwd=project_root, check=True, shell=False)
+    subprocess.run(["git", "commit", "--quiet", "-m", "fixture"], cwd=project_root, check=True, shell=False)
+    commit_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=project_root,
+        check=True,
+        shell=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip().lower()
+    if persist:
+        SnapshotManager(project_root).save_snapshot(commit_sha, [])
+    return commit_sha
 
 
 def _write_runtime_graph(project_root: Path, workflow_name: str) -> Path:
@@ -57,9 +85,11 @@ contracts: []
 
 
 def test_context_assembly_produces_context_json(tmp_path: Path):
+    commit_sha = _prepare_structural_snapshot(tmp_path)
     assembler = ContextAssembler(project_root=tmp_path)
     pkg = assembler.assemble(execution_id="exec-ctx-1", intent="Add logging")
     assert pkg.confidence_score >= 0.72
+    assert pkg.structural_snapshot["commit_sha"] == commit_sha
     
     ctx_file = tmp_path / ".harness" / "state" / "executions" / "exec-ctx-1" / "context.json"
     assert ctx_file.is_file()
@@ -68,12 +98,14 @@ def test_context_assembly_produces_context_json(tmp_path: Path):
 
 
 def test_context_sufficiency_blocks_when_below_threshold(tmp_path: Path):
+    _prepare_structural_snapshot(tmp_path)
     assembler = ContextAssembler(project_root=tmp_path)
     with pytest.raises(InsufficientContextError):
         assembler.assemble(execution_id="exec-ctx-low", intent="Add logging", force_confidence=0.5)
 
 
 def test_planner_produces_plan_json(tmp_path: Path):
+    _prepare_structural_snapshot(tmp_path)
     assembler = ContextAssembler(project_root=tmp_path)
     pkg = assembler.assemble(execution_id="exec-plan-1", intent="Add authentication")
     
@@ -83,6 +115,16 @@ def test_planner_produces_plan_json(tmp_path: Path):
     assert plan.goal == "Add authentication"
     plan_file = tmp_path / ".harness" / "state" / "executions" / "exec-plan-1" / "plan.json"
     assert plan_file.is_file()
+
+
+def test_context_assembly_fails_without_ready_snapshot_and_writes_no_context(tmp_path: Path):
+    commit_sha = _prepare_structural_snapshot(tmp_path, persist=False)
+    assembler = ContextAssembler(project_root=tmp_path)
+
+    with pytest.raises(SnapshotNotFoundError, match=commit_sha):
+        assembler.assemble(execution_id="exec-missing-index", intent="Add logging")
+
+    assert not (tmp_path / ".harness" / "state" / "executions" / "exec-missing-index").exists()
 
 
 def test_plan_validated_before_execution(tmp_path: Path):

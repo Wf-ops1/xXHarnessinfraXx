@@ -86,6 +86,21 @@ def test_current_docs_recognize_real_serena_without_claiming_live_default() -> N
     assert "configuração e injeção live continuam externas e opt-in" in readme
 
 
+def test_current_docs_recognize_f4_1_storage_without_claiming_f4_2_indexing() -> None:
+    readme = _read(ROOT / "README.md")
+    lifecycle = _read(ROOT / "docs" / "agentic_lifecycle_audit.md")
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+    walkthrough_audit = _read(ROOT / "docs" / "walkthrough_audit.md")
+
+    for document in (readme, lifecycle, user_guide, walkthrough_audit):
+        assert "mock_ast" not in document
+        assert "F4.2" in document
+    assert ".harness/state/structural-index/snapshots/<sha>.json" in user_guide
+    assert "status e digest validados" in lifecycle
+    assert "falha se estiver ausente/inválido" in walkthrough_audit
+    assert "Indexador AST local na F4.2" in readme
+
+
 def test_public_state_docs_distinguish_real_primitives_from_missing_composition() -> None:
     readme = _read(ROOT / "README.md")
     panel = _read(ROOT / "TASK.md")
@@ -109,15 +124,17 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #30" in readme
     assert "c2aa89b" in readme
     assert "31316853244" in readme
-    assert "próxima implementação planejada, F4.1" in readme
+    assert "A F4.1 está concluída localmente" in readme
     assert "F3.7 continua dependente da F4.7" in readme
     assert "permanece obrigatória antes" not in readme
     assert "aguarda autorização própria para publicação" not in readme
 
-    assert "branch `docs/align-phase3-closeout`" in panel
-    assert "nenhum gate `READY`" in panel
+    assert "`task/f4.1-index-storage`" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "docs/tasks/active/F4.1.md" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
-    assert "docs/align-phase3-closeout" in panel
+    assert "e4292ca" in panel
+    assert "31319202731" in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle

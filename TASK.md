@@ -6,8 +6,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. Não há dossiê ativo de implementação; a última promoção certificada está no
-   [dossiê F3.8](docs/tasks/completed/F3.8.md).
+2. O único dossiê ativo é [F4.1](docs/tasks/active/F4.1.md); a última promoção de implementação
+   certificada permanece no [dossiê F3.8](docs/tasks/completed/F3.8.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -34,13 +34,13 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | Campo | Estado observado |
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
-| **Fase ativa** | Pausa entre o fechamento certificado da F3.8 e a F4.1 planejada |
-| **Tarefa ativa** | Nenhuma tarefa ativa; F4.1 ainda não possui gate nem branch de implementação |
-| **Gate** | F3.8 `PROMOTED`; PR administrativo #30 incorporado e verde; nenhum gate `READY` |
-| **Executor ativo** | `Codex`, único escritor da correção documental transversal solicitada |
+| **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
+| **Tarefa ativa** | F4.1 — concluída localmente; promoção pendente |
+| **Gate** | F4.1 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #32 aberto com checks pendentes |
+| **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/align-phase3-closeout`, somente documental; nenhuma branch de implementação ativa |
-| **Baseline promovido** | `main == origin/main == c2aa89b`; run `31316853244`, evento `push`, 11/11 verde |
+| **Branch** | `task/f4.1-index-storage`, publicada e rastreando `origin/task/f4.1-index-storage` |
+| **Baseline promovido** | `main == origin/main == e4292ca`; run `31319202731`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
 
@@ -48,54 +48,51 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa | `F3.8` — edição real confinada e Serena MCP explícito, agora `PROMOTED` e arquivada |
+| Tarefa | `F3.8` — edição real confinada e Serena MCP explícito, promovida pelo PR #29 e arquivada |
 | PR de implementação | #29; head final `f941c89fd0ec112aca82621ab9e11244f05962aa`; 11/11 no run `31292195340` |
 | Promoção da implementação | merge `e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f`; run `31295594376`, 11/11 |
 | PR administrativo | #30; head final `bd0bda9385db850208f125e69757118ee9fe2b27`; 11/11 no run `31316549732` |
 | Fechamento administrativo | merge `c2aa89b50ad32dc90b26b70087dbd795e32f0042`; run `31316853244`, 11/11 |
-| Fronteira | branch remota de implementação preservada; nenhuma tag remota; F4.1 não foi iniciada |
+| Correção transversal | PR #31; merge `e4292ca52456708af7c2afe4e4471b1a721676a6`; run `31319202731`, 11/11 |
+| Fronteira | branch remota anterior preservada; nenhuma tag remota; F4.1 iniciada somente localmente |
 
 ## 5. Tarefa ativa
 
-Não há nenhuma tarefa ativa de implementação. O [dossiê F3.8](docs/tasks/completed/F3.8.md) preserva
-o problema inicial, as evidências negativas R1/R2, os reparos sem relaxamento, a promoção do PR #29
-e o fechamento administrativo pelo PR #30. O merge `c2aa89b` e o run pós-merge `31316853244`
-comprovam o baseline corrente de `main`.
+A F4.1 foi implementada e validada localmente no commit
+`b3686e0d8eaf6ae0b31cf29a2ecb75426d15da1b`, com contrato e evidências no
+[dossiê ativo](docs/tasks/active/F4.1.md). Ela corrige o path divergente entre escritor/consumidor,
+proíbe `HEAD` persistido, define schema único de símbolos e exige status/digest válidos antes de
+servir snapshots. O indexador Python real, rebuild e descoberta de símbolos permanecem na F4.2.
 
-A branch `docs/align-phase3-closeout` corrige o atraso documental encontrado após esse fechamento:
-atualiza somente painel, README, ledger, dossiê arquivado e regressões de estado. Trata-se de correção
-transversal explicitamente solicitada, não de reconciliação administrativa recursiva. Produto,
-dependências, schemas, defaults e CI permanecem fora do escopo e byte-idênticos a `c2aa89b`.
-
-F4.1 é apenas a próxima implementação planejada. Ela não pode receber dossiê `READY`, branch ou
-edição antes do fechamento desta correção documental e de nova autorização nominal. F3.7 permanece
-depois da F4.7.
+O baseline inclui o fechamento pelo PR administrativo #30 e a correção transversal já incorporada
+pelo PR #31 no merge `e4292ca`, cuja CI de `push` concluiu 11/11 verde no SHA exato de `main`.
+A branch F4.1 foi publicada e o PR #32 aberto; merge, tags e exclusão de refs não foram autorizados.
+F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido na F3.8: implementação, reconciliação administrativa e respectivas
-CIs pós-merge estão verdes. O único trabalho corrente é a correção documental transversal solicitada
-após a varredura. Até seu fechamento e uma autorização nominal nova, F4.1 permanece planejada e sem
-gate. Tags não serão publicadas.
+Não há bloqueio técnico local conhecido: aceite, regressão, quality, build, smoke e escopo estão verdes.
+A ausência de snapshot real permanece comportamento esperado até F4.2 e agora falha explicitamente.
+O bloqueio corrente é o CI pendente do PR #32. Merge exige todos os checks verdes e autorização nova;
+F4.2 não pode iniciar antes de merge, CI pós-merge e reconciliação administrativa da F4.1.
 
 ## 7. Próxima ação exata
 
 ```text
-CONCLUIR E VALIDAR A CORREÇÃO DOCUMENTAL `docs/align-phase3-closeout`; PERMANECER PAUSADO.
-Publicação/abertura e merge de seu único PR documental exigem autorizações próprias. Depois desse
-fechamento, a próxima autorização nominal de implementação será: “Autorizo iniciar a F4.1.”
-F3.7 permanece depois da F4.7. Não publicar tags, excluir branches ou iniciar outra tarefa
-implicitamente.
+AGUARDAR E REVALIDAR TODOS OS CHECKS DO HEAD FINAL DO PR #32, INCLUINDO `CI required`. Somente se
+todos ficarem verdes, solicitar autorização nominal separada para o merge. F4.2, F3.7, merge, tags e
+exclusão de refs não estão autorizados implicitamente; depois de eventual merge será obrigatória a
+reconciliação `docs/promote-f4.1`.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia a certificação em `docs/tasks/completed/F3.8.md`.
-3. Leia F4.1 no plano principal, DEC-013 e DEC-014.
+2. Leia `docs/tasks/active/F4.1.md` integralmente.
+3. Leia F4.1 no plano principal e, se houver promoção, DEC-014.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e CI da `main`.
-5. Enquanto a correção documental estiver pendente, execute somente a próxima ação exata acima; não
-   crie gate F4.1. Se escopo ou estado divergir, pare e registre nova evidência.
+5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
+   evidência e recongele antes de editar implementação.
 
 ## 9. Regras de manutenção
 
@@ -107,4 +104,4 @@ implicitamente.
 
 ---
 
-*Atualizado em: 2026-08-09 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T12:55:45-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
