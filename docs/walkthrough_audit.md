@@ -39,12 +39,11 @@ INITIATED
   -> COMPLETED
 ```
 
-O grafo acima descreve transições de software, não efeitos garantidos. Em particular:
-
-- `EXECUTING` recebe resposta sintética de provider e não comprova edição;
-- `PROMOTING` é chamado em dry-run;
-- `REINDEXING` recebe mock AST;
-- `COMPLETED` pode conter SHA sintético.
+O grafo acima descreve a FSM legada, não o fluxo padrão atual da CLI nem efeitos garantidos. O
+lifecycle canônico percorre arestas compiladas, persiste bundle/eventos e retoma por identidade; com o
+registry padrão vazio, `harness run` falha fechado antes de modelo ou tool. `PromotionManager` e
+`CodebaseMemoryAdapter` continuam separados e sintéticos: se chamados diretamente, podem produzir SHA
+de dry-run e `mock_ast`, mas não são prova de uma execução operacional concluída.
 
 ## 4. Matriz de comandos
 
@@ -52,12 +51,13 @@ O grafo acima descreve transições de software, não efeitos garantidos. Em par
 |---|---:|---:|---|
 | `harness init` | Sim | Cria/copia scaffold local | Implementado como base |
 | `harness doctor` | Sim | Apenas renderiza resultados pré-aprovados | Simulado |
-| `harness compile` | Sim | Lê YAML e grava JSON | Experimental |
+| `harness compile` | Sim | Compila pelo pipeline canônico e grava artefato validado | Implementado como contrato interno |
 | `harness index` | Sim | Grava snapshot de dados fabricados | Simulado |
-| `harness run` | Sim | Grava artefatos locais do fluxo | Experimental/simulado |
+| `harness run` | Sim | Cria bundle e falha fechado sem executor injetado | Experimental/fail-closed |
 | `harness status` | Sim | Lê arquivo de estado | Implementado como leitura local |
 | `harness inspect` | Sim | Lê estado, audit e aprovação | Experimental |
 | `harness approve` | Sim | Persiste decisão | Parcial; não retoma o fluxo |
+| `harness resume` | Sim | Retoma do bundle canônico | Implementado como contrato injetável |
 | `harness verify` | Sim | Executa subprocessos selecionados | Experimental |
 | `harness audit` | Sim | Valida hash chain local | Implementado como mecanismo local |
 | `harness rollback` | Sim | Eventos locais e Git opcional | Experimental/inseguro |
@@ -66,14 +66,14 @@ O grafo acima descreve transições de software, não efeitos garantidos. Em par
 
 | Prioridade | Risco | Causa atual | Fase responsável |
 |---|---|---|---|
-| P0 | Alteração fora de isolamento | Worktree real ausente e Serena sem confinamento | F3.6/F5 |
-| P0 | Execução arbitrária de shell | Terminal recebe string e usa `shell=True` | F3.5/F5 |
-| P0 | Sucesso sem efeito | Providers, promoção e memória sintéticos | F2/F3/F4 |
+| P0 | Alteração fora de isolamento | Worktree/guard/edição reais ainda não são compostos automaticamente pelo lifecycle | F4/F5 |
+| P0 | Git mutável fora do protocolo | Promoção/rollback legados não usam candidate commit, worktree e terminal tipado | F3.7/F6 |
+| P0 | Sucesso sem efeito | CLI falha fechada, mas promoção e memória isoladas ainda aceitam resultados sintéticos | F3.7/F4/F6 |
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
-| P1 | Grafo não governa runtime | Dois compiladores e sequência fixa | F1/F2 |
-| P1 | Aprovação sem resume seguro | Estado e protocolo incompletos | F2/F5 |
+| P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
+| P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
-| P1 | CI ainda não cobre comportamento operacional completo | Pipeline obrigatória cobre o baseline, mas providers, worktree, promoção e recovery reais ainda não existem | F1–F7 |
+| P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |
 
 ## 6. Gates para considerar o produto operacional
 

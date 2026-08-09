@@ -6,37 +6,33 @@ Este documento separa o fluxo que o código executa hoje do fluxo que o produto 
 presença de uma classe, estado da FSM ou teste unitário não significa que a integração externa ou o
 efeito operacional correspondente já exista.
 
-## Fluxo observado no protótipo
+## Fluxo observado no comando padrão
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Desenvolvedor
     participant CLI as CLI
-    participant Engine as RuntimeEngine
-    participant Model as Adapter LLM simulado
-    participant Verify as VerificationEngine
-    participant Promo as PromotionManager
-    participant Memory as CodebaseMemoryAdapter
-    participant Audit as AuditTrailManager
+    participant Lifecycle as ExecutionLifecycleService
+    participant Graph as GraphExecutor
+    participant Registry as NodeExecutorRegistry
+    participant State as Storage e journal
 
     User->>CLI: harness run workflow
-    CLI->>Engine: run_workflow
-    Engine->>Engine: contexto e plano locais
-    Engine->>Model: complete
-    Model-->>Engine: resposta fabricada
-    Engine->>Verify: executar gates configurados
-    Verify-->>Engine: resultado real ou lista vazia
-    Engine->>Promo: promote(dry_run=true)
-    Promo-->>Engine: SHA sintético
-    Engine->>Memory: query_ast
-    Memory-->>Engine: mock_ast persistido
-    Engine->>Audit: eventos e evidence.json
+    CLI->>CLI: carregar ou compilar artefato canônico
+    CLI->>Lifecycle: start(artefato, input)
+    Lifecycle->>State: persistir bundle e identidade
+    Lifecycle->>Graph: percorrer arestas compiladas
+    Graph->>Registry: exigir executor do nó
+    Registry-->>Graph: backend indisponível no wiring padrão
+    Graph-->>Lifecycle: erro tipado e estado fail-closed
 ```
 
-O fluxo exercita contratos e persistência local, mas não modifica código por um modelo real, não cria
-candidate commit em worktree e não promove por cherry-pick. O estado `COMPLETED` do protótipo não
-deve ser interpretado como entrega real da intenção do usuário.
+O comando padrão não fabrica resposta de modelo nem declara promoção: ele constrói o lifecycle com um
+registry de executores deliberadamente vazio e falha antes de efeitos operacionais. Quando injetados
+explicitamente, providers OpenAI/local, tool loop durável, worktree, terminal e edição usam primitivas
+reais testadas; essa composição ainda não é feita automaticamente pela CLI. Candidate commit,
+cherry-pick, memória semântica e recovery integral continuam ausentes do caminho crítico.
 
 ## Fluxo-alvo
 
@@ -74,16 +70,21 @@ sequenceDiagram
 - `ExternalWorktreeManager` com `git worktree` real, referência durável e path guard canônico;
 - execução de subprocessos de verificação por `argv`, com executável autorizado, cwd confinado,
   ambiente seletivo, timeout da árvore de processos e saída limitada/redigida;
+- edição local real por leitura, listagem, busca e patch atômico confinados, além de cliente Serena MCP
+  explícito com prova de raiz, capability e mudança;
+- factory opt-in para registrar oito tools operacionais sem relaxar a policy compilada ou deny-wins;
 - hash chain local para o diário de eventos.
 
 ## Lacunas que impedem uso seguro
 
-- providers LLM não fazem chamadas externas ou locais reais;
-- Serena e Codebase-Memory não se conectam a MCP;
+- providers OpenAI/local fazem chamadas reais quando configurados, mas nenhum backend agentic padrão
+  fecha sozinho o fluxo do produto;
+- Serena possui cliente MCP explícito e opt-in; Codebase-Memory ainda não oferece memória real;
 - `doctor` não mede saúde;
-- o worktree Git real ainda não está ligado ao lifecycle e às tools operacionais;
+- o worktree Git real ainda não está ligado automaticamente ao lifecycle e ao registry opt-in;
 - promoção e rollback não possuem o protocolo Git final;
-- terminal seguro ainda não está registrado no tool loop nem ligado ao lifecycle/worktree provisionado;
+- terminal, edição local, Git somente leitura e Serena possuem registrations opt-in, mas o lifecycle
+  ainda não constrói esse registry nem injeta o worktree provisionado;
 - persistência, recovery, budgets, secrets e políticas ainda não controlam todo o caminho crítico.
 
 O plano concreto para fechar essas lacunas está em
