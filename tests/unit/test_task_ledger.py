@@ -187,7 +187,7 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f3_5_is_certified_and_f3_8_is_the_only_ready_gate() -> None:
+def test_f3_5_is_certified_and_f3_8_is_the_only_completed_local_gate() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     dossier = _read(COMPLETED_ROOT / "F3.5.md")
@@ -197,10 +197,14 @@ def test_f3_5_is_certified_and_f3_8_is_the_only_ready_gate() -> None:
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
     assert (ACTIVE_ROOT / "F3.8.md").is_file()
     assert "docs/tasks/active/F3.8.md" in panel
-    assert "`READY / ACTIVE`" in panel
+    assert "`READY`; `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "task/f3.8-real-editing" in panel
     assert "> **Gate:** `READY`" in active_dossier
-    assert "> **Lifecycle:** `ACTIVE`" in active_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in active_dossier
+    assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in active_dossier
+    assert "623 passed, 2 skipped, 6 subtests passed" in active_dossier
+    assert "checkpoint/f3.8-complete" in panel
+    assert "Autorizo publicar a branch task/f3.8-real-editing" in panel
     assert "PR #27 aberto" not in panel
     assert "Autorizo o merge do PR #27" not in panel
     assert "> **Lifecycle:** `PROMOTED`" in dossier
