@@ -49,6 +49,7 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 | F3 | F3.C1 | [Integridade de modelo e model-turn](completed/F3.C1.md) | PR #23 / merge `5616fc5` / pós-merge `31240455344` |
 | F3 | F3.C2 | [Execução durável de tools e policy](completed/F3.C2.md) | PR #24 / merge `d2502b0` / pós-merge `31266993044` |
 | F3 | F3.4 | [Path guard](completed/F3.4.md) | PR #25 / merge `8fac2d0` / pós-merge `31272502445` |
+| F3 | F3.6 | [Worktree Git externo](completed/F3.6.md) | PR #26 / merge `6757fbf` / pós-merge `31279967619` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

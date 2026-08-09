@@ -34,8 +34,8 @@ flowchart TD
 | Contratos | `src/ai_engineering_harness/contracts/` | Implementada como modelos internos | Modelos canônicos GraphSpec/PolicySpec/CompiledArtifact ainda serão unificados |
 | Compilação | `compiler/` e `src/ai_engineering_harness/compiler/` | Experimental | Dois compiladores e validações incompletas |
 | Runtime | `src/ai_engineering_harness/runtime/` | Experimental | Ordem fixa, adapters simulados e promoção dry-run |
-| Ferramentas/modelos | `tools/`, `models/`, `indexer/` | Simulada | Sem chamadas reais; terminal não cumpre contrato final |
-| Verificação | `verification/` | Experimental | Gates reais existem, mas fail-closed e matriz completa ainda faltam |
+| Ferramentas/modelos | `tools/`, `models/`, `indexer/` | Experimental | Terminal seguro existe como primitivo, mas registry operacional, edição e memória real ainda faltam |
+| Verificação | `verification/` | Experimental | Gates estáticos usam o terminal confinado; fail-closed integral e matriz completa ainda faltam |
 | Governança/segurança | `governance/`, `security/` | Experimental | Enforcement não cobre todo side effect |
 | Auditoria | `observability/audit.py` | Experimental | Hash chain local não prova efeitos externos nem recovery |
 | Workspace Git | `workspace/` | Implementada como primitivo | Cria/valida worktree Git externo e guard canônico; integração com lifecycle/tools ainda falta |

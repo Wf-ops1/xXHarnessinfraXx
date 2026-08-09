@@ -60,6 +60,19 @@ def test_current_docs_recognize_real_worktree_without_claiming_full_integration(
     assert "Cria/valida worktree Git externo" in architecture
 
 
+def test_current_docs_recognize_safe_terminal_without_claiming_tool_integration() -> None:
+    readme = _read(ROOT / "README.md")
+    operating_model = _read(ROOT / "docs" / "agentic_operating_model.md")
+    architecture = _read(ROOT / "docs" / "harness_architecture_spec.md")
+
+    assert "recebe string e usa" not in readme
+    assert "terminal aceita comando como string" not in operating_model
+    assert "terminal não cumpre contrato final" not in architecture
+    assert "executa somente `argv`" in readme
+    assert "terminal seguro ainda não está registrado" in operating_model.casefold()
+    assert "Terminal seguro existe como primitivo" in architecture
+
+
 def test_markdown_links_are_relative_and_resolve() -> None:
     for document in MARKDOWN_FILES:
         for match in MARKDOWN_LINK.finditer(_read(document)):

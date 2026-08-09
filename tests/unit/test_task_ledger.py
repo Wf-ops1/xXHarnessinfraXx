@@ -202,5 +202,5 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "F3.6 exige nova autorização explícita" in panel
+    assert "F3.5 exige nova autorização explícita" in panel
     assert "Não restou achado blocker/high" in realignment
