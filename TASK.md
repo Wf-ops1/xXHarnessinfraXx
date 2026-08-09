@@ -36,10 +36,10 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | F3.8 — edição real confinada e Serena MCP explícito |
-| **Gate** | `READY`; `REPAIR_ACTIVE / PROMOTION_BLOCKED` |
+| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f3.8-real-editing`, publicada em `origin` no head `33688e6` |
+| **Branch** | `task/f3.8-real-editing`, publicada em `origin`; PR único #29 aberto para `main` |
 | **Baseline promovido** | F3.5 em `b6a4a24`; reconciliação PR #28 em `fd49310`; run `31287059584`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32; somente `mcp>=1.26,<2` congelada para F3.8 |
@@ -60,34 +60,34 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 O [dossiê F3.8](docs/tasks/active/F3.8.md) comprovou o sucesso sintético do adapter legado, revalidou
 F3.4/F3.6/F3.5/F3.C2 e congelou arquivos, efeitos, critérios e rollback antes do primeiro código.
 
-A entrega local no commit `45d3b05` implementa leitura/listagem/busca/patch confinados, adapta o
+A entrega iniciada no commit `45d3b05` implementa leitura/listagem/busca/patch confinados, adapta o
 terminal seguro e Git somente leitura ao registry opt-in e substitui o falso Serena por cliente MCP
-configurado explicitamente. A evidência negativa do PR #29/run `31289781573` supera o aceite local
-anterior; a promoção está bloqueada até reparo e recertificação integral.
+configurado explicitamente. A evidência negativa do PR #29/run `31289781573` reabriu corretamente o
+gate; os commits `4505cf4` e `3576a04` registraram e repararam as divergências sem relaxar critérios.
+O run `31290430138`, no head técnico exato `3576a0495fd0d02a4413a131ec9848bfd24652ea`,
+recertificou os 11/11 checks, incluindo `CI required`.
 
 Os checkpoints `checkpoint/f3.8-ready` e `checkpoint/f3.8-complete` permanecem históricos e imóveis;
-nenhum deles prova o estado positivo corrente depois da falha remota.
+o estado positivo corrente é provado pelos reparos, pelo aceite repetido e pela CI remota posterior.
 
 Lifecycle/CLI, configuração default, promoção F3.7, instalação live de Serena e fallback automático
 continuam fora do escopo e não foram implicitamente habilitados.
 
 ## 6. Bloqueios atuais
 
-O PR #29 executou CI no head `33688e6`: 7/11 checks passaram, os jobs de tests Ubuntu 3.11/3.14 e
-Windows 3.11 falharam e `CI required` terminou vermelho. Ubuntu registrou 10 falhas de transporte no
-servidor MCP de teste (`600 passed, 1 skipped, 6 subtests passed`). A reprodução completa local em
-Python 3.11 também revelou detecção incorreta de junction no adapter local (`609 passed, 1 failed`).
-Merge e restauração de estado positivo estão proibidos até corrigir ambos sem relaxar o gate.
+Não há bloqueio técnico conhecido no escopo congelado. A falha inicial do PR #29 permanece registrada
+no dossiê e foi superada por correção, recertificação local integral e CI remota 11/11. O merge ainda
+está bloqueado apenas pela fronteira administrativa: exige autorização nominal separada do usuário e
+CI verde no head documental final do PR. Tags não serão publicadas e F3.7 não será iniciada.
 
 ## 7. Próxima ação exata
 
 ```text
-REPARAR O PR #29 NO ESCOPO CONGELADO DA F3.8:
-1. Preservar os checkpoints históricos e registrar falha/diagnóstico/correção append-only no dossiê.
-2. Corrigir a portabilidade do servidor MCP de teste em Linux e a detecção de junction no Python 3.11.
-3. Repetir aceite focado, suíte integral nas versões aplicáveis, quality, pacote, smoke e escopo.
-4. Atualizar a mesma branch/PR e exigir `CI required=success`; merge continua sem autorização.
-5. Não publicar tags, configurar Serena live, excluir refs ou iniciar F3.7.
+PERMANECER PAUSADO APÓS A CI VERDE DO HEAD DOCUMENTAL FINAL DO PR #29.
+Próxima autorização nominal necessária: “Autorizo o merge do PR #29.”
+Somente depois do merge autorizado: validar a CI push no SHA exato de main, sincronizar o repositório,
+certificar/arquivar a F3.8 no primeiro commit do gate seguinte e pausar antes de qualquer F3.7.
+Não publicar tags, configurar Serena live, excluir refs ou iniciar outra tarefa implicitamente.
 ```
 
 ## 8. Retomada após perda de contexto

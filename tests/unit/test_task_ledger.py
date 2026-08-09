@@ -187,7 +187,7 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f3_5_is_certified_and_f3_8_repair_blocks_promotion() -> None:
+def test_f3_5_is_certified_and_f3_8_waits_for_authorized_merge() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     dossier = _read(COMPLETED_ROOT / "F3.5.md")
@@ -197,16 +197,19 @@ def test_f3_5_is_certified_and_f3_8_repair_blocks_promotion() -> None:
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
     assert (ACTIVE_ROOT / "F3.8.md").is_file()
     assert "docs/tasks/active/F3.8.md" in panel
-    assert "`READY`; `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in panel
+    assert "`READY`; `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "task/f3.8-real-editing" in panel
     assert "> **Gate:** `READY`" in active_dossier
-    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in active_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in active_dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in active_dossier
     assert "623 passed, 2 skipped, 6 subtests passed" in active_dossier
     assert "checkpoint/f3.8-complete" in panel
     assert "31289781573" in active_dossier
+    assert "31290430138" in active_dossier
+    assert "3576a0495fd0d02a4413a131ec9848bfd24652ea" in active_dossier
     assert "PR #29" in panel
     assert "CI required" in panel
+    assert "Autorizo o merge do PR #29" in panel
     assert "PR #27 aberto" not in panel
     assert "Autorizo o merge do PR #27" not in panel
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -224,6 +227,7 @@ def test_negative_evidence_precedes_positive_state_until_recertification() -> No
     plan = _read(IMPLEMENTATION_PLAN)
     decision = _read(POST_MERGE_DECISION)
     dossier = _read(COMPLETED_ROOT / "F3.5.md")
+    active_dossier = _read(ACTIVE_ROOT / "F3.8.md")
 
     for source in (panel, rules, plan, decision):
         assert "evidência negativa" in source.casefold()
@@ -240,7 +244,11 @@ def test_negative_evidence_precedes_positive_state_until_recertification() -> No
     assert dossier.rfind("31284043501") > certified_at
     assert dossier.rfind("31285547886") > certified_at
     assert "evidência negativa do PR #29" in panel
-    assert "Merge e restauração de estado positivo estão proibidos" in panel
+    f3_8_blocked_at = active_dossier.rfind("REPAIR_ACTIVE / PROMOTION_BLOCKED")
+    f3_8_recertified_at = active_dossier.rfind("### Recertificação do reparo R1")
+    assert f3_8_blocked_at >= 0
+    assert f3_8_recertified_at > f3_8_blocked_at
+    assert "foi superada por correção, recertificação local integral" in panel
 
 
 def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> None:
