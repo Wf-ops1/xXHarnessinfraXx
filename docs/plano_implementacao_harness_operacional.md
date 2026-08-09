@@ -62,19 +62,23 @@ tarefa sem reverter a fase inteira.
    enfraquecimento de proteção/check obrigatório.
 8. Exigir branch atualizada e `CI required=success`. Preferir merge commit para preservar os commits
    e permitir revert do merge completo; squash/rebase de histórico exige decisão explícita registrada.
-9. Antes da próxima implementação, confirmar no Git/GitHub que o PR anterior foi mesclado e que o CI
-   pós-merge da `main` está verde. No primeiro commit do gate seguinte, registrar essas evidências no
-   dossiê anterior, marcá-lo `PROMOTED`, movê-lo para `docs/tasks/completed/` e somente então criar o
-   novo dossiê ativo `READY`. Essa certificação é pré-requisito da nova tarefa e não cria um segundo PR
-   para a tarefa anterior.
-10. A branch remota concluída pode ser removida após o merge; commits, PR e checkpoints preservam o
+9. Depois do merge, confirmar no Git/GitHub a CI de `push` verde no SHA exato de `main` e sincronizar
+   o checkout. Sem iniciar a tarefa seguinte, criar imediatamente `docs/promote-<id>` a partir dessa
+   `main` e registrar PR/checks/merge/run no dossiê anterior, marcá-lo `PROMOTED`, movê-lo para
+   `docs/tasks/completed/` e atualizar índice, painel, README e testes de estado.
+10. A reconciliação usa um PR administrativo exclusivamente documental. Ele não conta como segundo PR
+    de implementação da tarefa, não pode alterar produto/dependências/schemas/CI e continua sujeito a
+    autorização explícita para push, abertura e merge. A próxima implementação só pode começar depois
+    que esse PR e sua CI pós-merge também estiverem verdes. O PR administrativo não certifica o próprio
+    merge por outro PR; sua finalidade termina ao publicar a evidência da tarefa promovida.
+11. A branch remota concluída pode ser removida após o merge; commits, PR e checkpoints preservam o
     histórico. Tags remotas, PR, merge, exclusão de branch ou mudança de proteção continuam efeitos
     externos que exigem autorização explícita.
 
 Mudanças exclusivamente documentais e transversais usam branch `docs/<descricao-curta>` e um único PR
-próprio. Gate, implementação documental, validação e estado local final permanecem nesse PR. Depois do
-merge, o dossiê fica em `active/` como `COMPLETED_LOCAL / PROMOTION_PENDING` até a certificação no gate
-seguinte; é proibido abrir PR recursivo somente para registrar o próprio merge.
+próprio. Gate, implementação documental, validação e estado local final permanecem nesse PR. A branch
+administrativa `docs/promote-<id>` é a exceção restrita definida pela DEC-014: ela fecha a evidência da
+tarefa de implementação recém-promovida e não abre uma nova tarefa de produto.
 
 A F1, concluída linearmente antes desta regra, foi promovida por um único PR e constitui a única
 exceção planejada. Os PRs #17 e #18 são um desvio histórico de fechamento recursivo de
@@ -97,6 +101,7 @@ implementação pode ser alterado; é permitida apenas a preparação documental
 | **Critérios congelados** | Comandos exatos, resultado esperado e condição de falha definidos antes da implementação; critério não pode ser enfraquecido para passar. |
 | **Rollback executável** | Checkpoint Git existente, gatilhos para interromper/reverter, procedimento não destrutivo e verificação pós-rollback. |
 | **Responsabilidade explícita** | Executor único, data/hora da autorização, estado do gate e runtime efetivamente utilizado. |
+| **Verdade temporal** | Estado positivo sustentado pela última observação; erro/blocker posterior tem precedência, identifica fonte/horário e impede avanço até recertificação integral. |
 
 O dossiê ativo deve conter, no mínimo, o equivalente aos campos abaixo. Markdown é permitido, mas
 omitir a semântica de qualquer campo mantém o gate `BLOCKED`.
@@ -145,10 +150,18 @@ Regras de congelamento e mudança de escopo:
    previamente verificado.
 6. Após os gates locais, o dossiê passa a `COMPLETED_LOCAL / PROMOTION_PENDING`, mas a tarefa seguinte
    continua bloqueada até merge e CI pós-merge verdes serem observados.
-7. No primeiro commit do gate seguinte, certificar a promoção anterior, preencher PR/checks/merge/CI,
-   marcar `PROMOTED`, arquivar o dossiê e só então liberar o novo dossiê `READY`.
-8. Um commit não antecipa prova do próprio merge. Essa limitação é resolvida pela certificação no gate
-   seguinte, nunca por um PR adicional de fechamento.
+7. Após observar merge e CI pós-merge, executar a reconciliação administrativa da DEC-014, preencher
+   PR/checks/merge/CI, marcar `PROMOTED` e arquivar o dossiê antes de criar o próximo `READY`.
+8. Um commit não antecipa prova do próprio merge. A reconciliação registra somente a promoção da tarefa
+   anterior; seu PR administrativo termina a cadeia e não gera outra reconciliação recursiva.
+9. Evidência negativa posterior sempre prevalece sobre sucesso anterior. Antes do merge, mudar o estado
+   para `REPAIR_ACTIVE / PROMOTION_BLOCKED`; depois do merge, preservar `PROMOTED` como fato histórico,
+   marcar `POST_PROMOTION_BLOCKED` no estado corrente e impedir qualquer novo gate.
+10. Estado positivo só pode ser restaurado após correção sem relaxamento, repetição integral do aceite
+    aplicável e reconciliação documental com SHA, run, resultado e horário observados. Falha histórica
+    permanece registrada; nunca é apagada ou reclassificada silenciosamente como sucesso.
+11. Atraso entre evento externo e commit documental é uma pendência explícita, não um estado alinhado.
+    Painel e dossiê devem informar o último snapshot observado e a ação necessária para reconciliá-lo.
 
 Checklist mínimo de liberação:
 
@@ -159,6 +172,8 @@ Checklist mínimo de liberação:
 [ ] Critérios exatos, resultados esperados e condições de falha congelados
 [ ] Checkpoint e rollback verificável existentes
 [ ] Executor único, runtime e horário de autorização registrados
+[ ] Nenhum erro/blocker posterior contradiz o estado positivo corrente
+[ ] SHA, run, resultado e horário citados foram realmente observados
 ```
 
 ---
