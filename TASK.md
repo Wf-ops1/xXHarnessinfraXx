@@ -6,7 +6,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. [Dossiê ativo](docs/tasks/active/F3.5.md): problema, evidência, escopo, aceite e rollback.
+2. Não há dossiê ativo. A última promoção certificada está no [dossiê F3.5](docs/tasks/completed/F3.5.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -32,12 +32,11 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
-| **Tarefa ativa** | `F3.5` — terminal seguro por `argv` |
-| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Executor ativo** | `Codex`, único escritor |
+| **Tarefa ativa** | nenhuma tarefa ativa; F3.8 é apenas a próxima tarefa planejada |
+| **Gate** | `PAUSED / NO_ACTIVE_GATE` |
+| **Executor ativo** | nenhum executor de implementação; aguardando autorização nominal |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f3.5-safe-terminal`, criada de `6757fbf3b0a72a07080a7a7b45e5ae34f9bc3b86` |
-| **Última main comprovada** | `6757fbf3b0a72a07080a7a7b45e5ae34f9bc3b86`; run `31279967619`, 11/11 verde |
+| **Baseline promovido** | F3.5 em `b6a4a24179271a8caa22252f71d08c35e13e7a41`; run `31285547886`, 11/11 verde |
 | **Python** | runtime do workspace — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32; nenhuma dependência nova autorizada |
 
@@ -45,55 +44,43 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa anterior | `F3.6`, agora `PROMOTED` e arquivada neste primeiro commit do gate F3.5 |
-| PR | #26; head final `919c28f3bf9ddd6f03d227784dd36808ba72a587`; merge `6757fbf3b0a72a07080a7a7b45e5ae34f9bc3b86` |
-| CI do PR | run `31274543029`, evento `pull_request`, 11/11 jobs verdes incluindo `CI required` |
-| CI pós-merge | run `31279967619`, evento `push` em `main`, SHA exato do merge, 11/11 jobs verdes |
-| Linha comprovada | `main == origin/main == 6757fbf3b0a72a07080a7a7b45e5ae34f9bc3b86` antes desta branch |
+| Tarefa | `F3.5` — terminal seguro por `argv`, agora `PROMOTED` e arquivada |
+| PR | #27; head final `e6d947a2713e61c0700154cb7453f8bc0a7c342f`; 11/11 no run `31284043501` |
+| Merge | `b6a4a24179271a8caa22252f71d08c35e13e7a41`, merge commit em `main` |
+| CI pós-merge | run `31285547886`, evento `push`, SHA exato do merge, 11/11 incluindo `CI required` |
+| Fronteira | branch remota preservada; nenhuma tag remota; F3.8 não iniciada |
 
 ## 5. Tarefa ativa
 
-Leia integralmente: [F3.5](docs/tasks/active/F3.5.md), a
-[DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md) e o plano da Fase 3.
+Não há tarefa nem implementação ativa. Leia a [DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md),
+a [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e a Fase 3 do plano antes de continuar.
 
-F3.5 exige nova autorização explícita; a promoção F3.6 foi certificada e a autorização nominal para
-iniciar F3.5 foi observada em `2026-08-08T18:47:32-03:00`. Ela autoriza congelamento, checkpoint e
-implementação local da F3.5. A autorização separada para publicar a branch e abrir o PR único foi
-observada em `2026-08-08T19:26:53-03:00`; ela não inclui merge, tags remotas ou início de F3.8.
-
-| Campo | Valor |
-|---|---|
-| **Objetivo** | substituir execução por shell string por contrato tipado, confinado, limitado e redigido |
-| **Escopo** | terminal adapter, consumidor determinístico de verificação, documentação e testes F3.5 |
-| **Proibido** | registrar tool operacional, tool loop/runtime/lifecycle, GitAdapter, edição, promoção, dependências, schemas e CI |
-| **Checkpoint** | `checkpoint/f3.5-ready` em `866124d`; `checkpoint/f3.5-complete` em `47435c0`; `checkpoint/f3.5-timeout-repair-ready` em `3248a73`, criado antes do código do reparo |
-| **Estado remoto** | PR #27 aberto; head remoto ainda `b8db591`; reparo local concluído em `95175f8` mais este fechamento documental, ainda não publicados; run anterior `31281757984`, 11/11 verde e sem conflitos |
+A próxima tarefa planejada é F3.8 — edição real confinada — porque F3.4, F3.6 e F3.5 foram promovidas.
+F3.7 permanece dependente de F4.7. O dossiê F3.8 ainda não existe e seu escopo não está congelado;
+merge/CI anteriores, esta reconciliação ou autorizações antigas não permitem iniciar implementação.
 
 ## 6. Bloqueios atuais
 
-O blocker local da corrida no timeout foi corrigido e todo o aceite repetido ficou verde. A promoção
-continua pendente, não por falha conhecida, mas porque os commits do reparo ainda precisam ser
-publicados no mesmo PR #27 e o novo head precisa obter 11/11 checks finais sem conflitos. Merge, F3.7,
-F3.8 e registro do terminal no tool loop permanecem bloqueados até a autorização/gate próprios.
+Não há blocker técnico ou documental conhecido da F3.5 após esta certificação. A F3.8 permanece
+bloqueada somente porque não foi autorizada nem possui dossiê/checkpoint `READY`. Terminal operacional,
+Serena real, edição, promoção e F3.7 continuam sujeitos aos gates correspondentes.
 
 ## 7. Próxima ação exata
 
 ```text
-ATUALIZAR E VALIDAR O MESMO PR, SEM MERGE:
-1. Publicar os commits documentais/técnicos do reparo somente em task/f3.5-safe-terminal/PR #27,
-   sem force e sem tags remotas.
-2. Confirmar o SHA exato do novo head, ausência de conflitos e todos os 11 checks finais verdes,
-   incluindo CI required; qualquer falha reabre o gate e deve ser corrigida sem enfraquecer critérios.
-3. Sincronizar e comprovar o estado local/remoto limpo.
-4. Somente então pausar para a autorização nominal “Autorizo o merge do PR #27.”
+PERMANECER PAUSADO, SEM IMPLEMENTAÇÃO:
+1. Aguardar a autorização nominal “Autorizo iniciar a F3.8.”
+2. Depois da autorização, comprovar o último head/CI de main, criar branch exclusiva F3.8 e preparar
+   problema, baseline, escopo, aceite, rollback, executor e checkpoint READY antes do primeiro código.
+3. Qualquer divergência exige parar e recongelar; a autorização não inclui push, PR ou merge.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia o dossiê ativo indicado na seção 5.
-3. Leia a fase relevante no plano principal e DEC-013.
-4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e checkpoint.
+2. Confirme que não existe dossiê ativo; consulte o último dossiê promovido somente quando necessário.
+3. Leia a fase relevante no plano principal, DEC-013 e DEC-014.
+4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e CI da `main`.
 5. Execute somente a próxima ação exata; se escopo/estado divergir, pare e recongele o dossiê.
 
 ## 9. Regras de manutenção
@@ -106,4 +93,4 @@ ATUALIZAR E VALIDAR O MESMO PR, SEM MERGE:
 
 ---
 
-*Atualizado em: 2026-08-08 | Fonte normativa: plano principal + DEC-012 + DEC-013*
+*Atualizado em: 2026-08-08 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*

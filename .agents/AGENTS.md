@@ -55,12 +55,14 @@ Em caso de conflito, o pedido explícito do usuário prevalece; depois, o plano 
    proteção exigem autorização explícita do usuário. Force-push e bypass não são o fluxo normal.
 9. Depois dos gates locais, manter o dossiê em `active/` como
    `COMPLETED_LOCAL / PROMOTION_PENDING`; isso não autoriza iniciar a tarefa seguinte.
-10. No primeiro commit do gate seguinte, comprovar no Git/GitHub o PR/checks/merge anterior e a CI
-    verde da `main`, registrar a evidência no dossiê anterior, marcá-lo `PROMOTED`, movê-lo para
-    `completed/` e somente então criar o novo dossiê `READY`.
-11. Mudanças documentais transversais usam `docs/<descricao-curta>` e um único PR próprio. É proibido
-    abrir PR recursivo somente para registrar o merge/CI do PR anterior; a certificação pertence ao
-    gate seguinte.
+10. Depois do merge e da CI pós-merge verde no SHA exato de `main`, iniciar imediatamente uma
+    reconciliação administrativa em `docs/promote-<id>`: registrar PR/checks/merge/run, marcar o
+    dossiê `PROMOTED`, movê-lo para `completed/`, atualizar índice, painel, README e testes de estado.
+11. A reconciliação pós-merge possui PR documental próprio, não conta como segundo PR de implementação
+    e não pode alterar produto, dependências, schemas ou CI. Push, abertura e merge continuam exigindo
+    autorização explícita. Nenhum gate seguinte começa antes de esse PR e sua CI em `main` ficarem
+    verdes. O próprio PR administrativo não exige outro PR recursivo; ele encerra a certificação.
+12. Outras mudanças documentais transversais usam `docs/<descricao-curta>` e um único PR próprio.
 
 O ciclo completo e suas exceções estão em `docs/plano_implementacao_harness_operacional.md`, seção
 `Ciclo Git obrigatório por tarefa`. A F1 é a exceção histórica já concluída em uma branch linear;
@@ -107,6 +109,7 @@ verdade.
 4. Dossiê concluído é evidência imutável. Correção exige PR documental explícito e atualização de
    integridade; nunca reescrever silenciosamente resultado, erro, SHA, PR ou run.
 5. Não duplicar no painel contratos completos, logs, checklists concluídos ou histórico de fases.
-6. Entre tarefas, o painel pode apontar o dossiê `PROMOTION_PENDING`, mas deve declarar que não há
-   implementação ativa. O primeiro commit do novo gate certifica/arquiva esse dossiê e cria o próximo
-   `READY` antes do primeiro arquivo de implementação.
+6. Entre o merge de implementação e a reconciliação administrativa, o painel pode apontar o dossiê
+   `PROMOTION_PENDING`, mas deve declarar que não há implementação ativa. A reconciliação pós-merge
+   certifica/arquiva esse dossiê imediatamente; somente depois de seu merge e CI verde o próximo gate
+   pode ser criado como `READY` antes do primeiro arquivo de implementação.

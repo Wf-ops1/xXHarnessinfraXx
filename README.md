@@ -58,9 +58,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 - **Fase 2 concluída:** record atômico, storage concorrente, execução por grafo, FSM por eventos,
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
-- **Fase 3 em execução:** F3.1–F3.4, F3.6 e as corretivas F3.C1/F3.C2 foram promovidas. A branch
-  ativa F3.5 acrescenta terminal seguro por `argv` ao worktree/path guard; registro operacional,
-  integração de edição e promoção continuam tarefas futuras isoladas e sujeitas a pausas/autorização.
+- **Fase 3 em execução:** F3.1–F3.6 e as corretivas F3.C1/F3.C2 aplicáveis foram promovidas; a F3.5
+  acrescentou terminal seguro por `argv` ao worktree/path guard. Não há implementação ativa. F3.8 é
+  a próxima tarefa planejada, enquanto F3.7 permanece dependente da F4.7; ambas exigem gate e
+  autorização próprios.
 
 ## Dívidas técnicas críticas
 

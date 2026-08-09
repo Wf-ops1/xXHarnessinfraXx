@@ -13,6 +13,7 @@ AGENT_RULES = ROOT / ".agents" / "AGENTS.md"
 IMPLEMENTATION_PLAN = ROOT / "docs" / "plano_implementacao_harness_operacional.md"
 PHASE3_REALIGNMENT = ROOT / "docs" / "fase3_realignamento_operacional.md"
 PHASE3_ORDER_DECISION = ROOT / "docs" / "decisions" / "DEC-013-fase3-ordem-operacional.md"
+POST_MERGE_DECISION = ROOT / "docs" / "decisions" / "DEC-014-reconciliacao-pos-merge.md"
 TASKS_ROOT = ROOT / "docs" / "tasks"
 TASKS_INDEX = TASKS_ROOT / "README.md"
 ACTIVE_ROOT = TASKS_ROOT / "active"
@@ -147,7 +148,7 @@ def test_agent_rules_point_to_the_short_panel_and_active_dossier() -> None:
     assert "no máximo 300 linhas" in rules
 
 
-def test_normative_sources_agree_on_gate_and_single_pr_lifecycle() -> None:
+def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None:
     rules = _read(AGENT_RULES)
     plan = _read(IMPLEMENTATION_PLAN)
     task_index = _read(TASKS_INDEX)
@@ -169,18 +170,42 @@ def test_normative_sources_agree_on_gate_and_single_pr_lifecycle() -> None:
         assert requirement in plan
 
     assert "um único PR da tarefa" in plan
-    assert "primeiro commit do gate seguinte" in plan
-    assert "proibido abrir PR recursivo" in plan
-    assert "PRs #17 e #18" in plan
-    assert "não criam precedente" in plan
+    assert "docs/promote-<id>" in plan
+    assert "PR administrativo exclusivamente documental" in plan
+    assert "não conta como segundo PR" in plan
+    assert "de implementação da tarefa" in plan
+    assert "não gera outra reconciliação recursiva" in plan
 
     assert "seção 1.2 do plano principal" in rules
     assert "Critério que falhou nunca pode ser removido" in rules
     assert "COMPLETED_LOCAL / PROMOTION_PENDING" in rules
-    assert "primeiro commit do gate seguinte" in rules
-    assert "proibido" in rules and "PR recursivo" in rules
+    assert "docs/promote-<id>" in rules
+    assert "reconciliação pós-merge possui PR documental próprio" in rules
+    assert "não conta como segundo PR de implementação" in rules
     assert "DEC-011" in task_index
-    assert "sem PR recursivo de fechamento" in task_index
+    assert "DEC-014" in task_index
+    assert "substituída pela reconciliação imediata" in task_index
+
+
+def test_f3_5_is_certified_and_no_implementation_gate_is_active() -> None:
+    panel = _read(TASK_PANEL)
+    task_index = _read(TASKS_INDEX)
+    dossier = _read(COMPLETED_ROOT / "F3.5.md")
+    decision = _read(POST_MERGE_DECISION)
+
+    assert not (ACTIVE_ROOT / "F3.5.md").exists()
+    assert "nenhuma tarefa ativa" in panel.casefold()
+    assert "`PAUSED / NO_ACTIVE_GATE`" in panel
+    assert "Autorizo iniciar a F3.8." in panel
+    assert "PR #27 aberto" not in panel
+    assert "Autorizo o merge do PR #27" not in panel
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "e6d947a2713e61c0700154cb7453f8bc0a7c342f" in dossier
+    assert "b6a4a24179271a8caa22252f71d08c35e13e7a41" in dossier
+    assert "31284043501" in dossier
+    assert "31285547886" in dossier
+    assert "completed/F3.5.md" in task_index
+    assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
 def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> None:
@@ -196,11 +221,13 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "DEC-013" in panel
     assert "DEC-013" in plan
     assert "DEC-013" in task_index
+    assert "DEC-014" in panel
+    assert "DEC-014" in task_index
     assert "F3.C1 → F3.C2 → F3.4" in plan
     assert "F3.4 → F3.6 → F3.5 → F3.8" in plan
     assert "raiz autorizada explícita" in order_decision
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "F3.5 exige nova autorização explícita" in panel
+    assert "Autorizo iniciar a F3.8." in panel
     assert "Não restou achado blocker/high" in realignment

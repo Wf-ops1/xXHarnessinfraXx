@@ -50,6 +50,7 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 | F3 | F3.C2 | [Execução durável de tools e policy](completed/F3.C2.md) | PR #24 / merge `d2502b0` / pós-merge `31266993044` |
 | F3 | F3.4 | [Path guard](completed/F3.4.md) | PR #25 / merge `8fac2d0` / pós-merge `31272502445` |
 | F3 | F3.6 | [Worktree Git externo](completed/F3.6.md) | PR #26 / merge `6757fbf` / pós-merge `31279967619` |
+| F3 | F3.5 | [Terminal seguro por argv](completed/F3.5.md) | PR #27 / merge `b6a4a24` / pós-merge `31285547886` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
@@ -68,6 +69,7 @@ Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` 
 | DEC-008 | Artefato 2.0 canônico, íntegro, versionado e publicado atomicamente. |
 | DEC-009 | Uma branch e um PR por tarefa, partindo de `main` pós-merge verde. |
 | DEC-010 | Painel curto; dossiê detalhado por tarefa; histórico concluído imutável e indexado. |
-| DEC-011 | Gate detalhado no plano; promoção certificada no gate seguinte, sem PR recursivo de fechamento. |
+| DEC-011 | Regra histórica de certificação no gate seguinte, substituída pela reconciliação imediata da DEC-014. |
 | DEC-012 | Realinhamento da Fase 3 em F3.C1/F3.C2, com pausa humana obrigatória e autorização nova entre tarefas. |
 | DEC-013 | F3.4 cria guard parametrizado sem efeitos; F3.6 fornece worktree; F3.5/F3.8 integram consumidores depois de ambos. |
+| DEC-014 | Após merge/CI, PR administrativo documental certifica e arquiva a tarefa antes do próximo gate. |
