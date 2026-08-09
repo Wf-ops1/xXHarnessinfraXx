@@ -36,7 +36,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
 | **Tarefa ativa** | F3.8 — edição real confinada e Serena MCP explícito |
-| **Gate** | `READY`; `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Gate** | `READY`; `REPAIR_ACTIVE / PROMOTION_BLOCKED` por divergência documental pré-merge |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.8-real-editing`, publicada em `origin`; PR único #29 aberto para `main` |
@@ -75,19 +75,22 @@ continuam fora do escopo e não foram implicitamente habilitados.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido no escopo congelado. A falha inicial do PR #29 permanece registrada
-no dossiê e foi superada por correção, recertificação local integral e CI remota 11/11. O merge ainda
-está bloqueado apenas pela fronteira administrativa: exige autorização nominal separada do usuário e
-CI verde no head documental final do PR. Tags não serão publicadas e F3.7 não será iniciada.
+Não há bloqueio técnico conhecido no código da F3.8: o head `b898d88` obteve 11/11 checks no run
+`31290644133`. A auditoria pré-merge, porém, encontrou claims documentais correntes que ainda descrevem
+a branch como não publicada, aplicam a regra pós-merge substituída da DEC-011 ou tratam primitivas já
+reais como ausentes/simuladas. Essa evidência negativa reabre somente o gate documental e proíbe merge
+até correção, regressão semântica, recertificação e nova CI completa no head final.
 
 ## 7. Próxima ação exata
 
 ```text
-PERMANECER PAUSADO APÓS A CI VERDE DO HEAD DOCUMENTAL FINAL DO PR #29.
-Próxima autorização nominal necessária: “Autorizo o merge do PR #29.”
-Somente depois do merge autorizado: validar a CI push no SHA exato de main, sincronizar o repositório,
-certificar/arquivar a F3.8 no primeiro commit do gate seguinte e pausar antes de qualquer F3.7.
-Não publicar tags, configurar Serena live, excluir refs ou iniciar outra tarefa implicitamente.
+REPARAR E RECERTIFICAR O ALINHAMENTO DOCUMENTAL PRÉ-MERGE NO PR #29:
+1. Recongelar a ampliação exclusivamente documental e preservar todas as evidências anteriores.
+2. Corrigir painel, README e documentos públicos que conflitam com código, Git ou DEC-014.
+3. Fixar regressões para distinguir primitivas reais de integração automática ainda ausente.
+4. Repetir documentação/encoding, quality, escopo e a CI completa no novo head do mesmo PR.
+5. Somente depois de 11/11 verdes, pausar para “Autorizo o merge do PR #29.”
+6. Não fazer merge, publicar tags, configurar Serena live ou iniciar F4.1/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -108,4 +111,4 @@ Não publicar tags, configurar Serena live, excluir refs ou iniciar outra tarefa
 
 ---
 
-*Atualizado em: 2026-08-08 23:18 -03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-08 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
