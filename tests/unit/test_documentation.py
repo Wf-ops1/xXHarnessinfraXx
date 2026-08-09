@@ -127,6 +127,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "A F4.1 foi promovida pelo PR #32" in readme
     assert "12ce3b7" in readme
     assert "31323952381" in readme
+    assert "PR #33" in readme
     assert "F3.7 continua dependente da F4.7" in readme
     assert "permanece obrigatória antes" not in readme
     assert "aguarda autorização própria para publicação" not in readme
@@ -135,6 +136,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "F4.1 `PROMOTED`" in panel
     assert "docs/tasks/completed/F4.1.md" in panel
     assert "Nenhuma tarefa ativa; F4.2 não iniciada" in panel
+    assert "PR administrativo #33" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
     assert "12ce3b7" in panel
     assert "31323952381" in panel

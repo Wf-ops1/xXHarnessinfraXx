@@ -220,6 +220,7 @@ def test_f3_8_closeout_and_f4_1_promotion_are_certified() -> None:
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
     assert "docs/promote-f4.1" in panel
+    assert "PR administrativo #33" in panel
     assert "CI required" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
@@ -247,6 +248,8 @@ def test_f3_8_closeout_and_f4_1_promotion_are_certified() -> None:
     assert "12ce3b7360a6035fb354326261fc409de15e29ec" in f4_1_dossier
     assert "31323952381" in f4_1_dossier
     assert "checkpoint/f4.1-promotion-sync-ready" in f4_1_dossier
+    assert "31328788064" in f4_1_dossier
+    assert "administrativo #33 aberto" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
