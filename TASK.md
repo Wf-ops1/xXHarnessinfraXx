@@ -6,7 +6,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. Não há dossiê ativo. A última promoção certificada está no [dossiê F3.5](docs/tasks/completed/F3.5.md).
+2. O único dossiê ativo é [F3.8](docs/tasks/active/F3.8.md); a última promoção certificada está no
+   [dossiê F3.5](docs/tasks/completed/F3.5.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -34,13 +35,14 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2 — F2.1–F2.6 implementadas e promovidas |
 | **Fase ativa** | Fase 3 — paths, ferramentas e workspace reais |
-| **Tarefa ativa** | nenhuma tarefa ativa; F3.8 é apenas a próxima tarefa planejada |
-| **Gate** | `PAUSED / NO_ACTIVE_GATE` |
-| **Executor ativo** | nenhum executor de implementação; aguardando autorização nominal |
+| **Tarefa ativa** | F3.8 — edição real confinada e Serena MCP explícito |
+| **Gate** | `READY / ACTIVE` |
+| **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Baseline promovido** | F3.5 em `b6a4a24179271a8caa22252f71d08c35e13e7a41`; run `31285547886`, 11/11 verde |
-| **Python** | runtime do workspace — 3.12.13 |
-| **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32; nenhuma dependência nova autorizada |
+| **Branch** | `task/f3.8-real-editing`, criada de `fd49310ddca91e10381a08a7f456fe9ab03d3636` |
+| **Baseline promovido** | F3.5 em `b6a4a24`; reconciliação PR #28 em `fd49310`; run `31287059584`, 11/11 verde |
+| **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
+| **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32; somente `mcp>=1.26,<2` congelada para F3.8 |
 
 ## 4. Última promoção comprovada
 
@@ -50,37 +52,40 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | PR | #27; head final `e6d947a2713e61c0700154cb7453f8bc0a7c342f`; 11/11 no run `31284043501` |
 | Merge | `b6a4a24179271a8caa22252f71d08c35e13e7a41`, merge commit em `main` |
 | CI pós-merge | run `31285547886`, evento `push`, SHA exato do merge, 11/11 incluindo `CI required` |
-| Fronteira | branch remota preservada; nenhuma tag remota; F3.8 não iniciada |
+| Reconciliação | PR administrativo #28; merge `fd49310ddca91e10381a08a7f456fe9ab03d3636`; run `31287059584`, 11/11 |
+| Fronteira | branches remotas preservadas; nenhuma tag remota; F3.8 iniciou somente após autorização nova |
 
 ## 5. Tarefa ativa
 
-Não há tarefa nem implementação ativa. Leia a [DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md),
-a [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e a Fase 3 do plano antes de continuar.
+O [dossiê F3.8](docs/tasks/active/F3.8.md) comprovou o sucesso sintético do adapter legado, revalidou
+F3.4/F3.6/F3.5/F3.C2 e congelou arquivos, efeitos, critérios e rollback antes do primeiro código.
 
-A próxima tarefa planejada é F3.8 — edição real confinada — porque F3.4, F3.6 e F3.5 foram promovidas.
-F3.7 permanece dependente de F4.7. O dossiê F3.8 ainda não existe e seu escopo não está congelado;
-merge/CI anteriores, esta reconciliação ou autorizações antigas não permitem iniciar implementação.
+A entrega implementa leitura/listagem/busca/patch locais confinados, adapta o terminal seguro e Git
+somente leitura ao registry opt-in e substitui o falso Serena por cliente MCP configurado
+explicitamente. Lifecycle/CLI, configuração default, promoção F3.7 e fallback automático estão fora.
 
 ## 6. Bloqueios atuais
 
-Não há blocker técnico ou documental conhecido da F3.5 após esta certificação. A F3.8 permanece
-bloqueada somente porque não foi autorizada nem possui dossiê/checkpoint `READY`. Terminal operacional,
-Serena real, edição, promoção e F3.7 continuam sujeitos aos gates correspondentes.
+Não há blocker conhecido no gate congelado. A consulta `git ls-remote` foi negada pela rede do sandbox,
+mas a sessão autenticada do GitHub revalidou o run `31287059584` como `push/main/fd49310`, 11/11
+verde; Git local comprovou divergência `0 0` antes da branch. Qualquer evidência negativa posterior
+reabre o aceite e bloqueia publicação.
 
 ## 7. Próxima ação exata
 
 ```text
-PERMANECER PAUSADO, SEM IMPLEMENTAÇÃO:
-1. Aguardar a autorização nominal “Autorizo iniciar a F3.8.”
-2. Depois da autorização, comprovar o último head/CI de main, criar branch exclusiva F3.8 e preparar
-   problema, baseline, escopo, aceite, rollback, executor e checkpoint READY antes do primeiro código.
-3. Qualquer divergência exige parar e recongelar; a autorização não inclui push, PR ou merge.
+EXECUTAR SOMENTE O ESCOPO CONGELADO DA F3.8:
+1. Criar o commit/tag local checkpoint/f3.8-ready antes do primeiro arquivo de implementação.
+2. Implementar e executar todo o aceite do dossiê; falha exige reparar sem enfraquecer critérios ou
+   parar/recongelar se houver expansão material.
+3. Ao ficar verde, registrar COMPLETED_LOCAL / PROMOTION_PENDING e pausar. A autorização atual não
+   inclui push, PR, merge, exclusão de refs, configuração live de Serena ou início da F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Confirme que não existe dossiê ativo; consulte o último dossiê promovido somente quando necessário.
+2. Leia integralmente o único dossiê ativo `docs/tasks/active/F3.8.md`.
 3. Leia a fase relevante no plano principal, DEC-013 e DEC-014.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e CI da `main`.
 5. Execute somente a próxima ação exata; se escopo/estado divergir, pare e recongele o dossiê.
@@ -95,4 +100,4 @@ PERMANECER PAUSADO, SEM IMPLEMENTAÇÃO:
 
 ---
 
-*Atualizado em: 2026-08-08 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-08 22:16 -03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*

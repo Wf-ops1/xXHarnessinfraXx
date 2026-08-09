@@ -187,16 +187,20 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f3_5_is_certified_and_no_implementation_gate_is_active() -> None:
+def test_f3_5_is_certified_and_f3_8_is_the_only_ready_gate() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     dossier = _read(COMPLETED_ROOT / "F3.5.md")
+    active_dossier = _read(ACTIVE_ROOT / "F3.8.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
-    assert "nenhuma tarefa ativa" in panel.casefold()
-    assert "`PAUSED / NO_ACTIVE_GATE`" in panel
-    assert "Autorizo iniciar a F3.8." in panel
+    assert (ACTIVE_ROOT / "F3.8.md").is_file()
+    assert "docs/tasks/active/F3.8.md" in panel
+    assert "`READY / ACTIVE`" in panel
+    assert "task/f3.8-real-editing" in panel
+    assert "> **Gate:** `READY`" in active_dossier
+    assert "> **Lifecycle:** `ACTIVE`" in active_dossier
     assert "PR #27 aberto" not in panel
     assert "Autorizo o merge do PR #27" not in panel
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -229,7 +233,7 @@ def test_negative_evidence_precedes_positive_state_until_recertification() -> No
     assert 0 <= dossier.rfind("31281757984") < certified_at
     assert dossier.rfind("31284043501") > certified_at
     assert dossier.rfind("31285547886") > certified_at
-    assert "Não há blocker técnico ou documental conhecido da F3.5" in panel
+    assert "Não há blocker conhecido no gate congelado" in panel
 
 
 def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> None:
@@ -253,5 +257,6 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "Autorizo iniciar a F3.8." in panel
+    assert "docs/tasks/active/F3.8.md" in panel
+    assert "checkpoint/f3.8-ready" in panel
     assert "Não restou achado blocker/high" in realignment
