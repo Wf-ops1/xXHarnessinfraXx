@@ -1,5 +1,6 @@
 """Testes unitários para verificação do CLI Runtime, FSM State, Visualizer e Audit Export."""
 
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +11,7 @@ import ai_engineering_harness.cli.main as CLI_MODULE
 from ai_engineering_harness.cli.main import main
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
 from ai_engineering_harness.contracts.execution import ApprovalStatus, ExecutionState
+from ai_engineering_harness.indexer import SnapshotManager
 from ai_engineering_harness.runtime import (
     ExecutionInspection,
     ExecutionStatusView,
@@ -260,3 +262,49 @@ def test_cli_help_lists_resume_approve_cancel_status_and_inspect() -> None:
     assert result.exit_code == 0
     for command in ("run", "resume", "approve", "cancel", "status", "inspect"):
         assert command in result.output
+
+
+def _initialize_cli_git_repository(project_root: Path) -> str:
+    subprocess.run(["git", "init", "--quiet"], cwd=project_root, check=True, shell=False)
+    subprocess.run(["git", "config", "user.name", "CLI Test"], cwd=project_root, check=True, shell=False)
+    subprocess.run(
+        ["git", "config", "user.email", "cli@example.invalid"], cwd=project_root, check=True, shell=False
+    )
+    (project_root / "tracked.py").write_text("def tracked():\n    return True\n", encoding="utf-8")
+    subprocess.run(["git", "add", "tracked.py"], cwd=project_root, check=True, shell=False)
+    subprocess.run(["git", "commit", "--quiet", "-m", "fixture"], cwd=project_root, check=True, shell=False)
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=project_root,
+        check=True,
+        shell=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip().lower()
+
+
+def test_cli_index_validates_existing_snapshot_without_claiming_reindex(tmp_path: Path) -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        project_root = Path.cwd()
+        commit_sha = _initialize_cli_git_repository(project_root)
+        SnapshotManager(project_root).save_snapshot(commit_sha, [])
+        result = runner.invoke(main, ["index"])
+
+    assert result.exit_code == 0
+    assert "Snapshot estrutural validado" in result.output
+    assert commit_sha in result.output
+    assert "atualizado com sucesso" not in result.output
+
+
+def test_cli_index_fails_explicitly_when_snapshot_is_missing(tmp_path: Path) -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        project_root = Path.cwd()
+        commit_sha = _initialize_cli_git_repository(project_root)
+        result = runner.invoke(main, ["index"])
+
+    assert result.exit_code != 0
+    assert f"no ready structural snapshot exists for commit {commit_sha}" in result.output
+    assert "atualizado" not in result.output

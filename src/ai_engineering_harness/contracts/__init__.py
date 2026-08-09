@@ -49,9 +49,17 @@ from .registry import (
     ResolvedContractSpec,
     UntrustedPythonContractError,
 )
+from .structural_index import (
+    STRUCTURAL_SNAPSHOT_SCHEMA_VERSION,
+    StructuralSnapshot,
+    StructuralSymbol,
+    StructuralSymbolKind,
+    validate_commit_sha,
+)
 
 __all__ = [
     "EXECUTION_RECORD_SCHEMA_VERSION",
+    "STRUCTURAL_SNAPSHOT_SCHEMA_VERSION",
     "AgentNodeSpec",
     "AgentRoleSpec",
     "ApprovalStatus",
@@ -84,6 +92,9 @@ __all__ = [
     "RoleNotFoundError",
     "RoleToolPolicySpec",
     "SourceManifestEntry",
+    "StructuralSnapshot",
+    "StructuralSymbol",
+    "StructuralSymbolKind",
     "TerminalStateSpec",
     "ToolCapabilitySpec",
     "ToolGovernancePolicySpec",
@@ -92,4 +103,5 @@ __all__ = [
     "ToolRegistrySpec",
     "UnauthorizedToolError",
     "UntrustedPythonContractError",
+    "validate_commit_sha",
 ]

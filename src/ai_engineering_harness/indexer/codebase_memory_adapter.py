@@ -1,29 +1,31 @@
-"""Adaptador único de comunicação com o Codebase-Memory MCP."""
+"""Read adapter for validated structural snapshots."""
 
 from pathlib import Path
 from typing import Any
 
-from ai_engineering_harness.indexer.snapshot_manager import SnapshotManager
+from ai_engineering_harness.indexer.snapshot_manager import (
+    SnapshotManager,
+    resolve_git_commit,
+)
 
 
 class CodebaseMemoryAdapter:
-    """Interface de inteligência de código sobre a Codebase-Memory MCP."""
+    """Serve an existing structural snapshot bound to a real Git commit."""
 
-    def __init__(self, project_root: Path):
-        self.project_root = project_root
+    def __init__(self, project_root: Path, *, git_executable: str = "git"):
+        self.project_root = Path(project_root)
+        self.git_executable = git_executable
         self.snapshot_manager = SnapshotManager(project_root)
 
     def query_ast(self, query: str, commit_sha: str) -> dict[str, Any]:
-        """Consulta a árvore AST vinculada ao commit SHA."""
-        snapshot = self.snapshot_manager.get_snapshot(commit_sha)
-        if snapshot:
-            return snapshot
+        """Resolve a revision and return only its validated ready snapshot."""
 
-        # Simulação da resposta da Codebase-Memory MCP para o commit
-        mock_ast = {
-            "commit_sha": commit_sha,
-            "symbols": ["main", "ConfigResolver", "DoctorChecker"],
-            "classes": ["ModelRouter", "PolicyEngine"]
-        }
-        self.snapshot_manager.save_snapshot(commit_sha, mock_ast)
-        return mock_ast
+        if type(query) is not str or not query.strip():
+            raise ValueError("structural query must be non-empty text")
+        resolved_sha = resolve_git_commit(
+            self.project_root,
+            commit_sha,
+            git_executable=self.git_executable,
+        )
+        snapshot = self.snapshot_manager.require_snapshot(resolved_sha)
+        return snapshot.model_dump(mode="json")

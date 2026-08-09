@@ -15,6 +15,7 @@ from ai_engineering_harness.compiler import GraphCompiler, GraphCompilerError
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
 from ai_engineering_harness.doctor.checker import DoctorChecker
 from ai_engineering_harness.doctor.report import DoctorReport
+from ai_engineering_harness.indexer import StructuralIndexError
 from ai_engineering_harness.indexer.codebase_memory_adapter import CodebaseMemoryAdapter
 from ai_engineering_harness.observability.audit import AuditTrailManager
 from ai_engineering_harness.persistence import AtomicFileStateStorage, StateStorageError
@@ -126,11 +127,17 @@ def compile(graph_spec_path, workflow, render):
         console.print("\n[bold magenta]Diagrama Mermaid do Grafo:[/bold magenta]")
         console.print(f"```mermaid\n{mermaid_code}\n```")
 
-@main.command(help="Atualiza o índice estrutural vinculado ao Git SHA via Codebase-Memory MCP.")
+@main.command(help="Valida e carrega o snapshot estrutural existente para o commit Git atual.")
 def index():
     adapter = CodebaseMemoryAdapter(project_root=Path.cwd())
-    ast_data = adapter.query_ast("get_structure", commit_sha="HEAD")
-    console.print(f"[green]{_get_symbol(True)}[/green]Índice estrutural atualizado com sucesso. Símbolos: {len(ast_data.get('symbols', []))}")
+    try:
+        ast_data = adapter.query_ast("get_structure", commit_sha="HEAD")
+    except StructuralIndexError as exc:
+        raise click.ClickException(str(exc)) from exc
+    console.print(
+        f"[green]{_get_symbol(True)}[/green]Snapshot estrutural validado. "
+        f"Commit: {ast_data['commit_sha']}. Símbolos: {len(ast_data['symbols'])}"
+    )
 
 @main.command(help="Executa um workflow agentic autônomo.")
 @click.argument("workflow_name")
