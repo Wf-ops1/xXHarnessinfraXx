@@ -76,6 +76,7 @@ class SerenaMcpConfiguration:
     environment: Mapping[str, str] = field(default_factory=dict)
     headers: Mapping[str, str] = field(default_factory=dict)
     timeout_seconds: float = 30.0
+    _resolved_command: str | None = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.transport, SerenaTransport):
@@ -97,13 +98,15 @@ class SerenaMcpConfiguration:
             command = Path(self.command)
             if not command.is_absolute():
                 raise SerenaConfigurationError("stdio command must be absolute")
+            configured = Path(os.path.abspath(os.fspath(command)))
             try:
-                resolved = command.resolve(strict=True)
+                resolved = configured.resolve(strict=True)
             except (OSError, RuntimeError, ValueError) as exc:
                 raise SerenaConfigurationError("stdio command must resolve to an existing executable") from exc
-            if not resolved.is_file() or not os.access(resolved, os.X_OK):
+            if not configured.is_file() or not os.access(configured, os.X_OK):
                 raise SerenaConfigurationError("stdio command must resolve to an executable file")
-            object.__setattr__(self, "command", os.fspath(resolved))
+            object.__setattr__(self, "command", os.fspath(configured))
+            object.__setattr__(self, "_resolved_command", os.fspath(resolved))
             return
 
         if self.command is not None or args or environment:
@@ -283,9 +286,9 @@ class SerenaAdapter:
         timeout = timedelta(seconds=self._configuration.timeout_seconds)
         try:
             if self._configuration.transport is SerenaTransport.STDIO:
-                assert self._configuration.command is not None
+                command = self._validated_stdio_command()
                 parameters = StdioServerParameters(
-                    command=self._configuration.command,
+                    command=command,
                     args=list(self._configuration.args),
                     env=dict(self._configuration.environment),
                     cwd=self.authorized_root,
@@ -333,6 +336,20 @@ class SerenaAdapter:
         except Exception as exc:
             safe_type = Redactor.redact_text(type(exc).__name__)
             raise SerenaConnectionError(f"Serena MCP connection failed: {safe_type}") from exc
+
+    def _validated_stdio_command(self) -> str:
+        command = self._configuration.command
+        expected = self._configuration._resolved_command
+        if command is None or expected is None:
+            raise SerenaConfigurationError("stdio command identity is unavailable")
+        configured = Path(command)
+        try:
+            current = configured.resolve(strict=True)
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise SerenaConfigurationError("stdio command is no longer available") from exc
+        if os.fspath(current) != expected or not configured.is_file() or not os.access(configured, os.X_OK):
+            raise SerenaConfigurationError("stdio command changed after configuration")
+        return command
 
     @staticmethod
     async def _list_tools(session: ClientSession) -> dict[str, Any]:

@@ -32,7 +32,7 @@ SERVER = ROOT / "tests" / "fixtures" / "serena_mcp_server.py"
 def _stdio_configuration(root: Path, *extra: str, timeout: float = 10.0) -> SerenaMcpConfiguration:
     return SerenaMcpConfiguration(
         transport=SerenaTransport.STDIO,
-        command=os.fspath(Path(sys.executable).resolve(strict=True)),
+        command=os.path.abspath(sys.executable),
         args=(os.fspath(SERVER), os.fspath(root), *extra),
         environment={},
         timeout_seconds=timeout,
@@ -50,7 +50,7 @@ def _http_configuration(root: Path) -> Iterator[SerenaMcpConfiguration]:
         port = probe.getsockname()[1]
     process = subprocess.Popen(
         [
-            os.fspath(Path(sys.executable).resolve(strict=True)),
+            os.path.abspath(sys.executable),
             os.fspath(SERVER),
             os.fspath(root),
             "--transport",
@@ -93,7 +93,7 @@ def _http_configuration(root: Path) -> Iterator[SerenaMcpConfiguration]:
 
 
 def test_configuration_requires_one_explicit_safe_transport(tmp_path: Path) -> None:
-    executable = os.fspath(Path(sys.executable).resolve(strict=True))
+    executable = os.path.abspath(sys.executable)
     with pytest.raises(SerenaConfigurationError, match="absolute"):
         SerenaMcpConfiguration(transport=SerenaTransport.STDIO, command="python")
     with pytest.raises(SerenaConfigurationError, match="endpoint"):
@@ -115,6 +115,11 @@ def test_configuration_requires_one_explicit_safe_transport(tmp_path: Path) -> N
             endpoint="http://127.0.0.1:1/mcp",
             headers={"Authorization\nInjected": "value"},
         )
+    configured = SerenaMcpConfiguration(
+        transport=SerenaTransport.STDIO,
+        command=executable,
+    )
+    assert configured.command == executable
 
 
 def test_stdio_probe_performs_real_initialize_discovery_and_root_proof(tmp_path: Path) -> None:

@@ -132,8 +132,8 @@ class LocalEditingAdapter:
             child_directories: list[Path] = []
             for entry in entries:
                 guarded = self._path_guard.guard_read(entry.path)
-                is_symlink = _is_directory_link(entry)
                 try:
+                    is_symlink = _is_directory_link(entry)
                     is_directory = entry.is_dir(follow_symlinks=False)
                     is_file = entry.is_file(follow_symlinks=False)
                 except OSError as exc:
@@ -500,8 +500,14 @@ def _digest(content: bytes) -> str:
 
 
 def _is_directory_link(entry: os.DirEntry[str]) -> bool:
-    is_junction = getattr(Path(entry.path), "is_junction", lambda: False)
-    return entry.is_symlink() or bool(is_junction())
+    if entry.is_symlink():
+        return True
+    is_junction = getattr(Path(entry.path), "is_junction", None)
+    if is_junction is not None and is_junction():
+        return True
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    attributes = getattr(entry.stat(follow_symlinks=False), "st_file_attributes", 0)
+    return bool(reparse_flag and attributes & reparse_flag)
 
 
 def _fsync_directory(directory: Path) -> None:

@@ -72,7 +72,7 @@ def _adapters(
         path_guard=guard,
         configuration=SerenaMcpConfiguration(
             transport=SerenaTransport.STDIO,
-            command=os.fspath(Path(sys.executable).resolve(strict=True)),
+            command=os.path.abspath(sys.executable),
             args=(os.fspath(SERVER), os.fspath(root)),
             environment={},
             timeout_seconds=10,
