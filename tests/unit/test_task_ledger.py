@@ -187,7 +187,7 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f3_8_is_certified_and_f4_1_waits_for_admin_reconciliation() -> None:
+def test_f3_8_admin_closeout_is_certified_and_f4_1_waits_for_authorization() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
@@ -200,7 +200,7 @@ def test_f3_8_is_certified_and_f4_1_waits_for_admin_reconciliation() -> None:
     assert "docs/tasks/completed/F3.8.md" in panel
     assert "Nenhuma tarefa ativa" in panel
     assert "nenhum gate `READY`" in panel
-    assert "docs/promote-f3.8" in panel
+    assert "docs/align-phase3-closeout" in panel
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
@@ -217,15 +217,20 @@ def test_f3_8_is_certified_and_f4_1_waits_for_admin_reconciliation() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "docs/promote-f3.8" in panel
+    assert "docs/align-phase3-closeout" in panel
     assert "PR #29" in panel
     assert "PR administrativo #30" in panel
     assert "CI required" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
-    assert "Autorizo o merge do PR #30" in panel
+    assert "Autorizo o merge do PR #30" not in panel
+    assert "Autorizo iniciar a F4.1" in panel
     assert "05f54dd8690f060008acb95cf3de5d6a3c12b9a0" in dossier
     assert "PR administrativo #30" in dossier
+    assert "bd0bda9385db850208f125e69757118ee9fe2b27" in dossier
+    assert "31316549732" in dossier
+    assert "c2aa89b50ad32dc90b26b70087dbd795e32f0042" in dossier
+    assert "31316853244" in dossier
     assert "PR #27 aberto" not in panel
     assert "Autorizo o merge do PR #27" not in panel
     assert "> **Lifecycle:** `PROMOTED`" in f3_5_dossier

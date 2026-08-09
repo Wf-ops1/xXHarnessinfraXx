@@ -60,10 +60,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
 - **Transição da Fase 3 para a Fase 4:** F3.1–F3.6, F3.8 e as corretivas F3.C1/F3.C2 aplicáveis foram
-  promovidas. A F3.8 entrou em `main` pelo PR #29 no merge `e6b5b84`; a CI pós-merge
-  `31295594376` concluiu 11/11 checks verdes. A reconciliação administrativa `docs/promote-f3.8`
-  permanece obrigatória antes da próxima implementação planejada, F4.1. F3.7 continua dependente da
-  F4.7 e de gate separado.
+  promovidas. A F3.8 entrou em `main` pelo PR #29 no merge `e6b5b84`, com CI pós-merge `31295594376`
+  verde; a reconciliação administrativa foi incorporada pelo PR #30 no merge `c2aa89b`, e a CI
+  pós-merge `31316853244` concluiu 11/11 checks verdes. A próxima implementação planejada, F4.1,
+  ainda exige gate/autorização próprios. F3.7 continua dependente da F4.7 e de gate separado.
 
 ## Dívidas técnicas críticas
 

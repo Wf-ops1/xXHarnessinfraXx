@@ -34,13 +34,13 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | Campo | Estado observado |
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
-| **Fase ativa** | Pausa de reconciliação entre F3.8 promovida e F4.1 planejada |
+| **Fase ativa** | Pausa entre o fechamento certificado da F3.8 e a F4.1 planejada |
 | **Tarefa ativa** | Nenhuma tarefa ativa; F4.1 ainda não possui gate nem branch de implementação |
-| **Gate** | F3.8 `PROMOTED`; nenhum gate `READY`; PR administrativo #30 aberto |
-| **Executor ativo** | `Codex`, único escritor da reconciliação documental |
+| **Gate** | F3.8 `PROMOTED`; PR administrativo #30 incorporado e verde; nenhum gate `READY` |
+| **Executor ativo** | `Codex`, único escritor da correção documental transversal solicitada |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f3.8`, publicada em `origin`; PR administrativo #30 aberto para `main` |
-| **Baseline promovido** | F3.8 no merge `e6b5b84`; run pós-merge `31295594376`, evento `push`, 11/11 verde |
+| **Branch** | `docs/align-phase3-closeout`, somente documental; nenhuma branch de implementação ativa |
+| **Baseline promovido** | `main == origin/main == c2aa89b`; run `31316853244`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
 
@@ -49,42 +49,43 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | Evidência | Resultado |
 |---|---|
 | Tarefa | `F3.8` — edição real confinada e Serena MCP explícito, agora `PROMOTED` e arquivada |
-| PR | #29; head final `f941c89fd0ec112aca82621ab9e11244f05962aa`; 11/11 no run `31292195340` |
-| Merge | `e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f`, merge commit em `main` |
-| CI pós-merge | run `31295594376`, evento `push`, SHA exato do merge, 11/11 incluindo `CI required` |
-| Reconciliação | PR administrativo #30 aberto; head remoto inicial `05f54dd`; CI do head final ainda pendente |
+| PR de implementação | #29; head final `f941c89fd0ec112aca82621ab9e11244f05962aa`; 11/11 no run `31292195340` |
+| Promoção da implementação | merge `e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f`; run `31295594376`, 11/11 |
+| PR administrativo | #30; head final `bd0bda9385db850208f125e69757118ee9fe2b27`; 11/11 no run `31316549732` |
+| Fechamento administrativo | merge `c2aa89b50ad32dc90b26b70087dbd795e32f0042`; run `31316853244`, 11/11 |
 | Fronteira | branch remota de implementação preservada; nenhuma tag remota; F4.1 não foi iniciada |
 
 ## 5. Tarefa ativa
 
 Não há nenhuma tarefa ativa de implementação. O [dossiê F3.8](docs/tasks/completed/F3.8.md) preserva
-o problema inicial, as evidências negativas R1/R2, os reparos sem relaxamento e a certificação final
-do PR #29. O merge `e6b5b84` e o run pós-merge `31295594376` comprovam a promoção em `main`.
+o problema inicial, as evidências negativas R1/R2, os reparos sem relaxamento, a promoção do PR #29
+e o fechamento administrativo pelo PR #30. O merge `c2aa89b` e o run pós-merge `31316853244`
+comprovam o baseline corrente de `main`.
 
-A branch `docs/promote-f3.8` executa somente a reconciliação administrativa exigida pela DEC-014:
-arquiva o dossiê, atualiza painel, README, ledger e regressões de estado. Produto, dependências,
-schemas, defaults e CI permanecem fora do escopo e devem ficar byte-idênticos ao merge.
+A branch `docs/align-phase3-closeout` corrige o atraso documental encontrado após esse fechamento:
+atualiza somente painel, README, ledger, dossiê arquivado e regressões de estado. Trata-se de correção
+transversal explicitamente solicitada, não de reconciliação administrativa recursiva. Produto,
+dependências, schemas, defaults e CI permanecem fora do escopo e byte-idênticos a `c2aa89b`.
 
 F4.1 é apenas a próxima implementação planejada. Ela não pode receber dossiê `READY`, branch ou
-edição antes do merge/CI do PR administrativo e de nova autorização nominal. F3.7 permanece depois
-da F4.7.
+edição antes do fechamento desta correção documental e de nova autorização nominal. F3.7 permanece
+depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido na F3.8: PR, merge e CI pós-merge estão verdes. A reconciliação foi
-validada localmente, commitada e publicada no PR administrativo #30. O bloqueio é processual e
-intencional: o head final desse PR ainda precisa receber 11/11 checks e seu merge exige autorização
-nominal própria. Até a CI pós-merge verde do PR #30 em `main`, F4.1 permanece bloqueada. Tags não
-serão publicadas.
+Não há bloqueio técnico conhecido na F3.8: implementação, reconciliação administrativa e respectivas
+CIs pós-merge estão verdes. O único trabalho corrente é a correção documental transversal solicitada
+após a varredura. Até seu fechamento e uma autorização nominal nova, F4.1 permanece planejada e sem
+gate. Tags não serão publicadas.
 
 ## 7. Próxima ação exata
 
 ```text
-PERMANECER PAUSADO; AGUARDAR 11/11 CHECKS NO HEAD FINAL DO PR #30.
-Quando os checks estiverem verdes, a próxima autorização nominal será: “Autorizo o merge do PR #30.”
-Depois do merge administrativo, validar CI `push` no SHA exato de `main`, sincronizar e pedir
-autorização nova para iniciar F4.1. F3.7 permanece depois da F4.7. Não publicar tags, excluir branches
-ou iniciar outra tarefa implicitamente.
+CONCLUIR E VALIDAR A CORREÇÃO DOCUMENTAL `docs/align-phase3-closeout`; PERMANECER PAUSADO.
+Publicação/abertura e merge de seu único PR documental exigem autorizações próprias. Depois desse
+fechamento, a próxima autorização nominal de implementação será: “Autorizo iniciar a F4.1.”
+F3.7 permanece depois da F4.7. Não publicar tags, excluir branches ou iniciar outra tarefa
+implicitamente.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -93,8 +94,8 @@ ou iniciar outra tarefa implicitamente.
 2. Leia a certificação em `docs/tasks/completed/F3.8.md`.
 3. Leia F4.1 no plano principal, DEC-013 e DEC-014.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e CI da `main`.
-5. Enquanto a reconciliação estiver pendente, execute somente a próxima ação exata acima; não crie
-   gate F4.1. Se escopo ou estado divergir, pare e registre nova evidência.
+5. Enquanto a correção documental estiver pendente, execute somente a próxima ação exata acima; não
+   crie gate F4.1. Se escopo ou estado divergir, pare e registre nova evidência.
 
 ## 9. Regras de manutenção
 
