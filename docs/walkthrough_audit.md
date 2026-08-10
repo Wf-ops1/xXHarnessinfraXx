@@ -42,9 +42,10 @@ INITIATED
 O grafo acima descreve a FSM legada, não o fluxo padrão atual da CLI nem efeitos garantidos. O
 lifecycle canônico percorre arestas compiladas, persiste bundle/eventos e retoma por identidade; com o
 registry padrão vazio, `harness run` falha fechado antes de modelo ou tool. `PromotionManager` ainda
-pode produzir SHA de dry-run. O `CodebaseMemoryAdapter` permanece separado do lifecycle, mas agora
-resolve um commit Git real e só serve snapshot `ready` canônico com digest válido; ausência falha
-explicitamente e a geração AST continua pendente na F4.2.
+pode produzir SHA de dry-run. O `PythonAstIndexer` também permanece separado do lifecycle, mas
+`harness index` agora resolve o commit Git real, lê seus blobs `.py`, produz símbolos AST e publica um
+snapshot `ready` canônico. O `CodebaseMemoryAdapter` somente serve esse snapshot com digest válido;
+consulta ausente/inválida continua falhando explicitamente, sem indexação implícita.
 
 ## 4. Matriz de comandos
 
@@ -53,7 +54,7 @@ explicitamente e a geração AST continua pendente na F4.2.
 | `harness init` | Sim | Cria/copia scaffold local | Implementado como base |
 | `harness doctor` | Sim | Apenas renderiza resultados pré-aprovados | Simulado |
 | `harness compile` | Sim | Compila pelo pipeline canônico e grava artefato validado | Implementado como contrato interno |
-| `harness index` | Sim | Valida/carrega o snapshot do SHA Git atual; falha se estiver ausente/inválido | Parcial/fail-closed até a F4.2 |
+| `harness index` | Sim | Faz rebuild AST dos blobs Python do SHA Git atual, publica e recarrega snapshot íntegro | Implementado localmente; explícito, Python-only e ainda fora do lifecycle |
 | `harness run` | Sim | Cria bundle e falha fechado sem executor injetado | Experimental/fail-closed |
 | `harness status` | Sim | Lê arquivo de estado | Implementado como leitura local |
 | `harness inspect` | Sim | Lê estado, audit e aprovação | Experimental |

@@ -284,27 +284,51 @@ def _initialize_cli_git_repository(project_root: Path) -> str:
     ).stdout.strip().lower()
 
 
-def test_cli_index_validates_existing_snapshot_without_claiming_reindex(tmp_path: Path) -> None:
+def test_cli_index_rebuilds_and_validates_real_commit_snapshot(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_root = Path.cwd()
         commit_sha = _initialize_cli_git_repository(project_root)
-        SnapshotManager(project_root).save_snapshot(commit_sha, [])
-        result = runner.invoke(main, ["index"])
+        first = runner.invoke(main, ["index"])
+        second = runner.invoke(main, ["index"])
 
-    assert result.exit_code == 0
-    assert "Snapshot estrutural validado" in result.output
-    assert commit_sha in result.output
-    assert "atualizado com sucesso" not in result.output
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    assert "Índice estrutural reconstruído e validado" in first.output
+    assert commit_sha in first.output
+    assert "Símbolos: 2" in first.output
+    snapshot = SnapshotManager(project_root).require_snapshot(commit_sha)
+    assert {(symbol.kind, symbol.qualified_name) for symbol in snapshot.symbols} == {
+        ("module", "tracked"),
+        ("function", "tracked.tracked"),
+    }
 
 
-def test_cli_index_fails_explicitly_when_snapshot_is_missing(tmp_path: Path) -> None:
+def test_cli_index_fails_on_committed_syntax_error_without_partial_snapshot(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_root = Path.cwd()
-        commit_sha = _initialize_cli_git_repository(project_root)
+        _initialize_cli_git_repository(project_root)
+        (project_root / "broken.py").write_text("def broken(:\n", encoding="utf-8")
+        subprocess.run(["git", "add", "broken.py"], cwd=project_root, check=True, shell=False)
+        subprocess.run(
+            ["git", "commit", "--quiet", "-m", "broken source"],
+            cwd=project_root,
+            check=True,
+            shell=False,
+        )
+        commit_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=project_root,
+            check=True,
+            shell=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        ).stdout.strip().lower()
         result = runner.invoke(main, ["index"])
 
     assert result.exit_code != 0
-    assert f"no ready structural snapshot exists for commit {commit_sha}" in result.output
-    assert "atualizado" not in result.output
+    assert "committed Python source could not be parsed: broken.py" in result.output
+    assert "reconstruído" not in result.output
+    assert not SnapshotManager(project_root).snapshot_path(commit_sha).exists()

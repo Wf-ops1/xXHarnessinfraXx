@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from ai_engineering_harness.indexer.codebase_memory_adapter import CodebaseMemoryAdapter
-from ai_engineering_harness.indexer.snapshot_manager import SnapshotManager
+from ai_engineering_harness.indexer import CodebaseMemoryAdapter, PythonAstIndexer
 from ai_engineering_harness.tools.router import ToolRouter
 from ai_engineering_harness.workspace.sandbox import SandboxProvider
 
@@ -42,12 +41,16 @@ def test_codebase_memory_adapter_snapshots(tmp_path: Path):
         text=True,
         encoding="utf-8",
     ).stdout.strip().lower()
-    SnapshotManager(tmp_path).save_snapshot(commit_sha, [])
+    snapshot = PythonAstIndexer(tmp_path).rebuild()
     adapter = CodebaseMemoryAdapter(project_root=tmp_path)
     ast1 = adapter.query_ast("get classes", commit_sha="HEAD")
     assert ast1["commit_sha"] == commit_sha
-    assert ast1["symbols"] == []
+    assert ast1 == snapshot.model_dump(mode="json")
+    assert {(symbol["kind"], symbol["qualified_name"]) for symbol in ast1["symbols"]} == {
+        ("module", "tracked"),
+        ("function", "tracked.tracked"),
+    }
     
-    # Segunda chamada recupera o mesmo snapshot validado, sem fabricar símbolos.
+    # Segunda chamada recupera o mesmo snapshot validado, sem reindexar por efeito colateral.
     ast2 = adapter.query_ast("get classes", commit_sha="HEAD")
     assert ast2 == ast1

@@ -45,7 +45,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
-| Serena e índice estrutural | Edição local confinada e cliente Serena MCP explícito usam efeitos verificados; snapshots usam path único, SHA Git real, schema fechado e digest/status validados | Serena live depende de configuração externa opt-in; o snapshot precisa existir e o adapter falha explicitamente sem ele | Indexador AST local na F4.2, injeção pelo lifecycle e memória semântica real |
+| Serena e índice estrutural | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato com `ast`, e snapshots validam SHA/schema/digest/status | Serena é opt-in; indexação é Python-only, full rebuild e comando explícito, ainda sem composição pelo lifecycle | Suficiência por evidência na F4.3, backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Há caminhos de gate vazio e garantias de integração ainda incompletas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -65,7 +65,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   pós-merge `31316853244` concluiu 11/11 checks verdes. A correção transversal do PR #31 foi
   incorporada no merge `e4292ca`, com CI pós-merge `31319202731` também 11/11 verde. A F4.1 foi
   promovida pelo PR #32 no merge `12ce3b7`, e a CI pós-merge `31323952381` concluiu 11/11 checks
-  verdes; sua reconciliação administrativa foi publicada no PR #33 e aguarda checks. F3.7 continua
+  verdes; sua reconciliação administrativa entrou em `main` pelo PR #33 no merge `571a8eb`, com CI
+  pós-merge `31329231458` também 11/11 verde. A F4.2 foi concluída localmente no gate `READY`, com
+  indexador AST do commit exato, e está publicada no PR #34 com checks pendentes; F3.7 continua
   dependente da F4.7 e de gate separado.
 
 ## Dívidas técnicas críticas
@@ -82,9 +84,10 @@ operacionais:
 - [SerenaAdapter](src/ai_engineering_harness/tools/adapters/serena.py) abre transporte MCP stdio ou
   Streamable HTTP configurado, comprova capability/raiz e valida a mudança real; instalação,
   configuração e injeção live continuam externas e opt-in;
-- [CodebaseMemoryAdapter](src/ai_engineering_harness/indexer/codebase_memory_adapter.py) resolve a
-  revisão para um commit Git real e serve somente snapshot canônico `ready` com digest válido; ele
-  não cria índice, e a ausência falha explicitamente até o indexador AST da F4.2;
+- [PythonAstIndexer](src/ai_engineering_harness/indexer/python_ast_indexer.py) lê somente blobs Python
+  regulares do commit Git resolvido, produz símbolos AST reais e publica pelo contrato íntegro F4.1;
+  `harness index` aciona esse rebuild explicitamente, enquanto `CodebaseMemoryAdapter` permanece
+  read-only e falha sem snapshot — o lifecycle ainda não compõe a indexação automaticamente;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em

@@ -86,7 +86,7 @@ def test_current_docs_recognize_real_serena_without_claiming_live_default() -> N
     assert "configuração e injeção live continuam externas e opt-in" in readme
 
 
-def test_current_docs_recognize_f4_1_storage_without_claiming_f4_2_indexing() -> None:
+def test_current_docs_recognize_f4_2_indexing_without_claiming_f4_3_or_mcp() -> None:
     readme = _read(ROOT / "README.md")
     lifecycle = _read(ROOT / "docs" / "agentic_lifecycle_audit.md")
     user_guide = _read(ROOT / "docs" / "user_guide.md")
@@ -94,11 +94,12 @@ def test_current_docs_recognize_f4_1_storage_without_claiming_f4_2_indexing() ->
 
     for document in (readme, lifecycle, user_guide, walkthrough_audit):
         assert "mock_ast" not in document
-        assert "F4.2" in document
+        assert "PythonAstIndexer" in document
     assert ".harness/state/structural-index/snapshots/<sha>.json" in user_guide
-    assert "status e digest validados" in lifecycle
-    assert "falha se estiver ausente/inválido" in walkthrough_audit
-    assert "Indexador AST local na F4.2" in readme
+    assert "SHA/schema/status/digest validados" in lifecycle
+    assert "consulta ausente/inválida continua falhando" in walkthrough_audit
+    assert "Suficiência por evidência na F4.3" in readme
+    assert "backend MCP ainda não" in lifecycle
 
 
 def test_public_state_docs_distinguish_real_primitives_from_missing_composition() -> None:
@@ -128,18 +129,20 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "12ce3b7" in readme
     assert "31323952381" in readme
     assert "PR #33" in readme
+    assert "571a8eb" in readme
+    assert "31329231458" in readme
     assert "F3.7 continua dependente da F4.7" in readme
     assert "permanece obrigatória antes" not in readme
-    assert "aguarda autorização própria para publicação" not in readme
+    assert "publicada no PR #34 com checks pendentes" in readme
 
-    assert "`docs/promote-f4.1`" in panel
-    assert "F4.1 `PROMOTED`" in panel
+    assert "`task/f4.2-python-ast-indexer`" in panel
+    assert "F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #34 aberto" in panel
     assert "docs/tasks/completed/F4.1.md" in panel
-    assert "Nenhuma tarefa ativa; F4.2 não iniciada" in panel
-    assert "PR administrativo #33" in panel
+    assert "docs/tasks/active/F4.2.md" in panel
+    assert "PR administrativo" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
-    assert "12ce3b7" in panel
-    assert "31323952381" in panel
+    assert "571a8eb" in panel
+    assert "31329231458" in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle
