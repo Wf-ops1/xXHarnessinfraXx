@@ -98,7 +98,7 @@ def test_current_docs_recognize_f4_2_indexing_without_claiming_f4_3_or_mcp() -> 
     assert ".harness/state/structural-index/snapshots/<sha>.json" in user_guide
     assert "SHA/schema/status/digest validados" in lifecycle
     assert "consulta ausente/inválida continua falhando" in walkthrough_audit
-    assert "Suficiência por evidência na F4.3" in readme
+    assert "a F4.3 calcula seis dimensões" in readme
     assert "backend MCP ainda não" in lifecycle
 
 
@@ -138,38 +138,33 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31345231098" in readme
     assert "PR #35 no merge `3705693`" in readme
     assert "31346860397" in readme
-    assert "A implementação local da Suficiência por evidência na F4.3" in readme
-    assert "gate documental `READY` R4" in readme
-    assert "o gate voltou a `BLOCKED`" in readme
-    assert "O gate R5 está `READY`" in readme
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in readme
-    assert "auditoria posterior reproduziu suficiência sem `artifact_evidence`" in readme
-    assert "recertificação local passou em 679 testes" in readme
-    assert "31410376576" in readme
-    assert "31414226952" in readme
-    assert "DEC-015" in readme
+    assert "A F4.3 preservou os gates R1–R6" in readme
+    assert "passou na regressão local de 679 testes" in readme
+    assert "PR #36 encerrou no head `84eda1c`" in readme
+    assert "31414853048" in readme
+    assert "merge `fa31ef8`" in readme
+    assert "31419214233" in readme
+    assert "`docs/promote-f4.3`" in readme
+    assert "PR #37" in readme
+    assert "checks ainda estão pendentes" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
 
-    assert "`task/f4.3-evidence-context-sufficiency`" in panel
-    assert "F4.2 `PROMOTED`" in panel
-    assert "F4.3 `READY` R6" in panel
-    assert "checkpoint/f4.3-r2-ready" in panel
-    assert "checkpoint/f4.3-r3-ready" in panel
-    assert "checkpoint/f4.3-r4-ready" in panel
-    assert "checkpoint/f4.3-r5-ready" in panel
-    assert "checkpoint/f4.3-r6-ready" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "O commit `ed559ee`" in panel
-    assert "31410376576" in panel
-    assert "head `ede9a54`, run `31414226952`, 11/11 verde" in panel
+    assert "`docs/promote-f4.3`" in panel
+    assert "F4.3 `PROMOTED`" in panel
+    assert "checkpoint `25f72b1`" in panel
+    assert "PR #36" in panel
+    assert "PR #37" in panel
+    assert "checks pendentes" in panel
+    assert "head final `84eda1c421d13d1e8e86620127c3318e2cfe5086`" in panel
+    assert "31414853048" in panel
+    assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in panel
+    assert "31419214233" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/completed/F4.2.md" in panel
-    assert "docs/tasks/active/F4.3.md" in panel
-    assert "PR #35" in panel
+    assert "docs/tasks/completed/F4.3.md" in panel
+    assert "Nenhuma tarefa ativa" in panel
+    assert "F4.4 permanece planejada e não iniciada" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
-    assert "3705693" in panel
-    assert "31346860397" in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle

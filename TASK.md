@@ -6,8 +6,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. O único dossiê ativo é o gate [F4.3](docs/tasks/active/F4.3.md); a última promoção certificada
-   continua sendo a [F4.2](docs/tasks/completed/F4.2.md).
+2. Não há dossiê de implementação ativo; a última promoção certificada é a
+   [F4.3](docs/tasks/completed/F4.3.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -33,15 +33,15 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Campo | Estado observado |
 |---|---|
-| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
+| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.3 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — reparo R6 recertificado local e remotamente no PR #36; merge não autorizado |
-| **Gate** | F4.3 `READY` R6 / lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
+| **Tarefa ativa** | Nenhuma tarefa ativa; F4.4 permanece planejada e não iniciada |
+| **Gate** | F4.3 `PROMOTED`; PR administrativo #37 aberto, checks pendentes |
+| **Última promoção** | F4.3 `PROMOTED` pelo PR #36; reconciliação administrativa em validação remota |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.3-evidence-context-sufficiency`, PR #36; head `ede9a54`, run `31414226952`, 11/11 verde |
-| **Baseline promovido** | `main == origin/main == 3705693`; run `31346860397`, evento `push`, 11/11 verde |
+| **Branch** | `docs/promote-f4.3`, rastreando `origin/docs/promote-f4.3`; PR #37; checkpoint `25f72b1` local |
+| **Baseline promovido** | `main == origin/main == fa31ef8`; run `31419214233`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
 
@@ -49,77 +49,45 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa | `F4.2` — indexador Python AST local e vinculado ao commit, promovida e arquivada |
-| PR de implementação | #34; head final `2268f3fa276b017ad5b64efdb54e7abbf1f917d9`; 11/11 no run `31344668587` |
-| Promoção da implementação | merge `212a9bfba2189ce8ca84d8eca76ede2d872b7d2c`; run `31345231098`, 11/11 |
-| Reconciliação administrativa | PR #35; head final `fffd226a0d5567daa2ef399f054c20704f2315ca`; merge `370569377a1b065db479c239edde4016e1de5c0a`; run pós-merge `31346860397`, 11/11 |
-| Fronteira | branches remotas preservadas; nenhuma tag remota ou exclusão de ref; F4.3 aberta somente para preparar seu gate; F3.7 não iniciada |
+| Tarefa | `F4.3` — context sufficiency baseada em evidência, promovida e arquivada localmente |
+| PR de implementação | #36; head final `84eda1c421d13d1e8e86620127c3318e2cfe5086`; 11/11 no run `31414853048` |
+| Promoção da implementação | merge `fa31ef8987b1028d38014fe676247cd425daf9b6`; run `31419214233`, 11/11 |
+| Reconciliação administrativa | PR #37 aberto a partir de `docs/promote-f4.3`; head inicial `8021a54`; checks pendentes |
+| Fronteira | branches remotas preservadas; nenhuma tag remota ou exclusão de ref; F4.4/F3.7 não iniciadas |
 
 ## 5. Tarefa ativa
 
-O [dossiê F4.3](docs/tasks/active/F4.3.md) preserva o checkpoint R1 e a auditoria que reabriu o gate:
-score vazio `0.85`, evaluator parcial `1.0`, snapshot vazio aceito, gates `0/0` e CLI reprovada com exit
-zero. A [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md) corrige o blocker de ownership:
-o lifecycle prepara contexto antes do grafo e persiste a transição bloqueante; F4.4–F4.8 possuem owners
-explícitos e não podem terminar como componentes desconectados.
+Não há implementação ativa. A F4.3 foi incorporada pelo PR #36 e certificada no
+[dossiê concluído](docs/tasks/completed/F4.3.md). O lifecycle agora exige contexto suficiente baseado
+em manifesto, evidência, snapshot e identidade antes do primeiro nó; tentativas e estados bloqueantes
+são persistidos, e o retry de recuperação é limitado de forma durável.
 
-Após o checkpoint R4, contratos, policy, evaluator, assembler e lifecycle foram integrados dentro da
-allowlist. O caminho compilado exige envelope imutável, persiste `CONTEXT_EVALUATED`, bloqueia antes do
-primeiro nó, retoma por bundle, exaure após a tentativa inicial + duas retomadas e entrega somente
-`graph_input` ao executor a partir de `PLANNING`. A regressão observada concluiu 673 testes, 2 skips
-opt-in existentes e 6 subtests; build e smoke do wheel passaram. Planner, gates/verificação, repair,
-F3.7, MCP e memória semântica continuam fora da implementação F4.3. F3.7 permanece depois da F4.7.
-
-O R3 amplia exclusivamente a allowlist para a transição
-`BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED` e seu teste. Os checkpoints R1/R2 são
-preservados, incluindo `checkpoint/f4.3-r2-ready`, e a autorização nominal inclui criar
-`checkpoint/f4.3-r3-ready` e prosseguir com a
-implementação depois dele.
-
-O R4 permite exclusivamente que `GraphExecutor.execute()` aceite `PLANNING` como estado inicial
-pré-grafo, além de `INITIATED`, sem alterar traversal, preflight ou resume. A tag
-`checkpoint/f4.3-r4-ready` foi criada no commit `7bcc611` antes dessa alteração; a auditoria do diff
-confirma somente essa exceção no executor.
-
-O R5 foi autorizado nominalmente em `2026-08-10T12:54:21-03:00` para corrigir somente a
-materialização de `affected_modules` em `runtime/planner.py:68` e seu teste/validação. Nenhum contrato
-de plano, geração F4.4 ou outro comportamento do planner foi reaberto. O checkpoint
-`checkpoint/f4.3-r5-ready` preservou toda a implementação R4 no commit `0c37602` antes dessa única
-edição. A correção, o teste e a recertificação integral foram concluídos.
-
-O R6 foi autorizado nominalmente em `2026-08-10T13:59:04-03:00` após a revisão do PR #36. Embora o
-run `31410376576` tenha concluído 11/11 checks verdes no head `1b1e8ad`, dois probes reproduziram
-falso sucesso no evaluator: manifesto com cinco artefatos e `artifact_evidence=()` retornou
-`is_sufficient=True`; `requirement_id` e `query_digest` divergentes também produziram suficiência.
-Evidência negativa posterior prevalece sobre a CI verde, conforme DEC-014.
-
-O checkpoint local `checkpoint/f4.3-r6-ready` preservou o recongelamento no commit `d686d50` antes
-do reparo. O commit `ed559ee` agora exige igualdade de identidade e digest da query, correspondência
-exata entre manifesto e evidência e path canônico ligado ao `artifact_id`; a justificativa do digest
-não alega comparação externa. Os grupos congelados passaram em 96/48/63/72 testes e a regressão
-integral combinada passou em 679 testes, 2 skips live opt-in e 6 subtests. Mypy Windows/Linux, Ruff,
-compileall, diff-check, build e smoke da wheel também estão verdes.
+A F4.4 é a próxima tarefa planejada: produzir e persistir `PlanDocument` tipado ligado aos digests de
+contexto e plano conforme a [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md). Seu gate não
+pode ser preparado nem sua implementação iniciada antes de a reconciliação administrativa F4.3 ser
+publicada, mesclada e ficar verde em `main`. Gates F4.5–F4.8, F3.7, MCP e memória semântica continuam
+fora do escopo; F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há blocker técnico local ou remoto aberto. Os dois falsos sucessos R6 estão cobertos por testes
-negativos, a matriz local foi recertificada e o run `31414226952` concluiu 11/11 checks verdes no head
-`ede9a54`. O PR #36 está pronto para merge, mas não existe autorização nominal para mesclá-lo. Tags
-permanecem somente locais; publicação de tag e exclusão de refs continuam proibidas.
+Não há blocker técnico local aberto na F4.3. A pendência é exclusivamente administrativa: o PR #37
+está aberto e seu `CI required` ainda precisa concluir no head final. Merge exige autorização nominal
+separada e CI verde. Até lá, F4.4/F3.7 permanecem bloqueadas. Tags continuam somente locais;
+publicação de tag e exclusão de refs permanecem proibidas.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA O MERGE DO PR #36. NÃO PUBLICAR TAG, MESCLAR O PR,
-EXCLUIR REFS OU INICIAR F4.4/F3.7 SEM ESSA NOVA AUTORIZAÇÃO.
+AGUARDAR TODOS OS CHECKS DO HEAD FINAL DO PR #37, INCLUINDO CI REQUIRED. DEPOIS DE VERDES, AGUARDAR
+AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA O MERGE. NÃO PUBLICAR TAG, EXCLUIR REFS OU INICIAR F4.4/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia `docs/tasks/active/F4.3.md`, DEC-015, `docs/tasks/completed/F4.2.md` e DEC-014 integralmente.
-3. Confirme F4.3 `COMPLETED_LOCAL / PROMOTION_PENDING`, o PR #36, a branch e os seis checkpoints locais.
-4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e o baseline promovido da `main`.
+2. Leia `docs/tasks/completed/F4.3.md`, DEC-015, DEC-014 e a fase ativa do plano integralmente.
+3. Confirme F4.3 `PROMOTED`, PRs #36/#37, merge `fa31ef8`, run `31419214233` e os sete checkpoints locais.
+4. Confirme `.git`, `docs/promote-f4.3`, upstream, `git status --short --branch`, `git log -10` e o baseline de `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
 
@@ -133,4 +101,4 @@ EXCLUIR REFS OU INICIAR F4.4/F3.7 SEM ESSA NOVA AUTORIZAÇÃO.
 
 ---
 
-*Atualizado em: 2026-08-10T14:33:01-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T17:46:31-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

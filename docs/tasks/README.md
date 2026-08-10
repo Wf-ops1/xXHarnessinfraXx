@@ -54,6 +54,7 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 | F3 | F3.8 | [Edição real confinada e Serena MCP explícito](completed/F3.8.md) | PR #29 / merge `e6b5b84` / pós-merge `31295594376`; administrativo #30 / merge `c2aa89b` / pós-merge `31316853244` |
 | F4 | F4.1 | [Armazenamento íntegro do índice estrutural](completed/F4.1.md) | PR #32 / merge `12ce3b7` / pós-merge `31323952381`; administrativo #33 / merge `571a8eb` / pós-merge `31329231458` |
 | F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |
+| F4 | F4.3 | [Context sufficiency baseada em evidência](completed/F4.3.md) | PR #36 / merge `fa31ef8` / pós-merge `31419214233`; administrativo #37 aberto / checks pendentes |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
