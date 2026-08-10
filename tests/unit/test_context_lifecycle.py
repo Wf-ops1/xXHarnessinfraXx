@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -14,6 +15,7 @@ from ai_engineering_harness.contracts.execution import ExecutionState
 from ai_engineering_harness.contracts.nodes import ContextSufficiencyReport
 from ai_engineering_harness.contracts.structural_index import StructuralSymbol
 from ai_engineering_harness.indexer import SnapshotManager
+from ai_engineering_harness.models import LLMResponse, ModelRouter
 from ai_engineering_harness.persistence import (
     AtomicFileStateStorage,
     ExecutionLock,
@@ -62,6 +64,109 @@ class _TraceBackend:
     def execute(self, context: NodeExecutionContext) -> NodeExecutionResult:
         self.calls.append(context.input_payload)
         return NodeExecutionResult.completed({"executed": context.node.id})
+
+
+class _PlanningProvider:
+    provider_id = "test"
+
+    def structured_output(
+        self,
+        prompt: str,
+        response_schema: dict[str, object],
+        **_: object,
+    ) -> LLMResponse:
+        del response_schema
+        planning_input = json.loads(prompt.split("\n", 1)[1])
+        constraints = planning_input["constraints"]
+        evidence_refs = constraints["allowed_evidence_refs"]
+        acceptance_ref = next(
+            reference
+            for reference in evidence_refs
+            if reference.startswith("artifact:acceptance_criteria@")
+        )
+        symbol_ref = next(
+            reference for reference in evidence_refs if reference.startswith("symbol:")
+        )
+        return LLMResponse(
+            content="",
+            provider="test",
+            model_name="planning-test-model",
+            prompt_tokens=7,
+            completion_tokens=5,
+            total_tokens=12,
+            request_id="request-plan",
+            response_id="response-plan",
+            structured_output={
+                "objective": "Implement the logging requirement against validated evidence",
+                "acceptance_criteria": [
+                    {
+                        "order": 1,
+                        "criterion_id": "logging-works",
+                        "description": "Logging behavior satisfies the acceptance artifact",
+                        "evidence_refs": [acceptance_ref],
+                    }
+                ],
+                "targets": [
+                    {
+                        "target_id": "logging-target",
+                        "path": "logging",
+                        "symbol": "logging",
+                        "change_kind": "modify",
+                        "evidence_refs": [symbol_ref],
+                    }
+                ],
+                "steps": [
+                    {
+                        "order": 1,
+                        "step_id": "implement-logging",
+                        "description": "Modify the validated logging symbol",
+                        "target_ids": ["logging-target"],
+                        "tools": [],
+                    }
+                ],
+                "planned_tools": constraints["allowed_tools"],
+                "risks": [
+                    {
+                        "risk_id": "logging-regression",
+                        "description": "Existing logging behavior may regress",
+                        "mitigation": "Run every compiled verification gate",
+                    }
+                ],
+                "applicable_gates": constraints["applicable_gates"],
+                "rollback_strategy": {
+                    "triggers": ["A compiled verification gate fails"],
+                    "actions": ["Revert only the logging target change"],
+                    "verification": ["Repeat every compiled verification gate"],
+                },
+                "completion_conditions": [
+                    {
+                        "condition_id": "logging-complete",
+                        "criterion_id": "logging-works",
+                        "description": "The logging acceptance criterion is evidenced",
+                    }
+                ],
+                "remaining_gaps": [],
+            },
+        )
+
+
+class _PlanningRegistry:
+    def __init__(self) -> None:
+        self.provider = _PlanningProvider()
+
+    def is_configured(self, provider_id: str) -> bool:
+        return provider_id == "test"
+
+    def create_provider(self, provider_id: str) -> _PlanningProvider:
+        assert provider_id == "test"
+        return self.provider
+
+
+def _model_router(_: object) -> ModelRouter:
+    return ModelRouter(
+        allowed_providers=("test",),
+        provider_registry=_PlanningRegistry(),  # type: ignore[arg-type]
+    )
 
 
 class _FailContextPayloadStorage(AtomicFileStateStorage):
@@ -124,6 +229,8 @@ terminal_states:
     outcome: failure
 policies:
   - policies/context_sufficiency.yaml
+  - policies/tool_policy.yaml
+  - policies/verification_policy.yaml
 contracts: []
 """,
         encoding="utf-8",
@@ -191,6 +298,7 @@ def _service(
         event_id_factory=_Ids(),
         owner_id_factory=lambda: "context-lifecycle-owner",
         git_identity_provider=lambda: (COMMIT_SHA, "task/f4.3-context"),
+        model_router_factory=_model_router,  # type: ignore[arg-type]
     )
     return service, selected_storage, calls
 

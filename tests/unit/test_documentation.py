@@ -148,7 +148,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #37" in readme
     assert "merge `5c8408d`" in readme
     assert "31433785637" in readme
-    assert "implementação não foi iniciada" in readme
+    assert "implementação local autorizada" in readme
+    assert "está consolidada no commit local" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
 
@@ -165,7 +166,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31419214233" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.3.md" in panel
-    assert "F4.4 — plano tipado e específico; implementação não iniciada" in panel
+    assert "F4.4 — plano tipado e específico; `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "F4.4 `READY`" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 

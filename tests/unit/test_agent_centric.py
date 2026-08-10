@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.compiler.compiler import GraphCompiler
@@ -169,37 +170,21 @@ def test_context_sufficiency_blocks_when_below_threshold(tmp_path: Path):
 
 
 def test_planner_produces_plan_json(tmp_path: Path):
-    commit_sha = _prepare_structural_snapshot(tmp_path)
-    _write_context_artifacts(tmp_path)
-    pkg = _assemble_context(tmp_path, commit_sha, "exec-plan-1")
-    
-    planner = Planner(project_root=tmp_path)
-    plan = planner.create_plan(execution_id="exec-plan-1", context_package=pkg, intent="Add authentication")
-    
-    assert plan.goal == "Add authentication"
-    plan_file = tmp_path / ".harness" / "state" / "executions" / "exec-plan-1" / "plan.json"
-    assert plan_file.is_file()
+    del tmp_path
+    schema = Planner.response_schema()
+
+    assert "objective" in schema["properties"]
+    assert "execution_id" not in schema["properties"]
+    assert Planner.schema_digest().startswith("sha256:")
 
 
-def test_planner_materializes_context_symbols_as_list_and_preserves_fallback(tmp_path: Path):
-    commit_sha = _prepare_structural_snapshot(tmp_path)
-    _write_context_artifacts(tmp_path)
-    package = _assemble_context(tmp_path, commit_sha, "exec-plan-symbols")
-    planner = Planner(project_root=tmp_path)
+def test_planner_requires_typed_context_and_removes_generic_fallback(tmp_path: Path):
+    del tmp_path
+    parameters = Planner.create_plan.__annotations__
 
-    plan = planner.create_plan(
-        execution_id="exec-plan-symbols",
-        context_package=package,
-    )
-    empty_package = package.model_copy(update={"relevant_symbols": ()})
-    fallback = planner.create_plan(
-        execution_id="exec-plan-fallback",
-        context_package=empty_package,
-    )
-
-    assert isinstance(plan.affected_modules, list)
-    assert plan.affected_modules == list(package.relevant_symbols)
-    assert fallback.affected_modules == ["core", "runtime"]
+    assert "context_package" not in parameters
+    assert "intent" not in parameters
+    assert "context_report" in parameters
 
 
 def test_context_assembly_fails_without_ready_snapshot_and_writes_no_context(tmp_path: Path):
@@ -213,9 +198,15 @@ def test_context_assembly_fails_without_ready_snapshot_and_writes_no_context(tmp
 
 
 def test_plan_validated_before_execution(tmp_path: Path):
-    planner = Planner(project_root=tmp_path)
-    invalid_plan = PlanDocument(goal="", affected_modules=[], applicable_gates=[])
-    assert planner.validate_plan(invalid_plan) is False
+    del tmp_path
+    with pytest.raises(ValidationError):
+        PlanDocument.model_validate(
+            {
+                "goal": "",
+                "affected_modules": [],
+                "applicable_gates": [],
+            }
+        )
 
 
 def test_agent_direct_tool_dispatch_is_disabled(tmp_path: Path):

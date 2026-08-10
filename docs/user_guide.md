@@ -65,7 +65,8 @@ publica somente a projeção sem conteúdo bruto em
 `.harness/state/executions/<execution_id>/context.json` e registra `CONTEXT_EVALUATED` apontando para o
 relatório por digest. Os resultados são fail-closed:
 
-- contexto suficiente: `CONTEXT_ASSEMBLING → PLANNING → EXECUTING`, entregando somente `graph_input`;
+- contexto suficiente: `CONTEXT_ASSEMBLING → PLANNING`; a implementação local F4.4 exige plano
+  durável antes de `PLANNING → EXECUTING`, entregando ao grafo somente `graph_input`;
 - manifesto, snapshot vazio, relevância zero ou confiança insuficiente:
   `BLOCKED_INSUFFICIENT_CONTEXT`, sem executar nó;
 - policy, snapshot ou persistência inválida: `BLOCKED_PREREQUISITE`, sem fabricar score;
@@ -76,10 +77,19 @@ relatório por digest. Os resultados são fail-closed:
 `force_confidence`, override de score ou fallback para policy mutável. A auditoria R6 do PR #36
 reproduziu suficiência sem evidência de artefato e com identidade de request divergente; o reparo agora
 vincula identidade/digest, manifesto/evidência e path canônico. A F4.3 e sua reconciliação
-administrativa #37 foram promovidas, ambas com CI pós-merge verde. O gate F4.4 está congelado, mas o
-planner tipado/específico ainda não foi implementado; hoje o estado `PLANNING` segue para o grafo sem
-plano durável ligado ao contexto. Isso não transforma o protótipo em execução
-autônoma porque o registry padrão de executores continua vazio.
+administrativa #37 foram promovidas, ambas com CI pós-merge verde. A implementação local F4.4 agora:
+
+- valida rota/egress antes de reler artefatos ou construir o prompt;
+- exige structured output compatível com `PlanContent` e anexa identidades confiáveis por código;
+- vincula targets/critérios à evidência, gates à policy de verificação e tools à policy compilada;
+- persiste `PLAN_GENERATION_STARTED`, payload content-addressed, `plan.json` atômico e
+  `PLAN_GENERATED` antes do primeiro nó;
+- recupera um plano gerado em resume sem segunda chamada; efeito iniciado sem outcome bloqueia em
+  `BLOCKED_PREREQUISITE`.
+
+F4.4 está consolidada no commit local, mas ainda não foi publicada ou promovida. Isso não transforma
+o protótipo em execução autônoma porque o registry padrão de executores continua vazio e F4.5–F4.8
+ainda não executam os gates.
 
 ## Teste controlado de `init`
 
@@ -97,7 +107,7 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- planner F4.4 tipado, específico, persistido e integrado ao lifecycle.
+- promoção da implementação local F4.4 e execução/guarda dos gates F4.5–F4.8.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

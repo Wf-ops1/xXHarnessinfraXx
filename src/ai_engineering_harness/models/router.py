@@ -209,6 +209,51 @@ class ModelRouter:
         assert last_transient_error is not None
         raise last_transient_error
 
+    def structured_output_with_fallback(
+        self,
+        prompt: str,
+        response_schema: dict[str, Any],
+        primary_provider_id: str | None = None,
+        fallback_provider_ids: list[str] | tuple[str, ...] | None = None,
+        *,
+        cancellation_token: CancellationToken | None = None,
+    ) -> LLMResponse:
+        """Request strict structured output under the canonical route invariants."""
+        candidates = self.validate_route(primary_provider_id, fallback_provider_ids)
+        last_transient_error: ProviderError | None = None
+        for provider_id in candidates:
+            self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
+            self.budget_tracker.ensure_available()
+            provider = self._create_provider(provider_id)
+            try:
+                response = provider.structured_output(
+                    prompt,
+                    response_schema,
+                    cancellation_token=cancellation_token,
+                )
+            except ProviderError as exc:
+                self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
+                if not exc.retryable:
+                    raise
+                last_transient_error = exc
+                continue
+
+            self._raise_if_cancelled(
+                cancellation_token,
+                provider_id=provider_id,
+                response=response,
+            )
+            if response.provider != provider_id:
+                raise ModelRoutingIntegrityError(
+                    "provider retornado não corresponde ao candidato selecionado",
+                    response=response,
+                )
+            self._charge_response(response)
+            return response
+
+        assert last_transient_error is not None
+        raise last_transient_error
+
     def call_tools_with_fallback(
         self,
         prompt: str,

@@ -13,6 +13,8 @@ from .execution_lifecycle import (
     APPROVAL_REQUESTED,
     CONTEXT_EVALUATED,
     EXECUTION_APPROVED,
+    PLAN_GENERATED,
+    PLAN_GENERATION_STARTED,
     ApprovalLifecycleIntegrityError,
     ApprovalSubjectMismatchError,
     ContextLifecycleIntegrityError,
@@ -25,6 +27,8 @@ from .execution_lifecycle import (
     ExecutionLifecycleError,
     ExecutionLifecycleService,
     ExecutionStatusView,
+    PlanningLifecycleIntegrityError,
+    PlanningPrerequisiteError,
 )
 from .graph_executor import (
     ApprovalPauseHandler,
@@ -73,6 +77,13 @@ from .node_executors import (
     ToolExecutionRecord,
     UnsupportedNodeTypeError,
 )
+from .planner import (
+    InvalidPlanError,
+    PlanDocument,
+    PlanGenerationResult,
+    Planner,
+    PlanPrerequisiteError,
+)
 from .state_machine import (
     VALID_STATE_TRANSITIONS,
     EventSourcedStateMachine,
@@ -102,6 +113,8 @@ __all__ = [
     "APPROVAL_REQUESTED",
     "CONTEXT_EVALUATED",
     "EXECUTION_APPROVED",
+    "PLAN_GENERATED",
+    "PLAN_GENERATION_STARTED",
     "VALID_STATE_TRANSITIONS",
     "AgentNodeExecutor",
     "ApprovalLifecycleIntegrityError",
@@ -137,6 +150,7 @@ __all__ = [
     "InsufficientContextError",
     "InterruptedExecutionError",
     "InterruptedNodeExecutionError",
+    "InvalidPlanError",
     "InvalidStateTransitionError",
     "KnowledgeSyncNodeExecutor",
     "ModelCallMetadata",
@@ -153,6 +167,12 @@ __all__ = [
     "NodeExecutorUnavailableError",
     "NodeInputValidationError",
     "NodeOutputValidationError",
+    "PlanDocument",
+    "PlanGenerationResult",
+    "PlanPrerequisiteError",
+    "Planner",
+    "PlanningLifecycleIntegrityError",
+    "PlanningPrerequisiteError",
     "RetryBudget",
     "RetryContext",
     "RetryContextIntegrityError",

@@ -51,6 +51,12 @@ pode produzir SHA de dry-run. O `PythonAstIndexer` também permanece separado do
 snapshot `ready` canônico. O `CodebaseMemoryAdapter` somente serve esse snapshot com digest válido;
 consulta ausente/inválida continua falhando explicitamente, sem indexação implícita.
 
+Na implementação local F4.4, `PLANNING → EXECUTING` somente ocorre depois de contexto suficiente relido,
+structured output tipado, payload content-addressed, projeção `plan.json` atômica e evento
+`PLAN_GENERATED`. Resume recupera o payload sem nova chamada; efeito iniciado sem outcome, tamper,
+duplicata ou divergência de policy/input bloqueiam antes do primeiro nó. Essa mudança está consolidada
+no commit local, mas ainda não foi publicada nem promovida.
+
 ## 4. Matriz de comandos
 
 | Comando | Código existe | Efeito real comprovado | Classificação |
@@ -78,7 +84,7 @@ consulta ausente/inválida continua falhando explicitamente, sem indexação imp
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
 | P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
 | P0 | Verificação `0/0` | Gate vazio/desconhecido pode passar e CLI reprovada pode retornar zero | F4.5–F4.7 |
-| P1 | Planejamento genérico e desconectado | F4.3 está promovida, mas o planner ainda usa literais, `write_text` e não liga contexto/plano/input antes do grafo | F4.4; gate `READY`, implementação não iniciada |
+| P1 | Planejamento ainda não promovido | A implementação F4.4 liga contexto/plano/input e remove literais/write_text, mas possui somente commit local, sem push, PR ou CI remota | F4.4; publicação/promoção pendentes |
 | P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
 | P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |

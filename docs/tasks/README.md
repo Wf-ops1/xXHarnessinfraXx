@@ -18,6 +18,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 - `migration-manifest.json`: origem e SHA-256 dos 19 payloads extraídos do painel legado.
 - Git, PRs e runs de CI permanecem a evidência externa autoritativa de promoção.
 
+## Tarefa ativa
+
+F4.4 permanece em [`active/F4.4.md`](active/F4.4.md) como
+`COMPLETED_LOCAL / PROMOTION_PENDING` na branch local `task/f4.4-typed-specific-plan`; o commit local
+de conclusão integra esta alteração, mas ainda não existe push, PR ou promoção a registrar neste
+ledger concluído.
+
 ## Ledger concluído
 
 | Fase | Tarefa | Dossiê | Promoção principal |

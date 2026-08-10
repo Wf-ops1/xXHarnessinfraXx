@@ -359,7 +359,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "Não há blocker técnico conhecido para o gate documental" in panel
+    assert "Não há blocker técnico conhecido" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -388,15 +388,15 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert dossier.rfind("## Certificação final da promoção") > dossier.rfind("merge não autorizado")
 
 
-def test_f4_4_gate_is_frozen_without_starting_implementation() -> None:
+def test_f4_4_gate_tracks_authorized_local_implementation_without_promotion() -> None:
     panel = _read(TASK_PANEL)
     readme = _read(ROOT / "README.md")
     dossier = _read(ACTIVE_ROOT / "F4.4.md")
     task_index = _read(TASKS_INDEX)
 
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `PREPARING`" in dossier
-    assert "> **Implementação:** `não iniciada`" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "> **Implementação:** `aplicada, certificada e consolidada em commit local; sem push/PR`" in dossier
     assert "checkpoint/f4.4-ready" in dossier
     assert "task/f4.4-typed-specific-plan" in dossier
     assert "5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1" in dossier
@@ -408,11 +408,14 @@ def test_f4_4_gate_is_frozen_without_starting_implementation() -> None:
     assert "graph_input_digest" in dossier
     assert "GraphExecutor" in dossier
     assert "F4.5–F4.8" in dossier
-    assert "implementação não foi iniciada" in dossier
-    assert "AGUARDAR AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA IMPLEMENTAR A F4.4" in panel
+    assert "Autorizo implementar a F4.4 conforme o gate READY e a DEC-015" in dossier
+    assert "Autorizo criar o commit local de conclusão da F4.4" in dossier
+    assert "AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH" in panel
     assert "F4.4 `READY`" in panel
-    assert "implementação não iniciada" in panel
-    assert "o gate F4.4 está congelado, sem implementação" in readme
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "implementação local autorizada" in readme
+    assert "está consolidada no commit local" in readme
+    assert "active/F4.4.md" in task_index
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
 
 

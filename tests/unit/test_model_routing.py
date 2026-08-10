@@ -33,6 +33,7 @@ class _StaticProvider:
         self.provider_id = provider_id
         self.outcomes = outcomes
         self.prompts: list[str] = []
+        self.schemas: list[dict[str, object]] = []
 
     def complete(self, prompt: str, **_: object) -> LLMResponse:
         self.prompts.append(prompt)
@@ -40,6 +41,15 @@ class _StaticProvider:
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
+
+    def structured_output(
+        self,
+        prompt: str,
+        response_schema: dict[str, object],
+        **_: object,
+    ) -> LLMResponse:
+        self.schemas.append(response_schema)
+        return self.complete(prompt)
 
 
 class _StaticRegistry:
@@ -60,6 +70,7 @@ def _response(
     *,
     model: str | None = None,
     total_tokens: int = 5,
+    structured_output: dict[str, object] | None = None,
 ) -> LLMResponse:
     return LLMResponse(
         content="ok",
@@ -70,6 +81,7 @@ def _response(
         total_tokens=total_tokens,
         request_id=f"req-{provider}",
         response_id=f"resp-{provider}",
+        structured_output=structured_output,
     )
 
 
@@ -129,6 +141,90 @@ def test_transient_failure_falls_back_once_and_preserves_real_identity() -> None
     assert primary.prompts == ["sentinel"]
     assert fallback.prompts == ["sentinel"]
     assert (response.provider, response.model_name) == ("local", "actual-local")
+
+
+def test_structured_output_uses_same_transient_fallback_identity_and_budget() -> None:
+    schema = {
+        "type": "object",
+        "properties": {"status": {"type": "string"}},
+        "required": ["status"],
+        "additionalProperties": False,
+    }
+    primary = _StaticProvider(
+        "openai",
+        [ProviderTimeoutError("timeout", provider_id="openai")],
+    )
+    fallback = _StaticProvider(
+        "local",
+        [_response("local", structured_output={"status": "ready"})],
+    )
+    registry = _StaticRegistry({"openai": primary, "local": fallback})
+    router = _router(registry)
+
+    response = router.structured_output_with_fallback("plan", schema)
+
+    assert response.structured_output == {"status": "ready"}
+    assert registry.created == ["openai", "local"]
+    assert primary.schemas == [schema]
+    assert fallback.schemas == [schema]
+    assert router.budget_tracker.consumed_tokens == 5
+
+
+def test_structured_output_validates_egress_before_provider_creation() -> None:
+    provider = _StaticProvider("openai", [_response("openai")])
+    registry = _StaticRegistry({"openai": provider})
+
+    with pytest.raises(ModelEgressDeniedError):
+        _router(registry, allowed=("openai",)).structured_output_with_fallback(
+            "must-not-leave",
+            {"type": "object"},
+            fallback_provider_ids=("local",),
+        )
+
+    assert registry.created == []
+    assert provider.prompts == []
+
+
+def test_structured_output_provider_identity_mismatch_fails_closed() -> None:
+    provider = _StaticProvider(
+        "openai",
+        [_response("local", structured_output={"status": "ready"})],
+    )
+    registry = _StaticRegistry({"openai": provider})
+
+    with pytest.raises(ModelRoutingIntegrityError):
+        _router(registry, allowed=("openai",)).structured_output_with_fallback(
+            "plan",
+            {"type": "object"},
+            fallback_provider_ids=(),
+        )
+
+    assert provider.prompts == ["plan"]
+
+
+def test_structured_output_cancellation_after_response_prevents_charge() -> None:
+    token = CancellationToken()
+
+    class _CancellingStructuredProvider:
+        def structured_output(self, prompt: str, schema: object, **_: object) -> LLMResponse:
+            del prompt, schema
+            token.cancel()
+            return _response("openai", structured_output={"status": "ready"})
+
+    registry = _StaticRegistry(  # type: ignore[arg-type]
+        {"openai": _CancellingStructuredProvider()}
+    )
+    router = _router(registry, allowed=("openai",))
+
+    with pytest.raises(ModelResponseCancelledError):
+        router.structured_output_with_fallback(
+            "plan",
+            {"type": "object"},
+            fallback_provider_ids=(),
+            cancellation_token=token,
+        )
+
+    assert router.budget_tracker.consumed_tokens == 0
 
 
 @pytest.mark.parametrize(
