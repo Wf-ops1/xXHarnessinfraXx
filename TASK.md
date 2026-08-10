@@ -35,12 +35,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — reparo R6 concluído e recertificado localmente; atualização do PR #36 pendente |
+| **Tarefa ativa** | `F4.3` — reparo R6 recertificado local e remotamente no PR #36; merge não autorizado |
 | **Gate** | F4.3 `READY` R6 / lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.3-evidence-context-sufficiency`, PR #36; implementação R6 em `ed559ee`, push/CI pendentes |
+| **Branch** | `task/f4.3-evidence-context-sufficiency`, PR #36; head `ede9a54`, run `31414226952`, 11/11 verde |
 | **Baseline promovido** | `main == origin/main == 3705693`; run `31346860397`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -102,16 +102,16 @@ compileall, diff-check, build e smoke da wheel também estão verdes.
 
 ## 6. Bloqueios atuais
 
-Não há blocker local aberto. Os dois falsos sucessos R6 estão cobertos por testes negativos e a matriz
-local integral foi recertificada. A branch remota e o PR #36 ainda apontam para o estado anterior ao
-reparo, portanto a recertificação remota permanece pendente e merge continua bloqueado. Tags permanecem
-somente locais; publicação de tag e exclusão de refs continuam proibidas.
+Não há blocker técnico local ou remoto aberto. Os dois falsos sucessos R6 estão cobertos por testes
+negativos, a matriz local foi recertificada e o run `31414226952` concluiu 11/11 checks verdes no head
+`ede9a54`. O PR #36 está pronto para merge, mas não existe autorização nominal para mesclá-lo. Tags
+permanecem somente locais; publicação de tag e exclusão de refs continuam proibidas.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR SOMENTE OS COMMITS R6 NA BRANCH JÁ ASSOCIADA AO PR #36 E AGUARDAR A RECERTIFICAÇÃO REMOTA.
-NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
+AGUARDAR AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA O MERGE DO PR #36. NÃO PUBLICAR TAG, MESCLAR O PR,
+EXCLUIR REFS OU INICIAR F4.4/F3.7 SEM ESSA NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -133,4 +133,4 @@ NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
 
 ---
 
-*Atualizado em: 2026-08-10T14:24:38-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T14:33:01-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

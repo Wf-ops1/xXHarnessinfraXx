@@ -350,7 +350,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
     assert "checkpoint/f4.3-r6-ready" in panel
-    assert "Não há blocker local aberto" in panel
+    assert "Não há blocker técnico local ou remoto aberto" in panel
     assert "runtime/planner.py:68" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
@@ -369,6 +369,10 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "grupos congelados: 96 / 48 / 63 / 72 testes" in dossier
     assert "679 passed, 2 skipped, 6 subtests passed" in dossier
     assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "ede9a54fac2517586d3f4a48b586b73a3f47a33a" in dossier
+    assert "31414226952" in dossier
+    assert "11/11 checks verdes" in dossier
+    assert "merge não autorizado" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

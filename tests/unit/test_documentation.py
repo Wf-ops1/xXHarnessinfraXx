@@ -146,6 +146,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "auditoria posterior reproduziu suficiência sem `artifact_evidence`" in readme
     assert "recertificação local passou em 679 testes" in readme
     assert "31410376576" in readme
+    assert "31414226952" in readme
     assert "DEC-015" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
@@ -159,8 +160,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.3-r5-ready" in panel
     assert "checkpoint/f4.3-r6-ready" in panel
     assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "implementação R6 em `ed559ee`" in panel
+    assert "O commit `ed559ee`" in panel
     assert "31410376576" in panel
+    assert "head `ede9a54`, run `31414226952`, 11/11 verde" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "docs/tasks/active/F4.3.md" in panel

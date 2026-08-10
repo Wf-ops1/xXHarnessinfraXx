@@ -78,8 +78,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   chegou ao PR #36 no head `1b1e8ad`, cujo run `31410376576` concluiu 11/11 checks verdes. Uma auditoria
   posterior reproduziu suficiência sem `artifact_evidence` e com identidade de request divergente. O
   checkpoint R6 preservou essa evidência; o reparo vinculou request/digest, manifesto/evidência e path,
-  e a recertificação local passou em 679 testes. O estado é `COMPLETED_LOCAL / PROMOTION_PENDING`;
-  nenhuma tag foi publicada e merge permanece proibido até a nova CI.
+  e a recertificação local passou em 679 testes. O run R6 `31414226952` concluiu 11/11 checks verdes
+  no head `ede9a54`; o estado é `COMPLETED_LOCAL / PROMOTION_PENDING`. Nenhuma tag foi publicada e
+  merge permanece proibido até autorização nominal.
   Geração/contratos F4.4 permanecem fechados. F3.7 continua
   dependente da F4.7.
 
