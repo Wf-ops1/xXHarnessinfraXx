@@ -45,7 +45,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
-| Serena, índice e contexto | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato; a F4.3 local calcula seis dimensões, aplica dual gate e integra decisão/evento/estado ao lifecycle antes do grafo | Serena é opt-in; indexação é Python-only, full rebuild e explícita; F4.3 está `PR_OPEN / CHECKS_PENDING` no PR #36 | Planner F4.4, backend Codebase-Memory compatível e memória semântica real |
+| Serena, índice e contexto | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato; a F4.3 local calcula seis dimensões, aplica dual gate e integra decisão/evento/estado ao lifecycle antes do grafo | Serena é opt-in; indexação é Python-only, full rebuild e explícita; F4.3 está `REPAIR_ACTIVE / PROMOTION_BLOCKED` no PR #36 após auditoria R6 | Planner F4.4, backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Suíte vazia/gate desconhecido podem passar `0/0` e a CLI pode retornar zero em reprovação; F4.5–F4.8 ainda não foram implementadas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -75,9 +75,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   voltou a `BLOCKED` quando `mypy src` encontrou um erro preexistente em `runtime/planner.py`, idêntico
   em `main` e no checkpoint R4. O gate R5 está `READY` e autoriza exclusivamente essa normalização de
   tipo após um novo checkpoint. O R5 materializou a lista, os gates locais ficaram verdes e a tarefa
-  está `PR_OPEN / CHECKS_PENDING`: o PR #36 foi aberto contra `main` com head inicial `0cc4c38`, e a
-  primeira observação do run `31409970887` encontrou 3/10 checks verdes e 7 em andamento; nenhuma tag
-  foi publicada.
+  chegou ao PR #36 no head `1b1e8ad`, cujo run `31410376576` concluiu 11/11 checks verdes. Uma auditoria
+  posterior reproduziu suficiência sem `artifact_evidence` e com identidade de request divergente; por
+  precedência da evidência negativa, o gate R6 está `REPAIR_ACTIVE / PROMOTION_BLOCKED`. Nenhuma tag foi
+  publicada e merge permanece proibido até reparo e recertificação.
   Geração/contratos F4.4 permanecem fechados. F3.7 continua
   dependente da F4.7.
 

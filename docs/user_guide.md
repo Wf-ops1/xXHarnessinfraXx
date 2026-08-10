@@ -73,8 +73,9 @@ relatório por digest. Os resultados são fail-closed:
   `FAILED_RETRY_EXHAUSTED`.
 
 `harness resume <id>` sempre recarrega o envelope, commit, artefato e policy originais. Não existem
-`force_confidence`, override de score ou fallback para policy mutável. A implementação local está
-integrada e sua recertificação R5 local está verde (`COMPLETED_LOCAL / PROMOTION_PENDING`). Isso não
+`force_confidence`, override de score ou fallback para policy mutável. A auditoria R6 do PR #36
+reproduziu suficiência sem evidência de artefato e com identidade de request divergente; o estado atual
+é `REPAIR_ACTIVE / PROMOTION_BLOCKED`, mesmo após 11/11 checks no run `31410376576`. Isso não
 transforma o protótipo em execução
 autônoma porque o registry padrão de executores continua vazio.
 

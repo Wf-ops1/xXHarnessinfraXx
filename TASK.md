@@ -35,12 +35,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — implementação e aceitação local concluídas; PR #36 aberto, checks pendentes |
-| **Gate** | F4.3 `READY` R5 / lifecycle `PR_OPEN / CHECKS_PENDING` |
+| **Tarefa ativa** | `F4.3` — PR #36 reaberto para reparo mínimo após auditoria pós-CI |
+| **Gate** | F4.3 `BLOCKED` R6 / lifecycle `REPAIR_ACTIVE / PROMOTION_BLOCKED` |
 | **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.3-evidence-context-sufficiency`, publicada no origin; PR #36 aberto com head inicial `0cc4c38` |
+| **Branch** | `task/f4.3-evidence-context-sufficiency`, PR #36; head auditado `1b1e8ad`, merge bloqueado |
 | **Baseline promovido** | `main == origin/main == 3705693`; run `31346860397`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -87,29 +87,35 @@ de plano, geração F4.4 ou outro comportamento do planner foi reaberto. O check
 `checkpoint/f4.3-r5-ready` preservou toda a implementação R4 no commit `0c37602` antes dessa única
 edição. A correção, o teste e a recertificação integral foram concluídos.
 
+O R6 foi autorizado nominalmente em `2026-08-10T13:59:04-03:00` após a revisão do PR #36. Embora o
+run `31410376576` tenha concluído 11/11 checks verdes no head `1b1e8ad`, dois probes reproduziram
+falso sucesso no evaluator: manifesto com cinco artefatos e `artifact_evidence=()` retornou
+`is_sufficient=True`; `requirement_id` e `query_digest` divergentes também produziram suficiência.
+Evidência negativa posterior prevalece sobre a CI verde, conforme DEC-014.
+
 ## 6. Bloqueios atuais
 
-Não há blocker local aberto. `mypy src` e `mypy --platform linux src` passam nos 104 arquivos; os quatro
-grupos congelados passam em 91/48/63/72 testes; a regressão integral concluiu 674 testes, 2 skips live
-opt-in existentes e 6 subtests. Ruff, compileall, diff-check, build e smoke também estão verdes. Os
-falsos sucessos de verificação continuam reservados para F4.5–F4.8. O PR #36 foi aberto contra `main`
-com head inicial `0cc4c383ff024024242810dfff7961d495ce6ef6`. A primeira observação do run
-`31409970887` encontrou 3/10 checks verdes e 7 em andamento, portanto o lifecycle é
-`PR_OPEN / CHECKS_PENDING`. Tags permanecem somente locais; publicar tag, fazer merge ou excluir refs
-continua não autorizado.
+Há blocker local aberto no contrato fail-closed do evaluator. O gate discreto confia em
+`ManifestResult.all_required_present` sem exigir a partição exata de `artifact_evidence`, e a identidade
+valida somente `graph_type`, sem vincular `requirement_id` nem o digest SHA-256 da query. Além disso, o
+motivo da dimensão afirmava detectar divergência de digest sem existir digest externo esperado no MVP.
+O run `31410376576` está 11/11 verde, mas não invalida os probes negativos; o estado correto é
+`REPAIR_ACTIVE / PROMOTION_BLOCKED`. Tags permanecem somente locais; merge, publicação de tag e
+exclusão de refs continuam proibidos.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR TODOS OS CHECKS DO PR #36 TERMINAREM VERDES. NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS,
-INICIAR F4.4/F3.7 OU ALTERAR A IMPLEMENTAÇÃO CONCLUÍDA SEM NOVA AUTORIZAÇÃO.
+CRIAR O CHECKPOINT LOCAL `checkpoint/f4.3-r6-ready` NESTE RECONGELAMENTO E IMPLEMENTAR SOMENTE AS
+INVARIANTES REQUEST/IDENTITY E MANIFEST/ARTIFACT_EVIDENCE, SEUS TESTES NEGATIVOS E O ALINHAMENTO
+DOCUMENTAL AUTORIZADOS. NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
 2. Leia `docs/tasks/active/F4.3.md`, DEC-015, `docs/tasks/completed/F4.2.md` e DEC-014 integralmente.
-3. Confirme F4.3 `PR_OPEN / CHECKS_PENDING`, o PR #36, a branch e os cinco checkpoints locais.
+3. Confirme F4.3 `REPAIR_ACTIVE / PROMOTION_BLOCKED`, o PR #36, a branch e os seis checkpoints locais.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e o baseline promovido da `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
@@ -124,4 +130,4 @@ INICIAR F4.4/F3.7 OU ALTERAR A IMPLEMENTAÇÃO CONCLUÍDA SEM NOVA AUTORIZAÇÃO
 
 ---
 
-*Atualizado em: 2026-08-10T13:39:00-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T13:59:55-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

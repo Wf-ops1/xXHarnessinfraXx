@@ -212,18 +212,19 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "F4.2 `PROMOTED`" in panel
     assert (ACTIVE_ROOT / "F4.3.md").is_file()
     assert "docs/tasks/active/F4.3.md" in panel
-    assert "F4.3 `READY`" in panel
+    assert "F4.3 `BLOCKED` R6" in panel
     assert "task/f4.3-evidence-context-sufficiency" in panel
-    assert "> **Gate:** `READY`" in f4_3_dossier
-    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f4_3_dossier
+    assert "> **Gate:** `BLOCKED`" in f4_3_dossier
+    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
-    assert "> **Revisão do gate:** `R5`" in f4_3_dossier
+    assert "> **Revisão do gate:** `R6`" in f4_3_dossier
     assert "checkpoint/f4.3-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r2-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r3-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r4-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r5-ready" in f4_3_dossier
+    assert "checkpoint/f4.3-r6-ready" in f4_3_dossier
     assert "DEC-015" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -296,7 +297,7 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
-def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
+def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     panel = _read(TASK_PANEL)
     plan = _read(IMPLEMENTATION_PLAN)
     task_index = _read(TASKS_INDEX)
@@ -308,17 +309,20 @@ def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     r3_at = dossier.find("### R3 — exceção mínima da FSM")
     r4_at = dossier.find("### R4 — entrada pré-grafo em `PLANNING`")
     r5_at = dossier.find("### R5 — correção mínima do gate de tipos")
+    r6_at = dossier.find("### R6 — auditoria pós-CI reabre o gate fail-closed")
     assert r1_at >= 0
     assert r2_at > r1_at
     assert r3_at > r2_at
     assert r4_at > r3_at
     assert r5_at > r4_at
+    assert r6_at > r5_at
     assert "perde precedência operacional para este R2" in dossier
     assert "checkpoint/f4.3-ready" in dossier
     assert "checkpoint/f4.3-r2-ready" in dossier
     assert "checkpoint/f4.3-r3-ready" in dossier
     assert "checkpoint/f4.3-r4-ready" in dossier
     assert "checkpoint/f4.3-r5-ready" in dossier
+    assert "checkpoint/f4.3-r6-ready" in dossier
     assert "BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED" in dossier
     assert "ExecutionLifecycleService" in dossier
     assert "INITIATED → CONTEXT_ASSEMBLING" in dossier
@@ -345,7 +349,8 @@ def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
-    assert "Não há blocker local aberto" in panel
+    assert "checkpoint/f4.3-r6-ready" in panel
+    assert "Há blocker local aberto" in panel
     assert "runtime/planner.py:68" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
@@ -355,7 +360,10 @@ def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "[#36](https://github.com/Wf-ops1/Harnessinfra/pull/36)" in dossier
     assert "0cc4c383ff024024242810dfff7961d495ce6ef6" in dossier
     assert "31409970887" in dossier
-    assert "PR_OPEN / CHECKS_PENDING" in dossier
+    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in dossier
+    assert "31410376576" in dossier
+    assert "artifact_evidence=()" in dossier
+    assert "req-other" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
