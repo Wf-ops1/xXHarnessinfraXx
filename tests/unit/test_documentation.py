@@ -136,9 +136,11 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
     assert "31345231098" in readme
+    assert "PR #35 com checks pendentes" in readme
 
     assert "`docs/promote-f4.2`" in panel
     assert "F4.2 `PROMOTED`" in panel
+    assert "PR administrativo #35 aberto" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "PR administrativo" in panel

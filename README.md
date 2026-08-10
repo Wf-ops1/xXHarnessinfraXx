@@ -67,8 +67,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   promovida pelo PR #32 no merge `12ce3b7`, e a CI pós-merge `31323952381` concluiu 11/11 checks
   verdes; sua reconciliação administrativa entrou em `main` pelo PR #33 no merge `571a8eb`, com CI
   pós-merge `31329231458` também 11/11 verde. A F4.2 foi promovida pelo PR #34 no merge `212a9bf`,
-  com CI pós-merge `31345231098` também 11/11 verde; sua reconciliação administrativa está preparada
-  somente localmente em `docs/promote-f4.2`. F4.3 não foi iniciada, e F3.7 continua dependente da F4.7.
+  com CI pós-merge `31345231098` também 11/11 verde; sua reconciliação administrativa está publicada
+  no PR #35 com checks pendentes. F4.3 não foi iniciada, e F3.7 continua dependente da F4.7.
 
 ## Dívidas técnicas críticas
 

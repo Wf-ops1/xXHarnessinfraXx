@@ -36,10 +36,10 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | Nenhuma tarefa ativa; F4.3 permanece planejada e não iniciada |
-| **Gate** | F4.2 `PROMOTED`; reconciliação administrativa concluída localmente e pendente de publicação |
+| **Gate** | F4.2 `PROMOTED`; PR administrativo #35 aberto, checks pendentes |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.2`, somente local; checkpoint `checkpoint/f4.2-promotion-sync-ready` em `d515b70` |
+| **Branch** | `docs/promote-f4.2`, publicada e rastreando `origin/docs/promote-f4.2`; head inicial do PR `a1bfcb8` |
 | **Baseline promovido** | `main == origin/main == 212a9bf`; run `31345231098`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -51,7 +51,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | Tarefa | `F4.2` — indexador Python AST local e vinculado ao commit, promovida e arquivada |
 | PR de implementação | #34; head final `2268f3fa276b017ad5b64efdb54e7abbf1f917d9`; 11/11 no run `31344668587` |
 | Promoção da implementação | merge `212a9bfba2189ce8ca84d8eca76ede2d872b7d2c`; run `31345231098`, 11/11 |
-| Reconciliação administrativa | `docs/promote-f4.2`, somente local; publicação e PR administrativo pendentes de autorização |
+| Reconciliação administrativa | PR #35 aberto a partir de `docs/promote-f4.2`; head inicial `a1bfcb8`; checks pendentes |
 | Fronteira | branch remota de implementação preservada; nenhuma tag remota ou exclusão de ref; F4.3/F3.7 não iniciadas |
 
 ## 5. Tarefa ativa
@@ -66,16 +66,16 @@ merge do PR administrativo desta reconciliação e de sua CI pós-merge verde. F
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido. A pendência é administrativa: publicar `docs/promote-f4.2` e
-abrir seu PR documental exigem autorização nominal nova. O merge desse futuro PR, tags remotas e
-exclusão de refs continuam não autorizados; F4.3 permanece bloqueada.
+Não há bloqueio técnico conhecido. O PR administrativo #35 está aberto; todos os checks do head
+final, incluindo `CI required`, precisam ficar verdes antes de qualquer pedido de merge. Merge, tags
+remotas e exclusão de refs continuam não autorizados; F4.3 permanece bloqueada.
 
 ## 7. Próxima ação exata
 
 ```text
-PAUSAR COM A RECONCILIAÇÃO F4.2 SOMENTE LOCAL. A PRÓXIMA AUTORIZAÇÃO EXATA É PUBLICAR
-`docs/promote-f4.2` E ABRIR O PR ADMINISTRATIVO. Não iniciar F4.3/F3.7, publicar tag, excluir refs
-ou mesclar qualquer PR sem autorização nominal própria.
+AGUARDAR E REVALIDAR TODOS OS CHECKS DO HEAD FINAL DO PR #35, INCLUINDO `CI required`. Somente se
+todos ficarem verdes, solicitar autorização nominal separada para o merge. Não iniciar F4.3/F3.7,
+publicar tag, excluir refs ou mesclar o PR sem autorização própria.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -97,4 +97,4 @@ ou mesclar qualquer PR sem autorização nominal própria.
 
 ---
 
-*Atualizado em: 2026-08-09T21:48:40-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T21:54:43-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*

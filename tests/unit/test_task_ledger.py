@@ -269,6 +269,9 @@ def test_f4_2_promotion_is_certified_and_reconciliation_is_local() -> None:
     assert "31345231098" in f4_2_dossier
     assert "checkpoint/f4.2-promotion-sync-ready" in f4_2_dossier
     assert "completed/F4.2.md" in task_index
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/35" in f4_2_dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_2_dossier
+    assert "administrativo #35 aberto" in task_index
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
