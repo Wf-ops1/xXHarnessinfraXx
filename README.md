@@ -67,7 +67,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   promovida pelo PR #32 no merge `12ce3b7`, e a CI pós-merge `31323952381` concluiu 11/11 checks
   verdes; sua reconciliação administrativa entrou em `main` pelo PR #33 no merge `571a8eb`, com CI
   pós-merge `31329231458` também 11/11 verde. A F4.2 foi concluída localmente no gate `READY`, com
-  indexador AST do commit exato, e aguarda autorização própria para publicação; F3.7 continua
+  indexador AST do commit exato, e está publicada no PR #34 com checks pendentes; F3.7 continua
   dependente da F4.7 e de gate separado.
 
 ## Dívidas técnicas críticas

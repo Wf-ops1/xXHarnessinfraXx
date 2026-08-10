@@ -204,7 +204,7 @@ def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
     assert "docs/tasks/completed/F4.1.md" in panel
     assert (ACTIVE_ROOT / "F4.2.md").is_file()
     assert "docs/tasks/active/F4.2.md" in panel
-    assert "F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #34 aberto" in panel
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
@@ -260,6 +260,8 @@ def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
     assert "checkpoint/f4.2-ready" in f4_2_dossier
     assert "643 passed, 2 skipped, 6 subtests passed" in f4_2_dossier
     assert "7702396d5dd74ebed3f5a0aa449721a3a89d554d" in f4_2_dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/34" in f4_2_dossier
+    assert "PR_OPEN / CHECKS_PENDING" in f4_2_dossier
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 

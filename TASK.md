@@ -36,10 +36,10 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.2 — indexador Python AST local e vinculado ao commit |
-| **Gate** | F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; aceite local integral verde |
+| **Gate** | F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #34 aberto, checks pendentes |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.2-python-ast-indexer`, somente local; checkpoint `checkpoint/f4.2-ready` em `abedc34`; implementação em `7702396` |
+| **Branch** | `task/f4.2-python-ast-indexer`, publicada e rastreando `origin/task/f4.2-python-ast-indexer`; head inicial do PR `765b978` |
 | **Baseline promovido** | `main == origin/main == 571a8eb`; run `31329231458`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -69,16 +69,16 @@ suficiência F4.3 e F3.7 permanecem fora do escopo. F3.7 permanece depois da F4.
 ## 6. Bloqueios atuais
 
 Não há bloqueio técnico conhecido. O aceite final passou `643 passed, 2 skipped, 6 subtests passed`,
-quality Windows/Linux, build e smoke isolado do wheel. A única pendência é administrativa: push e
-abertura do PR exigem autorização nominal nova. Merge, tags remotas e exclusão de refs continuam não
-autorizados.
+quality Windows/Linux, build e smoke isolado do wheel. A branch foi publicada e o PR #34 está aberto;
+todos os checks do head final, incluindo `CI required`, precisam ficar verdes antes de qualquer pedido
+de merge. Merge, tags remotas e exclusão de refs continuam não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-PAUSAR COM A F4.2 CONCLUÍDA SOMENTE LOCALMENTE. A PRÓXIMA AUTORIZAÇÃO EXATA É PUBLICAR
-`task/f4.2-python-ast-indexer` E ABRIR O PR DA F4.2. Não iniciar F4.3/F3.7, mesclar PR, publicar tag
-ou excluir refs sem autorização nominal própria.
+AGUARDAR E REVALIDAR TODOS OS CHECKS DO HEAD FINAL DO PR #34, INCLUINDO `CI required`. Somente se
+todos ficarem verdes, solicitar autorização nominal separada para o merge. Não iniciar F4.3/F3.7,
+publicar tag, excluir refs ou mesclar o PR sem autorização própria.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -100,4 +100,4 @@ ou excluir refs sem autorização nominal própria.
 
 ---
 
-*Atualizado em: 2026-08-09T16:27:57-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-09T21:28:14-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
