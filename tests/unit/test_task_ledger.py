@@ -215,7 +215,7 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "F4.3 `READY`" in panel
     assert "task/f4.3-evidence-context-sufficiency" in panel
     assert "> **Gate:** `READY`" in f4_3_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_3_dossier
+    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
     assert "> **Revisão do gate:** `R5`" in f4_3_dossier
@@ -352,7 +352,10 @@ def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
     assert "0c376023d3f6a2d6ccde8277de715e0dd617e1b3" in dossier
     assert "1ee5f062b75a45b0cbcbab0e23b68458969c7c99" in dossier
-    assert "nenhuma tag remota e nenhum PR" in dossier
+    assert "[#36](https://github.com/Wf-ops1/Harnessinfra/pull/36)" in dossier
+    assert "0cc4c383ff024024242810dfff7961d495ce6ef6" in dossier
+    assert "31409970887" in dossier
+    assert "PR_OPEN / CHECKS_PENDING" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

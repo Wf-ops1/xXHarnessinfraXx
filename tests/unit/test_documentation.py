@@ -142,8 +142,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "gate documental `READY` R4" in readme
     assert "o gate voltou a `BLOCKED`" in readme
     assert "O gate R5 está `READY`" in readme
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in readme
-    assert "a branch foi publicada em `1ee5f06`" in readme
+    assert "PR_OPEN / CHECKS_PENDING" in readme
+    assert "o PR #36 foi aberto contra `main`" in readme
+    assert "31409970887" in readme
     assert "DEC-015" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
@@ -155,8 +156,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "primeira observação remota `1ee5f06`" in panel
+    assert "PR_OPEN / CHECKS_PENDING" in panel
+    assert "PR #36 aberto com head inicial `0cc4c38`" in panel
+    assert "31409970887" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "docs/tasks/active/F4.3.md" in panel
