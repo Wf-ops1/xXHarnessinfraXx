@@ -76,3 +76,4 @@ Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` 
 | DEC-012 | Realinhamento da Fase 3 em F3.C1/F3.C2, com pausa humana obrigatória e autorização nova entre tarefas. |
 | DEC-013 | F3.4 cria guard parametrizado sem efeitos; F3.6 fornece worktree; F3.5/F3.8 integram consumidores depois de ambos. |
 | DEC-014 | Reconciliação pós-merge imediata; evidência negativa prevalece e exige recertificação integral. |
+| DEC-015 | Lifecycle possui a preparação F4; contexto bloqueia antes do grafo e verificação guarda `COMPLETED`. |

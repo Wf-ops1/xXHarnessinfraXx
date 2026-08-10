@@ -35,8 +35,8 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — suficiência de contexto baseada em evidência; somente gate documental preparado |
-| **Gate** | F4.3 `READY` / lifecycle `ACTIVE`; checkpoint local `checkpoint/f4.3-ready` neste commit documental |
+| **Tarefa ativa** | `F4.3` — suficiência de contexto baseada em evidência; recongelamento R2 documental concluído |
+| **Gate** | F4.3 `READY` R2 / lifecycle `ACTIVE`; checkpoint local `checkpoint/f4.3-r2-ready` neste commit documental |
 | **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
@@ -57,34 +57,37 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 ## 5. Tarefa ativa
 
-O [dossiê F4.3](docs/tasks/active/F4.3.md) comprova que o consumidor atual aceita contexto sem
-evidência: `_evaluate_confidence({})` retorna `0.85`, o evaluator parcial retorna `1.0` e um teste passa
-com snapshot vazio. O gate congela seis dimensões, policy tipada, dual gate de artefatos + confiança,
-relatório canônico persistido e erro tipado `BLOCKED_INSUFFICIENT_CONTEXT`.
+O [dossiê F4.3](docs/tasks/active/F4.3.md) preserva o checkpoint R1 e a auditoria que reabriu o gate:
+score vazio `0.85`, evaluator parcial `1.0`, snapshot vazio aceito, gates `0/0` e CLI reprovada com exit
+zero. A [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md) corrige o blocker de ownership:
+o lifecycle prepara contexto antes do grafo e persiste a transição bloqueante; F4.4–F4.8 possuem owners
+explícitos e não podem terminar como componentes desconectados.
 
-Nenhum arquivo de produção foi alterado. A fronteira não inclui composição automática no
-`GraphExecutor`, lifecycle, FSM ou CLI; planner F4.4, gates F4.5–F4.8, MCP e memória semântica também
-continuam fora do escopo. F3.7 permanece depois da F4.7.
+Nenhum arquivo de produção foi alterado. O R2 congela quatro manifestos, identidade exata de artefato,
+seis fórmulas Decimal, policy compilada, envelope imutável, start/resume e taxonomy de estado. Planner,
+gates/verificação, repair, F3.7, MCP e memória semântica continuam fora da implementação F4.3.
+F3.7 permanece depois da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico conhecido. O gate `READY` é materializado neste commit pela tag local
-`checkpoint/f4.3-ready`; nenhuma implementação pode antecedê-lo. Publicação de branch/tag remota,
-abertura ou merge de PR e exclusão de refs continuam não autorizados.
+Não há blocker aberto no contrato R2. O gate é materializado neste commit pela tag local
+`checkpoint/f4.3-r2-ready`; nenhuma implementação pode antecedê-lo. Os falsos sucessos de verificação
+continuam conhecidos e reservados para F4.5–F4.8, sem autorização para corrigi-los agora. Publicação,
+PR, merge e exclusão de refs permanecem não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-INTERROMPER APÓS MATERIALIZAR A TAG LOCAL `checkpoint/f4.3-ready` NESTE COMMIT, SEM ALTERAR PRODUÇÃO.
-SOLICITAR AUTORIZAÇÃO NOMINAL PARA IMPLEMENTAR SOMENTE O ESCOPO CONGELADO DA F4.3. NÃO PUBLICAR
-BRANCH/TAG, ABRIR OU MESCLAR PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
+INTERROMPER APÓS MATERIALIZAR `checkpoint/f4.3-r2-ready`, SEM ALTERAR PRODUÇÃO. SOLICITAR AUTORIZAÇÃO
+NOMINAL PARA IMPLEMENTAR SOMENTE O ESCOPO R2 DA F4.3. NÃO CORRIGIR F4.4–F4.8, PUBLICAR BRANCH/TAG,
+ABRIR/MESCLAR PR, EXCLUIR REFS OU INICIAR F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia `docs/tasks/active/F4.3.md`, `docs/tasks/completed/F4.2.md` e a DEC-014 integralmente.
-3. Confirme o gate F4.3 `READY`, a branch exclusiva e o checkpoint local indicado pelo dossiê.
+2. Leia `docs/tasks/active/F4.3.md`, DEC-015, `docs/tasks/completed/F4.2.md` e DEC-014 integralmente.
+3. Confirme o gate F4.3 `READY` R2, a branch exclusiva e ambos os checkpoints locais do dossiê.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e o baseline promovido da `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
@@ -99,4 +102,4 @@ BRANCH/TAG, ABRIR OU MESCLAR PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
 
 ---
 
-*Atualizado em: 2026-08-09T23:30:01-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014*
+*Atualizado em: 2026-08-10T00:14:13-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

@@ -39,7 +39,7 @@ uv run python -m build
 | `harness inspect <id>` | Exibe digests, eventos e aprovação sem secrets | Implementado como inspeção local |
 | `harness approve <id>` | Persiste decisão ligada à revisão corrente | Exige retomada explícita e ainda não promove por Git |
 | `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Implementado como contrato; depende dos mesmos backends explicitamente injetados |
-| `harness verify` | Executa gates Python selecionados | Experimental: cobertura e política fail-closed ainda incompletas |
+| `harness verify` | Executa gates Python selecionados | Inseguro como decisão: `0/0` pode passar e reprovação pode retornar exit zero; correção pertence a F4.5–F4.8 |
 | `harness audit <id>` | Verifica/exporta o diário local | Implementação local; não prova efeitos reais |
 | `harness rollback <id>` | Registra compensação e possui caminho Git legado | Não usar em repo valioso; não está ligado ao worktree/terminal tipado nem reexecuta gates |
 

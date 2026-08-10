@@ -14,6 +14,9 @@ IMPLEMENTATION_PLAN = ROOT / "docs" / "plano_implementacao_harness_operacional.m
 PHASE3_REALIGNMENT = ROOT / "docs" / "fase3_realignamento_operacional.md"
 PHASE3_ORDER_DECISION = ROOT / "docs" / "decisions" / "DEC-013-fase3-ordem-operacional.md"
 POST_MERGE_DECISION = ROOT / "docs" / "decisions" / "DEC-014-reconciliacao-pos-merge.md"
+PHASE4_COMPOSITION_DECISION = (
+    ROOT / "docs" / "decisions" / "DEC-015-composicao-canonica-fase4.md"
+)
 TASKS_ROOT = ROOT / "docs" / "tasks"
 TASKS_INDEX = TASKS_ROOT / "README.md"
 ACTIVE_ROOT = TASKS_ROOT / "active"
@@ -215,6 +218,10 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "> **Lifecycle:** `ACTIVE`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
+    assert "> **Revisão do gate:** `R2`" in f4_3_dossier
+    assert "checkpoint/f4.3-ready" in f4_3_dossier
+    assert "checkpoint/f4.3-r2-ready" in f4_3_dossier
+    assert "DEC-015" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
@@ -286,6 +293,45 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
+def test_f4_3_r2_preserves_the_failed_gate_and_names_every_phase4_owner() -> None:
+    panel = _read(TASK_PANEL)
+    plan = _read(IMPLEMENTATION_PLAN)
+    task_index = _read(TASKS_INDEX)
+    dossier = _read(ACTIVE_ROOT / "F4.3.md")
+    decision = _read(PHASE4_COMPOSITION_DECISION)
+
+    r1_at = dossier.find("### R1 — gate inicial preservado")
+    r2_at = dossier.find("### R2 — diagnóstico e recertificação documental")
+    assert r1_at >= 0
+    assert r2_at > r1_at
+    assert "perde precedência operacional para este R2" in dossier
+    assert "checkpoint/f4.3-ready" in dossier
+    assert "checkpoint/f4.3-r2-ready" in dossier
+    assert "ExecutionLifecycleService" in dossier
+    assert "INITIATED → CONTEXT_ASSEMBLING" in dossier
+    assert "BLOCKED_INSUFFICIENT_CONTEXT" in dossier
+    assert "BLOCKED_PREREQUISITE" in dossier
+    assert "GraphExecutor" in dossier
+    assert "conditional` não vazio falha" in dossier
+    assert "suíte vazia/gate desconhecido/ID `tests`" in dossier
+
+    for source in (panel, plan, task_index, dossier):
+        assert "DEC-015" in source
+    assert "ExecutionLifecycleService" in decision
+    assert "GraphExecutor" in decision
+    assert "F4.4" in decision
+    assert "F4.5" in decision
+    assert "F4.6" in decision
+    assert "F4.7" in decision
+    assert "F4.8" in decision
+    assert "all_passed=True" in decision
+    assert "context_request" in decision
+    assert "graph_input" in decision
+    assert "ao menos um gate obrigatório" in decision
+    assert "checkpoint/f4.3-r2-ready" in panel
+    assert "Não há blocker aberto no contrato R2" in panel
+
+
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
     panel = _read(TASK_PANEL)
     rules = _read(AGENT_RULES)
@@ -336,6 +382,9 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "DEC-013" in task_index
     assert "DEC-014" in panel
     assert "DEC-014" in task_index
+    assert "DEC-015" in panel
+    assert "DEC-015" in plan
+    assert "DEC-015" in task_index
     assert "F3.C1 → F3.C2 → F3.4" in plan
     assert "F3.4 → F3.6 → F3.5 → F3.8" in plan
     assert "raiz autorizada explícita" in order_decision

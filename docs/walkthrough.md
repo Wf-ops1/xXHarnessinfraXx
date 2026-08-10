@@ -85,6 +85,9 @@ Limitações importantes:
 O `VerificationEngine` possui runners que executam processos reais pelo terminal tipado, com `argv`,
 cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. A F4 deverá ligar gates
 obrigatórios ao planejamento/runtime, bloquear ausência de gate e cobrir a matriz configurada.
+Até F4.5–F4.8, `0/0` e gate desconhecido ainda podem ser aceitos e a CLI pode encerrar com código zero
+após reprovação. A DEC-015 atribui a preparação ao lifecycle e o guard de conclusão à verificação
+persistida; chamar runners manualmente depois de `COMPLETED` não satisfaz a fase.
 
 ## Fluxo de auditoria e rollback
 

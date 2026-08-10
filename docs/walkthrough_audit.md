@@ -73,6 +73,7 @@ consulta ausente/inválida continua falhando explicitamente, sem indexação imp
 | P0 | Sucesso sem efeito | CLI falha fechada, mas promoção e memória isoladas ainda aceitam resultados sintéticos | F3.7/F4/F6 |
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
 | P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
+| P0 | Verificação `0/0` | Gate vazio/desconhecido pode passar e CLI reprovada pode retornar zero | F4.5–F4.7 |
 | P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
 | P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |

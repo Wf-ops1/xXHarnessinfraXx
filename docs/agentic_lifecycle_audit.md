@@ -9,11 +9,11 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 | Etapa | Componente atual | Evidência existente | Estado real | Lacuna para o produto |
 |---|---|---|---|---|
 | Disparo | CLI `run` | Cria `execution_id` e chama o runtime | Experimental | Falta validar repositório, configuração e precondições fail-closed |
-| Contexto | `ContextAssembler` | Persiste `context.json` | Experimental | Score é heurístico; contexto estrutural/semântico real fica para F4 |
+| Contexto | `ContextAssembler` | Persiste `context.json` | Experimental | Score ainda é fixo; gate F4.3 R2/DEC-015 exige policy compilada e estado bloqueado real antes do grafo |
 | Plano | `Planner` | Persiste `plan.json` | Experimental | Não nasce de provider real nem governa efeitos com pre/postcondições completas |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados | Primitiva real/injetável | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |
-| Verificação | `VerificationEngine` | Executa subprocessos para gates selecionados | Experimental | Lista vazia pode passar; política fail-closed e gates completos ficam para F4 |
+| Verificação | `VerificationEngine` | Executa subprocessos para gates selecionados | Experimental | Lista vazia/gate desconhecido podem passar 0/0 e CLI reprovada pode sair zero; correção fica em F4.5–F4.8 |
 | Reparo | Retry do `GraphExecutor` | Consome erro, tool call, saída redigida, gates, diff e orçamento | Implementado como contrato | Sem composição operacional das tools ainda não produz um reparo de produto de ponta a ponta |
 | Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos | Implementada como contrato | Aprovação exige `resume` explícito e ainda não aciona promoção Git segura |
 | Promoção | `PromotionManager` | Registra evento e retorna string | Simulado | Runtime força dry-run e recebe SHA sintético; caminho live possui fallbacks sintéticos |
