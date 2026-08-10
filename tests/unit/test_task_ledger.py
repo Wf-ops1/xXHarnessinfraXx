@@ -218,9 +218,10 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "> **Lifecycle:** `ACTIVE`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
-    assert "> **Revisão do gate:** `R2`" in f4_3_dossier
+    assert "> **Revisão do gate:** `R3`" in f4_3_dossier
     assert "checkpoint/f4.3-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r2-ready" in f4_3_dossier
+    assert "checkpoint/f4.3-r3-ready" in f4_3_dossier
     assert "DEC-015" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -293,7 +294,7 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
-def test_f4_3_r2_preserves_the_failed_gate_and_names_every_phase4_owner() -> None:
+def test_f4_3_r3_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     panel = _read(TASK_PANEL)
     plan = _read(IMPLEMENTATION_PLAN)
     task_index = _read(TASKS_INDEX)
@@ -302,11 +303,15 @@ def test_f4_3_r2_preserves_the_failed_gate_and_names_every_phase4_owner() -> Non
 
     r1_at = dossier.find("### R1 — gate inicial preservado")
     r2_at = dossier.find("### R2 — diagnóstico e recertificação documental")
+    r3_at = dossier.find("### R3 — exceção mínima da FSM")
     assert r1_at >= 0
     assert r2_at > r1_at
+    assert r3_at > r2_at
     assert "perde precedência operacional para este R2" in dossier
     assert "checkpoint/f4.3-ready" in dossier
     assert "checkpoint/f4.3-r2-ready" in dossier
+    assert "checkpoint/f4.3-r3-ready" in dossier
+    assert "BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED" in dossier
     assert "ExecutionLifecycleService" in dossier
     assert "INITIATED → CONTEXT_ASSEMBLING" in dossier
     assert "BLOCKED_INSUFFICIENT_CONTEXT" in dossier
@@ -329,7 +334,8 @@ def test_f4_3_r2_preserves_the_failed_gate_and_names_every_phase4_owner() -> Non
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-r2-ready" in panel
-    assert "Não há blocker aberto no contrato R2" in panel
+    assert "checkpoint/f4.3-r3-ready" in panel
+    assert "Não há blocker aberto no contrato R3" in panel
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

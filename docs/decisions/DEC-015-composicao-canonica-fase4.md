@@ -2,8 +2,8 @@
 
 > **Estado:** aceita
 > **Data:** 2026-08-10
-> **Autoridade:** autorização explícita para reabrir e recongelar o gate F4.3 conforme a auditoria
-> integral da Fase 4, sem iniciar implementação
+> **Autoridade:** autorizações explícitas para recongelar o gate F4.3 conforme a auditoria integral da
+> Fase 4 e, no R3, permitir somente a transição FSM necessária ao retry exaurido
 
 ## Contexto
 
@@ -51,16 +51,18 @@ tarefa posterior possuía ownership explícito da composição completa.
 12. A F4.3 não implementa planner, executor de gates, repair loop, promoção ou MCP. Ela entrega somente
     contexto determinístico, sua persistência e a transição real de preparação/bloqueio.
 
-## Consequências para o gate F4.3 R2
+## Consequências para o gate F4.3 R3
 
 - `execution_lifecycle.py`, o facade estritamente afetado, os defaults context-enabled e seus testes
   passam a integrar a allowlist F4.3;
-- `GraphExecutor`, `ExecutionRecord` e a tabela da FSM não precisam mudar: os estados e transições
-  exigidos já existem;
+- `GraphExecutor` e `ExecutionRecord` não mudam; o mapeamento pré-implementação comprovou que a tabela
+  da FSM não permitia a transição exigida no item 7, portanto o R3 autoriza exclusivamente
+  `BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED` e seu teste;
 - o envelope é obrigatório apenas quando a policy de contexto está no artefato; grafos de testes sem
   essa policy preservam seu contrato F2;
-- o checkpoint original não é movido nem apagado. O recongelamento recebe novo commit/tag
-  `checkpoint/f4.3-r2-ready`;
+- os checkpoints anteriores não são movidos nem apagados. O R2 permanece em
+  `checkpoint/f4.3-r2-ready`, e o recongelamento da exceção mínima recebe
+  `checkpoint/f4.3-r3-ready`;
 - qualquer necessidade de mudar schema do bundle/record, compiler ou GraphExecutor reabre o gate.
 
 ## Alternativas rejeitadas

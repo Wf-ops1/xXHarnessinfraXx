@@ -139,7 +139,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #35 no merge `3705693`" in readme
     assert "31346860397" in readme
     assert "F4.3 está ativa com gate documental `READY`" in readme
-    assert "gate documental `READY` R2" in readme
+    assert "gate documental `READY` R3" in readme
     assert "DEC-015" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
@@ -148,6 +148,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "F4.2 `PROMOTED`" in panel
     assert "F4.3 `READY`" in panel
     assert "checkpoint/f4.3-r2-ready" in panel
+    assert "checkpoint/f4.3-r3-ready" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "docs/tasks/active/F4.3.md" in panel
