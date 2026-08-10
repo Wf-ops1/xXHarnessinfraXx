@@ -187,13 +187,13 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
+def test_f4_2_promotion_is_certified_and_reconciliation_is_local() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
     dossier = _read(COMPLETED_ROOT / "F3.8.md")
     f4_1_dossier = _read(COMPLETED_ROOT / "F4.1.md")
-    f4_2_dossier = _read(ACTIVE_ROOT / "F4.2.md")
+    f4_2_dossier = _read(COMPLETED_ROOT / "F4.2.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
@@ -201,10 +201,11 @@ def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
     assert not (ACTIVE_ROOT / "F4.1.md").exists()
     assert (COMPLETED_ROOT / "F3.8.md").is_file()
     assert (COMPLETED_ROOT / "F4.1.md").is_file()
-    assert "docs/tasks/completed/F4.1.md" in panel
-    assert (ACTIVE_ROOT / "F4.2.md").is_file()
-    assert "docs/tasks/active/F4.2.md" in panel
-    assert "F4.2 `READY`; lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #34 aberto" in panel
+    assert "docs/tasks/completed/F4.2.md" in panel
+    assert not (ACTIVE_ROOT / "F4.2.md").exists()
+    assert (COMPLETED_ROOT / "F4.2.md").is_file()
+    assert "docs/tasks/completed/F4.2.md" in panel
+    assert "F4.2 `PROMOTED`" in panel
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
@@ -221,7 +222,7 @@ def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "task/f4.2-python-ast-indexer" in panel
+    assert "docs/promote-f4.2" in panel
     assert "PR administrativo" in panel
     assert "CI required" in panel
     assert "Autorizo o merge do PR #29" not in panel
@@ -252,7 +253,7 @@ def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
     assert "checkpoint/f4.1-promotion-sync-ready" in f4_1_dossier
     assert "31328788064" in f4_1_dossier
     assert "> **Gate:** `READY`" in f4_2_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_2_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f4_2_dossier
     assert "e1ecc39cf26df1a4267aef867829b6d71f8bda1f" in f4_2_dossier
     assert "31328946696" in f4_2_dossier
     assert "571a8eb8be27179dd83527d7691012d732a27d28" in f4_2_dossier
@@ -262,6 +263,15 @@ def test_f4_1_promotion_is_certified_and_f4_2_is_complete_locally() -> None:
     assert "7702396d5dd74ebed3f5a0aa449721a3a89d554d" in f4_2_dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/34" in f4_2_dossier
     assert "PR_OPEN / CHECKS_PENDING" in f4_2_dossier
+    assert "2268f3fa276b017ad5b64efdb54e7abbf1f917d9" in f4_2_dossier
+    assert "31344668587" in f4_2_dossier
+    assert "212a9bfba2189ce8ca84d8eca76ede2d872b7d2c" in f4_2_dossier
+    assert "31345231098" in f4_2_dossier
+    assert "checkpoint/f4.2-promotion-sync-ready" in f4_2_dossier
+    assert "completed/F4.2.md" in task_index
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/35" in f4_2_dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_2_dossier
+    assert "administrativo #35 aberto" in task_index
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
@@ -322,7 +332,7 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "docs/tasks/completed/F4.1.md" in panel
+    assert "docs/tasks/completed/F4.2.md" in panel
     assert "F4.1" in panel
     assert "F3.7 permanece depois" in panel
     assert "Não restou achado blocker/high" in realignment
