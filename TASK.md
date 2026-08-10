@@ -35,12 +35,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — PR #36 reaberto para reparo mínimo após auditoria pós-CI |
-| **Gate** | F4.3 `BLOCKED` R6 / lifecycle `REPAIR_ACTIVE / PROMOTION_BLOCKED` |
+| **Tarefa ativa** | `F4.3` — reparo R6 concluído e recertificado localmente; atualização do PR #36 pendente |
+| **Gate** | F4.3 `READY` R6 / lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.3-evidence-context-sufficiency`, PR #36; head auditado `1b1e8ad`, merge bloqueado |
+| **Branch** | `task/f4.3-evidence-context-sufficiency`, PR #36; implementação R6 em `ed559ee`, push/CI pendentes |
 | **Baseline promovido** | `main == origin/main == 3705693`; run `31346860397`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
@@ -93,29 +93,32 @@ falso sucesso no evaluator: manifesto com cinco artefatos e `artifact_evidence=(
 `is_sufficient=True`; `requirement_id` e `query_digest` divergentes também produziram suficiência.
 Evidência negativa posterior prevalece sobre a CI verde, conforme DEC-014.
 
+O checkpoint local `checkpoint/f4.3-r6-ready` preservou o recongelamento no commit `d686d50` antes
+do reparo. O commit `ed559ee` agora exige igualdade de identidade e digest da query, correspondência
+exata entre manifesto e evidência e path canônico ligado ao `artifact_id`; a justificativa do digest
+não alega comparação externa. Os grupos congelados passaram em 96/48/63/72 testes e a regressão
+integral combinada passou em 679 testes, 2 skips live opt-in e 6 subtests. Mypy Windows/Linux, Ruff,
+compileall, diff-check, build e smoke da wheel também estão verdes.
+
 ## 6. Bloqueios atuais
 
-Há blocker local aberto no contrato fail-closed do evaluator. O gate discreto confia em
-`ManifestResult.all_required_present` sem exigir a partição exata de `artifact_evidence`, e a identidade
-valida somente `graph_type`, sem vincular `requirement_id` nem o digest SHA-256 da query. Além disso, o
-motivo da dimensão afirmava detectar divergência de digest sem existir digest externo esperado no MVP.
-O run `31410376576` está 11/11 verde, mas não invalida os probes negativos; o estado correto é
-`REPAIR_ACTIVE / PROMOTION_BLOCKED`. Tags permanecem somente locais; merge, publicação de tag e
-exclusão de refs continuam proibidos.
+Não há blocker local aberto. Os dois falsos sucessos R6 estão cobertos por testes negativos e a matriz
+local integral foi recertificada. A branch remota e o PR #36 ainda apontam para o estado anterior ao
+reparo, portanto a recertificação remota permanece pendente e merge continua bloqueado. Tags permanecem
+somente locais; publicação de tag e exclusão de refs continuam proibidas.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL `checkpoint/f4.3-r6-ready` NESTE RECONGELAMENTO E IMPLEMENTAR SOMENTE AS
-INVARIANTES REQUEST/IDENTITY E MANIFEST/ARTIFACT_EVIDENCE, SEUS TESTES NEGATIVOS E O ALINHAMENTO
-DOCUMENTAL AUTORIZADOS. NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
+PUBLICAR SOMENTE OS COMMITS R6 NA BRANCH JÁ ASSOCIADA AO PR #36 E AGUARDAR A RECERTIFICAÇÃO REMOTA.
+NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS OU INICIAR F4.4/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
 2. Leia `docs/tasks/active/F4.3.md`, DEC-015, `docs/tasks/completed/F4.2.md` e DEC-014 integralmente.
-3. Confirme F4.3 `REPAIR_ACTIVE / PROMOTION_BLOCKED`, o PR #36, a branch e os seis checkpoints locais.
+3. Confirme F4.3 `COMPLETED_LOCAL / PROMOTION_PENDING`, o PR #36, a branch e os seis checkpoints locais.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e o baseline promovido da `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
@@ -130,4 +133,4 @@ DOCUMENTAL AUTORIZADOS. NÃO PUBLICAR TAG, MESCLAR O PR, EXCLUIR REFS OU INICIAR
 
 ---
 
-*Atualizado em: 2026-08-10T13:59:55-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T14:24:38-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

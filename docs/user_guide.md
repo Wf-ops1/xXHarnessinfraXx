@@ -74,8 +74,9 @@ relatório por digest. Os resultados são fail-closed:
 
 `harness resume <id>` sempre recarrega o envelope, commit, artefato e policy originais. Não existem
 `force_confidence`, override de score ou fallback para policy mutável. A auditoria R6 do PR #36
-reproduziu suficiência sem evidência de artefato e com identidade de request divergente; o estado atual
-é `REPAIR_ACTIVE / PROMOTION_BLOCKED`, mesmo após 11/11 checks no run `31410376576`. Isso não
+reproduziu suficiência sem evidência de artefato e com identidade de request divergente; o reparo agora
+vincula identidade/digest, manifesto/evidência e path canônico, com recertificação local integral. O
+estado é `COMPLETED_LOCAL / PROMOTION_PENDING` até a nova CI do PR. Isso não
 transforma o protótipo em execução
 autônoma porque o registry padrão de executores continua vazio.
 

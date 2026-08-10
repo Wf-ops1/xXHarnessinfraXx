@@ -142,8 +142,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "gate documental `READY` R4" in readme
     assert "o gate voltou a `BLOCKED`" in readme
     assert "O gate R5 está `READY`" in readme
-    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in readme
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in readme
     assert "auditoria posterior reproduziu suficiência sem `artifact_evidence`" in readme
+    assert "recertificação local passou em 679 testes" in readme
     assert "31410376576" in readme
     assert "DEC-015" in readme
     assert "`harness verify`" in readme
@@ -151,14 +152,14 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
 
     assert "`task/f4.3-evidence-context-sufficiency`" in panel
     assert "F4.2 `PROMOTED`" in panel
-    assert "F4.3 `BLOCKED` R6" in panel
+    assert "F4.3 `READY` R6" in panel
     assert "checkpoint/f4.3-r2-ready" in panel
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
     assert "checkpoint/f4.3-r6-ready" in panel
-    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in panel
-    assert "head auditado `1b1e8ad`" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "implementação R6 em `ed559ee`" in panel
     assert "31410376576" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel

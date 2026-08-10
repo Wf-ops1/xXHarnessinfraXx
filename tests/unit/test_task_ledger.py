@@ -212,10 +212,10 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "F4.2 `PROMOTED`" in panel
     assert (ACTIVE_ROOT / "F4.3.md").is_file()
     assert "docs/tasks/active/F4.3.md" in panel
-    assert "F4.3 `BLOCKED` R6" in panel
+    assert "F4.3 `READY` R6" in panel
     assert "task/f4.3-evidence-context-sufficiency" in panel
-    assert "> **Gate:** `BLOCKED`" in f4_3_dossier
-    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in f4_3_dossier
+    assert "> **Gate:** `READY`" in f4_3_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
     assert "> **Revisão do gate:** `R6`" in f4_3_dossier
@@ -350,7 +350,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
     assert "checkpoint/f4.3-r6-ready" in panel
-    assert "Há blocker local aberto" in panel
+    assert "Não há blocker local aberto" in panel
     assert "runtime/planner.py:68" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
@@ -364,6 +364,11 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "31410376576" in dossier
     assert "artifact_evidence=()" in dossier
     assert "req-other" in dossier
+    assert "d686d50e84eba6cf2d318da837e26547bb3b833c" in dossier
+    assert "ed559ee8f0c7c0b4c52bdd7b144d19af0ddbc7c0" in dossier
+    assert "grupos congelados: 96 / 48 / 63 / 72 testes" in dossier
+    assert "679 passed, 2 skipped, 6 subtests passed" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
