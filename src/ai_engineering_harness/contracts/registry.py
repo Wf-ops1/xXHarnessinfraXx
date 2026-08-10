@@ -19,10 +19,8 @@ from .events.execution_event import ExecutionEvent, KnowledgeSyncEvent
 from .events.knowledge_sync import KnowledgeSyncCompleted, KnowledgeSyncFailed, KnowledgeUpdateEvent
 from .nodes.architecture_analysis import ArchitectureAnalysisInput, ArchitectureAnalysisOutput
 from .nodes.code_generation import CodeGenerationInput, CodeGenerationOutput
-from .nodes.context_sufficiency import ContextSufficiencyReport as ContextSufficiencyReportNode
-from .nodes.context_sufficiency import RetrievalRequest
+from .nodes.context_sufficiency import ContextSufficiencyReport, RetrievalRequest
 from .nodes.node_contracts import ArchitectureAnalysis, CodeGenNode
-from .nodes.node_contracts import ContextSufficiencyReport as ContextSufficiencyReportLegacy
 from .nodes.test_generation import TestGenerationInput, TestGenerationOutput
 from .transactions.knowledge_transaction import ArtifactVersionItem, JournalState, KnowledgeTransaction
 
@@ -129,11 +127,10 @@ _INTERNAL_MODELS: tuple[ContractModel, ...] = (
     ArchitectureAnalysisOutput,
     CodeGenerationInput,
     CodeGenerationOutput,
-    ContextSufficiencyReportNode,
+    ContextSufficiencyReport,
     RetrievalRequest,
     ArchitectureAnalysis,
     CodeGenNode,
-    ContextSufficiencyReportLegacy,
     TestGenerationInput,
     TestGenerationOutput,
     ExecutionEvent,
@@ -153,7 +150,7 @@ _LEGACY_ALIAS_MODELS: dict[str, ContractModel] = {
     "contracts/nodes/architecture_analysis.py#ArchitectureAnalysisOutput": ArchitectureAnalysisOutput,
     "contracts/nodes/code_generation.py#CodeGenerationInput": CodeGenerationInput,
     "contracts/nodes/code_generation.py#CodeGenerationOutput": CodeGenerationOutput,
-    "contracts/nodes/context_sufficiency.py#ContextSufficiencyReport": ContextSufficiencyReportNode,
+    "contracts/nodes/context_sufficiency.py#ContextSufficiencyReport": ContextSufficiencyReport,
     "contracts/nodes/context_sufficiency.py#RetrievalRequest": RetrievalRequest,
     "contracts/nodes/test_generation.py#TestGenerationInput": TestGenerationInput,
     "contracts/nodes/test_generation.py#TestGenerationOutput": TestGenerationOutput,

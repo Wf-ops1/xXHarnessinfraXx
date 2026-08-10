@@ -159,11 +159,13 @@ def test_cli_run_status_inspect_lifecycle():
             [
                 "run",
                 "new-feature",
-                "--input-json",
-                (
-                    '{"requirement_id":"req-1","graph_type":"new_feature",'
-                    '"query":"deliver"}'
-                ),
+                    "--input-json",
+                    (
+                        '{"context_request":{"requirement_id":"req-1",'
+                        '"graph_type":"new_feature","query":"deliver"},'
+                        '"graph_input":{"requirement_id":"req-1",'
+                        '"graph_type":"new_feature","query":"deliver"}}'
+                    ),
             ],
         )
         assert res_run.exit_code != 0

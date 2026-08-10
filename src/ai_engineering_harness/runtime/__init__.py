@@ -1,12 +1,22 @@
 """Public runtime contracts for compiled graph execution and legacy FSM access."""
 
+from .context_assembler import (
+    ContextAssembler,
+    ContextAssemblyError,
+    ContextPackage,
+    ContextPrerequisiteError,
+    InsufficientContextError,
+)
 from .engine import RuntimeEngine, RuntimeGraphConfigurationError
 from .execution_lifecycle import (
     APPROVAL_INVALIDATED,
     APPROVAL_REQUESTED,
+    CONTEXT_EVALUATED,
     EXECUTION_APPROVED,
     ApprovalLifecycleIntegrityError,
     ApprovalSubjectMismatchError,
+    ContextLifecycleIntegrityError,
+    ContextRetryExhaustedError,
     ExecutionApprovalRequiredError,
     ExecutionCancellationError,
     ExecutionConfigurationError,
@@ -90,6 +100,7 @@ from .tool_loop import (
 __all__ = [
     "APPROVAL_INVALIDATED",
     "APPROVAL_REQUESTED",
+    "CONTEXT_EVALUATED",
     "EXECUTION_APPROVED",
     "VALID_STATE_TRANSITIONS",
     "AgentNodeExecutor",
@@ -97,6 +108,12 @@ __all__ = [
     "ApprovalPauseHandler",
     "ApprovalSubjectMismatchError",
     "ArtifactExecutionMismatchError",
+    "ContextAssembler",
+    "ContextAssemblyError",
+    "ContextLifecycleIntegrityError",
+    "ContextPackage",
+    "ContextPrerequisiteError",
+    "ContextRetryExhaustedError",
     "DeterministicNodeExecutor",
     "EffectiveToolPolicy",
     "EventSourcedStateMachine",
@@ -117,6 +134,7 @@ __all__ = [
     "GraphExecutionResult",
     "GraphExecutor",
     "HumanApprovalNodeExecutor",
+    "InsufficientContextError",
     "InterruptedExecutionError",
     "InterruptedNodeExecutionError",
     "InvalidStateTransitionError",

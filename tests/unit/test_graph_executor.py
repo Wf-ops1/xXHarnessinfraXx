@@ -1790,6 +1790,39 @@ def test_interrupted_execution_does_not_reexecute_backend(tmp_path: Path) -> Non
     assert _journal(tmp_path, "exec-interrupted") == journal_before
 
 
+def test_execute_accepts_planning_only_as_pre_graph_entry_state(tmp_path: Path) -> None:
+    artifact = _artifact([_deterministic_node("gate", "completed")])
+    execution_id = "exec-planning-entry"
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(artifact, execution_id))
+    EventSourcedStateMachine(storage, execution_id, clock=_Clock()).transition_to(
+        ExecutionState.PLANNING,
+        node_id="gate",
+        attempt=0,
+        reason="context_sufficient",
+    )
+    trace: list[str] = []
+
+    result = _executor(
+        storage,
+        NodeExecutorRegistry(
+            deterministic=DeterministicNodeExecutor(_TraceBackend(trace)),
+        ),
+    ).execute(artifact, execution_id, {})
+
+    assert result.outcome == "success"
+    assert trace == ["gate"]
+    transitions = [
+        event.payload
+        for event in storage.load_events(execution_id)
+        if event.event_type == "STATE_TRANSITIONED"
+    ]
+    assert any(
+        payload["from_state"] == "PLANNING" and payload["to_state"] == "EXECUTING"
+        for payload in transitions
+    )
+
+
 def test_resume_recovers_pending_outcome_without_reexecuting_completed_node(
     tmp_path: Path,
 ) -> None:

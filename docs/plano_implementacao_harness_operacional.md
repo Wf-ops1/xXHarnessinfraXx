@@ -1039,6 +1039,17 @@ Uma execução E2E deve produzir uma alteração real dentro do worktree e um co
 
 Remover scores e artefatos fabricados, produzir contexto verificável e impedir conclusão sem gates reais.
 
+### Composição canônica da fase — DEC-015
+
+- `ExecutionLifecycleService` possui a preparação pré-grafo; `GraphExecutor` continua percorrendo
+  somente o artefato compilado.
+- Artefato com policy de contexto exige envelope imutável `context_request + graph_input`; contexto
+  insuficiente é persistido e transiciona a execução real antes de qualquer nó.
+- F4.4 estende a preparação com o plano tipado; F4.5–F4.7 entregam o executor determinístico e o guard
+  de conclusão; F4.8 conecta seus resultados ao retry e à suíte final.
+- Componente isolado ou E2E que chama etapas manualmente não satisfaz a tarefa responsável pela
+  composição. Ownership não pode ser adiado para uma tarefa sem ID.
+
 ### Tarefa F4.1 — Corrigir armazenamento do índice
 
 - Definir um único path e naming convention para snapshots.
@@ -1086,6 +1097,11 @@ O dual gate deverá exigir:
 
 Não atingir qualquer gate deve levar a `BLOCKED_INSUFFICIENT_CONTEXT`.
 
+Para grafos que declaram a policy de contexto, F4.3 deve integrar essa decisão ao lifecycle conforme a
+DEC-015: usar a policy compilada, persistir todas as tentativas, transicionar pelo FSM canônico e não
+executar qualquer nó antes de contexto suficiente. Falha operacional de policy/snapshot/persistência
+leva a `BLOCKED_PREREQUISITE`, não a score ou fallback.
+
 ### Tarefa F4.4 — Plano tipado e específico
 
 O planner deverá produzir `PlanDocument` via structured output contendo:
@@ -1103,6 +1119,10 @@ O planner deverá produzir `PlanDocument` via structured output contendo:
 
 O plano deve ser rejeitado se usar escopo genérico fixo ou módulos sem ligação com o contexto.
 
+O lifecycle consome o contexto suficiente persistido, transiciona para `PLANNING`, persiste o plano e
+liga os digests de contexto/plano à entrada executada. Criar `plan.json` fora dessa composição não
+satisfaz F4.4.
+
 ### Tarefa F4.5 — Normalizar gates
 
 Definir IDs oficiais:
@@ -1115,6 +1135,8 @@ Definir IDs oficiais:
 
 Atualizar políticas e evaluator para os mesmos IDs.
 
+Gate ausente ou desconhecido é erro bloqueante. Policy e evaluator não podem divergir nem ignorar IDs.
+
 ### Tarefa F4.6 — Detectar stack e comandos efetivos
 
 - Usar `StackDetector` no runtime.
@@ -1124,6 +1146,9 @@ Atualizar políticas e evaluator para os mesmos IDs.
 - Executar no worktree.
 - Verificar se a ferramenta existe antes do gate.
 - Ferramenta ausente em gate obrigatório resulta em `ERROR_PREREQUISITE`, não skip.
+
+O executor determinístico resolvido nesta tarefa é a única fronteira autorizada para F4.7 persistir
+resultados; CLI ou teste não podem chamar um runner paralelo fora do lifecycle e contar como composição.
 
 ### Tarefa F4.7 — Persistir resultados de verificação
 
@@ -1145,6 +1170,9 @@ COMPLETED somente se todos os gates obrigatórios aplicáveis forem PASSED
 e pelo menos um gate obrigatório tiver sido realmente executado.
 ```
 
+O guard de conclusão consulta resultados persistidos ligados ao digest do commit. `0/0`, gate
+desconhecido, resultado de outro commit ou runner chamado depois de `COMPLETED` bloqueiam a execução.
+
 ### Tarefa F4.8 — Repair loop orientado pelos gates
 
 - Construir `RetryContext` com falhas específicas.
@@ -1153,6 +1181,9 @@ e pelo menos um gate obrigatório tiver sido realmente executado.
 - Limitar tentativas por nó e por execução.
 - Bloquear por custo e tempo.
 - Persistir todas as tentativas.
+
+O retry deve consumir o resultado canônico F4.7. Orçamento apenas transportado no payload não conta
+como limite aplicado; custo/tempo precisam impedir nova tentativa de forma durável.
 
 **Testes obrigatórios da Fase 4**
 

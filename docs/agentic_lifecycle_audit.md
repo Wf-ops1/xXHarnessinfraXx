@@ -9,15 +9,15 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 | Etapa | Componente atual | Evidência existente | Estado real | Lacuna para o produto |
 |---|---|---|---|---|
 | Disparo | CLI `run` | Cria `execution_id` e chama o runtime | Experimental | Falta validar repositório, configuração e precondições fail-closed |
-| Contexto | `ContextAssembler` | Persiste `context.json` | Experimental | Score é heurístico; contexto estrutural/semântico real fica para F4 |
+| Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, identidade/digest e partição exata de evidência, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 R6 `COMPLETED_LOCAL / PROMOTION_PENDING` | Reparo pós-auditoria foi recertificado localmente e em 11/11 checks no PR #36; merge aguarda autorização; a entrada depende de artefatos e snapshot previamente produzidos; planner F4.4 não foi executado |
 | Plano | `Planner` | Persiste `plan.json` | Experimental | Não nasce de provider real nem governa efeitos com pre/postcondições completas |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados | Primitiva real/injetável | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |
-| Verificação | `VerificationEngine` | Executa subprocessos para gates selecionados | Experimental | Lista vazia pode passar; política fail-closed e gates completos ficam para F4 |
+| Verificação | `VerificationEngine` | Executa subprocessos para gates selecionados | Experimental | Lista vazia/gate desconhecido podem passar 0/0 e CLI reprovada pode sair zero; correção fica em F4.5–F4.8 |
 | Reparo | Retry do `GraphExecutor` | Consome erro, tool call, saída redigida, gates, diff e orçamento | Implementado como contrato | Sem composição operacional das tools ainda não produz um reparo de produto de ponta a ponta |
 | Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos | Implementada como contrato | Aprovação exige `resume` explícito e ainda não aciona promoção Git segura |
 | Promoção | `PromotionManager` | Registra evento e retorna string | Simulado | Runtime força dry-run e recebe SHA sintético; caminho live possui fallbacks sintéticos |
-| Memória | `PythonAstIndexer` + `CodebaseMemoryAdapter` + `SnapshotManager` | Rebuild AST de blobs Python do commit exato e snapshot canônico com SHA/schema/status/digest validados | Backend local implementado | Execução é explícita por `harness index`; lifecycle, suficiência F4.3 e backend MCP ainda não o compõem automaticamente |
+| Memória | `PythonAstIndexer` + `CodebaseMemoryAdapter` + `SnapshotManager` | Rebuild AST de blobs Python do commit exato e snapshot canônico com SHA/schema/status/digest validados; F4.3 consome o snapshot commit-bound | Backend local implementado | Execução do índice é explícita por `harness index`; o lifecycle não reindexa automaticamente e o backend MCP ainda não substitui esse backend |
 | Knowledge sync | `KnowledgeSynchronizer` | Transação local em etapas | Experimental | Falta integrar backend real, idempotência/recovery e política no caminho crítico |
 | Evidência | `RuntimeEngine` e audit trail | `evidence.json` e hash chain locais | Experimental | Evidência pode registrar SHA/efeitos simulados e não prova alteração entregue |
 | Rollback | `RollbackManager` | Eventos de compensação e adapter Git legado existem | Experimental/inseguro | Não usa o worktree real nem o terminal tipado atual; promoção, recovery e gates pós-reversão faltam |
@@ -25,8 +25,10 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 
 ## Interpretação correta dos testes
 
-Os testes atuais provam providers HTTP com servidores controlados, tool loop durável, worktree Git
-real, terminal por `argv`, edição confinada e transporte MCP Serena contra fixtures. Integrações live
+Os testes atuais também provam o dual gate de contexto, bloqueio antes de nós, envelope imutável,
+retry/exaustão e recuperação de decisão durável. Eles provam providers HTTP com servidores controlados,
+tool loop durável, worktree Git real, terminal por `argv`, edição confinada e transporte MCP Serena
+contra fixtures. Integrações live
 OpenAI/Serena continuam condicionadas a configuração externa. Eles ainda não provam que a CLI compõe
 essas primitivas numa execução autônoma, nem promoção/reversão segura sobre um repositório externo. O
 E2E atual usa diretórios temporários e backends determinísticos injetados; não cobre o gate final do

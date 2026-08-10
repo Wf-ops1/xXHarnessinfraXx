@@ -5,16 +5,25 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.compiler.compiler import GraphCompiler
 from ai_engineering_harness.contracts.execution import ExecutionState
-from ai_engineering_harness.indexer import SnapshotManager, SnapshotNotFoundError
+from ai_engineering_harness.contracts.nodes import RetrievalRequest
+from ai_engineering_harness.contracts.policies import ContextSufficiencyPolicySpec
+from ai_engineering_harness.contracts.structural_index import StructuralSymbol
+from ai_engineering_harness.indexer import SnapshotManager
 from ai_engineering_harness.models.registry import ProviderConfiguration, ProviderRegistry
 from ai_engineering_harness.models.router import ModelRouter, ModelRoutingConfigurationError
 from ai_engineering_harness.observability.audit import AuditTrailManager
+from ai_engineering_harness.persistence import canonical_json_digest, canonical_json_object
 from ai_engineering_harness.runtime.agent_executor import AgentExecutor
-from ai_engineering_harness.runtime.context_assembler import ContextAssembler, InsufficientContextError
+from ai_engineering_harness.runtime.context_assembler import (
+    ContextAssembler,
+    ContextPrerequisiteError,
+    InsufficientContextError,
+)
 from ai_engineering_harness.runtime.engine import (
     RuntimeEngine,
     RuntimeGraphConfigurationError,
@@ -50,8 +59,64 @@ def _prepare_structural_snapshot(project_root: Path, *, persist: bool = True) ->
         encoding="utf-8",
     ).stdout.strip().lower()
     if persist:
-        SnapshotManager(project_root).save_snapshot(commit_sha, [])
+        SnapshotManager(project_root).save_snapshot(
+            commit_sha,
+            [
+                StructuralSymbol(
+                    kind="function",
+                    name="tracked",
+                    qualified_name="tracked",
+                    path="tracked",
+                    line_start=1,
+                    line_end=2,
+                )
+            ],
+        )
     return commit_sha
+
+
+def _context_policy() -> ContextSufficiencyPolicySpec:
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "src"
+        / "ai_engineering_harness"
+        / "defaults"
+        / "policies"
+        / "context_sufficiency.yaml"
+    )
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert isinstance(document, dict)
+    return ContextSufficiencyPolicySpec.model_validate(document)
+
+
+def _write_context_artifacts(project_root: Path) -> None:
+    root = project_root / ".harness" / "knowledge" / "artifacts"
+    root.mkdir(parents=True, exist_ok=True)
+    for artifact_id in (
+        "prd",
+        "domain_model",
+        "non_functional_requirements",
+        "acceptance_criteria",
+        "architecture",
+    ):
+        (root / f"{artifact_id}.md").write_text(f"# {artifact_id}\n", encoding="utf-8")
+
+
+def _assemble_context(project_root: Path, commit_sha: str, execution_id: str):
+    policy = _context_policy()
+    return ContextAssembler(project_root=project_root).assemble(
+        execution_id=execution_id,
+        request=RetrievalRequest(
+            requirement_id="req-tracked",
+            graph_type="new_feature",
+            query="tracked",
+        ),
+        workflow_name="new-feature",
+        commit_sha=commit_sha,
+        policy=policy,
+        policy_digest=canonical_json_digest(canonical_json_object(policy.model_dump(mode="json"))),
+        attempt=1,
+    )
 
 
 def _write_runtime_graph(project_root: Path, workflow_name: str) -> Path:
@@ -86,28 +151,27 @@ contracts: []
 
 def test_context_assembly_produces_context_json(tmp_path: Path):
     commit_sha = _prepare_structural_snapshot(tmp_path)
-    assembler = ContextAssembler(project_root=tmp_path)
-    pkg = assembler.assemble(execution_id="exec-ctx-1", intent="Add logging")
-    assert pkg.confidence_score >= 0.72
-    assert pkg.structural_snapshot["commit_sha"] == commit_sha
+    _write_context_artifacts(tmp_path)
+    pkg = _assemble_context(tmp_path, commit_sha, "exec-ctx-1")
+    assert pkg.report.confidence >= pkg.report.threshold
+    assert pkg.structural_snapshot.commit_sha == commit_sha
     
     ctx_file = tmp_path / ".harness" / "state" / "executions" / "exec-ctx-1" / "context.json"
     assert ctx_file.is_file()
     data = json.loads(ctx_file.read_text(encoding="utf-8"))
-    assert "confidence_score" in data
+    assert "confidence" in data
 
 
 def test_context_sufficiency_blocks_when_below_threshold(tmp_path: Path):
-    _prepare_structural_snapshot(tmp_path)
-    assembler = ContextAssembler(project_root=tmp_path)
+    commit_sha = _prepare_structural_snapshot(tmp_path)
     with pytest.raises(InsufficientContextError):
-        assembler.assemble(execution_id="exec-ctx-low", intent="Add logging", force_confidence=0.5)
+        _assemble_context(tmp_path, commit_sha, "exec-ctx-low")
 
 
 def test_planner_produces_plan_json(tmp_path: Path):
-    _prepare_structural_snapshot(tmp_path)
-    assembler = ContextAssembler(project_root=tmp_path)
-    pkg = assembler.assemble(execution_id="exec-plan-1", intent="Add authentication")
+    commit_sha = _prepare_structural_snapshot(tmp_path)
+    _write_context_artifacts(tmp_path)
+    pkg = _assemble_context(tmp_path, commit_sha, "exec-plan-1")
     
     planner = Planner(project_root=tmp_path)
     plan = planner.create_plan(execution_id="exec-plan-1", context_package=pkg, intent="Add authentication")
@@ -117,12 +181,33 @@ def test_planner_produces_plan_json(tmp_path: Path):
     assert plan_file.is_file()
 
 
+def test_planner_materializes_context_symbols_as_list_and_preserves_fallback(tmp_path: Path):
+    commit_sha = _prepare_structural_snapshot(tmp_path)
+    _write_context_artifacts(tmp_path)
+    package = _assemble_context(tmp_path, commit_sha, "exec-plan-symbols")
+    planner = Planner(project_root=tmp_path)
+
+    plan = planner.create_plan(
+        execution_id="exec-plan-symbols",
+        context_package=package,
+    )
+    empty_package = package.model_copy(update={"relevant_symbols": ()})
+    fallback = planner.create_plan(
+        execution_id="exec-plan-fallback",
+        context_package=empty_package,
+    )
+
+    assert isinstance(plan.affected_modules, list)
+    assert plan.affected_modules == list(package.relevant_symbols)
+    assert fallback.affected_modules == ["core", "runtime"]
+
+
 def test_context_assembly_fails_without_ready_snapshot_and_writes_no_context(tmp_path: Path):
     commit_sha = _prepare_structural_snapshot(tmp_path, persist=False)
-    assembler = ContextAssembler(project_root=tmp_path)
+    _write_context_artifacts(tmp_path)
 
-    with pytest.raises(SnapshotNotFoundError, match=commit_sha):
-        assembler.assemble(execution_id="exec-missing-index", intent="Add logging")
+    with pytest.raises(ContextPrerequisiteError, match="snapshot"):
+        _assemble_context(tmp_path, commit_sha, "exec-missing-index")
 
     assert not (tmp_path / ".harness" / "state" / "executions" / "exec-missing-index").exists()
 

@@ -136,23 +136,49 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
     assert "31345231098" in readme
-    assert "PR #35 com checks pendentes" in readme
+    assert "PR #35 no merge `3705693`" in readme
+    assert "31346860397" in readme
+    assert "A implementação local da Suficiência por evidência na F4.3" in readme
+    assert "gate documental `READY` R4" in readme
+    assert "o gate voltou a `BLOCKED`" in readme
+    assert "O gate R5 está `READY`" in readme
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in readme
+    assert "auditoria posterior reproduziu suficiência sem `artifact_evidence`" in readme
+    assert "recertificação local passou em 679 testes" in readme
+    assert "31410376576" in readme
+    assert "31414226952" in readme
+    assert "DEC-015" in readme
+    assert "`harness verify`" in readme
+    assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
 
-    assert "`docs/promote-f4.2`" in panel
+    assert "`task/f4.3-evidence-context-sufficiency`" in panel
     assert "F4.2 `PROMOTED`" in panel
-    assert "PR administrativo #35 aberto" in panel
+    assert "F4.3 `READY` R6" in panel
+    assert "checkpoint/f4.3-r2-ready" in panel
+    assert "checkpoint/f4.3-r3-ready" in panel
+    assert "checkpoint/f4.3-r4-ready" in panel
+    assert "checkpoint/f4.3-r5-ready" in panel
+    assert "checkpoint/f4.3-r6-ready" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "O commit `ed559ee`" in panel
+    assert "31410376576" in panel
+    assert "head `ede9a54`, run `31414226952`, 11/11 verde" in panel
+    assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
-    assert "docs/tasks/completed/F4.2.md" in panel
-    assert "PR administrativo" in panel
+    assert "docs/tasks/active/F4.3.md" in panel
+    assert "PR #35" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
-    assert "212a9bf" in panel
-    assert "31345231098" in panel
+    assert "3705693" in panel
+    assert "31346860397" in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle
     assert "terminal usa `shell=True`" not in lifecycle
     assert "registry de executores vazio" in user_guide
     assert "harness resume <id>" in user_guide
+    assert "context_request + graph_input" in user_guide
+    assert "CONTEXT_EVALUATED" in user_guide
+    assert "FAILED_RETRY_EXHAUSTED" in user_guide
     assert "provider simulado" not in walkthrough
     assert "não existe worktree Git" not in walkthrough
     assert "Worktree real ausente" not in walkthrough_audit

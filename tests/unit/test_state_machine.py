@@ -318,6 +318,42 @@ def test_paused_approval_can_resume_only_through_the_explicit_executing_edge(
     assert machine.recover() == resumed
 
 
+def test_insufficient_context_can_fail_only_when_retry_budget_is_exhausted(
+    tmp_path: Path,
+) -> None:
+    assert VALID_STATE_TRANSITIONS[ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT] == {
+        ExecutionState.CONTEXT_ASSEMBLING,
+        ExecutionState.CANCELLED,
+        ExecutionState.FAILED,
+        ExecutionState.FAILED_RETRY_EXHAUSTED,
+    }
+    execution_id = "exec-context-retry-exhausted"
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(execution_id))
+    machine = EventSourcedStateMachine(storage, execution_id, clock=_Clock())
+    machine.transition_to(
+        ExecutionState.CONTEXT_ASSEMBLING,
+        node_id="context",
+        attempt=1,
+        reason="context_assembly_started",
+    )
+    machine.transition_to(
+        ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT,
+        node_id="context",
+        attempt=1,
+        reason="context_insufficient",
+    )
+
+    exhausted = machine.transition_to(
+        ExecutionState.FAILED_RETRY_EXHAUSTED,
+        node_id="context",
+        attempt=1,
+        reason="context_retry_exhausted",
+    )
+
+    assert exhausted.current_state == ExecutionState.FAILED_RETRY_EXHAUSTED
+
+
 def test_replay_allows_node_revision_gaps_and_reproduces_snapshot(
     tmp_path: Path,
 ) -> None:

@@ -106,6 +106,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
             ExecutionState.CONTEXT_ASSEMBLING,
             ExecutionState.CANCELLED,
             ExecutionState.FAILED,
+            ExecutionState.FAILED_RETRY_EXHAUSTED,
         }
     ),
     ExecutionState.BLOCKED_PREREQUISITE: frozenset(

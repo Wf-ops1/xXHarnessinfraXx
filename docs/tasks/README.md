@@ -53,7 +53,7 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 | F3 | F3.5 | [Terminal seguro por argv](completed/F3.5.md) | PR #27 / merge `b6a4a24` / pós-merge `31285547886` |
 | F3 | F3.8 | [Edição real confinada e Serena MCP explícito](completed/F3.8.md) | PR #29 / merge `e6b5b84` / pós-merge `31295594376`; administrativo #30 / merge `c2aa89b` / pós-merge `31316853244` |
 | F4 | F4.1 | [Armazenamento íntegro do índice estrutural](completed/F4.1.md) | PR #32 / merge `12ce3b7` / pós-merge `31323952381`; administrativo #33 / merge `571a8eb` / pós-merge `31329231458` |
-| F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 aberto |
+| F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
@@ -76,3 +76,4 @@ Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` 
 | DEC-012 | Realinhamento da Fase 3 em F3.C1/F3.C2, com pausa humana obrigatória e autorização nova entre tarefas. |
 | DEC-013 | F3.4 cria guard parametrizado sem efeitos; F3.6 fornece worktree; F3.5/F3.8 integram consumidores depois de ambos. |
 | DEC-014 | Reconciliação pós-merge imediata; evidência negativa prevalece e exige recertificação integral. |
+| DEC-015 | Lifecycle possui a preparação F4; contexto bloqueia antes do grafo e verificação guarda `COMPLETED`. |

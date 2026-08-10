@@ -3,38 +3,56 @@ policy_id: context-sufficiency-v1
 policy_schema_version: "1.0"
 definition_version: "3.2.0"
 
-minimum_confidence: 0.72
+minimum_confidence: "0.72"
 dual_gate_mode: true
+
+dimension_weights:
+  requirements: "0.25"
+  acceptance_criteria: "0.20"
+  structural_coverage: "0.15"
+  symbol_relevance: "0.15"
+  architecture_constraints: "0.15"
+  conflicts_and_gaps: "0.10"
 
 required_artifacts_manifest:
   new_feature:
-    mandatory:
+    requirements:
       - prd
       - domain_model
-      - acceptance_criteria
-      - architecture
       - non_functional_requirements
-    conditional:
-      - artifact: adr
-        condition: "architecture_change_required == true"
-      - artifact: security_spec
-        condition: "affected_modules contains auth OR payments"
+    acceptance_criteria:
+      - acceptance_criteria
+    architecture_constraints:
+      - architecture
+    conditional: []
   bug_fix:
-    mandatory:
+    requirements:
       - bug_report
       - reproduction_steps
       - affected_module_spec
+    acceptance_criteria:
+      - acceptance_criteria
+    architecture_constraints:
+      - architecture_constraints
+    conditional: []
   refactoring:
-    mandatory:
+    requirements:
       - target_module_spec
+    acceptance_criteria:
+      - acceptance_criteria
+    architecture_constraints:
       - architecture
-      - acceptance_criteria
+    conditional: []
   migration:
-    mandatory:
+    requirements:
       - migration_spec
-      - rollback_plan
       - data_schema
+    acceptance_criteria:
       - acceptance_criteria
+    architecture_constraints:
+      - architecture
+      - rollback_plan
+    conditional: []
 
 conflict_handling: escalate_to_human
 max_retrieval_retries: 2
