@@ -136,17 +136,19 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
     assert "31345231098" in readme
-    assert "PR #35 com checks pendentes" in readme
+    assert "PR #35 no merge `3705693`" in readme
+    assert "31346860397" in readme
+    assert "F4.3 está ativa com gate documental `READY`" in readme
 
-    assert "`docs/promote-f4.2`" in panel
+    assert "`task/f4.3-evidence-context-sufficiency`" in panel
     assert "F4.2 `PROMOTED`" in panel
-    assert "PR administrativo #35 aberto" in panel
+    assert "F4.3 `READY`" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
-    assert "docs/tasks/completed/F4.2.md" in panel
-    assert "PR administrativo" in panel
+    assert "docs/tasks/active/F4.3.md" in panel
+    assert "PR #35" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
-    assert "212a9bf" in panel
-    assert "31345231098" in panel
+    assert "3705693" in panel
+    assert "31346860397" in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle

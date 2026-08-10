@@ -187,13 +187,14 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f4_2_promotion_is_certified_and_reconciliation_is_local() -> None:
+def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
     dossier = _read(COMPLETED_ROOT / "F3.8.md")
     f4_1_dossier = _read(COMPLETED_ROOT / "F4.1.md")
     f4_2_dossier = _read(COMPLETED_ROOT / "F4.2.md")
+    f4_3_dossier = _read(ACTIVE_ROOT / "F4.3.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
@@ -206,6 +207,14 @@ def test_f4_2_promotion_is_certified_and_reconciliation_is_local() -> None:
     assert (COMPLETED_ROOT / "F4.2.md").is_file()
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "F4.2 `PROMOTED`" in panel
+    assert (ACTIVE_ROOT / "F4.3.md").is_file()
+    assert "docs/tasks/active/F4.3.md" in panel
+    assert "F4.3 `READY`" in panel
+    assert "task/f4.3-evidence-context-sufficiency" in panel
+    assert "> **Gate:** `READY`" in f4_3_dossier
+    assert "> **Lifecycle:** `ACTIVE`" in f4_3_dossier
+    assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
+    assert "31346860397" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "45d3b059db071bdb98285e2ad821f525f80a9de6" in dossier
@@ -222,8 +231,7 @@ def test_f4_2_promotion_is_certified_and_reconciliation_is_local() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "docs/promote-f4.2" in panel
-    assert "PR administrativo" in panel
+    assert "PR #35" in panel
     assert "CI required" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
@@ -271,7 +279,9 @@ def test_f4_2_promotion_is_certified_and_reconciliation_is_local() -> None:
     assert "completed/F4.2.md" in task_index
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/35" in f4_2_dossier
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_2_dossier
-    assert "administrativo #35 aberto" in task_index
+    assert "administrativo #35 / merge `3705693` / pós-merge `31346860397`" in task_index
+    assert "370569377a1b065db479c239edde4016e1de5c0a" in panel
+    assert "31346860397" in panel
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
