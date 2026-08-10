@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal, InvalidOperation
 from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
@@ -46,30 +47,115 @@ def _as_tuple(value: object) -> object:
     return tuple(value) if isinstance(value, list) else value
 
 
-class ConditionalArtifactSpec(_StrictFrozenModel):
-    artifact: _NonEmptyStr
-    condition: _NonEmptyStr
-
-
 class ArtifactManifestSpec(_StrictFrozenModel):
-    mandatory: tuple[_NonEmptyStr, ...]
-    conditional: tuple[ConditionalArtifactSpec, ...] = ()
+    requirements: tuple[_NonEmptyStr, ...]
+    acceptance_criteria: tuple[_NonEmptyStr, ...]
+    architecture_constraints: tuple[_NonEmptyStr, ...]
+    conditional: tuple[_NonEmptyStr, ...] = ()
 
-    @field_validator("mandatory", "conditional", mode="before")
+    @field_validator(
+        "requirements",
+        "acceptance_criteria",
+        "architecture_constraints",
+        "conditional",
+        mode="before",
+    )
     @classmethod
     def freeze_sequences(cls, value: object) -> object:
         return _as_tuple(value)
+
+    @model_validator(mode="after")
+    def validate_manifest(self) -> Self:
+        grouped = self.requirements + self.acceptance_criteria + self.architecture_constraints
+        if not self.requirements or not self.acceptance_criteria or not self.architecture_constraints:
+            raise ValueError("every artifact manifest group must be non-empty")
+        if len(set(grouped)) != len(grouped):
+            raise ValueError("artifact IDs must be unique across manifest groups")
+        if self.conditional:
+            raise ValueError("conditional artifacts are not supported by the context sufficiency MVP")
+        return self
+
+
+_CONTEXT_DIMENSIONS = (
+    "requirements",
+    "acceptance_criteria",
+    "structural_coverage",
+    "symbol_relevance",
+    "architecture_constraints",
+    "conflicts_and_gaps",
+)
+_EXPECTED_CONTEXT_WEIGHTS = {
+    "requirements": Decimal("0.25"),
+    "acceptance_criteria": Decimal("0.20"),
+    "structural_coverage": Decimal("0.15"),
+    "symbol_relevance": Decimal("0.15"),
+    "architecture_constraints": Decimal("0.15"),
+    "conflicts_and_gaps": Decimal("0.10"),
+}
+
+
+def _decimal_value(value: object) -> Decimal:
+    if isinstance(value, bool):
+        raise TypeError("decimal policy values cannot be booleans")
+    if isinstance(value, Decimal):
+        decimal_value = value
+    elif isinstance(value, (int, float, str)):
+        if isinstance(value, str) and value != value.strip():
+            raise ValueError("decimal policy values must be trimmed")
+        try:
+            decimal_value = Decimal(str(value))
+        except InvalidOperation as exc:
+            raise ValueError("invalid decimal policy value") from exc
+    else:
+        raise TypeError("decimal policy values must be numbers or canonical decimal strings")
+    if not decimal_value.is_finite():
+        raise ValueError("decimal policy values must be finite")
+    return decimal_value
 
 
 class ContextSufficiencyPolicySpec(_StrictFrozenModel):
     policy_id: _NonEmptyStr
     policy_schema_version: _NonEmptyStr
     definition_version: _NonEmptyStr
-    minimum_confidence: float = Field(ge=0.0, le=1.0)
+    minimum_confidence: Decimal = Field(ge=Decimal(0), le=Decimal(1))
+    dimension_weights: dict[_NonEmptyStr, Decimal]
     dual_gate_mode: bool
     required_artifacts_manifest: dict[_NonEmptyStr, ArtifactManifestSpec]
-    conflict_handling: _NonEmptyStr
+    conflict_handling: Literal["escalate_to_human"]
     max_retrieval_retries: int = Field(ge=0)
+
+    @field_validator("minimum_confidence", mode="before")
+    @classmethod
+    def parse_threshold(cls, value: object) -> Decimal:
+        return _decimal_value(value)
+
+    @field_validator("dimension_weights", mode="before")
+    @classmethod
+    def parse_weights(cls, value: object) -> object:
+        if not isinstance(value, dict):
+            return value
+        return {key: _decimal_value(weight) for key, weight in value.items()}
+
+    @model_validator(mode="after")
+    def validate_context_policy(self) -> Self:
+        if self.minimum_confidence != Decimal("0.72"):
+            raise ValueError("minimum_confidence must be exactly 0.72")
+        if self.dimension_weights != _EXPECTED_CONTEXT_WEIGHTS:
+            raise ValueError("dimension_weights must contain the six canonical weights")
+        if tuple(self.dimension_weights) != _CONTEXT_DIMENSIONS:
+            raise ValueError("dimension_weights must use canonical dimension order")
+        if sum(self.dimension_weights.values(), Decimal(0)) != Decimal("1.00"):
+            raise ValueError("dimension_weights must sum exactly to 1.00")
+        if self.dual_gate_mode is not True:
+            raise ValueError("dual_gate_mode must be enabled")
+        if set(self.required_artifacts_manifest) != {
+            "new_feature",
+            "bug_fix",
+            "refactoring",
+            "migration",
+        }:
+            raise ValueError("required_artifacts_manifest must define exactly four supported graph types")
+        return self
 
 
 class AutomationWindowSpec(_StrictFrozenModel):

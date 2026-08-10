@@ -3,7 +3,8 @@
 > **Estado:** aceita
 > **Data:** 2026-08-10
 > **Autoridade:** autorizações explícitas para recongelar o gate F4.3 conforme a auditoria integral da
-> Fase 4 e, no R3, permitir somente a transição FSM necessária ao retry exaurido
+> Fase 4, permitir no R3 somente a transição FSM do retry exaurido e, no R4, aceitar `PLANNING`
+> como entrada pré-grafo
 
 ## Contexto
 
@@ -51,18 +52,21 @@ tarefa posterior possuía ownership explícito da composição completa.
 12. A F4.3 não implementa planner, executor de gates, repair loop, promoção ou MCP. Ela entrega somente
     contexto determinístico, sua persistência e a transição real de preparação/bloqueio.
 
-## Consequências para o gate F4.3 R3
+## Consequências para o gate F4.3 R4
 
 - `execution_lifecycle.py`, o facade estritamente afetado, os defaults context-enabled e seus testes
   passam a integrar a allowlist F4.3;
-- `GraphExecutor` e `ExecutionRecord` não mudam; o mapeamento pré-implementação comprovou que a tabela
-  da FSM não permitia a transição exigida no item 7, portanto o R3 autoriza exclusivamente
+- `ExecutionRecord` não muda; o R3 autoriza exclusivamente
   `BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED` e seu teste;
+- o R4 comprova que `GraphExecutor` exigia `INITIATED` mesmo depois da preparação pré-grafo. Ele pode
+  aceitar também `PLANNING` no entrypoint em modo não-resume, sem conhecer contexto e sem alterar
+  traversal, preflight, contratos de nós ou resume;
 - o envelope é obrigatório apenas quando a policy de contexto está no artefato; grafos de testes sem
   essa policy preservam seu contrato F2;
 - os checkpoints anteriores não são movidos nem apagados. O R2 permanece em
   `checkpoint/f4.3-r2-ready`, e o recongelamento da exceção mínima recebe
-  `checkpoint/f4.3-r3-ready`;
+  `checkpoint/f4.3-r3-ready`; a implementação parcial é preservada antes da exceção do executor em
+  `checkpoint/f4.3-r4-ready`;
 - qualquer necessidade de mudar schema do bundle/record, compiler ou GraphExecutor reabre o gate.
 
 ## Alternativas rejeitadas

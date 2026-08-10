@@ -28,11 +28,8 @@ def test_policy_engine_budget_exceeded():
     assert "[BUDGET EXCEEDED]" in str(exc_info.value)
 
 def test_context_sufficiency_evaluation():
-    dims = {"kis": 0.8, "ast": 0.9, "spec": 0.7}
-    report = ContextSufficiencyEvaluator.evaluate(dims, required_threshold=0.72)
-    assert report.is_sufficient is True
-    assert report.score == 0.80
-    assert report.dimensions["kis"] == 0.8
-
-    insufficient_report = ContextSufficiencyEvaluator.evaluate({"kis": 0.4}, required_threshold=0.72)
-    assert insufficient_report.is_sufficient is False
+    with pytest.raises(TypeError):
+        ContextSufficiencyEvaluator.evaluate(  # type: ignore[call-arg]
+            {"requirements": 1.0},
+            required_threshold=0.72,
+        )

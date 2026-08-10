@@ -109,9 +109,17 @@ def test_public_contract_registry_api_exports_frozen_symbols() -> None:
 def test_internal_catalog_uses_qualified_names_and_exact_legacy_aliases() -> None:
     registry = ContractRegistry()
 
-    assert len(registry.available_contracts) == 19
+    assert len(registry.available_contracts) == 18
     assert len(registry.legacy_aliases) == 11
     assert all(name.startswith("ai_engineering_harness.contracts.") for name in registry.available_contracts)
+    assert (
+        "ai_engineering_harness.contracts.nodes.context_sufficiency.ContextSufficiencyReport"
+        in registry.available_contracts
+    )
+    assert not any(
+        name.endswith("node_contracts.ContextSufficiencyReport")
+        for name in registry.available_contracts
+    )
     for alias in registry.legacy_aliases:
         resolved = registry.resolve(alias)
         assert resolved.source == "internal"
