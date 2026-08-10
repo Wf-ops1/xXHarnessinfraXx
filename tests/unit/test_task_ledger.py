@@ -351,6 +351,8 @@ def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
     assert "0c376023d3f6a2d6ccde8277de715e0dd617e1b3" in dossier
+    assert "1ee5f062b75a45b0cbcbab0e23b68458969c7c99" in dossier
+    assert "nenhuma tag remota e nenhum PR" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
