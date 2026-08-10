@@ -84,6 +84,8 @@ Limitações importantes:
 - os quatro workflows F4.3 exigem envelope exato `context_request + graph_input`; a decisão usa a
   policy resolvida do artefato, o snapshot do commit e os manifestos de conhecimento, com até duas
   retomadas além da tentativa inicial;
+- o planner atual ainda fabrica valores genéricos e não participa dessa sequência; o gate F4.4 está
+  `READY`, mas nenhuma geração tipada, payload de plano ou evento `PLAN_GENERATED` foi implementado;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
 - promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,

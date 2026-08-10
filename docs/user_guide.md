@@ -75,10 +75,10 @@ relatório por digest. Os resultados são fail-closed:
 `harness resume <id>` sempre recarrega o envelope, commit, artefato e policy originais. Não existem
 `force_confidence`, override de score ou fallback para policy mutável. A auditoria R6 do PR #36
 reproduziu suficiência sem evidência de artefato e com identidade de request divergente; o reparo agora
-vincula identidade/digest, manifesto/evidência e path canônico, com recertificação local integral. O
-estado é `COMPLETED_LOCAL / PROMOTION_PENDING`; a nova CI do PR passou em 11/11 checks e merge ainda
-aguarda autorização nominal. Isso não
-transforma o protótipo em execução
+vincula identidade/digest, manifesto/evidência e path canônico. A F4.3 e sua reconciliação
+administrativa #37 foram promovidas, ambas com CI pós-merge verde. O gate F4.4 está congelado, mas o
+planner tipado/específico ainda não foi implementado; hoje o estado `PLANNING` segue para o grafo sem
+plano durável ligado ao contexto. Isso não transforma o protótipo em execução
 autônoma porque o registry padrão de executores continua vazio.
 
 ## Teste controlado de `init`
@@ -97,7 +97,7 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- publicação e promoção remotas da F4.3, ainda não autorizadas.
+- planner F4.4 tipado, específico, persistido e integrado ao lifecycle.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

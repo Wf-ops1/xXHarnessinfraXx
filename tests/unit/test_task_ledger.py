@@ -212,7 +212,8 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert (COMPLETED_ROOT / "F4.3.md").is_file()
     assert "docs/tasks/completed/F4.3.md" in panel
     assert "F4.3 `PROMOTED`" in panel
-    assert "docs/promote-f4.3" in panel
+    assert "docs/tasks/active/F4.4.md" in panel
+    assert (ACTIVE_ROOT / "F4.4.md").is_file()
     assert "> **Gate:** `READY`" in f4_3_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
@@ -252,6 +253,8 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "PR #36" in panel
     assert "PR #37" in panel
     assert "11/11" in panel
+    assert "5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1" in panel
+    assert "31433785637" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
     assert "Autorizo o merge do PR #30" not in panel
@@ -300,6 +303,7 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_2_dossier
     assert "administrativo #35 / merge `3705693` / pós-merge `31346860397`" in task_index
     assert "completed/F4.3.md" in task_index
+    assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
     assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in panel
     assert "31419214233" in panel
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
@@ -355,7 +359,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "Não há blocker técnico local aberto na F4.3" in panel
+    assert "Não há blocker técnico conhecido para o gate documental" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -382,6 +386,34 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in dossier
     assert "31419214233" in dossier
     assert dossier.rfind("## Certificação final da promoção") > dossier.rfind("merge não autorizado")
+
+
+def test_f4_4_gate_is_frozen_without_starting_implementation() -> None:
+    panel = _read(TASK_PANEL)
+    readme = _read(ROOT / "README.md")
+    dossier = _read(ACTIVE_ROOT / "F4.4.md")
+    task_index = _read(TASKS_INDEX)
+
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PREPARING`" in dossier
+    assert "> **Implementação:** `não iniciada`" in dossier
+    assert "checkpoint/f4.4-ready" in dossier
+    assert "task/f4.4-typed-specific-plan" in dossier
+    assert "5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1" in dossier
+    assert "31433785637" in dossier
+    assert "structured_output_with_fallback" in dossier
+    assert "PLAN_GENERATION_STARTED" in dossier
+    assert "PLAN_GENERATED" in dossier
+    assert "context_digest" in dossier
+    assert "graph_input_digest" in dossier
+    assert "GraphExecutor" in dossier
+    assert "F4.5–F4.8" in dossier
+    assert "implementação não foi iniciada" in dossier
+    assert "AGUARDAR AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA IMPLEMENTAR A F4.4" in panel
+    assert "F4.4 `READY`" in panel
+    assert "implementação não iniciada" in panel
+    assert "o gate F4.4 está congelado, sem implementação" in readme
+    assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
