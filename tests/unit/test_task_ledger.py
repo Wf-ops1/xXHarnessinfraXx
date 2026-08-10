@@ -215,7 +215,7 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "F4.3 `READY`" in panel
     assert "task/f4.3-evidence-context-sufficiency" in panel
     assert "> **Gate:** `READY`" in f4_3_dossier
-    assert "> **Lifecycle:** `ACTIVE`" in f4_3_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
     assert "> **Revisão do gate:** `R5`" in f4_3_dossier
@@ -345,10 +345,12 @@ def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
-    assert "O blocker de certificação comprovado" in panel
+    assert "Não há blocker local aberto" in panel
     assert "runtime/planner.py:68" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
+    assert "674 passed, 2 skipped, 6 subtests passed" in dossier
+    assert "0c376023d3f6a2d6ccde8277de715e0dd617e1b3" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

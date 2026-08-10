@@ -181,6 +181,27 @@ def test_planner_produces_plan_json(tmp_path: Path):
     assert plan_file.is_file()
 
 
+def test_planner_materializes_context_symbols_as_list_and_preserves_fallback(tmp_path: Path):
+    commit_sha = _prepare_structural_snapshot(tmp_path)
+    _write_context_artifacts(tmp_path)
+    package = _assemble_context(tmp_path, commit_sha, "exec-plan-symbols")
+    planner = Planner(project_root=tmp_path)
+
+    plan = planner.create_plan(
+        execution_id="exec-plan-symbols",
+        context_package=package,
+    )
+    empty_package = package.model_copy(update={"relevant_symbols": ()})
+    fallback = planner.create_plan(
+        execution_id="exec-plan-fallback",
+        context_package=empty_package,
+    )
+
+    assert isinstance(plan.affected_modules, list)
+    assert plan.affected_modules == list(package.relevant_symbols)
+    assert fallback.affected_modules == ["core", "runtime"]
+
+
 def test_context_assembly_fails_without_ready_snapshot_and_writes_no_context(tmp_path: Path):
     commit_sha = _prepare_structural_snapshot(tmp_path, persist=False)
     _write_context_artifacts(tmp_path)

@@ -142,6 +142,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "gate documental `READY` R4" in readme
     assert "o gate voltou a `BLOCKED`" in readme
     assert "O gate R5 está `READY`" in readme
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in readme
     assert "DEC-015" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
@@ -153,6 +154,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
     assert "checkpoint/f4.3-r5-ready" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "docs/tasks/active/F4.3.md" in panel

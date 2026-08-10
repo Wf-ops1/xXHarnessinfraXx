@@ -9,7 +9,7 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 | Etapa | Componente atual | Evidência existente | Estado real | Lacuna para o produto |
 |---|---|---|---|---|
 | Disparo | CLI `run` | Cria `execution_id` e chama o runtime | Experimental | Falta validar repositório, configuração e precondições fail-closed |
-| Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | Implementado localmente na F4.3; gate R5 `READY` | A entrada ainda depende de artefatos e snapshot previamente produzidos; resta a correção mínima de tipo no planner antes da recertificação |
+| Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 `COMPLETED_LOCAL / PROMOTION_PENDING` | A entrada ainda depende de artefatos e snapshot previamente produzidos; promoção remota e planner F4.4 não foram executados |
 | Plano | `Planner` | Persiste `plan.json` | Experimental | Não nasce de provider real nem governa efeitos com pre/postcondições completas |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados | Primitiva real/injetável | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |

@@ -35,8 +35,8 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — implementação R4 integrada; correção mínima de tipo R5 autorizada |
-| **Gate** | F4.3 `READY` R5 / lifecycle `ACTIVE`; checkpoint R5 deve anteceder a edição do planner |
+| **Tarefa ativa** | `F4.3` — implementação e aceitação local concluídas; promoção pendente |
+| **Gate** | F4.3 `READY` R5 / lifecycle `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
@@ -84,30 +84,29 @@ confirma somente essa exceção no executor.
 O R5 foi autorizado nominalmente em `2026-08-10T12:54:21-03:00` para corrigir somente a
 materialização de `affected_modules` em `runtime/planner.py:68` e seu teste/validação. Nenhum contrato
 de plano, geração F4.4 ou outro comportamento do planner foi reaberto. O checkpoint
-`checkpoint/f4.3-r5-ready` deve preservar toda a implementação R4 antes dessa única edição.
+`checkpoint/f4.3-r5-ready` preservou toda a implementação R4 no commit `0c37602` antes dessa única
+edição. A correção, o teste e a recertificação integral foram concluídos.
 
 ## 6. Bloqueios atuais
 
-O blocker de certificação comprovado é: `mypy src` e `mypy --platform linux src` falham em
-`runtime/planner.py:68`, onde `tuple[str, ...] | list[str]` é passado para `PlanDocument.affected_modules`
-tipado como `list[str]`. O arquivo é idêntico em `main`, no checkpoint R4 e na árvore pré-R5. A
-ampliação mínima foi autorizada, mas nenhuma edição pode ocorrer antes do checkpoint R5. Ruff,
-compileall, diff-check, regressão, build e smoke estão verdes. Os falsos sucessos de verificação
-continuam reservados para F4.5–F4.8. Publicação, PR, merge e exclusão de refs permanecem não autorizados.
+Não há blocker local aberto. `mypy src` e `mypy --platform linux src` passam nos 104 arquivos; os quatro
+grupos congelados passam em 91/48/63/72 testes; a regressão integral concluiu 674 testes, 2 skips live
+opt-in existentes e 6 subtests. Ruff, compileall, diff-check, build e smoke também estão verdes. Os
+falsos sucessos de verificação continuam reservados para F4.5–F4.8. Publicação da branch/tag, PR, merge
+e exclusão de refs permanecem não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-REGISTRAR O R5, CRIAR `checkpoint/f4.3-r5-ready` PRESERVANDO A IMPLEMENTAÇÃO R4 E SOMENTE DEPOIS
-CORRIGIR A MATERIALIZAÇÃO DE LISTA EM `runtime/planner.py:68`, ACRESCENTAR SEU TESTE E REPETIR TODO O
-ACEITE. NÃO ALTERAR CONTRATOS/GERAÇÃO F4.4, PUBLICAR, ABRIR/MESCLAR PR OU EXCLUIR REFS.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH DA F4.3. NÃO PUBLICAR TAG, ABRIR/MESCLAR PR,
+EXCLUIR REFS, INICIAR F4.4/F3.7 OU ALTERAR A IMPLEMENTAÇÃO LOCAL CONCLUÍDA SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
 2. Leia `docs/tasks/active/F4.3.md`, DEC-015, `docs/tasks/completed/F4.2.md` e DEC-014 integralmente.
-3. Confirme o gate F4.3 `READY` R5, a branch exclusiva e os cinco checkpoints locais do dossiê.
+3. Confirme F4.3 `COMPLETED_LOCAL / PROMOTION_PENDING`, a branch e os cinco checkpoints locais.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e o baseline promovido da `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
@@ -122,4 +121,4 @@ ACEITE. NÃO ALTERAR CONTRATOS/GERAÇÃO F4.4, PUBLICAR, ABRIR/MESCLAR PR OU EXC
 
 ---
 
-*Atualizado em: 2026-08-10T12:54:21-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T13:02:30-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

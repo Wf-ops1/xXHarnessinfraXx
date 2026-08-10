@@ -74,8 +74,8 @@ relatório por digest. Os resultados são fail-closed:
 
 `harness resume <id>` sempre recarrega o envelope, commit, artefato e policy originais. Não existem
 `force_confidence`, override de score ou fallback para policy mutável. A implementação local está
-integrada e possui regressão verde. O gate R5 `READY` autoriza somente normalizar a lista em
-`runtime/planner.py`; isso não transforma o protótipo em execução
+integrada e sua recertificação R5 local está verde (`COMPLETED_LOCAL / PROMOTION_PENDING`). Isso não
+transforma o protótipo em execução
 autônoma porque o registry padrão de executores continua vazio.
 
 ## Teste controlado de `init`
@@ -94,7 +94,7 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- certificação local da F4.3 enquanto a correção de tipo R5 autorizada não for implementada e validada.
+- publicação e promoção remotas da F4.3, ainda não autorizadas.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

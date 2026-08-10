@@ -57,7 +57,7 @@ class Planner:
 
         goal = intent if intent else "Implement functionality with high quality"
         scope = ["src/ai_engineering_harness/"]
-        affected_modules = context_package.relevant_symbols or ["core", "runtime"]
+        affected_modules = list(context_package.relevant_symbols) or ["core", "runtime"]
         risks = ["potencial quebra de regressão", "violação de política de ferramentas"]
         applicable_gates = ["typecheck", "lint", "unit_test"]
         completion_criteria = ["100% dos testes unitários passando", "verificação de segurança e tipo ok"]
