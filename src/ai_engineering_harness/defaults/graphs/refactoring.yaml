@@ -11,6 +11,7 @@ policies:
   - policies/verification_policy.yaml
   - policies/tool_policy.yaml
   - policies/sandbox_policy.yaml
+  - policies/context_sufficiency.yaml
 
 contracts:
   - contracts/nodes/architecture_analysis.py#ArchitectureAnalysisInput

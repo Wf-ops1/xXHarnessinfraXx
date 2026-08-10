@@ -76,14 +76,6 @@ class ArtifactManifestSpec(_StrictFrozenModel):
         return self
 
 
-_CONTEXT_DIMENSIONS = (
-    "requirements",
-    "acceptance_criteria",
-    "structural_coverage",
-    "symbol_relevance",
-    "architecture_constraints",
-    "conflicts_and_gaps",
-)
 _EXPECTED_CONTEXT_WEIGHTS = {
     "requirements": Decimal("0.25"),
     "acceptance_criteria": Decimal("0.20"),
@@ -142,8 +134,6 @@ class ContextSufficiencyPolicySpec(_StrictFrozenModel):
             raise ValueError("minimum_confidence must be exactly 0.72")
         if self.dimension_weights != _EXPECTED_CONTEXT_WEIGHTS:
             raise ValueError("dimension_weights must contain the six canonical weights")
-        if tuple(self.dimension_weights) != _CONTEXT_DIMENSIONS:
-            raise ValueError("dimension_weights must use canonical dimension order")
         if sum(self.dimension_weights.values(), Decimal(0)) != Decimal("1.00"):
             raise ValueError("dimension_weights must sum exactly to 1.00")
         if self.dual_gate_mode is not True:

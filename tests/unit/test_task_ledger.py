@@ -218,11 +218,12 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "> **Lifecycle:** `ACTIVE`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
-    assert "> **Revisão do gate:** `R4`" in f4_3_dossier
+    assert "> **Revisão do gate:** `R5`" in f4_3_dossier
     assert "checkpoint/f4.3-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r2-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r3-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r4-ready" in f4_3_dossier
+    assert "checkpoint/f4.3-r5-ready" in f4_3_dossier
     assert "DEC-015" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -295,7 +296,7 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
 
-def test_f4_3_r4_preserves_prior_gates_and_names_every_phase4_owner() -> None:
+def test_f4_3_r5_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     panel = _read(TASK_PANEL)
     plan = _read(IMPLEMENTATION_PLAN)
     task_index = _read(TASKS_INDEX)
@@ -306,15 +307,18 @@ def test_f4_3_r4_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     r2_at = dossier.find("### R2 — diagnóstico e recertificação documental")
     r3_at = dossier.find("### R3 — exceção mínima da FSM")
     r4_at = dossier.find("### R4 — entrada pré-grafo em `PLANNING`")
+    r5_at = dossier.find("### R5 — correção mínima do gate de tipos")
     assert r1_at >= 0
     assert r2_at > r1_at
     assert r3_at > r2_at
     assert r4_at > r3_at
+    assert r5_at > r4_at
     assert "perde precedência operacional para este R2" in dossier
     assert "checkpoint/f4.3-ready" in dossier
     assert "checkpoint/f4.3-r2-ready" in dossier
     assert "checkpoint/f4.3-r3-ready" in dossier
     assert "checkpoint/f4.3-r4-ready" in dossier
+    assert "checkpoint/f4.3-r5-ready" in dossier
     assert "BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED" in dossier
     assert "ExecutionLifecycleService" in dossier
     assert "INITIATED → CONTEXT_ASSEMBLING" in dossier
@@ -340,7 +344,11 @@ def test_f4_3_r4_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "checkpoint/f4.3-r2-ready" in panel
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
-    assert "Não há blocker aberto no contrato R4" in panel
+    assert "checkpoint/f4.3-r5-ready" in panel
+    assert "O blocker de certificação comprovado" in panel
+    assert "runtime/planner.py:68" in panel
+    assert "673 passed, 2 skipped, 6 subtests passed" in dossier
+    assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

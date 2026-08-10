@@ -64,7 +64,13 @@ manifesto de versão e rollback de inicialização previstos na F7.
 flowchart TD
     A["CLI cria execution_id"] --> B["Localiza ou auto-compila grafo"]
     B --> C["ExecutionLifecycleService persiste bundle canônico"]
-    C --> D["GraphExecutor valida e percorre arestas compiladas"]
+    C --> P{"Policy context_sufficiency compilada?"}
+    P -->|Não| D["GraphExecutor valida e percorre arestas compiladas"]
+    P -->|Sim| X["Lifecycle monta contexto e persiste CONTEXT_EVALUATED"]
+    X -->|Suficiente| L["Estado PLANNING; entrega somente graph_input"]
+    L --> D
+    X -->|Insuficiente| I["BLOCKED_INSUFFICIENT_CONTEXT antes do primeiro nó"]
+    X -->|Pré-requisito inválido| J["BLOCKED_PREREQUISITE antes do primeiro nó"]
     D --> E["NodeExecutorRegistry exige backend do nó"]
     E --> F{"Executor explicitamente injetado?"}
     F -->|Não, padrão da CLI| G["Erro tipado e estado fail-closed"]
@@ -75,9 +81,13 @@ Limitações importantes:
 
 - o runtime percorre nós/arestas pelo `GraphExecutor`, mas a CLI constrói um registry de executores
   deliberadamente vazio e falha antes de efeitos;
+- os quatro workflows F4.3 exigem envelope exato `context_request + graph_input`; a decisão usa a
+  policy resolvida do artefato, o snapshot do commit e os manifestos de conhecimento, com até duas
+  retomadas além da tentativa inicial;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
-- promoção permanece sintética; a indexação Python é real e commit-bound, mas ambas continuam fora da composição automática do lifecycle;
+- promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
+  mas o lifecycle ainda não executa `harness index` automaticamente;
 - o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.
 
 ## Fluxo de verificação

@@ -36,6 +36,7 @@ _MARKDOWN_HEADING = re.compile(r"(?m)^ {0,3}#{1,6}[ \t]+\S")
 _STOPLIST: Final[frozenset[str]] = frozenset(
     {
         "a",
+        "add",
         "an",
         "and",
         "as",
@@ -84,15 +85,16 @@ class InsufficientContextError(ContextAssemblyError):
 
     state = ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
 
-    def __init__(self, package: ContextPackage) -> None:
+    def __init__(self, package: ContextPackage | ContextSufficiencyReport) -> None:
+        report = package.report if isinstance(package, ContextPackage) else package
         super().__init__(
-            f"context is insufficient at attempt {package.report.attempt}; "
-            f"action={package.report.recommended_action}"
+            f"context is insufficient at attempt {report.attempt}; "
+            f"action={report.recommended_action}"
         )
-        self.package = package
-        self.report = package.report
-        self.gaps = package.report.gaps
-        self.recommended_action = package.report.recommended_action
+        self.package = package if isinstance(package, ContextPackage) else None
+        self.report = report
+        self.gaps = report.gaps
+        self.recommended_action = report.recommended_action
 
 
 class ContextPackage(BaseModel):
@@ -283,8 +285,10 @@ class ContextAssembler:
             return ()
         try:
             return tuple(sorted(root.iterdir(), key=lambda path: path.name))
-        except OSError:
-            return ()
+        except OSError as exc:
+            raise ContextPrerequisiteError(
+                "context artifact directory could not be enumerated"
+            ) from exc
 
     def _read_artifact(self, artifact_id: str, path: Path) -> ArtifactEvidence | None:
         if path.is_symlink() or not path.is_file():
@@ -313,6 +317,8 @@ class ContextAssembler:
         )
         try:
             self._prepare_execution_directory(destination.parent)
+            if destination.is_symlink():
+                raise OSError("context projection destination is a symbolic link")
             canonical = canonical_json_object(report.model_dump(mode="json"))
             _atomic_replace_text(destination, canonical)
             persisted = destination.read_text(encoding="utf-8", errors="strict")

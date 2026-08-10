@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Final, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -51,6 +51,17 @@ def _validate_score(value: Decimal) -> Decimal:
     if value != value.quantize(Decimal("0.000001")):
         raise ValueError("score must contain at most six decimal places")
     return value
+
+
+def _parse_score(value: object) -> Decimal:
+    if isinstance(value, Decimal):
+        return value
+    if isinstance(value, str) and value == value.strip():
+        try:
+            return Decimal(value)
+        except InvalidOperation as exc:
+            raise ValueError("score must use canonical decimal text") from exc
+    raise TypeError("score must be a Decimal or canonical decimal text")
 
 
 class RetrievalRequest(_StrictFrozenModel):
@@ -154,6 +165,11 @@ class ContextDimension(_StrictFrozenModel):
     gaps: tuple[str, ...] = ()
     recommended_action: ContextAction
 
+    @field_validator("score", mode="before")
+    @classmethod
+    def parse_score(cls, value: object) -> Decimal:
+        return _parse_score(value)
+
     @field_validator("score")
     @classmethod
     def validate_score(cls, value: Decimal) -> Decimal:
@@ -205,6 +221,11 @@ class ContextSufficiencyReport(_StrictFrozenModel):
     @classmethod
     def validate_text(cls, value: str) -> str:
         return _validate_text(value)
+
+    @field_validator("confidence", "threshold", mode="before")
+    @classmethod
+    def parse_score(cls, value: object) -> Decimal:
+        return _parse_score(value)
 
     @field_validator("confidence", "threshold")
     @classmethod

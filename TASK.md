@@ -35,8 +35,8 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.2 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | `F4.3` — suficiência de contexto baseada em evidência; recongelamento R4 autorizado |
-| **Gate** | F4.3 `READY` R4 / lifecycle `ACTIVE`; `checkpoint/f4.3-r4-ready` deve anteceder a exceção do executor |
+| **Tarefa ativa** | `F4.3` — implementação R4 integrada; correção mínima de tipo R5 autorizada |
+| **Gate** | F4.3 `READY` R5 / lifecycle `ACTIVE`; checkpoint R5 deve anteceder a edição do planner |
 | **Última promoção** | F4.2 `PROMOTED`; reconciliação administrativa encerrada pelo PR #35 |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
@@ -63,11 +63,12 @@ zero. A [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md) corrige o
 o lifecycle prepara contexto antes do grafo e persiste a transição bloqueante; F4.4–F4.8 possuem owners
 explícitos e não podem terminar como componentes desconectados.
 
-Após o R3, contratos, policy, evaluator e assembler foram implementados parcialmente dentro da
-allowlist, com 77 testes focados verdes. O gate congela quatro manifestos, identidade exata de artefato,
-seis fórmulas Decimal, policy compilada, envelope imutável, start/resume e taxonomy de estado. Planner,
-gates/verificação, repair, F3.7, MCP e memória semântica continuam fora da implementação F4.3.
-F3.7 permanece depois da F4.7.
+Após o checkpoint R4, contratos, policy, evaluator, assembler e lifecycle foram integrados dentro da
+allowlist. O caminho compilado exige envelope imutável, persiste `CONTEXT_EVALUATED`, bloqueia antes do
+primeiro nó, retoma por bundle, exaure após a tentativa inicial + duas retomadas e entrega somente
+`graph_input` ao executor a partir de `PLANNING`. A regressão observada concluiu 673 testes, 2 skips
+opt-in existentes e 6 subtests; build e smoke do wheel passaram. Planner, gates/verificação, repair,
+F3.7, MCP e memória semântica continuam fora da implementação F4.3. F3.7 permanece depois da F4.7.
 
 O R3 amplia exclusivamente a allowlist para a transição
 `BLOCKED_INSUFFICIENT_CONTEXT → FAILED_RETRY_EXHAUSTED` e seu teste. Os checkpoints R1/R2 são
@@ -76,29 +77,37 @@ preservados, incluindo `checkpoint/f4.3-r2-ready`, e a autorização nominal inc
 implementação depois dele.
 
 O R4 permite exclusivamente que `GraphExecutor.execute()` aceite `PLANNING` como estado inicial
-pré-grafo, além de `INITIATED`, sem alterar traversal, preflight ou resume. A implementação foi pausada
-antes de editar o executor e só retoma depois de `checkpoint/f4.3-r4-ready`.
+pré-grafo, além de `INITIATED`, sem alterar traversal, preflight ou resume. A tag
+`checkpoint/f4.3-r4-ready` foi criada no commit `7bcc611` antes dessa alteração; a auditoria do diff
+confirma somente essa exceção no executor.
+
+O R5 foi autorizado nominalmente em `2026-08-10T12:54:21-03:00` para corrigir somente a
+materialização de `affected_modules` em `runtime/planner.py:68` e seu teste/validação. Nenhum contrato
+de plano, geração F4.4 ou outro comportamento do planner foi reaberto. O checkpoint
+`checkpoint/f4.3-r5-ready` deve preservar toda a implementação R4 antes dessa única edição.
 
 ## 6. Bloqueios atuais
 
-Não há blocker aberto no contrato R4. O gate deve ser materializado pela tag local
-`checkpoint/f4.3-r4-ready`; nenhuma alteração do executor pode antecedê-lo. Os falsos sucessos de verificação
-continuam conhecidos e reservados para F4.5–F4.8, sem autorização para corrigi-los agora. Publicação,
-PR, merge e exclusão de refs permanecem não autorizados.
+O blocker de certificação comprovado é: `mypy src` e `mypy --platform linux src` falham em
+`runtime/planner.py:68`, onde `tuple[str, ...] | list[str]` é passado para `PlanDocument.affected_modules`
+tipado como `list[str]`. O arquivo é idêntico em `main`, no checkpoint R4 e na árvore pré-R5. A
+ampliação mínima foi autorizada, mas nenhuma edição pode ocorrer antes do checkpoint R5. Ruff,
+compileall, diff-check, regressão, build e smoke estão verdes. Os falsos sucessos de verificação
+continuam reservados para F4.5–F4.8. Publicação, PR, merge e exclusão de refs permanecem não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-MATERIALIZAR `checkpoint/f4.3-r4-ready` PRESERVANDO A IMPLEMENTAÇÃO PARCIAL E IMPLEMENTAR SOMENTE O
-ESCOPO R4 AUTORIZADO DA F4.3. NÃO CORRIGIR F4.4–F4.8, PUBLICAR BRANCH/TAG, ABRIR/MESCLAR PR,
-EXCLUIR REFS OU INICIAR F3.7.
+REGISTRAR O R5, CRIAR `checkpoint/f4.3-r5-ready` PRESERVANDO A IMPLEMENTAÇÃO R4 E SOMENTE DEPOIS
+CORRIGIR A MATERIALIZAÇÃO DE LISTA EM `runtime/planner.py:68`, ACRESCENTAR SEU TESTE E REPETIR TODO O
+ACEITE. NÃO ALTERAR CONTRATOS/GERAÇÃO F4.4, PUBLICAR, ABRIR/MESCLAR PR OU EXCLUIR REFS.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
 2. Leia `docs/tasks/active/F4.3.md`, DEC-015, `docs/tasks/completed/F4.2.md` e DEC-014 integralmente.
-3. Confirme o gate F4.3 `READY` R4, a branch exclusiva e os quatro checkpoints locais do dossiê.
+3. Confirme o gate F4.3 `READY` R5, a branch exclusiva e os cinco checkpoints locais do dossiê.
 4. Confirme `.git`, branch, `git status --short --branch`, `git log -10` e o baseline promovido da `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
@@ -113,4 +122,4 @@ EXCLUIR REFS OU INICIAR F3.7.
 
 ---
 
-*Atualizado em: 2026-08-10T02:08:19-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T12:54:21-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

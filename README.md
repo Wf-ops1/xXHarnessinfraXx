@@ -45,7 +45,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
-| Serena e índice estrutural | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato com `ast`, e snapshots validam SHA/schema/digest/status | Serena é opt-in; indexação é Python-only e full rebuild; a F4.3 possui gate R4 `READY` e implementação parcial ainda não integrada ao lifecycle | Suficiência por evidência na F4.3 integrada ao lifecycle conforme DEC-015, backend Codebase-Memory compatível e memória semântica real |
+| Serena, índice e contexto | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato; a implementação local da F4.3 calcula seis dimensões, aplica dual gate e integra decisão/evento/estado ao lifecycle antes do grafo | Serena é opt-in; indexação é Python-only, full rebuild e explícita; gate R5 `READY` autoriza somente a correção de tipo preexistente em `runtime/planner.py` | Planner F4.4, backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Suíte vazia/gate desconhecido podem passar `0/0` e a CLI pode retornar zero em reprovação; F4.5–F4.8 ainda não foram implementadas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -69,9 +69,13 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   pós-merge `31329231458` também 11/11 verde. A F4.2 foi promovida pelo PR #34 no merge `212a9bf`,
   com CI pós-merge `31345231098` também 11/11 verde; sua reconciliação administrativa foi incorporada
   pelo PR #35 no merge `3705693`, e o run pós-merge `31346860397` concluiu 11/11 checks verdes. A F4.3
-  está ativa com gate documental `READY` R4 após a auditoria integral e as exceções mínimas da FSM e
-  da entrada pré-grafo; contratos/policy/evaluator/assembler estão parciais e ainda não integrados ao
-  lifecycle. F3.7 continua dependente da F4.7.
+  estava ativa com gate documental `READY` R4 após a auditoria integral e as exceções mínimas da FSM
+  e da entrada pré-grafo. A implementação local da Suficiência por evidência na F4.3, conforme a
+  DEC-015, agora integra contratos, policy compilada, evaluator, assembler e lifecycle, mas o gate
+  voltou a `BLOCKED` quando `mypy src` encontrou um erro preexistente em `runtime/planner.py`, idêntico
+  em `main` e no checkpoint R4. O gate R5 está `READY` e autoriza exclusivamente essa normalização de
+  tipo após um novo checkpoint; geração/contratos F4.4 permanecem fechados. F3.7 continua
+  dependente da F4.7.
 
 ## Dívidas técnicas críticas
 
@@ -91,9 +95,10 @@ operacionais:
   regulares do commit Git resolvido, produz símbolos AST reais e publica pelo contrato íntegro F4.1;
   `harness index` aciona esse rebuild explicitamente, enquanto `CodebaseMemoryAdapter` permanece
   read-only e falha sem snapshot — o lifecycle ainda não compõe a indexação automaticamente;
-- [ContextAssembler](src/ai_engineering_harness/runtime/context_assembler.py) possui implementação
-  parcial do cálculo por evidência e do dual gate; a F4.3 está em gate R4 `READY`, mas start/resume e
-  a persistência lifecycle ainda não foram integrados nem recertificados;
+- [ContextAssembler](src/ai_engineering_harness/runtime/context_assembler.py) calcula as seis dimensões
+  `Decimal`, aplica manifesto + threshold, persiste `context.json` sem conteúdo bruto e é chamado por
+  `ExecutionLifecycleService` em start/resume para policies compiladas; o gate integral de tipos é a
+  única pendência local e sua correção mínima foi recongelada como R5;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em

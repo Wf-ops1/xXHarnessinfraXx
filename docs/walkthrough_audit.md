@@ -39,8 +39,12 @@ INITIATED
   -> COMPLETED
 ```
 
-O grafo acima descreve a FSM legada, não o fluxo padrão atual da CLI nem efeitos garantidos. O
-lifecycle canônico percorre arestas compiladas, persiste bundle/eventos e retoma por identidade; com o
+Para artefatos com a policy F4.3, o prefixo real agora é
+`INITIATED → CONTEXT_ASSEMBLING → PLANNING → EXECUTING`; insuficiência desvia para
+`BLOCKED_INSUFFICIENT_CONTEXT`, pré-requisito inválido para `BLOCKED_PREREQUISITE` e uma quarta
+solicitação após três decisões persistidas leva a `FAILED_RETRY_EXHAUSTED`. O grafo maior acima
+descreve a FSM legada, não o fluxo padrão atual da CLI nem efeitos garantidos. O lifecycle canônico
+percorre arestas compiladas, persiste bundle/eventos e retoma por identidade; com o
 registry padrão vazio, `harness run` falha fechado antes de modelo ou tool. `PromotionManager` ainda
 pode produzir SHA de dry-run. O `PythonAstIndexer` também permanece separado do lifecycle, mas
 `harness index` agora resolve o commit Git real, lê seus blobs `.py`, produz símbolos AST e publica um
@@ -74,6 +78,7 @@ consulta ausente/inválida continua falhando explicitamente, sem indexação imp
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
 | P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
 | P0 | Verificação `0/0` | Gate vazio/desconhecido pode passar e CLI reprovada pode retornar zero | F4.5–F4.7 |
+| P1 | Certificação F4.3 pendente | Gate `mypy` integral detectou incompatibilidade preexistente em `runtime/planner.py`; correção mínima R5 autorizada | Checkpoint R5, correção e recertificação antes de F4.4 |
 | P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
 | P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |

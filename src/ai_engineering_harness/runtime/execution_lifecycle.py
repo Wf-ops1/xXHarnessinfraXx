@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 import subprocess
@@ -13,7 +14,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from ai_engineering_harness.contracts import CompiledGraphArtifact, HumanApprovalNodeSpec
+from ai_engineering_harness.contracts import (
+    CompiledGraphArtifact,
+    HumanApprovalNodeSpec,
+    ResolvedPolicySpec,
+)
 from ai_engineering_harness.contracts.events import ExecutionEvent
 from ai_engineering_harness.contracts.execution import (
     EXECUTION_RECORD_SCHEMA_VERSION,
@@ -22,15 +27,26 @@ from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     ExecutionState,
 )
+from ai_engineering_harness.contracts.nodes import (
+    ContextSufficiencyReport,
+    RetrievalRequest,
+)
+from ai_engineering_harness.contracts.policies import ContextSufficiencyPolicySpec
 from ai_engineering_harness.core.config import ConfigResolver
 from ai_engineering_harness.persistence import (
     ExecutionBundle,
     ExecutionLock,
     ResumeStateStorageProvider,
+    StateStorageError,
     canonical_json_digest,
     canonical_json_object,
 )
 
+from .context_assembler import (
+    ContextAssembler,
+    ContextPrerequisiteError,
+    InsufficientContextError,
+)
 from .graph_executor import (
     GraphExecutionPausedResult,
     GraphExecutionResult,
@@ -43,6 +59,8 @@ from .state_machine import VALID_STATE_TRANSITIONS, EventSourcedStateMachine
 APPROVAL_REQUESTED: Literal["APPROVAL_REQUESTED"] = "APPROVAL_REQUESTED"
 EXECUTION_APPROVED: Literal["EXECUTION_APPROVED"] = "EXECUTION_APPROVED"
 APPROVAL_INVALIDATED: Literal["APPROVAL_INVALIDATED"] = "APPROVAL_INVALIDATED"
+CONTEXT_EVALUATED: Literal["CONTEXT_EVALUATED"] = "CONTEXT_EVALUATED"
+_CONTEXT_POLICY_REFERENCE = "policies/context_sufficiency.yaml"
 
 _DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
@@ -94,6 +112,14 @@ class ExecutionGitIdentityError(ExecutionLifecycleError):
     """The immutable starting Git identity could not be established."""
 
 
+class ContextLifecycleIntegrityError(ExecutionLifecycleError):
+    """Persisted context attempts cannot be reconciled with the execution snapshot."""
+
+
+class ContextRetryExhaustedError(ExecutionLifecycleError):
+    """A new context retrieval was refused after the durable retry budget was consumed."""
+
+
 class _StrictFrozenModel(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
@@ -126,6 +152,18 @@ class ExecutionInspection(_StrictFrozenModel):
         return tuple(value) if isinstance(value, list) else value
 
 
+class _ContextExecutionEnvelope(_StrictFrozenModel):
+    context_request: RetrievalRequest
+    graph_input: dict[str, object]
+
+    @field_validator("graph_input", mode="before")
+    @classmethod
+    def detach_graph_input(cls, value: object) -> dict[str, object]:
+        if type(value) is not dict:
+            raise TypeError("graph_input must be an exact JSON object")
+        return dict(value)
+
+
 class ExecutionLifecycleService:
     """Coordinate resumable execution over the canonical provider and FSM."""
 
@@ -142,11 +180,14 @@ class ExecutionLifecycleService:
         event_id_factory: Callable[[], str] | None = None,
         owner_id_factory: Callable[[], str] | None = None,
         git_identity_provider: Callable[[], tuple[str, str]] | None = None,
+        context_assembler: ContextAssembler | None = None,
     ) -> None:
         if not isinstance(storage, ResumeStateStorageProvider):
             raise TypeError("storage must implement ResumeStateStorageProvider")
         if not isinstance(executors, NodeExecutorRegistry):
             raise TypeError("executors must be a NodeExecutorRegistry")
+        if context_assembler is not None and not isinstance(context_assembler, ContextAssembler):
+            raise TypeError("context_assembler must be a ContextAssembler")
         if (
             isinstance(lock_timeout_seconds, bool)
             or not isinstance(lock_timeout_seconds, (int, float))
@@ -168,6 +209,7 @@ class ExecutionLifecycleService:
             lambda: f"execution-lifecycle-{uuid.uuid4().hex}"
         )
         self._git_identity_provider = git_identity_provider or self._read_git_identity
+        self._context_assembler = context_assembler or ContextAssembler(self.project_root)
         self._graph_executor = GraphExecutor(
             storage,
             executors,
@@ -191,6 +233,13 @@ class ExecutionLifecycleService:
     ) -> GraphExecutionResult | GraphExecutionPausedResult:
         """Create one exact revision-zero execution and begin traversal."""
         artifact = MAFAdapter.load_and_validate(Path(compiled_artifact_path))
+        context_policy = self._resolved_context_policy(artifact)
+        envelope = (
+            self._context_envelope(initial_input, artifact)
+            if context_policy is not None
+            else None
+        )
+        graph_input = envelope.graph_input if envelope is not None else initial_input
         effective_configuration = (
             configuration
             if configuration is not None
@@ -210,7 +259,7 @@ class ExecutionLifecycleService:
         selected_id = execution_id or self._execution_id_factory()
         self._graph_executor.preflight(
             artifact,
-            initial_input,
+            graph_input,
             execution_id=selected_id,
         )
         base_commit_sha, original_branch = self._git_identity_provider()
@@ -248,7 +297,16 @@ class ExecutionLifecycleService:
         )
         self._storage.create_execution_bundle(bundle, initial_input=initial_input)
         self._storage.create_execution(record)
-        return self._graph_executor.execute(artifact, selected_id, initial_input)
+        if context_policy is not None and envelope is not None:
+            resolved_policy, policy = context_policy
+            self._prepare_context_attempt(
+                artifact=artifact,
+                execution_id=selected_id,
+                request=envelope.context_request,
+                resolved_policy=resolved_policy,
+                policy=policy,
+            )
+        return self._graph_executor.execute(artifact, selected_id, graph_input)
 
     def resume(
         self,
@@ -261,6 +319,32 @@ class ExecutionLifecycleService:
                 "cancelled execution cannot be resumed",
                 execution_id=execution_id,
             )
+        context_policy = self._resolved_context_policy(artifact)
+        if context_policy is not None and record.current_state in {
+            ExecutionState.INITIATED,
+            ExecutionState.CONTEXT_ASSEMBLING,
+            ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT,
+            ExecutionState.PLANNING,
+        }:
+            initial_input = self._storage.load_payload(
+                execution_id,
+                bundle.initial_input_digest,
+            )
+            envelope = self._context_envelope(initial_input, artifact)
+            if record.current_state != ExecutionState.PLANNING:
+                resolved_policy, policy = context_policy
+                self._prepare_context_attempt(
+                    artifact=artifact,
+                    execution_id=execution_id,
+                    request=envelope.context_request,
+                    resolved_policy=resolved_policy,
+                    policy=policy,
+                )
+            return self._graph_executor.execute(
+                artifact,
+                execution_id,
+                envelope.graph_input,
+            )
         if record.current_state == ExecutionState.INITIATED:
             initial_input = self._storage.load_payload(
                 execution_id,
@@ -272,6 +356,385 @@ class ExecutionLifecycleService:
                 initial_input,
             )
         return self._graph_executor.resume(artifact, execution_id)
+
+    @staticmethod
+    def _resolved_context_policy(
+        artifact: CompiledGraphArtifact,
+    ) -> tuple[ResolvedPolicySpec, ContextSufficiencyPolicySpec] | None:
+        matches = tuple(
+            resolved
+            for resolved in artifact.resolved_policies
+            if resolved.requested_reference == _CONTEXT_POLICY_REFERENCE
+        )
+        if not matches:
+            return None
+        if len(matches) != 1:
+            raise ExecutionConfigurationError(
+                "compiled artifact contains duplicate context sufficiency policies"
+            )
+        resolved = matches[0]
+        try:
+            policy = ContextSufficiencyPolicySpec.model_validate(
+                {
+                    "policy_id": resolved.policy_id,
+                    "policy_schema_version": resolved.policy_schema_version,
+                    "definition_version": resolved.definition_version,
+                    **resolved.effective_policy,
+                }
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ExecutionConfigurationError(
+                "compiled context sufficiency policy is invalid"
+            ) from exc
+        if (
+            policy.policy_id != resolved.policy_id
+            or policy.policy_schema_version != resolved.policy_schema_version
+            or policy.definition_version != resolved.definition_version
+        ):
+            raise ExecutionConfigurationError(
+                "compiled context policy identity does not match its resolved envelope"
+            )
+        return resolved, policy
+
+    @staticmethod
+    def _context_envelope(
+        initial_input: dict[str, object],
+        artifact: CompiledGraphArtifact,
+    ) -> _ContextExecutionEnvelope:
+        try:
+            envelope = _ContextExecutionEnvelope.model_validate(initial_input)
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ExecutionConfigurationError(
+                "context-enabled execution requires exactly context_request and graph_input"
+            ) from exc
+        expected_workflow = envelope.context_request.graph_type.replace("_", "-")
+        if artifact.graph.graph.name != expected_workflow:
+            raise ExecutionConfigurationError(
+                "context graph_type does not match the compiled workflow"
+            )
+        return envelope
+
+    def _prepare_context_attempt(
+        self,
+        *,
+        artifact: CompiledGraphArtifact,
+        execution_id: str,
+        request: RetrievalRequest,
+        resolved_policy: ResolvedPolicySpec,
+        policy: ContextSufficiencyPolicySpec,
+    ) -> ContextSufficiencyReport:
+        policy_digest = canonical_json_digest(
+            canonical_json_object(resolved_policy.effective_policy)
+        )
+        lock = self._acquire(execution_id)
+        try:
+            self._recover_approval_locked(execution_id, lock)
+            machine = self._state_machine(execution_id, lock)
+            record = machine.recover(lock=lock)
+            events = self._storage.load_events(execution_id, lock=lock)
+            context_events = self._validated_context_events(
+                events,
+                execution_id=execution_id,
+                commit_sha=record.base_commit_sha,
+                policy_digest=policy_digest,
+            )
+            if record.current_state == ExecutionState.INITIATED:
+                if context_events:
+                    raise ContextLifecycleIntegrityError(
+                        "initiated execution already has context decisions",
+                        execution_id=execution_id,
+                    )
+                attempt = 1
+                record = machine.transition_to(
+                    ExecutionState.CONTEXT_ASSEMBLING,
+                    node_id=record.current_node_id,
+                    attempt=attempt,
+                    reason="context_assembly_started",
+                    lock=lock,
+                )
+            elif record.current_state == ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT:
+                if not context_events:
+                    raise ContextLifecycleIntegrityError(
+                        "blocked context execution has no durable decision",
+                        execution_id=execution_id,
+                    )
+                if len(context_events) >= policy.max_retrieval_retries + 1:
+                    machine.transition_to(
+                        ExecutionState.FAILED_RETRY_EXHAUSTED,
+                        node_id=record.current_node_id,
+                        attempt=len(context_events),
+                        reason="context_retry_exhausted",
+                        lock=lock,
+                    )
+                    raise ContextRetryExhaustedError(
+                        "context retrieval retry budget is exhausted",
+                        execution_id=execution_id,
+                    )
+                attempt = len(context_events) + 1
+                record = machine.transition_to(
+                    ExecutionState.CONTEXT_ASSEMBLING,
+                    node_id=record.current_node_id,
+                    attempt=attempt,
+                    reason="context_retrieval_resumed",
+                    lock=lock,
+                )
+                events = self._storage.load_events(execution_id, lock=lock)
+            elif record.current_state == ExecutionState.CONTEXT_ASSEMBLING:
+                pending = self._pending_context_event(events)
+                if pending is not None:
+                    return self._recover_context_decision(
+                        pending,
+                        request=request,
+                        record=record,
+                        policy_digest=policy_digest,
+                        machine=machine,
+                        lock=lock,
+                    )
+                attempt = len(context_events) + 1
+            else:
+                raise ContextLifecycleIntegrityError(
+                    "context attempt requires INITIATED, CONTEXT_ASSEMBLING, or blocked context state",
+                    execution_id=execution_id,
+                )
+
+            try:
+                package = self._context_assembler.assemble(
+                    execution_id=execution_id,
+                    request=request,
+                    workflow_name=artifact.graph.graph.name,
+                    commit_sha=record.base_commit_sha,
+                    policy=policy,
+                    policy_digest=policy_digest,
+                    attempt=attempt,
+                )
+            except InsufficientContextError as exc:
+                self._persist_context_decision(
+                    record,
+                    exc.report,
+                    outcome="insufficient",
+                    policy_digest=policy_digest,
+                    machine=machine,
+                    lock=lock,
+                )
+                raise
+            except ContextPrerequisiteError:
+                self._transition_context_prerequisite(record, machine=machine, lock=lock)
+                raise
+
+            self._persist_context_decision(
+                record,
+                package.report,
+                outcome="sufficient",
+                policy_digest=policy_digest,
+                machine=machine,
+                lock=lock,
+            )
+            return package.report
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def _persist_context_decision(
+        self,
+        record: ExecutionRecord,
+        report: ContextSufficiencyReport,
+        *,
+        outcome: Literal["sufficient", "insufficient"],
+        policy_digest: str,
+        machine: EventSourcedStateMachine,
+        lock: ExecutionLock,
+    ) -> None:
+        expected_outcome = "sufficient" if report.is_sufficient else "insufficient"
+        if outcome != expected_outcome:
+            raise ContextLifecycleIntegrityError(
+                "context decision outcome does not match its report",
+                execution_id=record.execution_id,
+            )
+        try:
+            payload_digest = self._storage.store_payload(
+                record.execution_id,
+                report.model_dump(mode="json"),
+                lock=lock,
+            )
+            self._append_context_event(
+                record.execution_id,
+                {
+                    "attempt": report.attempt,
+                    "commit_sha": record.base_commit_sha,
+                    "outcome": outcome,
+                    "payload_digest": payload_digest,
+                    "policy_digest": policy_digest,
+                },
+                timestamp=self._next_timestamp(record.updated_at),
+                lock=lock,
+            )
+        except (ContextLifecycleIntegrityError, StateStorageError) as exc:
+            self._transition_context_prerequisite(record, machine=machine, lock=lock)
+            raise ContextPrerequisiteError(
+                "context decision could not be persisted durably"
+            ) from exc
+
+        target = (
+            ExecutionState.PLANNING
+            if outcome == "sufficient"
+            else ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
+        )
+        machine.transition_to(
+            target,
+            node_id=record.current_node_id,
+            attempt=report.attempt,
+            reason="context_sufficient" if outcome == "sufficient" else "context_insufficient",
+            lock=lock,
+        )
+
+    def _recover_context_decision(
+        self,
+        event: ExecutionEvent,
+        *,
+        request: RetrievalRequest,
+        record: ExecutionRecord,
+        policy_digest: str,
+        machine: EventSourcedStateMachine,
+        lock: ExecutionLock,
+    ) -> ContextSufficiencyReport:
+        payload = event.payload
+        digest = payload["payload_digest"]
+        if not isinstance(digest, str):
+            raise ContextLifecycleIntegrityError(
+                "context event payload digest is invalid",
+                execution_id=record.execution_id,
+            )
+        try:
+            document = self._storage.load_payload(record.execution_id, digest, lock=lock)
+            report = ContextSufficiencyReport.model_validate(document)
+        except (StateStorageError, TypeError, ValueError, ValidationError) as exc:
+            self._transition_context_prerequisite(record, machine=machine, lock=lock)
+            raise ContextPrerequisiteError(
+                "persisted context decision is unavailable or invalid"
+            ) from exc
+        expected_query_digest = "sha256:" + hashlib.sha256(request.query.encode("utf-8")).hexdigest()
+        outcome = payload["outcome"]
+        if (
+            report.commit_sha != record.base_commit_sha
+            or report.policy_digest != policy_digest
+            or report.attempt != payload["attempt"]
+            or report.request.requirement_id != request.requirement_id
+            or report.request.graph_type != request.graph_type
+            or report.request.query_digest != expected_query_digest
+            or report.is_sufficient != (outcome == "sufficient")
+        ):
+            self._transition_context_prerequisite(record, machine=machine, lock=lock)
+            raise ContextPrerequisiteError(
+                "persisted context decision does not match the immutable execution"
+            )
+        target = (
+            ExecutionState.PLANNING
+            if report.is_sufficient
+            else ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
+        )
+        machine.transition_to(
+            target,
+            node_id=record.current_node_id,
+            attempt=report.attempt,
+            reason="context_sufficient" if report.is_sufficient else "context_insufficient",
+            lock=lock,
+        )
+        if not report.is_sufficient:
+            raise InsufficientContextError(report)
+        return report
+
+    @staticmethod
+    def _pending_context_event(events: tuple[ExecutionEvent, ...]) -> ExecutionEvent | None:
+        last_context_transition = -1
+        last_context_decision = -1
+        decision: ExecutionEvent | None = None
+        for index, event in enumerate(events):
+            if (
+                event.event_type == "STATE_TRANSITIONED"
+                and event.payload.get("to_state") == ExecutionState.CONTEXT_ASSEMBLING.value
+            ):
+                last_context_transition = index
+            elif event.event_type == CONTEXT_EVALUATED:
+                last_context_decision = index
+                decision = event
+        if last_context_decision > last_context_transition:
+            return decision
+        return None
+
+    @staticmethod
+    def _validated_context_events(
+        events: tuple[ExecutionEvent, ...],
+        *,
+        execution_id: str,
+        commit_sha: str,
+        policy_digest: str,
+    ) -> tuple[ExecutionEvent, ...]:
+        decisions: list[ExecutionEvent] = []
+        expected_keys = {
+            "attempt",
+            "commit_sha",
+            "outcome",
+            "payload_digest",
+            "policy_digest",
+        }
+        for event in events:
+            if event.event_type != CONTEXT_EVALUATED:
+                continue
+            payload = event.payload
+            attempt = payload.get("attempt")
+            if (
+                set(payload) != expected_keys
+                or type(attempt) is not int
+                or attempt != len(decisions) + 1
+                or payload.get("commit_sha") != commit_sha
+                or payload.get("policy_digest") != policy_digest
+                or payload.get("outcome") not in {"sufficient", "insufficient"}
+                or not isinstance(payload.get("payload_digest"), str)
+                or _DIGEST_PATTERN.fullmatch(str(payload.get("payload_digest"))) is None
+            ):
+                raise ContextLifecycleIntegrityError(
+                    "context decision event history is invalid",
+                    execution_id=execution_id,
+                )
+            decisions.append(event)
+        return tuple(decisions)
+
+    def _append_context_event(
+        self,
+        execution_id: str,
+        payload: dict[str, object],
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=CONTEXT_EVALUATED,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ContextLifecycleIntegrityError(
+                "cannot construct a canonical context lifecycle event",
+                execution_id=execution_id,
+            ) from exc
+        return self._storage.append_event(execution_id, event, lock=lock)
+
+    @staticmethod
+    def _transition_context_prerequisite(
+        record: ExecutionRecord,
+        *,
+        machine: EventSourcedStateMachine,
+        lock: ExecutionLock,
+    ) -> None:
+        machine.transition_to(
+            ExecutionState.BLOCKED_PREREQUISITE,
+            node_id=record.current_node_id,
+            attempt=record.attempt_by_node.get(record.current_node_id, 0),
+            reason="context_prerequisite_invalid",
+            lock=lock,
+        )
 
     def approve(self, execution_id: str, *, approver: str) -> ExecutionRecord:
         """Approve exactly the currently paused immutable subject."""

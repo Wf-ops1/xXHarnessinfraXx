@@ -43,6 +43,41 @@ uv run python -m build
 | `harness audit <id>` | Verifica/exporta o diário local | Implementação local; não prova efeitos reais |
 | `harness rollback <id>` | Registra compensação e possui caminho Git legado | Não usar em repo valioso; não está ligado ao worktree/terminal tipado nem reexecuta gates |
 
+## Envelope e gate de contexto F4.3
+
+Os defaults `new-feature`, `bug-fix`, `refactoring` e `migration` declaram a policy compilada
+`policies/context_sufficiency.yaml`. Para eles, o envelope exato é
+`context_request + graph_input`: `--input-json` deve conter exatamente essas duas chaves,
+`context_request`, usada somente pela preparação pré-grafo, e `graph_input`, validada e entregue ao
+entrypoint depois de contexto suficiente. Exemplo PowerShell para `new-feature`:
+
+```powershell
+$inputJson = '{"context_request":{"requirement_id":"req-1","graph_type":"new_feature","query":"Adicionar logging"},"graph_input":{"requirement_id":"req-1","graph_type":"new_feature","query":"Adicionar logging"}}'
+harness run new-feature --input-json $inputJson
+```
+
+Antes do comando, o repositório precisa conter o snapshot íntegro do commit atual em
+`.harness/state/structural-index/snapshots/<sha>.json` e todos os arquivos do manifesto sob
+`.harness/knowledge/artifacts/<artifact_id>.md`. A F4.3 não cria nem atualiza esses pré-requisitos.
+
+O lifecycle persiste o envelope inteiro no bundle, calcula seis dimensões com precisão decimal,
+publica somente a projeção sem conteúdo bruto em
+`.harness/state/executions/<execution_id>/context.json` e registra `CONTEXT_EVALUATED` apontando para o
+relatório por digest. Os resultados são fail-closed:
+
+- contexto suficiente: `CONTEXT_ASSEMBLING → PLANNING → EXECUTING`, entregando somente `graph_input`;
+- manifesto, snapshot vazio, relevância zero ou confiança insuficiente:
+  `BLOCKED_INSUFFICIENT_CONTEXT`, sem executar nó;
+- policy, snapshot ou persistência inválida: `BLOCKED_PREREQUISITE`, sem fabricar score;
+- uma tentativa inicial e duas retomadas são permitidas; nova retomada termina em
+  `FAILED_RETRY_EXHAUSTED`.
+
+`harness resume <id>` sempre recarrega o envelope, commit, artefato e policy originais. Não existem
+`force_confidence`, override de score ou fallback para policy mutável. A implementação local está
+integrada e possui regressão verde. O gate R5 `READY` autoriza somente normalizar a lista em
+`runtime/planner.py`; isso não transforma o protótipo em execução
+autônoma porque o registry padrão de executores continua vazio.
+
 ## Teste controlado de `init`
 
 Crie um repositório descartável e execute o binário instalado pelo ambiente do clone. Confirme os
@@ -59,6 +94,7 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
+- certificação local da F4.3 enquanto a correção de tipo R5 autorizada não for implementada e validada.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

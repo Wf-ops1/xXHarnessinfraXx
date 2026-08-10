@@ -551,7 +551,8 @@ class GraphExecutor:
                 )
         else:
             if (
-                record.current_state != ExecutionState.INITIATED
+                record.current_state
+                not in {ExecutionState.INITIATED, ExecutionState.PLANNING}
                 or initial_id != artifact.graph.graph.entrypoint
             ):
                 raise InterruptedExecutionError(

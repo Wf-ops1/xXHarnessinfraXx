@@ -138,8 +138,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31345231098" in readme
     assert "PR #35 no merge `3705693`" in readme
     assert "31346860397" in readme
-    assert "F4.3 está ativa com gate documental `READY`" in readme
+    assert "A implementação local da Suficiência por evidência na F4.3" in readme
     assert "gate documental `READY` R4" in readme
+    assert "o gate voltou a `BLOCKED`" in readme
+    assert "O gate R5 está `READY`" in readme
     assert "DEC-015" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
@@ -150,6 +152,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.3-r2-ready" in panel
     assert "checkpoint/f4.3-r3-ready" in panel
     assert "checkpoint/f4.3-r4-ready" in panel
+    assert "checkpoint/f4.3-r5-ready" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.2.md" in panel
     assert "docs/tasks/active/F4.3.md" in panel
@@ -163,6 +166,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "terminal usa `shell=True`" not in lifecycle
     assert "registry de executores vazio" in user_guide
     assert "harness resume <id>" in user_guide
+    assert "context_request + graph_input" in user_guide
+    assert "CONTEXT_EVALUATED" in user_guide
+    assert "FAILED_RETRY_EXHAUSTED" in user_guide
     assert "provider simulado" not in walkthrough
     assert "não existe worktree Git" not in walkthrough
     assert "Worktree real ausente" not in walkthrough_audit
