@@ -99,6 +99,13 @@ class ArtifactEvidence(_StrictFrozenModel):
     size_bytes: int = Field(gt=0)
     has_markdown_heading: bool
 
+    @model_validator(mode="after")
+    def validate_artifact_path(self) -> Self:
+        expected_path = f".harness/knowledge/artifacts/{self.artifact_id}.md"
+        if self.relative_path != expected_path:
+            raise ValueError("artifact evidence path must match artifact_id")
+        return self
+
 
 class EvidenceReference(_StrictFrozenModel):
     """Typed, content-free evidence used by a scored dimension."""
@@ -245,6 +252,8 @@ class ContextSufficiencyReport(_StrictFrozenModel):
         evidence_ids = tuple(evidence.artifact_id for evidence in self.artifact_evidence)
         if evidence_ids != tuple(sorted(evidence_ids)) or len(set(evidence_ids)) != len(evidence_ids):
             raise ValueError("artifact evidence must be unique and sorted by artifact_id")
+        if set(evidence_ids) != set(self.manifest.present_artifacts):
+            raise ValueError("artifact evidence must exactly match present manifest artifacts")
         if self.manifest.graph_type != self.request.graph_type:
             raise ValueError("manifest graph_type must match the request")
         if self.is_sufficient:

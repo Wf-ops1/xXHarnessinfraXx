@@ -13,15 +13,23 @@ from pydantic import ValidationError
 import ai_engineering_harness.runtime.context_assembler as context_module
 from ai_engineering_harness.contracts.nodes import (
     CONTEXT_DIMENSION_ORDER,
+    ArtifactEvidence,
+    ContextRequestIdentity,
     ContextSufficiencyReport,
+    ManifestResult,
     RetrievalRequest,
 )
-from ai_engineering_harness.contracts.policies import ContextSufficiencyPolicySpec
+from ai_engineering_harness.contracts.policies import (
+    ArtifactManifestSpec,
+    ContextSufficiencyPolicySpec,
+)
 from ai_engineering_harness.contracts.structural_index import StructuralSymbol
+from ai_engineering_harness.governance import ContextSufficiencyEvaluator
 from ai_engineering_harness.indexer import SnapshotManager
 from ai_engineering_harness.persistence import canonical_json_digest, canonical_json_object
 from ai_engineering_harness.runtime import (
     ContextAssembler,
+    ContextPackage,
     ContextPrerequisiteError,
     InsufficientContextError,
 )
@@ -108,6 +116,49 @@ def _assemble(project_root: Path, *, execution_id: str = "exec-context"):
     )
 
 
+def _evaluate_direct(
+    package: ContextPackage,
+    *,
+    request: RetrievalRequest | None = None,
+    request_identity: ContextRequestIdentity | None = None,
+    manifest_spec: ArtifactManifestSpec | None = None,
+    manifest_result: ManifestResult | None = None,
+    artifact_evidence: tuple[ArtifactEvidence, ...] | None = None,
+) -> ContextSufficiencyReport:
+    policy = _policy()
+    selected_request = request if request is not None else _request()
+    selected_manifest = (
+        manifest_spec
+        if manifest_spec is not None
+        else policy.required_artifacts_manifest[selected_request.graph_type]
+    )
+    selected_evidence = (
+        artifact_evidence if artifact_evidence is not None else package.knowledge_refs
+    )
+    return ContextSufficiencyEvaluator.evaluate(
+        request=selected_request,
+        request_identity=(
+            request_identity if request_identity is not None else package.report.request
+        ),
+        workflow_name="new-feature",
+        commit_sha=COMMIT_SHA,
+        policy=policy,
+        policy_digest=_policy_digest(policy),
+        attempt=1,
+        manifest_spec=selected_manifest,
+        manifest_result=(
+            manifest_result if manifest_result is not None else package.report.manifest
+        ),
+        artifact_evidence=selected_evidence,
+        snapshot=package.structural_snapshot,
+        query_tokens=frozenset({"logging"}),
+        symbol_tokens=tuple(
+            (symbol, frozenset({"logging"}))
+            for symbol in package.structural_snapshot.symbols
+        ),
+    )
+
+
 def test_sufficient_context_uses_six_decimal_formulas_and_full_relevant_symbols(
     tmp_path: Path,
 ) -> None:
@@ -133,6 +184,96 @@ def test_sufficient_context_uses_six_decimal_formulas_and_full_relevant_symbols(
     assert report.recommended_action == "proceed"
     assert package.relevant_structural_symbols == package.structural_snapshot.symbols
     assert package.relevant_symbols == ("logging",)
+    conflicts = report.dimensions[-1]
+    assert "external expected digest" in conflicts.reason
+    assert "digest-divergent" not in conflicts.reason
+
+
+def test_artifact_evidence_path_must_match_artifact_identity() -> None:
+    with pytest.raises(ValidationError, match="path must match artifact_id"):
+        ArtifactEvidence(
+            artifact_id="prd",
+            relative_path=".harness/knowledge/artifacts/architecture.md",
+            digest="sha256:" + "0" * 64,
+            size_bytes=1,
+            has_markdown_heading=True,
+        )
+
+
+def test_evaluator_rejects_missing_or_extra_artifact_evidence(tmp_path: Path) -> None:
+    _save_snapshot(tmp_path)
+    _write_required_artifacts(tmp_path)
+    package = _assemble(tmp_path)
+
+    with pytest.raises(ValueError, match="exactly match present manifest artifacts"):
+        _evaluate_direct(package, artifact_evidence=())
+
+    extra = ArtifactEvidence(
+        artifact_id="extra",
+        relative_path=".harness/knowledge/artifacts/extra.md",
+        digest="sha256:" + "0" * 64,
+        size_bytes=1,
+        has_markdown_heading=True,
+    )
+    with pytest.raises(ValueError, match="exactly match present manifest artifacts"):
+        _evaluate_direct(package, artifact_evidence=(*package.knowledge_refs, extra))
+
+
+def test_canonical_report_rejects_manifest_without_exact_artifact_evidence(
+    tmp_path: Path,
+) -> None:
+    _save_snapshot(tmp_path)
+    _write_required_artifacts(tmp_path)
+    package = _assemble(tmp_path)
+    document = package.report.model_dump(mode="python")
+    document["artifact_evidence"] = ()
+
+    with pytest.raises(ValidationError, match="exactly match present manifest artifacts"):
+        ContextSufficiencyReport.model_validate(document)
+
+
+def test_evaluator_binds_request_requirement_and_query_digest(tmp_path: Path) -> None:
+    _save_snapshot(tmp_path)
+    _write_required_artifacts(tmp_path)
+    package = _assemble(tmp_path)
+    wrong_requirement = ContextRequestIdentity(
+        requirement_id="req-other",
+        graph_type="new_feature",
+        query_digest=package.report.request.query_digest,
+    )
+    wrong_query = ContextRequestIdentity(
+        requirement_id=_request().requirement_id,
+        graph_type="new_feature",
+        query_digest="sha256:" + "0" * 64,
+    )
+
+    with pytest.raises(ValueError, match="requirement_id does not match"):
+        _evaluate_direct(package, request_identity=wrong_requirement)
+    with pytest.raises(ValueError, match="query_digest does not match"):
+        _evaluate_direct(package, request_identity=wrong_query)
+
+
+def test_evaluator_binds_manifest_result_to_selected_spec(tmp_path: Path) -> None:
+    _save_snapshot(tmp_path)
+    _write_required_artifacts(tmp_path)
+    package = _assemble(tmp_path)
+    original = package.report.manifest
+    mismatched = ManifestResult(
+        graph_type=original.graph_type,
+        requirements_expected=(
+            original.acceptance_criteria_expected[0],
+            *original.requirements_expected[1:],
+        ),
+        acceptance_criteria_expected=(original.requirements_expected[0],),
+        architecture_constraints_expected=original.architecture_constraints_expected,
+        present_artifacts=original.present_artifacts,
+        missing_artifacts=(),
+        invalid_artifacts=(),
+        all_required_present=True,
+    )
+
+    with pytest.raises(ValueError, match="selected manifest specification"):
+        _evaluate_direct(package, manifest_result=mismatched)
 
 
 def test_report_projection_is_canonical_deterministic_and_contains_no_raw_artifact(

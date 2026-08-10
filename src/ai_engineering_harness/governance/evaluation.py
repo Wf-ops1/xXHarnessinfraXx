@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from decimal import ROUND_HALF_EVEN, Decimal
 
@@ -70,13 +71,32 @@ class ContextSufficiencyEvaluator:
     ) -> ContextSufficiencyReport:
         """Return the exact report used by lifecycle persistence and routing."""
 
+        if request.requirement_id != request_identity.requirement_id:
+            raise ValueError("request identity requirement_id does not match retrieval request")
         if request.graph_type != request_identity.graph_type:
             raise ValueError("request identity does not match retrieval request")
+        expected_query_digest = "sha256:" + hashlib.sha256(request.query.encode("utf-8")).hexdigest()
+        if request_identity.query_digest != expected_query_digest:
+            raise ValueError("request identity query_digest does not match retrieval request")
+        if manifest_result.graph_type != request.graph_type:
+            raise ValueError("manifest result graph_type does not match retrieval request")
+        if (
+            manifest_result.requirements_expected != manifest_spec.requirements
+            or manifest_result.acceptance_criteria_expected != manifest_spec.acceptance_criteria
+            or manifest_result.architecture_constraints_expected
+            != manifest_spec.architecture_constraints
+        ):
+            raise ValueError("manifest result does not match the selected manifest specification")
         if snapshot.commit_sha != commit_sha:
             raise ValueError("structural snapshot does not match the execution commit")
         if not query_tokens:
             raise ValueError("query_tokens must not be empty")
 
+        evidence_ids = tuple(item.artifact_id for item in artifact_evidence)
+        if len(evidence_ids) != len(set(evidence_ids)) or set(evidence_ids) != set(
+            manifest_result.present_artifacts
+        ):
+            raise ValueError("artifact evidence must exactly match present manifest artifacts")
         evidence_by_id = {item.artifact_id: item for item in artifact_evidence}
         present = set(manifest_result.present_artifacts)
         relevant = tuple((symbol, tokens) for symbol, tokens in symbol_tokens if query_tokens & tokens)
@@ -173,8 +193,10 @@ class ContextSufficiencyEvaluator:
                 score=conflicts_score,
                 evidence=(snapshot_reference, *_artifact_references(tuple(sorted(present)), evidence_by_id)),
                 reason=(
-                    "structural checks found no missing, invalid, case-colliding, digest-divergent, "
-                    "snapshot, query, or relevance gap; semantic contradiction analysis is not claimed"
+                    "structural checks found an exact manifest/evidence partition and no missing, "
+                    "invalid, case-colliding, snapshot, query, or relevance gap; artifact digests "
+                    "identify the bytes read in this attempt, but no external expected digest or "
+                    "semantic contradiction analysis is claimed"
                 ),
                 gaps=() if conflict_free else ("one or more structural evidence gaps remain",),
                 recommended_action=(
