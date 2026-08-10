@@ -45,7 +45,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
-| Serena, índice e contexto | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato; a F4.3 local calcula seis dimensões, aplica dual gate e integra decisão/evento/estado ao lifecycle antes do grafo | Serena é opt-in; indexação é Python-only, full rebuild e explícita; F4.3 R6 está `COMPLETED_LOCAL / PROMOTION_PENDING` no PR #36 | Planner F4.4, backend Codebase-Memory compatível e memória semântica real |
+| Serena, índice e contexto | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` faz rebuild dos blobs `.py` do commit exato; a F4.3 calcula seis dimensões, aplica dual gate e integra decisão/evento/estado ao lifecycle antes do grafo | Serena é opt-in; indexação é Python-only, full rebuild e explícita; F4.3 foi promovida pelo PR #36 e sua reconciliação administrativa está pronta somente localmente | Planner F4.4, backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Suíte vazia/gate desconhecido podem passar `0/0` e a CLI pode retornar zero em reprovação; F4.5–F4.8 ainda não foram implementadas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -69,20 +69,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   pós-merge `31329231458` também 11/11 verde. A F4.2 foi promovida pelo PR #34 no merge `212a9bf`,
   com CI pós-merge `31345231098` também 11/11 verde; sua reconciliação administrativa foi incorporada
   pelo PR #35 no merge `3705693`, e o run pós-merge `31346860397` concluiu 11/11 checks verdes. A F4.3
-  estava ativa com gate documental `READY` R4 após a auditoria integral e as exceções mínimas da FSM
-  e da entrada pré-grafo. A implementação local da Suficiência por evidência na F4.3, conforme a
-  DEC-015, agora integra contratos, policy compilada, evaluator, assembler e lifecycle, mas o gate
-  voltou a `BLOCKED` quando `mypy src` encontrou um erro preexistente em `runtime/planner.py`, idêntico
-  em `main` e no checkpoint R4. O gate R5 está `READY` e autoriza exclusivamente essa normalização de
-  tipo após um novo checkpoint. O R5 materializou a lista, os gates locais ficaram verdes e a tarefa
-  chegou ao PR #36 no head `1b1e8ad`, cujo run `31410376576` concluiu 11/11 checks verdes. Uma auditoria
-  posterior reproduziu suficiência sem `artifact_evidence` e com identidade de request divergente. O
-  checkpoint R6 preservou essa evidência; o reparo vinculou request/digest, manifesto/evidência e path,
-  e a recertificação local passou em 679 testes. O run R6 `31414226952` concluiu 11/11 checks verdes
-  no head `ede9a54`; o estado é `COMPLETED_LOCAL / PROMOTION_PENDING`. Nenhuma tag foi publicada e
-  merge permanece proibido até autorização nominal.
-  Geração/contratos F4.4 permanecem fechados. F3.7 continua
-  dependente da F4.7.
+  preservou os gates R1–R6, corrigiu os falsos sucessos de evidência/identidade e passou na regressão
+  local de 679 testes. O PR #36 encerrou no head `84eda1c` com 11/11 checks no run `31414853048` e foi
+  incorporado pelo merge `fa31ef8`; a CI de `push` `31419214233` também concluiu 11/11 checks verdes.
+  A reconciliação administrativa F4.3 está certificada e arquivada somente na branch local
+  `docs/promote-f4.3`, aguardando autorização própria para publicação e PR. Nenhuma tag foi publicada.
+  Geração/contratos F4.4 permanecem fechados, e F3.7 continua dependente da F4.7.
 
 ## Dívidas técnicas críticas
 
@@ -104,9 +96,9 @@ operacionais:
   read-only e falha sem snapshot — o lifecycle ainda não compõe a indexação automaticamente;
 - [ContextAssembler](src/ai_engineering_harness/runtime/context_assembler.py) calcula as seis dimensões
   `Decimal`, aplica manifesto + threshold, persiste `context.json` sem conteúdo bruto e é chamado por
-  `ExecutionLifecycleService` em start/resume para policies compiladas; o gate integral de tipos é a
-  correção de tipo R5 foi aplicada e a matriz local inteira está verde; promoção remota permanece
-  pendente e não foi inferida desses testes;
+  `ExecutionLifecycleService` em start/resume para policies compiladas; a correção de tipo R5 e as
+  invariantes fail-closed R6 foram recertificadas, promovidas pelo PR #36 e permanecem separadas do
+  planner F4.4 ainda não iniciado;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em

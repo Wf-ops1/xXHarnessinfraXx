@@ -190,14 +190,14 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
+def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
     dossier = _read(COMPLETED_ROOT / "F3.8.md")
     f4_1_dossier = _read(COMPLETED_ROOT / "F4.1.md")
     f4_2_dossier = _read(COMPLETED_ROOT / "F4.2.md")
-    f4_3_dossier = _read(ACTIVE_ROOT / "F4.3.md")
+    f4_3_dossier = _read(COMPLETED_ROOT / "F4.3.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
@@ -205,17 +205,16 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert not (ACTIVE_ROOT / "F4.1.md").exists()
     assert (COMPLETED_ROOT / "F3.8.md").is_file()
     assert (COMPLETED_ROOT / "F4.1.md").is_file()
-    assert "docs/tasks/completed/F4.2.md" in panel
     assert not (ACTIVE_ROOT / "F4.2.md").exists()
     assert (COMPLETED_ROOT / "F4.2.md").is_file()
-    assert "docs/tasks/completed/F4.2.md" in panel
-    assert "F4.2 `PROMOTED`" in panel
-    assert (ACTIVE_ROOT / "F4.3.md").is_file()
-    assert "docs/tasks/active/F4.3.md" in panel
-    assert "F4.3 `READY` R6" in panel
-    assert "task/f4.3-evidence-context-sufficiency" in panel
+    assert "completed/F4.2.md" in task_index
+    assert not (ACTIVE_ROOT / "F4.3.md").exists()
+    assert (COMPLETED_ROOT / "F4.3.md").is_file()
+    assert "docs/tasks/completed/F4.3.md" in panel
+    assert "F4.3 `PROMOTED`" in panel
+    assert "docs/promote-f4.3" in panel
     assert "> **Gate:** `READY`" in f4_3_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_3_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
     assert "31346860397" in f4_3_dossier
     assert "> **Revisão do gate:** `R6`" in f4_3_dossier
@@ -225,6 +224,11 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "checkpoint/f4.3-r4-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r5-ready" in f4_3_dossier
     assert "checkpoint/f4.3-r6-ready" in f4_3_dossier
+    assert "checkpoint/f4.3-promotion-sync-ready" in f4_3_dossier
+    assert "84eda1c421d13d1e8e86620127c3318e2cfe5086" in f4_3_dossier
+    assert "31414853048" in f4_3_dossier
+    assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in f4_3_dossier
+    assert "31419214233" in f4_3_dossier
     assert "DEC-015" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -242,8 +246,8 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "PR #35" in panel
-    assert "CI required" in panel
+    assert "PR #36" in panel
+    assert "11/11" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
     assert "Autorizo o merge do PR #30" not in panel
@@ -291,8 +295,9 @@ def test_f4_3_gate_uses_the_certified_f4_2_baseline() -> None:
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/35" in f4_2_dossier
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_2_dossier
     assert "administrativo #35 / merge `3705693` / pós-merge `31346860397`" in task_index
-    assert "370569377a1b065db479c239edde4016e1de5c0a" in panel
-    assert "31346860397" in panel
+    assert "completed/F4.3.md" in task_index
+    assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in panel
+    assert "31419214233" in panel
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
@@ -301,7 +306,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     panel = _read(TASK_PANEL)
     plan = _read(IMPLEMENTATION_PLAN)
     task_index = _read(TASKS_INDEX)
-    dossier = _read(ACTIVE_ROOT / "F4.3.md")
+    dossier = _read(COMPLETED_ROOT / "F4.3.md")
     decision = _read(PHASE4_COMPOSITION_DECISION)
 
     r1_at = dossier.find("### R1 — gate inicial preservado")
@@ -345,13 +350,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "context_request" in decision
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
-    assert "checkpoint/f4.3-r2-ready" in panel
-    assert "checkpoint/f4.3-r3-ready" in panel
-    assert "checkpoint/f4.3-r4-ready" in panel
-    assert "checkpoint/f4.3-r5-ready" in panel
-    assert "checkpoint/f4.3-r6-ready" in panel
-    assert "Não há blocker técnico local ou remoto aberto" in panel
-    assert "runtime/planner.py:68" in panel
+    assert "checkpoint/f4.3-promotion-sync-ready" in dossier
+    assert "Não há blocker técnico local ou remoto aberto na F4.3" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -368,11 +368,16 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ed559ee8f0c7c0b4c52bdd7b144d19af0ddbc7c0" in dossier
     assert "grupos congelados: 96 / 48 / 63 / 72 testes" in dossier
     assert "679 passed, 2 skipped, 6 subtests passed" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "ede9a54fac2517586d3f4a48b586b73a3f47a33a" in dossier
     assert "31414226952" in dossier
     assert "11/11 checks verdes" in dossier
     assert "merge não autorizado" in dossier
+    assert "84eda1c421d13d1e8e86620127c3318e2cfe5086" in dossier
+    assert "31414853048" in dossier
+    assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in dossier
+    assert "31419214233" in dossier
+    assert dossier.rfind("## Certificação final da promoção") > dossier.rfind("merge não autorizado")
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
@@ -434,7 +439,7 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "docs/tasks/completed/F4.2.md" in panel
+    assert "docs/tasks/completed/F4.3.md" in panel
     assert "F4.1" in panel
     assert "F3.7 permanece depois" in panel
     assert "Não restou achado blocker/high" in realignment
