@@ -229,6 +229,9 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "31414853048" in f4_3_dossier
     assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in f4_3_dossier
     assert "31419214233" in f4_3_dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/37" in f4_3_dossier
+    assert "8021a54c4024e541898bdd7f94cf981e0f14f179" in f4_3_dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_3_dossier
     assert "DEC-015" in f4_3_dossier
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
@@ -247,6 +250,7 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
     assert "PR #36" in panel
+    assert "PR #37" in panel
     assert "11/11" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
@@ -351,7 +355,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "Não há blocker técnico local ou remoto aberto na F4.3" in panel
+    assert "Não há blocker técnico local aberto na F4.3" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
