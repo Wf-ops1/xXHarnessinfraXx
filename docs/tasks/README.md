@@ -20,10 +20,10 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-F4.4 permanece em [`active/F4.4.md`](active/F4.4.md) como
-`COMPLETED_LOCAL / PROMOTION_PENDING` na branch local `task/f4.4-typed-specific-plan`; o commit local
-de conclusão integra esta alteração, mas ainda não existe push, PR ou promoção a registrar neste
-ledger concluído.
+Não há tarefa de implementação ativa. A F4.4 está arquivada em
+[`completed/F4.4.md`](completed/F4.4.md) como `PROMOTED` pelo PR #38, merge `93ce4ce` e CI pós-merge
+`31445624269`. A reconciliação administrativa permanece somente local em `docs/promote-f4.4`; F4.5
+e F3.7 não foram iniciadas.
 
 ## Ledger concluído
 
@@ -62,6 +62,7 @@ ledger concluído.
 | F4 | F4.1 | [Armazenamento íntegro do índice estrutural](completed/F4.1.md) | PR #32 / merge `12ce3b7` / pós-merge `31323952381`; administrativo #33 / merge `571a8eb` / pós-merge `31329231458` |
 | F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |
 | F4 | F4.3 | [Context sufficiency baseada em evidência](completed/F4.3.md) | PR #36 / merge `fa31ef8` / pós-merge `31419214233`; administrativo #37 / merge `5c8408d` / pós-merge `31433785637` |
+| F4 | F4.4 | [Plano tipado e específico](completed/F4.4.md) | PR #38 / merge `93ce4ce` / pós-merge `31445624269`; reconciliação administrativa local pendente de publicação |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

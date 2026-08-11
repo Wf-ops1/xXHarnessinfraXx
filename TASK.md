@@ -6,9 +6,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. O único dossiê ativo é o gate [F4.4](docs/tasks/active/F4.4.md), com implementação local
-   concluída, certificada e consolidada em commit local; a
-   última promoção certificada permanece a [F4.3](docs/tasks/completed/F4.3.md).
+2. Não há dossiê de implementação ativo; a última promoção certificada é a
+   [F4.4](docs/tasks/completed/F4.4.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -34,15 +33,15 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Campo | Estado observado |
 |---|---|
-| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.3 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
+| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.4 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | F4.4 — plano tipado e específico; `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Gate** | F4.4 `READY` no checkpoint local `checkpoint/f4.4-ready` |
-| **Última promoção** | F4.3 `PROMOTED`; PR administrativo #37 incorporado e CI pós-merge verde |
+| **Tarefa ativa** | Nenhuma tarefa ativa; F4.5 permanece planejada e não iniciada |
+| **Gate** | F4.4 `PROMOTED`; reconciliação administrativa local pronta, publicação pendente |
+| **Última promoção** | F4.4 `PROMOTED` pelo PR #38; reconciliação local em `docs/promote-f4.4` |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.4-typed-specific-plan`, criada de `origin/main`; sem upstream próprio ou publicação |
-| **Baseline promovido** | `main == origin/main == 5c8408d`; run `31433785637`, evento `push`, 11/11 verde |
+| **Branch** | `docs/promote-f4.4`, somente local, sem upstream |
+| **Baseline promovido** | `main == origin/main == 93ce4ce`; run `31445624269`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
 
@@ -50,47 +49,47 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa | `F4.3` — context sufficiency baseada em evidência, promovida e arquivada localmente |
-| PR de implementação | PR #36; head final `84eda1c421d13d1e8e86620127c3318e2cfe5086`; 11/11 no run `31414853048` |
-| Promoção da implementação | merge `fa31ef8987b1028d38014fe676247cd425daf9b6`; run `31419214233`, 11/11 |
-| Reconciliação administrativa | PR #37; head final `a7f7053e9783b5f6a9cbe43e922bf88dbe5c7443`; run `31430933615`, 11/11; merge `5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1`; pós-merge `31433785637`, 11/11 |
-| Fronteira | branches remotas preservadas; nenhuma tag remota ou exclusão de ref; F4.4 consolidada somente em commit local, sem push/PR; F3.7 não iniciada |
+| Tarefa | `F4.4` — plano tipado e específico, promovida e arquivada localmente |
+| PR de implementação | PR #38; head final `fbdb6ee3d2e1728cbc691b98f04846989475c614`; 11/11 no run `31442203348` |
+| Promoção da implementação | merge `93ce4ce9f4f0042c58d64103528b6c359a475bd9`; run `31445624269`, 11/11 |
+| Reconciliação administrativa | branch local `docs/promote-f4.4`, sem upstream; publicação e PR ainda não autorizados |
+| Fronteira | branches remotas preservadas; nenhuma tag publicada ou exclusão de ref; F4.5/F3.7 não iniciadas |
 
 ## 5. Tarefa ativa
 
-O [gate F4.4](docs/tasks/active/F4.4.md) permanece `READY` e a implementação nominalmente autorizada
-está concluída, certificada e consolidada no commit local desta branch. `PlanDocument` agora é Pydantic estrito/frozen/versionado;
-`ModelRouter` roteia structured output pelas invariantes de egress/fallback/cancelamento/budget; o
-lifecycle persiste `PLAN_GENERATION_STARTED`, payload/projeção e `PLAN_GENERATED` antes do primeiro nó.
+Não há implementação ativa. A F4.4 foi incorporada pelo PR #38 e certificada no
+[dossiê concluído](docs/tasks/completed/F4.4.md). `PlanDocument` é Pydantic estrito/frozen/versionado;
+o lifecycle liga contexto, plano e entrada por digest, persiste `PLAN_GENERATION_STARTED`, payload,
+`plan.json` e `PLAN_GENERATED` antes do primeiro nó e recupera o mesmo plano no resume sem nova chamada.
 
-Targets/critérios citam evidência relida por digest, gates/tools ficam limitados às policies
-compiladas e resume em `PLANNING` recupera o mesmo plano sem nova chamada. Evento iniciado sem outcome,
-payload/identidade divergente, policy ausente, plano inválido ou persistência falha bloqueiam em
-`BLOCKED_PREREQUISITE`. FSM, `GraphExecutor`, record/bundle, defaults/policies, F4.5–F4.8 e F3.7
-permaneceram fora do escopo; `checkpoint/f4.4-ready` continua anterior a todo hunk de produto.
-F3.7 permanece depois da F4.7.
+A F4.5 é a próxima tarefa planejada: normalizar IDs de gates conforme a Fase 4 e a
+[DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md). Seu gate não pode ser preparado nem
+sua implementação iniciada antes de a reconciliação administrativa F4.4 ser publicada, mesclada e
+ficar verde em `main`. F4.6–F4.8, MCP e memória semântica continuam fora do escopo. F3.7 permanece depois
+da F4.7.
 
 ## 6. Bloqueios atuais
 
-Não há blocker técnico conhecido. Contrato, lifecycle, negativos, legado, documentação, regressão,
-quality Windows/Linux, package/smoke e escopo passaram. O commit local de conclusão foi autorizado;
-push, PR, merge, tag remota, exclusão de ref e qualquer F4.5+/F3.7 não foram autorizados.
+Não há blocker técnico conhecido na F4.4. A pendência é exclusivamente administrativa: publicar
+`docs/promote-f4.4`, abrir seu PR documental, observar checks, obter autorização separada de merge e
+confirmar a CI pós-merge. Até lá, F4.5/F3.7 permanecem bloqueadas. Publicação de tag e exclusão de refs
+permanecem proibidas.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH DA F4.4.
-NÃO PUBLICAR BRANCH/TAG, ABRIR PR, FAZER MERGE, EXCLUIR REFS NEM INICIAR F4.5+/F3.7.
+AGUARDAR AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA PUBLICAR docs/promote-f4.4 E ABRIR SEU PR ADMINISTRATIVO.
+NÃO PUBLICAR TAG, MESCLAR PR, EXCLUIR REFS OU INICIAR F4.5/F3.7 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia `docs/tasks/active/F4.4.md`, DEC-015, DEC-014, as seções 1.1–1.2 e a Fase 4 do plano integralmente.
-3. Confirme F4.3 `PROMOTED`, PR #37, merge `5c8408d`, run `31433785637` e o checkpoint F4.4.
-4. Confirme `.git`, `task/f4.4-typed-specific-plan`, `git status --short --branch`, `git log -10` e
-   `main == origin/main == 5c8408d`.
-5. Confirme o commit local F4.4 e execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
+2. Leia `docs/tasks/completed/F4.4.md`, DEC-015, DEC-014, as seções 1.1–1.2 e a Fase 4 do plano integralmente.
+3. Confirme F4.4 `PROMOTED`, PR #38, head `fbdb6ee`, merge `93ce4ce` e runs
+   `31442203348`/`31445624269`.
+4. Confirme `.git`, `docs/promote-f4.4`, `git status --short --branch`, `git log -10` e o baseline de `main`.
+5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
 
 ## 9. Regras de manutenção
@@ -103,4 +102,4 @@ NÃO PUBLICAR BRANCH/TAG, ABRIR PR, FAZER MERGE, EXCLUIR REFS NEM INICIAR F4.5+/
 
 ---
 
-*Atualizado em: 2026-08-10T20:09:17-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T21:25:21-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
