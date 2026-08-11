@@ -258,7 +258,7 @@ def test_f4_4_promotion_uses_the_certified_f4_3_baseline() -> None:
     assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in f4_4_dossier
     assert "31445624269" in f4_4_dossier
     assert "Autorizo o merge do PR #29" not in panel
-    assert "Autorizo publicar a branch" not in panel
+    assert "Autorizo publicar a branch docs/promote-f4.4" not in panel
     assert "Autorizo o merge do PR #30" not in panel
     assert "Autorizo iniciar a F4.1" not in panel
     assert "05f54dd8690f060008acb95cf3de5d6a3c12b9a0" in dossier
@@ -461,8 +461,12 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "46b70709b773a6bca0aa7adfd76d40b3cdf27e23" in panel
     assert "31459891130" in panel
     assert "> **Gate:** `READY`" in f4_6_dossier
-    assert "> **Lifecycle:** `ACTIVE`" in f4_6_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_6_dossier
     assert "checkpoint/f4.6-ready" in f4_6_dossier
+    assert "checkpoint/f4.6-r1-ready" in f4_6_dossier
+    assert "checkpoint/f4.6-complete" in f4_6_dossier
+    assert "507c216" in f4_6_dossier
+    assert "735 passed, 2 skipped, 6 subtests passed" in f4_6_dossier
     assert "ERROR_PREREQUISITE" in f4_6_dossier
     assert "ProvisionedWorktree" in f4_6_dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/43" in f4_5_dossier
@@ -506,6 +510,7 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "PR #42 / merge `4ae0de7` / pós-merge `31458482033`" in task_index
     assert "administrativo #43 / merge `46b7070` / pós-merge `31459891130`" in task_index
     assert "active/F4.6.md" in task_index
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

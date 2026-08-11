@@ -39,7 +39,7 @@ uv run python -m build
 | `harness inspect <id>` | Exibe digests, eventos e aprovação sem secrets | Implementado como inspeção local |
 | `harness approve <id>` | Persiste decisão ligada à revisão corrente | Exige retomada explícita e ainda não promove por Git |
 | `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Implementado como contrato; depende dos mesmos backends explicitamente injetados |
-| `harness verify` | Executa gates Python selecionados | F4.5 bloqueia seleção vazia/desconhecida/duplicada antes de efeitos; ainda é inseguro como decisão porque reprovação executada pode retornar exit zero e resultados não são persistidos/ligados ao commit |
+| `harness verify <execution_id> [--gate <id> ...]` | Carrega o `ProvisionedWorktree`, detecta configuração e executa gates canônicos selecionados | F4.5/F4.6 bloqueiam seleção ou pré-requisito inválido antes de efeitos; ainda é inseguro como decisão porque reprovação executada pode retornar exit zero e resultados não são persistidos/ligados ao commit |
 | `harness audit <id>` | Verifica/exporta o diário local | Implementação local; não prova efeitos reais |
 | `harness rollback <id>` | Registra compensação e possui caminho Git legado | Não usar em repo valioso; não está ligado ao worktree/terminal tipado nem reexecuta gates |
 
@@ -87,9 +87,11 @@ administrativa #37 foram promovidas, ambas com CI pós-merge verde. A implementa
 - recupera um plano gerado em resume sem segunda chamada; efeito iniciado sem outcome bloqueia em
   `BLOCKED_PREREQUISITE`.
 
-F4.4 e F4.C1 foram promovidas. A implementação local F4.5 normaliza a policy/evaluator nos cinco IDs
-oficiais e impede sucesso `0/0`; isso não transforma o protótipo em execução autônoma porque o registry
-padrão de executores continua vazio e F4.6–F4.8 ainda não resolvem, persistem ou reparam os gates.
+F4.4, F4.C1 e F4.5 foram promovidas. A implementação local F4.6 exige worktree validado, detecta a
+stack pela configuração real, resolve toda a suíte em `argv` e falha `ERROR_PREREQUISITE` antes do
+primeiro subprocesso se configuração ou ferramenta faltar. Isso não transforma o protótipo em
+execução autônoma porque o registry padrão de executores continua vazio e F4.7–F4.8 ainda precisam
+persistir/guardar e reparar os gates.
 
 ## Teste controlado de `init`
 
@@ -107,7 +109,7 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- promoção da implementação local F4.5 e execução/guarda/retry dos gates F4.6–F4.8.
+- publicação da implementação local F4.6 e persistência/guarda/retry dos gates em F4.7–F4.8.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

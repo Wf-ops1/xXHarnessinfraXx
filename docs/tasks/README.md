@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F4.6](active/F4.6.md) está em `READY / ACTIVE` na branch local
-`task/f4.6-detect-stack-commands`, diretamente do baseline promovido `46b7070`. A tarefa congela
-detecção por configuração real, resolução `argv` e pré-requisitos no `ProvisionedWorktree`; F4.7
-continua dona da persistência/guarda de conclusão e F4.8 do repair loop. Publicação e PR ainda não
-estão autorizados.
+A [F4.6](active/F4.6.md) está em `COMPLETED_LOCAL / PROMOTION_PENDING` na branch local
+`task/f4.6-detect-stack-commands`, diretamente do baseline promovido `46b7070`. Detecção por
+configuração real, resolução imutável de `argv` e pré-requisitos no `ProvisionedWorktree` passaram no
+aceite local, inclusive regressão integral `735 passed, 2 skipped, 6 subtests passed`. F4.7 continua
+dona da persistência/guarda de conclusão e F4.8 do repair loop. Publicação e PR ainda não foram
+autorizados.
 
 ## Ledger concluído
 

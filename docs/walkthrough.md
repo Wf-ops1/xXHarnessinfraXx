@@ -87,7 +87,8 @@ Limitações importantes:
   retomadas além da tentativa inicial;
 - a F4.4 promovida valida rota/egress, relê evidência por digest, exige plano tipado
   limitado às policies compiladas e persiste payload/projeção/eventos antes de entregar `graph_input`;
-- a implementação local F4.5 normaliza os IDs e bloqueia suítes vazias/desconhecidas/duplicadas;
+- a F4.5 promovida normaliza os IDs e bloqueia suítes vazias/desconhecidas/duplicadas; a F4.6 local
+  resolve configuração/argv e pré-requisitos no worktree antes de efeitos;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
 - promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
@@ -100,9 +101,12 @@ O `VerificationEngine` possui runners que executam processos reais pelo terminal
 cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. A F4 deverá ligar gates
 obrigatórios ao planejamento/runtime, bloquear ausência de gate e cobrir a matriz configurada.
 F4.5 remove o falso sucesso `0/0`: gate ausente, desconhecido, duplicado ou sem comando bloqueia antes
-do terminal. A CLI ainda pode encerrar com código zero após uma reprovação realmente executada, e
-F4.6–F4.8 ainda precisam resolver comandos, persistir/guardar conclusão e reparar. A DEC-015 atribui a preparação ao lifecycle e o guard de conclusão à verificação
-persistida; chamar runners manualmente depois de `COMPLETED` não satisfaz a fase.
+do terminal. A F4.6 local exige um `ProvisionedWorktree`, detecta stack/ferramentas pela configuração,
+resolve a suíte inteira como `argv` antes de efeitos e transforma pré-requisito ausente em
+`ERROR_PREREQUISITE`. A CLI ainda pode encerrar com código zero após uma reprovação realmente
+executada; F4.7 precisa persistir/guardar conclusão e F4.8 reparar. A DEC-015 atribui a preparação ao
+lifecycle e o guard de conclusão à verificação persistida; chamar runners manualmente depois de
+`COMPLETED` não satisfaz a fase.
 
 ## Fluxo de auditoria e rollback
 
