@@ -20,12 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não existe dossiê de implementação ativo. A [F4.5](completed/F4.5.md) foi incorporada pelo PR #42 no
-merge `4ae0de7`, com 11/11 checks no head final `9e8dfe8` pelo run `31457935429` e 11/11 na CI
-pós-merge `31458482033`. A reconciliação administrativa está aberta no PR #43 a partir do head
-inicial `b304164`; o run `31459427729` está em andamento, mas este registro produzirá um head
-posterior que exige nova CI integral. F4.6+ e F3.7 não foram iniciadas e continuam bloqueadas até
-essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
+A [F4.6](active/F4.6.md) está em `READY / ACTIVE` na branch local
+`task/f4.6-detect-stack-commands`, diretamente do baseline promovido `46b7070`. A tarefa congela
+detecção por configuração real, resolução `argv` e pré-requisitos no `ProvisionedWorktree`; F4.7
+continua dona da persistência/guarda de conclusão e F4.8 do repair loop. Publicação e PR ainda não
+estão autorizados.
 
 ## Ledger concluído
 
@@ -66,7 +65,7 @@ essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
 | F4 | F4.3 | [Context sufficiency baseada em evidência](completed/F4.3.md) | PR #36 / merge `fa31ef8` / pós-merge `31419214233`; administrativo #37 / merge `5c8408d` / pós-merge `31433785637` |
 | F4 | F4.4 | [Plano tipado e específico](completed/F4.4.md) | PR #38 / merge `93ce4ce` / pós-merge `31445624269`; administrativo #39 / merge `94641d2` / pós-merge `31447628152` |
 | F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 / merge `362407f` / pós-merge `31455148050` |
-| F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 aberto |
+| F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 / merge `46b7070` / pós-merge `31459891130` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
