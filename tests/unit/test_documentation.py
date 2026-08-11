@@ -169,8 +169,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31457935429" in panel
     assert "4ae0de7" in panel
     assert "31458482033" in panel
+    assert "PR #43" in panel
+    assert "31459427729" in panel
     assert "checkpoint/f4.5-ready" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" not in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

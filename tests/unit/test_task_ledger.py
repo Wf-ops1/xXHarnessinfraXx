@@ -457,7 +457,10 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "F4.5 `PROMOTED`" in panel
     assert "docs/tasks/completed/F4.5.md" in panel
     assert "docs/promote-f4.5" in panel
-    assert "LOCAL_READY / PUBLICATION_PENDING" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/43" in f4_5_dossier
+    assert "b30416470b0ea4b266d2c4a65b9b1963858d51b8" in f4_5_dossier
+    assert "31459427729" in f4_5_dossier
     assert "checkpoint/f4.5-ready" in panel
     assert not (ACTIVE_ROOT / "F4.5.md").exists()
     assert "> **Gate:** `READY`" in f4_5_dossier
@@ -484,6 +487,8 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "31457935429" in readme
     assert "4ae0de7" in readme
     assert "31458482033" in readme
+    assert "PR #43" in readme
+    assert "31459427729" in readme
     assert "completed/F4.C1.md" in task_index
     assert "PR #40 / merge `3905d02` / pós-merge `31453662008`" in task_index
     assert "administrativo #41 / merge `362407f` / pós-merge `31455148050`" in task_index
@@ -491,6 +496,8 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "PR #42" in task_index
     assert "completed/F4.5.md" in task_index
     assert "PR #42 / merge `4ae0de7` / pós-merge `31458482033`" in task_index
+    assert "administrativo #43 aberto" in task_index
+    assert "31459427729" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

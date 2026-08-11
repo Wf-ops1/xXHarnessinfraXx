@@ -32,12 +32,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.5 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | nenhuma implementação ativa; reconciliação administrativa F4.5 local; F4.6+ e F3.7 não iniciadas |
-| **Gate** | F4.5 `PROMOTED`; `docs/promote-f4.5` em `LOCAL_READY / PUBLICATION_PENDING`; checkpoint `checkpoint/f4.5-ready` |
+| **Tarefa ativa** | nenhuma implementação ativa; PR administrativo F4.5 #43 aberto; F4.6+ e F3.7 não iniciadas |
+| **Gate** | F4.5 `PROMOTED`; PR #43 em `ADMIN_PR_OPEN / CHECKS_PENDING`; checkpoint `checkpoint/f4.5-ready` |
 | **Última promoção** | F4.5 `PROMOTED`; PR #42 incorporado e CI pós-merge verde no SHA exato |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.5`, local e sem upstream, criada de `main == origin/main == 4ae0de7` |
+| **Branch** | `docs/promote-f4.5`, rastreando `origin/docs/promote-f4.5`; PR #43; head inicial `b304164` |
 | **Baseline promovido** | `main == origin/main == 4ae0de7`; run `31458482033`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **Promoção F4.5** | head final `9e8dfe8`; PR CI `31457935429`; merge `4ae0de7`; pós-merge `31458482033`, todos 11/11 |
@@ -49,7 +49,7 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | Tarefa | F4.5 — taxonomia canônica e gates fail-closed, promovida e arquivada localmente |
 | PR de implementação | PR #42; head final `9e8dfe80a8aaf0bcf4180866fb6e40eb117b0fc6`; run `31457935429`, 11/11 |
 | Promoção | merge `4ae0de798607cf4fec13c0469fddb93d8024ead5`; run `31458482033`, 11/11 |
-| Reconciliação administrativa | branch local `docs/promote-f4.5`; validação local concluída, publicação pendente |
+| Reconciliação administrativa | PR #43 aberto no head inicial `b304164`; run inicial `31459427729` em andamento |
 | Fronteira | branch remota de implementação preservada; nenhuma tag publicada ou ref excluída |
 
 O estado histórico `POST_PROMOTION_BLOCKED` da F4.1 foi encerrado pela F4.C1. Não resta blocker
@@ -66,31 +66,32 @@ integral de `714 passed, 2 skipped, 6 subtests passed`, mypy Windows/Linux em 10
 compileall, diff, build isolado e smoke da wheel verdes. Escopo proibido permaneceu byte-idêntico.
 
 O head final `9e8dfe8` recebeu 11/11 checks no run `31457935429`. O merge `4ae0de7` recebeu 11/11 na
-CI de `push` `31458482033`. A pausa corrente é exclusivamente administrativa: `docs/promote-f4.5`
-precisa ser validada, publicada, incorporada e receber CI pós-merge antes de qualquer novo gate.
+CI de `push` `31458482033`. A pausa corrente é exclusivamente administrativa: o PR #43 está aberto
+e precisa receber CI integral no head final, ser incorporado e receber CI pós-merge antes de qualquer novo gate.
 F4.6+ não foi iniciada; F3.7 permanece depois da F4.7. Tag remota e exclusão de refs continuam não
 autorizadas.
 
 ## 6. Bloqueios atuais
 
-Não resta blocker técnico local conhecido na F4.5. A implementação está incorporada e a CI pós-merge
-está verde; resta concluir a reconciliação administrativa. Até seu PR, merge e CI pós-merge em
-`main`, F4.6+/F3.7 continuam bloqueadas. Publicação/PR administrativo, merge administrativo, tag
-remota e exclusão de refs continuam sem autorização.
+Não resta blocker técnico local conhecido na F4.5. O PR administrativo #43 está aberto; o run inicial
+`31459427729` começou no head `b304164`, mas este registro produzirá um head posterior e exigirá nova
+CI integral. Até checks do head final, merge e CI pós-merge em `main`, F4.6+/F3.7 continuam
+bloqueadas. Merge administrativo, tag remota e exclusão de refs continuam sem autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR `docs/promote-f4.5` E ABRIR O PR ADMINISTRATIVO DA F4.5.
-NÃO PUBLICAR, ABRIR/MESCLAR PR, PUBLICAR TAG, EXCLUIR REF OU INICIAR F4.6+/F3.7.
+PUBLICAR SOMENTE ESTE REGISTRO DOCUMENTAL NO PR #43 E AGUARDAR TODOS OS CHECKS DO HEAD FINAL,
+INCLUINDO `CI REQUIRED`. NÃO MESCLAR, PUBLICAR TAG, EXCLUIR REF OU INICIAR F4.6+/F3.7.
+DEPOIS DOS CHECKS VERDES, AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA O MERGE ADMINISTRATIVO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/completed/F4.5.md` integralmente.
 2. Leia DEC-015, as seções 1.1–1.2 e a Fase 4 do plano.
-3. Confirme `.git`, branch `docs/promote-f4.5`, ausência de upstream, PR #42/head `9e8dfe8`, merge
-   `4ae0de7`, runs `31457935429`/`31458482033` e baseline sincronizado.
+3. Confirme `.git`, branch/upstream, PR #43, head inicial `b304164`, run inicial `31459427729`,
+   PR #42/head `9e8dfe8`, merge `4ae0de7` e runs `31457935429`/`31458482033`.
 4. Execute somente a próxima ação exata. Divergência de escopo exige parar e recongelar.
 
 ## 9. Regras de manutenção
@@ -102,4 +103,4 @@ NÃO PUBLICAR, ABRIR/MESCLAR PR, PUBLICAR TAG, EXCLUIR REF OU INICIAR F4.6+/F3.7
 
 ---
 
-*Atualizado em: 2026-08-11T01:40:07-03:00 | Fonte: plano principal + DEC-014 + DEC-015 + PR #42/CI observados*
+*Atualizado em: 2026-08-11T01:45:06-03:00 | Fonte: plano principal + DEC-014 + DEC-015 + PRs #42/#43 observados*

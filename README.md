@@ -90,8 +90,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `31458482033`. A tarefa
   substitui `tests` por
   `unit_test`, centraliza os cinco IDs oficiais e bloqueia seleção vazia/desconhecida/duplicada ou sem
-  comando antes de qualquer efeito. A reconciliação administrativa local `docs/promote-f4.5` ainda
-  precisa ser publicada e incorporada; F3.7 continua dependente da F4.7.
+  comando antes de qualquer efeito. A reconciliação administrativa está aberta no PR #43, no head
+  inicial `b304164`; o run inicial `31459427729` começou antes deste registro documental final, que
+  exige nova CI integral. F3.7 continua dependente da F4.7.
 
 ## Dívidas técnicas críticas
 
