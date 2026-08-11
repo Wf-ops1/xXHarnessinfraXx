@@ -469,6 +469,7 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_7_dossier
     assert "checkpoint/f4.7-ready" in f4_7_dossier
     assert "checkpoint/f4.7-complete" in f4_7_dossier
+    assert "a706b7fb8ce6ca6ea7a3a2a65f7ad4ab7630bf6a" in f4_7_dossier
     assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in f4_7_dossier
     assert "751 passed, 5 skipped, 6 subtests passed" in f4_7_dossier
     assert "SKIPPED_NOT_APPLICABLE" in f4_7_dossier

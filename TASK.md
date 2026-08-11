@@ -65,8 +65,8 @@ publicar efeitos remotos.
 
 Não há blocker técnico local. A publicação da branch e a abertura do PR aguardam autorização nominal
 nova. Push, PR, merge, tag remota e exclusão de refs não foram executados; CI da branch ainda não
-existe. O checkpoint local `checkpoint/f4.7-ready` aponta para `d1e9b1f`; o checkpoint de conclusão
-será materializado no commit documental final desta recertificação.
+existe. O checkpoint local `checkpoint/f4.7-ready` aponta para `d1e9b1f`; o checkpoint local
+`checkpoint/f4.7-complete` aponta para a certificação `a706b7fb8ce6ca6ea7a3a2a65f7ad4ab7630bf6a`.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
