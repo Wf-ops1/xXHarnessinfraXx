@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "F4.7 `READY / ACTIVE`" in panel
+    assert "F4.7 `READY / COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "31510277593" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
@@ -459,15 +459,18 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     f4_7_dossier = _read(ACTIVE_ROOT / "F4.7.md")
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
     assert (ACTIVE_ROOT / "F4.7.md").is_file()
-    assert "F4.7 `READY / ACTIVE`" in panel
+    assert "F4.7 `READY / COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "docs/tasks/active/F4.7.md" in panel
     assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
     assert "31510277593" in panel
     assert "b578515f9ee24b1d72dffcca8756b80586862fd8" in panel
     assert "31513097203" in panel
     assert "> **Gate:** `READY`" in f4_7_dossier
-    assert "> **Lifecycle:** `ACTIVE`" in f4_7_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_7_dossier
     assert "checkpoint/f4.7-ready" in f4_7_dossier
+    assert "checkpoint/f4.7-complete" in f4_7_dossier
+    assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in f4_7_dossier
+    assert "751 passed, 5 skipped, 6 subtests passed" in f4_7_dossier
     assert "SKIPPED_NOT_APPLICABLE" in f4_7_dossier
     assert "ao menos um gate obrigatório" in f4_7_dossier
     assert "> **Gate:** `READY`" in f4_6_dossier

@@ -20,12 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O único dossiê ativo é a [F4.7](active/F4.7.md), autorizada nominalmente e congelada para persistir a
-evidência de cada gate e guardar `COMPLETED`. A [F4.6](completed/F4.6.md) foi incorporada pelo PR #44
-no merge `a4fd1da`, com 11/11 checks no head final `00e8357` pelo run `31505324814` e 11/11 na CI
-pós-merge `31510277593`. Sua reconciliação administrativa PR #45 terminou no head `09ced2f`, run
-`31512605530`, merge `b578515` e CI pós-merge `31513097203`, todos 11/11. F4.8/F3.7 não foram
-iniciadas e permanecem fora do gate corrente.
+O único dossiê ativo é a [F4.7](active/F4.7.md), agora em
+`COMPLETED_LOCAL / PROMOTION_PENDING`. O gate foi congelado em `d1e9b1f`, o produto certificado está
+em `bbc2d93` e a regressão final concluiu `751 passed, 5 skipped, 6 subtests passed`, com qualidade,
+escopo, build e smoke isolado verdes. A branch ainda não foi publicada e não existe PR/CI da F4.7.
+A [F4.6](completed/F4.6.md) e sua reconciliação administrativa permanecem promovidas no baseline
+`b578515`, cuja CI pós-merge `31513097203` concluiu 11/11. F4.8/F3.7 não foram iniciadas.
 
 ## Ledger concluído
 

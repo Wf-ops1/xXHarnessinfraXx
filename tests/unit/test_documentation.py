@@ -132,7 +132,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "571a8eb" in readme
     assert "31329231458" in readme
     assert "F3.7 continua" in readme
-    assert "dependente de sua promoção" in readme
+    assert "dependente da promoção da F4.7" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
@@ -164,7 +164,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/active/F4.7.md" in panel
-    assert "F4.7 `READY / ACTIVE`" in panel
+    assert "F4.7 `READY / COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
     assert "b578515f9ee24b1d72dffcca8756b80586862fd8" in panel
     assert "00e83574da789fa58f22f928b5290b9471264a63" in panel
@@ -175,7 +175,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31512605530" in panel
     assert "31513097203" in panel
     assert "checkpoint/f4.7-ready" in panel
-    assert "36 passed, 1 skipped" in panel
+    assert "checkpoint/f4.7-complete" in panel
+    assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in panel
+    assert "751 passed, 5 skipped, 6 subtests" in panel
     assert "write-ahead/outcome" in panel
     assert "F4.8" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
