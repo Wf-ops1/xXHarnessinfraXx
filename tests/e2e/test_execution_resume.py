@@ -259,10 +259,20 @@ def test_execution_resume_concurrent_workers_do_not_duplicate_completed_effect(
         worker.join(timeout=30)
         assert worker.exitcode == 0
 
-    assert sorted(result[0] for result in results) == ["ok", "verification_required"]
+    successful = [result for result in results if result[0] == "ok"]
+    verification_required = [
+        result for result in results if result[0] == "verification_required"
+    ]
+    assert len(successful) in {1, 2}
+    assert len(successful) + len(verification_required) == len(results)
+    assert all(result[1] == "success" for result in successful)
+    assert len({result[2] for result in successful}) == 1
+    assert all(result == ("verification_required", None, None) for result in verification_required)
     assert marker.read_text(encoding="utf-8").splitlines() == [
         "exec-resume-concurrent:execute"
     ]
+    events = storage.load_events("exec-resume-concurrent")
+    assert [event.event_type for event in events].count("NODE_COMPLETED") == 1
     assert storage.load_execution("exec-resume-concurrent").current_state == ExecutionState.VERIFYING
 
 

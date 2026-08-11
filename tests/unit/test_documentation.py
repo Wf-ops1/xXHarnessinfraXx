@@ -161,10 +161,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "POST_PROMOTION_BLOCKED" in panel
+    assert "PR_OPEN / CHECKS_PENDING" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/active/F4.7.md" in panel
-    assert "F4.7 `READY / PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F4.7-R1 `READY / PR_OPEN / CHECKS_PENDING`" in panel
     assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
     assert "b578515f9ee24b1d72dffcca8756b80586862fd8" in panel
     assert "00e83574da789fa58f22f928b5290b9471264a63" in panel
@@ -178,7 +178,12 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.7-complete" in panel
     assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in panel
     assert "751 passed, 5 skipped, 6 subtests" in panel
+    assert "2841346a" in panel
+    assert "20/20" in panel
+    assert "github.com/Wf-ops1/Harnessinfra/pull/47" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/46" in panel
+    assert "31528955883" in panel
+    assert "f7aa43a154e36d29f9882f060cf23294d8194b3e" in panel
     assert "write-ahead/outcome" in panel
     assert "F4.8" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
