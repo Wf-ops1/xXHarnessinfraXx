@@ -363,7 +363,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "blocker técnico reproduzido" in panel
+    assert "Não resta blocker técnico local" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -424,11 +424,13 @@ def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
     assert "63562bdd724213dbfbf47442e9c2f7e3354d662b" in dossier
     assert "31447000037" in dossier
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
-    assert "F4.C1 `READY / ACTIVE`" in panel
+    assert "F4.C1 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "31447628152" in panel
     assert "F4.4 `PROMOTED`" in panel
     assert "docs/tasks/active/F4.C1.md" in panel
+    assert "702 passed, 2 skipped, 6 subtests passed" in panel
+    assert "b4d212c" in panel
     assert "PR #38 encerrou no head `fbdb6ee`" in readme
     assert "docs/promote-f4.4" in readme
     assert "completed/F4.4.md" in task_index

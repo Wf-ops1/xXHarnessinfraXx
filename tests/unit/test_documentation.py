@@ -171,7 +171,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.4.md" in panel
-    assert "F4.C1 — imutabilidade concorrente" in panel
+    assert "F4.C1 concluída localmente" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "702 passed, 2 skipped, 6 subtests passed" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

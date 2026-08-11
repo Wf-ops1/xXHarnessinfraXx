@@ -36,12 +36,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.4 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | F4.C1 — imutabilidade concorrente da publicação de snapshots; F4.5 não iniciada |
-| **Gate** | F4.C1 `READY / ACTIVE`; estado operacional `POST_PROMOTION_BLOCKED` |
+| **Tarefa ativa** | F4.C1 concluída localmente, promoção pendente; F4.5 não iniciada |
+| **Gate** | F4.C1 `COMPLETED_LOCAL / PROMOTION_PENDING`; estado operacional `POST_PROMOTION_BLOCKED` |
 | **Última promoção** | F4.4 `PROMOTED` historicamente; PR administrativo #39 incorporado e CI pós-merge verde |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.c1-snapshot-publication-concurrency`, criada de `main` limpa e sincronizada |
+| **Branch** | `task/f4.c1-snapshot-publication-concurrency`; implementação `b4d212c`; sem upstream/push |
 | **Baseline promovido** | `main == origin/main == 94641d2`; run `31447628152`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | path versionado anterior indisponível neste checkout; nenhum runtime será trocado silenciosamente |
@@ -58,10 +58,12 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 ## 5. Tarefa ativa
 
-O gate [F4.C1](docs/tasks/active/F4.C1.md) corrige uma evidência negativa pós-promoção no contrato
-F4.1: duas publicações concorrentes divergentes que observam o destino ausente podem concluir com
-sucesso e a segunda sobrescreve o snapshot validado pela primeira. A correção está congelada para
-claim exclusivo por SHA, idempotência concorrente, conflito divergente tipado e vencedor imutável.
+O gate [F4.C1](docs/tasks/active/F4.C1.md) corrigiu localmente a evidência negativa pós-promoção no
+contrato F4.1. A publicação agora prepara e sincroniza o temporário e usa `os.link` como claim atômico
+do destino ausente: escrita concorrente idêntica é idempotente; divergente recebe
+`SnapshotConflictError`; o vencedor nunca é substituído. A regressão integral concluiu
+`702 passed, 2 skipped, 6 subtests passed`; mypy Windows/Linux, Ruff, compileall, build e smoke ficaram
+verdes.
 
 F4.1–F4.4 permanecem historicamente `PROMOTED`, mas o estado corrente é `POST_PROMOTION_BLOCKED`.
 F4.5 e F4.6–F4.8 continuam fora do escopo; F3.7 permanece depois da F4.7. Nenhuma delas, nem MCP ou
@@ -70,17 +72,17 @@ administrativa da F4.C1.
 
 ## 6. Bloqueios atuais
 
-O blocker técnico reproduzido está na publicação concorrente de
-`src/ai_engineering_harness/indexer/snapshot_manager.py`: `first=success`, `second=success`,
-`final=second`. Até a F4.C1 ser promovida e reconciliada, F4.5/F3.7 permanecem bloqueadas. Push, PR,
-merge, publicação de tag e exclusão de refs continuam sem autorização.
+Não resta blocker técnico local conhecido dentro do escopo F4.C1. O bloqueio corrente é de promoção:
+a branch ainda não foi publicada e não há PR/CI do novo head, merge, CI pós-merge ou reconciliação.
+Até esses fatos serem observados, o estado permanece `POST_PROMOTION_BLOCKED` e F4.5/F3.7 continuam
+bloqueadas. Push, PR, merge, publicação remota de tag e exclusão de refs continuam sem autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-IMPLEMENTAR SOMENTE A F4.C1 DEPOIS DO CHECKPOINT READY; PROVAR IDEMPOTÊNCIA/CONFLITO CONCORRENTES E
-VENCEDOR IMUTÁVEL; REPETIR ACEITE F4.1–F4.4, REGRESSÃO, QUALITY E PACKAGE/SMOKE. NÃO PUBLICAR, ABRIR
-PR, MESCLAR, EXCLUIR REFS OU INICIAR F4.5/F3.7 SEM AUTORIZAÇÃO NOMINAL NOVA.
+AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA PUBLICAR `task/f4.c1-snapshot-publication-concurrency` E ABRIR
+UM ÚNICO PR F4.C1. NÃO MESCLAR, PUBLICAR TAG REMOTA, EXCLUIR REFS OU INICIAR F4.5/F3.7. DEPOIS DA
+PUBLICAÇÃO, EXIGIR TODOS OS CHECKS DO HEAD FINAL, INCLUINDO `CI REQUIRED`.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -105,4 +107,4 @@ PR, MESCLAR, EXCLUIR REFS OU INICIAR F4.5/F3.7 SEM AUTORIZAÇÃO NOMINAL NOVA.
 
 ---
 
-*Atualizado em: 2026-08-10T23:11:37-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T23:28:21-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
