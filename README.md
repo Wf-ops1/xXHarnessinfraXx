@@ -46,7 +46,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível, memória semântica real e composição persistida dos gates F4.7–F4.8 |
-| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 detecta configuração, resolve a suíte no `ProvisionedWorktree` e falha `ERROR_PREREQUISITE` antes de efeitos; o R3 local preserva o launcher ativo até o spawn | O PR #44 ainda está no head R2 e precisa receber o R3 e passar a CI POSIX; persistência/guard e retry pertencem a F4.7–F4.8 | Matriz integral fail-closed, persistida e com recovery operacional |
+| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida detecta configuração, resolve a suíte no `ProvisionedWorktree`, preserva o launcher ativo até o spawn e falha `ERROR_PREREQUISITE` antes de efeitos | A reconciliação administrativa F4.6 está no PR #45 e aguarda checks do head final; persistência/guard e retry pertencem a F4.7–F4.8 | Matriz integral fail-closed, persistida e com recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
@@ -92,12 +92,14 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `unit_test`, centraliza os cinco IDs oficiais e bloqueia seleção vazia/desconhecida/duplicada ou sem
   comando antes de qualquer efeito. A reconciliação administrativa PR #43 foi incorporada pelo merge
   `46b7070`, e a CI de `push` `31459891130` concluiu 11/11 checks verdes. A F4.6 abriu o PR #44 no
-  head `f258541`, mas a CI `31463009231` reabriu o gate: os jobs Tests Ubuntu 3.11/3.14 perderam o
-  venv ao dereferenciar `.venv/bin/python` e falharam sem `pytest`. O R2 `f26c124` passou na
-  recertificação local integral, mas a CI `31463962634` repetiu a perda do venv. A revisão encontrou
-  outra dereferência no `TerminalAdapter`; o R3 local `167dbe5` seleciona por `sys.prefix`, preserva
-  o launcher até o spawn e passou em `738 passed, 5 skipped, 6 subtests passed`. O PR ainda aponta
-  para `0d10d0a`; F3.7 continua dependente da F4.7.
+  head `f258541`, mas as CIs `31463009231` e `31463962634` reabriram o gate: os jobs Tests Ubuntu
+  3.11/3.14 perderam o venv e falharam sem `pytest`. O R3 `167dbe5` passou na recertificação local de
+  `738 passed, 5 skipped, 6 subtests passed`, foi publicado no head final `00e8357` e recebeu 11/11
+  checks no run `31505324814`, inclusive as provas Ubuntu. O PR #44 foi incorporado pelo merge
+  `a4fd1da`, cuja CI de `push` `31510277593` também concluiu 11/11 checks verdes. A reconciliação
+  administrativa está aberta no PR #45, no head inicial `5882e42`; o run inicial `31512347572`
+  começou antes deste registro documental final, que exige nova CI integral. F3.7 continua
+  dependente da F4.7.
 
 ## Dívidas técnicas críticas
 
@@ -123,9 +125,9 @@ operacionais:
   invariantes fail-closed R6 foram recertificadas e promovidas. A F4.4 também foi promovida: o planner
   usa structured output roteado, relê evidência por digest, limita gates/tools às policies compiladas
   e participa do lifecycle com payload, `plan.json` atômico e eventos duráveis. A F4.5 normaliza IDs
-  e bloqueia suítes não executáveis; a F4.6 detecta stack/configuração e resolve a suíte no worktree,
-  e o R3 local do PR #44 corrige a seleção do launcher ativo por `sys.prefix` e sua preservação no
-  terminal; publicação/CI ainda bloqueiam promoção, enquanto persistência e guard permanecem na F4.7;
+  e bloqueia suítes não executáveis; a F4.6 promovida detecta stack/configuração, resolve a suíte no
+  worktree e preserva no terminal o launcher ativo selecionado por `sys.prefix`; o PR administrativo
+  #45 ainda bloqueia o próximo gate, enquanto persistência e guard permanecem na F4.7;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em
