@@ -159,23 +159,23 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
 
-    assert "`task/f4.c1-snapshot-publication-concurrency`" in panel
-    assert "F4.4 `PROMOTED`" in panel
-    assert "PR #38" in panel
-    assert "fbdb6ee3d2e1728cbc691b98f04846989475c614" in panel
-    assert "31442203348" in panel
-    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in panel
-    assert "31445624269" in panel
-    assert "PR #39" in panel
-    assert "31447628152" in panel
+    assert "`docs/promote-f4.c1`" in panel
+    assert "F4.C1 `PROMOTED`" in panel
+    assert "PR #40" in panel
+    assert "65c54338b5753d31c0b0ed15ab6cf9ba1486f493" in panel
+    assert "31453116947" in panel
+    assert "3905d02d575fc177d917f605b7e1a9b6a658c818" in panel
+    assert "31453662008" in panel
+    assert "PR #41" in panel
+    assert "39f7366" in panel
+    assert "31454615745" in panel
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.4.md" in panel
-    assert "F4.C1 concluída localmente" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "docs/tasks/completed/F4.C1.md" in panel
+    assert "nenhuma tarefa ativa de implementação" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "702 passed, 2 skipped, 6 subtests passed" in panel
-    assert "PR #40" in panel
-    assert "31452975479" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

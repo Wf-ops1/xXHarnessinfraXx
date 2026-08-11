@@ -252,12 +252,12 @@ def test_f4_4_promotion_uses_the_certified_f4_3_baseline() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "PR #38" in panel
-    assert "11/11" in panel
-    assert "fbdb6ee3d2e1728cbc691b98f04846989475c614" in panel
-    assert "31442203348" in panel
-    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in panel
-    assert "31445624269" in panel
+    assert "PR #38" in f4_4_dossier
+    assert "11/11" in f4_4_dossier
+    assert "fbdb6ee3d2e1728cbc691b98f04846989475c614" in f4_4_dossier
+    assert "31442203348" in f4_4_dossier
+    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in f4_4_dossier
+    assert "31445624269" in f4_4_dossier
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
     assert "Autorizo o merge do PR #30" not in panel
@@ -307,8 +307,8 @@ def test_f4_4_promotion_uses_the_certified_f4_3_baseline() -> None:
     assert "administrativo #35 / merge `3705693` / pós-merge `31346860397`" in task_index
     assert "completed/F4.3.md" in task_index
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
-    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in panel
-    assert "31445624269" in panel
+    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in f4_4_dossier
+    assert "31445624269" in f4_4_dossier
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
@@ -393,7 +393,6 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
 
 
 def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
-    panel = _read(TASK_PANEL)
     readme = _read(ROOT / "README.md")
     dossier = _read(COMPLETED_ROOT / "F4.4.md")
     task_index = _read(TASKS_INDEX)
@@ -424,22 +423,51 @@ def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
     assert "63562bdd724213dbfbf47442e9c2f7e3354d662b" in dossier
     assert "31447000037" in dossier
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
-    assert "F4.C1 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
-    assert "POST_PROMOTION_BLOCKED" in panel
-    assert "31447628152" in panel
-    assert "F4.4 `PROMOTED`" in panel
-    assert "docs/tasks/active/F4.C1.md" in panel
-    assert "702 passed, 2 skipped, 6 subtests passed" in panel
-    assert "b4d212c" in panel
-    assert "PR #40" in panel
-    assert "31452975479" in panel
-    assert "checks do head final pendentes" in panel
     assert "PR #38 encerrou no head `fbdb6ee`" in readme
     assert "docs/promote-f4.4" in readme
     assert "completed/F4.4.md" in task_index
     assert "PR #38 / merge `93ce4ce` / pós-merge `31445624269`" in task_index
     assert "administrativo #39 / merge `94641d2` / pós-merge `31447628152`" in task_index
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
+
+
+def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
+    panel = _read(TASK_PANEL)
+    readme = _read(ROOT / "README.md")
+    dossier = _read(COMPLETED_ROOT / "F4.C1.md")
+    task_index = _read(TASKS_INDEX)
+
+    assert not (ACTIVE_ROOT / "F4.C1.md").exists()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "checkpoint/f4.c1-ready" in dossier
+    assert "checkpoint/f4.c1-complete" in dossier
+    assert "b4d212cb96a4b1b3335a467a7719b40856c30558" in dossier
+    assert "65c54338b5753d31c0b0ed15ab6cf9ba1486f493" in dossier
+    assert "31453116947" in dossier
+    assert "3905d02d575fc177d917f605b7e1a9b6a658c818" in dossier
+    assert "31453662008" in dossier
+    assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/41" in dossier
+    assert "39f7366fcd4b9aebdcb7e5fb0b6964a9929c2a39" in dossier
+    assert "31454615745" in dossier
+    assert "SnapshotConflictError" in dossier
+    assert "os.link" in dossier
+    assert "F4.C1 `PROMOTED`" in panel
+    assert "docs/tasks/completed/F4.C1.md" in panel
+    assert "docs/promote-f4.c1" in panel
+    assert "3905d02" in panel
+    assert "31453662008" in panel
+    assert "PR #41" in panel
+    assert "31454615745" in panel
+    assert "F4.5 não iniciada" in panel
+    assert "PR #40 foi incorporado pelo merge `3905d02`" in readme
+    assert "31453116947" in readme
+    assert "31453662008" in readme
+    assert "completed/F4.C1.md" in task_index
+    assert "PR #40 / merge `3905d02` / pós-merge `31453662008`" in task_index
+    assert "administrativo #41 aberto" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
