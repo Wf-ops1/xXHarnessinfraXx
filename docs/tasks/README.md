@@ -20,12 +20,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F4.6](active/F4.6.md) está em `LOCAL_READY / PR_UPDATE_PENDING` no
-[PR #44](https://github.com/Wf-ops1/Harnessinfra/pull/44). Após a CI `31463009231` provar que
-`Path.resolve()` perdia o venv no Ubuntu, o R2 `f26c124` preservou o launcher e passou em
-`736 passed, 3 skipped, 6 subtests passed`, quality e package/smoke locais. O novo head ainda precisa
-ser publicado e recertificado pela matriz remota. F4.7/F4.8 permanecem fora do escopo; merge e tags
-remotas não estão autorizados.
+A [F4.6](active/F4.6.md) está em `REPAIR_ACTIVE / PROMOTION_BLOCKED` no
+[PR #44](https://github.com/Wf-ops1/Harnessinfra/pull/44). O R2 removeu a dereferência do symlink,
+depois da primeira falha `31463009231`, mas a CI `31463962634` repetiu o Python base. A revisão
+encontrou nova dereferência no `TerminalAdapter`; os logs não isolam o valor original de
+`sys.executable`. O R3 seleciona o launcher do venv por `sys.prefix`, preserva seu path até o spawn,
+falha sem fallback e exige nova recertificação integral. F4.7/F4.8 permanecem fora do escopo; merge e
+tags remotas não estão autorizados.
 
 ## Ledger concluído
 

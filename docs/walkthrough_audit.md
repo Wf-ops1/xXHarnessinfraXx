@@ -84,7 +84,7 @@ no commit local, mas ainda não foi publicada nem promovida.
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
 | P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
 | P0 | Verificação incompleta | F4.5/F4.6 bloqueiam suíte inválida e pré-requisito ausente, mas a CLI reprovada ainda pode retornar zero e não existe resultado persistido/commit-bound | F4.7 |
-| P1 | Resolução ainda não promovida | O R2 do PR #44 preserva o launcher Python, está verde localmente e aguarda atualização/CI remota | F4.6; promoção pendente |
+| P1 | Resolução ainda não promovida | A CI R3 do PR #44 repetiu a perda do venv; o reparo precisa selecionar por `sys.prefix` e impedir nova dereferência no `TerminalAdapter` | F4.6; promoção bloqueada |
 | P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
 | P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |

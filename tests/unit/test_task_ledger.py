@@ -461,8 +461,11 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "46b70709b773a6bca0aa7adfd76d40b3cdf27e23" in panel
     assert "31459891130" in panel
     assert "> **Gate:** `READY`" in f4_6_dossier
-    assert "> **Lifecycle:** `LOCAL_READY / PR_UPDATE_PENDING`" in f4_6_dossier
-    assert "> **Revisão do gate:** `R2" in f4_6_dossier
+    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in f4_6_dossier
+    assert "> **Revisão do gate:** `R3" in f4_6_dossier
+    assert "src/ai_engineering_harness/tools/adapters/terminal.py" in f4_6_dossier
+    assert "<sys.prefix>/bin/python" in f4_6_dossier
+    assert "path de lançamento" in f4_6_dossier
     assert "checkpoint/f4.6-ready" in f4_6_dossier
     assert "checkpoint/f4.6-r1-ready" in f4_6_dossier
     assert "checkpoint/f4.6-complete" in f4_6_dossier
@@ -511,8 +514,10 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "PR #42 / merge `4ae0de7` / pós-merge `31458482033`" in task_index
     assert "administrativo #43 / merge `46b7070` / pós-merge `31459891130`" in task_index
     assert "active/F4.6.md" in task_index
-    assert "LOCAL_READY / PR_UPDATE_PENDING" in task_index
+    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in task_index
     assert "31463009231" in task_index
+    assert "31463962634" in task_index
+    assert "TerminalAdapter" in task_index
     assert "f26c124" in f4_6_dossier
     assert "736 passed, 3 skipped, 6 subtests passed" in f4_6_dossier
 
