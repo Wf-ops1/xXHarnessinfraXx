@@ -362,8 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "F4.6 — detectar stack e resolver comandos efetivos" in panel
-    assert "31459891130" in panel
+    assert "F4.6 `PROMOTED`" in panel
+    assert "31510277593" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -431,7 +431,7 @@ def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
 
 
-def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
+def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     panel = _read(TASK_PANEL)
     readme = _read(ROOT / "README.md")
     dossier = _read(COMPLETED_ROOT / "F4.C1.md")
@@ -455,13 +455,14 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "31454615745" in dossier
     assert "SnapshotConflictError" in dossier
     assert "os.link" in dossier
-    f4_6_dossier = _read(ACTIVE_ROOT / "F4.6.md")
-    assert "F4.6 — detectar stack e resolver comandos efetivos" in panel
-    assert "docs/tasks/active/F4.6.md" in panel
-    assert "46b70709b773a6bca0aa7adfd76d40b3cdf27e23" in panel
-    assert "31459891130" in panel
+    f4_6_dossier = _read(COMPLETED_ROOT / "F4.6.md")
+    assert not (ACTIVE_ROOT / "F4.6.md").exists()
+    assert "F4.6 `PROMOTED`" in panel
+    assert "docs/tasks/completed/F4.6.md" in panel
+    assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
+    assert "31510277593" in panel
     assert "> **Gate:** `READY`" in f4_6_dossier
-    assert "> **Lifecycle:** `LOCAL_READY / PR_UPDATE_PENDING`" in f4_6_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f4_6_dossier
     assert "> **Revisão do gate:** `R3" in f4_6_dossier
     assert "src/ai_engineering_harness/tools/adapters/terminal.py" in f4_6_dossier
     assert "<sys.prefix>/bin/python" in f4_6_dossier
@@ -513,11 +514,6 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "completed/F4.5.md" in task_index
     assert "PR #42 / merge `4ae0de7` / pós-merge `31458482033`" in task_index
     assert "administrativo #43 / merge `46b7070` / pós-merge `31459891130`" in task_index
-    assert "active/F4.6.md" in task_index
-    assert "LOCAL_READY / PR_UPDATE_PENDING" in task_index
-    assert "31463009231" in task_index
-    assert "31463962634" in task_index
-    assert "TerminalAdapter" in task_index
     assert "f26c124" in f4_6_dossier
     assert "736 passed, 3 skipped, 6 subtests passed" in f4_6_dossier
     assert "checkpoint/f4.6-r3-ready" in f4_6_dossier
@@ -525,6 +521,16 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "ce07850" in f4_6_dossier
     assert "167dbe5" in f4_6_dossier
     assert "738 passed, 5 skipped, 6 subtests passed" in f4_6_dossier
+    assert "00e83574da789fa58f22f928b5290b9471264a63" in f4_6_dossier
+    assert "31505324814" in f4_6_dossier
+    assert "93832738803" in f4_6_dossier
+    assert "93833502210" in f4_6_dossier
+    assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in f4_6_dossier
+    assert "31510277593" in f4_6_dossier
+    assert "LOCAL_READY / PUBLICATION_PENDING" in f4_6_dossier
+    assert "completed/F4.6.md" in task_index
+    assert "PR #44 / merge `a4fd1da` / pós-merge `31510277593`" in task_index
+    assert "administrativo pendente" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
