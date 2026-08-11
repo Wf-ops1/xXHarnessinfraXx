@@ -45,5 +45,6 @@ def test_default_policy_versions_use_separate_namespaces() -> None:
         if resource.name.endswith(".yaml"):
             policy = _load_yaml(resource)
             assert policy["policy_schema_version"] == POLICY_SCHEMA_VERSION
-            assert policy["definition_version"] == "3.2.0"
+            expected = "3.3.0" if resource.name == "retry_cost_policy.yaml" else "3.2.0"
+            assert policy["definition_version"] == expected
             assert "version" not in policy
