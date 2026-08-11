@@ -18,14 +18,15 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.6 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.7 — persistência e guard canônico dos resultados de verificação |
-| **Gate** | F4.7 `READY / COMPLETED_LOCAL / PROMOTION_PENDING`; aceite local integral verde |
+| **Gate** | F4.7 `READY / PR_OPEN / CHECKS_PENDING`; aceite local integral verde |
 | **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T14:40:10-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.7-persist-verification-results`, criada de `b578515`; sem upstream |
+| **Branch** | `task/f4.7-persist-verification-results`, publicada com upstream homônimo |
 | **Baseline promovido** | `main == origin/main == b578515f9ee24b1d72dffcca8756b80586862fd8` antes da branch F4.7 |
 | **CI do baseline** | run `31513097203`, evento `push`, 11/11 verde em `3m05s`, inclusive `CI required` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **Commits F4.7** | gate `d1e9b1f`; produto certificado `bbc2d93963c9c9fdfd5dfffa2d44c64439862c72` |
+| **PR F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46), aberto contra `main`; head inicial `054bf6e` |
 
 ## 3. Última promoção comprovada
 
@@ -63,29 +64,29 @@ publicar efeitos remotos.
 
 ## 6. Bloqueios atuais
 
-Não há blocker técnico local. A publicação da branch e a abertura do PR aguardam autorização nominal
-nova. Push, PR, merge, tag remota e exclusão de refs não foram executados; CI da branch ainda não
-existe. O checkpoint local `checkpoint/f4.7-ready` aponta para `d1e9b1f`; o checkpoint local
-`checkpoint/f4.7-complete` aponta para a certificação `a706b7fb8ce6ca6ea7a3a2a65f7ad4ab7630bf6a`.
+Não há blocker técnico local. A branch foi publicada e o PR #46 foi aberto mediante autorização
+nominal; a matriz obrigatória do head documental ainda precisa terminar verde. Merge, tag remota,
+exclusão de refs e início de F4.8/F3.7 continuam sem autorização. O checkpoint local
+`checkpoint/f4.7-ready` aponta para `d1e9b1f`; `checkpoint/f4.7-complete` aponta para a certificação
+`a706b7fb8ce6ca6ea7a3a2a65f7ad4ab7630bf6a`.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-SOLICITAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR `task/f4.7-persist-verification-results` E ABRIR O PR F4.7.
-NÃO FAZER MERGE, PUBLICAR TAG REMOTA, EXCLUIR REF OU INICIAR F4.8/F3.7 SEM AUTORIZAÇÃO ESPECÍFICA.
+OBSERVAR TODOS OS CHECKS DO HEAD FINAL DO PR #46, INCLUSIVE `CI required`. NÃO FAZER MERGE, PUBLICAR
+TAG REMOTA, EXCLUIR REF OU INICIAR F4.8/F3.7 SEM AUTORIZAÇÃO ESPECÍFICA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/active/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme `task/f4.7-persist-verification-results`, produto `bbc2d93`, baseline `b578515`, run
-   pós-merge `31513097203`, runtime 3.12.13 e checkpoints `checkpoint/f4.7-ready` e
-   `checkpoint/f4.7-complete`.
+3. Confirme PR #46, branch/head remoto, produto `bbc2d93`, baseline `b578515`, run pós-merge
+   `31513097203`, runtime 3.12.13 e checkpoints `checkpoint/f4.7-ready`/`complete`.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T16:09:17-03:00 | Fonte: aceite integral F4.7 + DEC-014/DEC-015 + Git local*
+*Atualizado em: 2026-08-11T16:26:00-03:00 | Fonte: aceite F4.7 + PR #46 + DEC-014/DEC-015*
