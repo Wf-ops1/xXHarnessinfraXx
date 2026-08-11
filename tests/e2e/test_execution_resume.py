@@ -28,6 +28,7 @@ from ai_engineering_harness.runtime import (
     NodeExecutionContext,
     NodeExecutionResult,
     NodeExecutorRegistry,
+    VerificationRequiredError,
 )
 
 
@@ -162,8 +163,12 @@ def _resume_worker(
 ) -> None:
     service = _service(Path(root), AtomicFileStateStorage(Path(root)))
     start_event.wait(20)
-    result = service.resume(execution_id)
-    result_queue.put(("ok", result.outcome, result.final_revision))
+    try:
+        result = service.resume(execution_id)
+    except VerificationRequiredError:
+        result_queue.put(("verification_required", None, None))
+    else:
+        result_queue.put(("ok", result.outcome, result.final_revision))
 
 
 def test_execution_resume_recovers_pending_outcome_without_reexecuting_completed_node(
@@ -192,7 +197,7 @@ def test_execution_resume_recovers_pending_outcome_without_reexecuting_completed
     ]
     assert [event.event_type for event in before].count("NODE_COMPLETED") == 1
     assert [event.event_type for event in after].count("NODE_COMPLETED") == 1
-    assert storage.load_execution("exec-resume-outcome").current_state == ExecutionState.COMPLETED
+    assert storage.load_execution("exec-resume-outcome").current_state == ExecutionState.VERIFYING
 
 
 def test_execution_resume_started_without_outcome_is_interrupted_without_retry(
@@ -254,11 +259,11 @@ def test_execution_resume_concurrent_workers_do_not_duplicate_completed_effect(
         worker.join(timeout=30)
         assert worker.exitcode == 0
 
-    assert all(result[0] == "ok" for result in results)
+    assert sorted(result[0] for result in results) == ["ok", "verification_required"]
     assert marker.read_text(encoding="utf-8").splitlines() == [
         "exec-resume-concurrent:execute"
     ]
-    assert storage.load_execution("exec-resume-concurrent").current_state == ExecutionState.COMPLETED
+    assert storage.load_execution("exec-resume-concurrent").current_state == ExecutionState.VERIFYING
 
 
 def test_execution_approval_paused_approve_and_resume_ignores_live_artifact(
@@ -281,7 +286,7 @@ def test_execution_approval_paused_approve_and_resume_ignores_live_artifact(
     assert approved.approval_status == ApprovalStatus.APPROVED
     assert isinstance(result, GraphExecutionResult)
     assert result.outcome == "success"
-    assert storage.load_execution("exec-resume-approval").current_state == ExecutionState.COMPLETED
+    assert storage.load_execution("exec-resume-approval").current_state == ExecutionState.VERIFYING
 
 
 def test_execution_cancel_paused_is_final_and_resume_is_rejected(tmp_path: Path) -> None:

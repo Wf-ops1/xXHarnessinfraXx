@@ -41,6 +41,11 @@ class _FakeLifecycle:
             revision=3,
             updated_at=datetime(2026, 8, 7, 12, 0, tzinfo=UTC),
         )
+        self.verification_result = SimpleNamespace(
+            all_passed=True,
+            passed_gates=1,
+            total_gates=1,
+        )
 
     def start(self, path: Path, *, initial_input: dict[str, object]):
         self.calls.append(("start", initial_input))
@@ -72,6 +77,10 @@ class _FakeLifecycle:
             event_count=3,
             event_types=("STATE_TRANSITIONED", "NODE_COMPLETED"),
         )
+
+    def verify(self, execution_id: str):
+        self.calls.append(("verify", execution_id))
+        return self.verification_result
 
 
 def test_graph_visualizer(tmp_path: Path):
@@ -192,7 +201,29 @@ def test_cli_run_accepts_explicit_json_and_uses_lifecycle(
     assert result.exit_code == 0
     assert "exec-cli-runtime" in result.output
     assert "bounded" not in result.output
-    assert fake.calls == [("start", {"intent": "bounded"})]
+    assert fake.calls == [
+        ("start", {"intent": "bounded"}),
+        ("status", "exec-cli-runtime"),
+    ]
+
+
+def test_cli_run_does_not_claim_completion_while_verification_is_pending(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    fake.status_view = fake.status_view.model_copy(
+        update={"current_state": ExecutionState.VERIFYING}
+    )
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root: fake)
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        assert runner.invoke(main, ["init"]).exit_code == 0
+        result = runner.invoke(main, ["run", "new-feature", "--input-json", "{}"])
+
+    assert result.exit_code == 0
+    assert "aguarda verificação canônica" in result.output
+    assert "Workflow new-feature concluído" not in result.output
 
 
 def test_cli_run_rejects_invalid_input_and_legacy_approval_flag(tmp_path: Path) -> None:
@@ -274,8 +305,42 @@ def test_cli_verify_requires_a_worktree_execution_id() -> None:
     assert help_result.exit_code == 0
     assert "EXECUTION_ID" in help_result.output
     assert "worktree validado" in help_result.output
+    assert "--gate" not in help_result.output
     assert missing_result.exit_code != 0
     assert "Missing argument 'EXECUTION_ID'" in missing_result.output
+
+
+def test_cli_verify_uses_lifecycle_and_returns_nonzero_when_blocked(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    monkeypatch.setattr(
+        CLI_MODULE,
+        "_lifecycle_service",
+        lambda root, *, project_id="default-proj": fake,
+    )
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        passed = runner.invoke(
+            main,
+            ["verify", "exec-cli-runtime", "--project-id", "fixture"],
+        )
+        fake.verification_result = SimpleNamespace(
+            all_passed=False,
+            passed_gates=0,
+            total_gates=1,
+        )
+        blocked = runner.invoke(main, ["verify", "exec-cli-runtime"])
+
+    assert passed.exit_code == 0
+    assert "Verificação persistida" in passed.output
+    assert blocked.exit_code != 0
+    assert "verificação bloqueou a conclusão" in blocked.output
+    assert fake.calls == [
+        ("verify", "exec-cli-runtime"),
+        ("verify", "exec-cli-runtime"),
+    ]
 
 
 def _initialize_cli_git_repository(project_root: Path) -> str:
