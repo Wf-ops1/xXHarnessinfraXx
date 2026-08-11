@@ -20,14 +20,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O único dossiê ativo é a [F4.7](active/F4.7.md), agora em
-`COMPLETED_LOCAL / PROMOTION_PENDING`. O [PR #46](https://github.com/Wf-ops1/Harnessinfra/pull/46)
+O único dossiê ativo é a [F4.7](active/F4.7.md), agora em `PR_OPEN / CHECKS_PENDING`. O
+[PR #46](https://github.com/Wf-ops1/Harnessinfra/pull/46)
 passou 11/11 no run `31528005230` e foi incorporado em `f7aa43a`, mas a CI pós-merge `31528955883`
 falhou no E2E concorrente Windows 3.11. O R1 foi recongelado para aceitar as duas interleavings
 idempotentes sem relaxar efeito/journal únicos ou `VERIFYING`. O gate R1 está em `311f3e4`, o reparo
 test-only em `2841346a` e a regressão repetida concluiu `751 passed, 5 skipped, 6 subtests passed`, com
-qualidade, escopo, build e smoke isolado verdes. A branch corretiva aguarda publicação e nova CI; o
-merge permanece não autorizado.
+qualidade, escopo, build e smoke isolado verdes. O
+[PR corretivo #47](https://github.com/Wf-ops1/Harnessinfra/pull/47) foi aberto no head inicial
+`f37e422a`; seu head documental final aguarda CI e o merge permanece não autorizado.
 A [F4.6](completed/F4.6.md) e sua reconciliação administrativa permanecem promovidas no baseline
 `b578515`, cuja CI pós-merge `31513097203` concluiu 11/11. F4.8/F3.7 não foram iniciadas.
 
