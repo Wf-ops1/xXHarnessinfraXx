@@ -20,17 +20,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O único dossiê ativo é a [F4.7](active/F4.7.md), agora em `PR_OPEN / CHECKS_PENDING`. O
-[PR #46](https://github.com/Wf-ops1/Harnessinfra/pull/46)
-passou 11/11 no run `31528005230` e foi incorporado em `f7aa43a`, mas a CI pós-merge `31528955883`
-falhou no E2E concorrente Windows 3.11. O R1 foi recongelado para aceitar as duas interleavings
-idempotentes sem relaxar efeito/journal únicos ou `VERIFYING`. O gate R1 está em `311f3e4`, o reparo
-test-only em `2841346a` e a regressão repetida concluiu `751 passed, 5 skipped, 6 subtests passed`, com
-qualidade, escopo, build e smoke isolado verdes. O
-[PR corretivo #47](https://github.com/Wf-ops1/Harnessinfra/pull/47) foi aberto no head inicial
-`f37e422a`; seu head documental final aguarda CI e o merge permanece não autorizado.
-A [F4.6](completed/F4.6.md) e sua reconciliação administrativa permanecem promovidas no baseline
-`b578515`, cuja CI pós-merge `31513097203` concluiu 11/11. F4.8/F3.7 não foram iniciadas.
+Não há dossiê de implementação ativo. A [F4.7](completed/F4.7.md) está `PROMOTED` e arquivada nesta
+reconciliação administrativa. O [PR #46](https://github.com/Wf-ops1/Harnessinfra/pull/46) passou
+11/11 no run `31528005230`, mas a CI pós-merge `31528955883` falhou no E2E concorrente Windows 3.11.
+O R1 test-only em `2841346a` preservou efeito/journal únicos e `VERIFYING`; o
+[PR corretivo #47](https://github.com/Wf-ops1/Harnessinfra/pull/47) passou 11/11 no head final
+`b79e14d2` pelo run `31533353223`, foi incorporado em `4aa701a` e recebeu 11/11 na CI pós-merge
+`31534918672`. O [PR administrativo #48](https://github.com/Wf-ops1/Harnessinfra/pull/48) foi aberto
+no head inicial `e198e5b7`; seu head documental final aguarda CI. F4.8/F3.7 não foram iniciadas e
+permanecem bloqueadas até o fechamento administrativo.
 
 ## Ledger concluído
 
@@ -73,6 +71,7 @@ A [F4.6](completed/F4.6.md) e sua reconciliação administrativa permanecem prom
 | F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 / merge `362407f` / pós-merge `31455148050` |
 | F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 / merge `46b7070` / pós-merge `31459891130` |
 | F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
+| F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 aberto |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
