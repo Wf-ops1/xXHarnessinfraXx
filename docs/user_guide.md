@@ -109,8 +109,8 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- reparo R3/CI do launcher por `sys.prefix` e preservação no `TerminalAdapter` no PR #44, seguido de
-  persistência/guarda/retry em F4.7–F4.8.
+- publicação e CI POSIX do reparo R3 local do launcher por `sys.prefix` e preservação no
+  `TerminalAdapter` no PR #44, seguidas de persistência/guarda/retry em F4.7–F4.8.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

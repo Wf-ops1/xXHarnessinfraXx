@@ -173,13 +173,16 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.6-ready" in panel
     assert "checkpoint/f4.6-r1-ready" in panel
     assert "checkpoint/f4.6-complete" in panel
-    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in panel
+    assert "LOCAL_READY / PR_UPDATE_PENDING" in panel
     assert "31463009231" in panel
     assert "31463962634" in panel
     assert "TerminalAdapter" in panel
     assert "preserva seu path até o spawn" in panel
     assert "f26c124" in panel
     assert "736 passed, 3 skipped, 6 subtests passed" in panel
+    assert "checkpoint/f4.6-r3-ready" in panel
+    assert "167dbe5" in panel
+    assert "738 passed, 5 skipped, 6 subtests passed" in panel
     assert "735 passed, 2 skipped, 6 subtests passed" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
