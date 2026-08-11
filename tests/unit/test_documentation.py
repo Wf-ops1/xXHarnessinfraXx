@@ -144,26 +144,30 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31414853048" in readme
     assert "merge `fa31ef8`" in readme
     assert "31419214233" in readme
-    assert "`docs/promote-f4.3`" in readme
+    assert "`task/f4.4-typed-specific-plan`" in readme
     assert "PR #37" in readme
-    assert "checks ainda estão pendentes" in readme
+    assert "merge `5c8408d`" in readme
+    assert "31433785637" in readme
+    assert "implementação local autorizada" in readme
+    assert "está consolidada no commit local" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
 
-    assert "`docs/promote-f4.3`" in panel
+    assert "`task/f4.4-typed-specific-plan`" in panel
     assert "F4.3 `PROMOTED`" in panel
-    assert "checkpoint `25f72b1`" in panel
+    assert "checkpoint/f4.4-ready" in panel
     assert "PR #36" in panel
     assert "PR #37" in panel
-    assert "checks pendentes" in panel
+    assert "5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1" in panel
+    assert "31433785637" in panel
     assert "head final `84eda1c421d13d1e8e86620127c3318e2cfe5086`" in panel
     assert "31414853048" in panel
     assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in panel
     assert "31419214233" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.3.md" in panel
-    assert "Nenhuma tarefa ativa" in panel
-    assert "F4.4 permanece planejada e não iniciada" in panel
+    assert "F4.4 — plano tipado e específico; `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F4.4 `READY`" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

@@ -9,8 +9,8 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 | Etapa | Componente atual | Evidência existente | Estado real | Lacuna para o produto |
 |---|---|---|---|---|
 | Disparo | CLI `run` | Cria `execution_id` e chama o runtime | Experimental | Falta validar repositório, configuração e precondições fail-closed |
-| Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, identidade/digest e partição exata de evidência, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 R6 `COMPLETED_LOCAL / PROMOTION_PENDING` | Reparo pós-auditoria foi recertificado localmente e em 11/11 checks no PR #36; merge aguarda autorização; a entrada depende de artefatos e snapshot previamente produzidos; planner F4.4 não foi executado |
-| Plano | `Planner` | Persiste `plan.json` | Experimental | Não nasce de provider real nem governa efeitos com pre/postcondições completas |
+| Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, identidade/digest e partição exata de evidência, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 `PROMOTED` | PR #36 e reconciliação #37 foram incorporados com CI pós-merge verde; a entrada ainda depende de artefatos e snapshot previamente produzidos |
+| Plano | `Planner` + `ExecutionLifecycleService` | Contrato Pydantic versionado, structured output roteado, evidência/policies por digest, payload/projeção/eventos antes do nó e resume idempotente possuem testes positivos e fail-closed | F4.4 implementada localmente; ainda não promovida | Provider/configuração operacional continuam injetáveis; F4.5–F4.8 ainda precisam executar gates e guardar `COMPLETED` |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados | Primitiva real/injetável | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |
 | Verificação | `VerificationEngine` | Executa subprocessos para gates selecionados | Experimental | Lista vazia/gate desconhecido podem passar 0/0 e CLI reprovada pode sair zero; correção fica em F4.5–F4.8 |
@@ -26,7 +26,9 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 ## Interpretação correta dos testes
 
 Os testes atuais também provam o dual gate de contexto, bloqueio antes de nós, envelope imutável,
-retry/exaustão e recuperação de decisão durável. Eles provam providers HTTP com servidores controlados,
+retry/exaustão e recuperação de decisão durável. Para F4.4, provam que plano tipado e ligado a
+contexto/input é persistido antes do primeiro nó, que tamper/duplicata/policy/output/persistência
+inválidos bloqueiam e que resume não repete o provider. Eles provam providers HTTP com servidores controlados,
 tool loop durável, worktree Git real, terminal por `argv`, edição confinada e transporte MCP Serena
 contra fixtures. Integrações live
 OpenAI/Serena continuam condicionadas a configuração externa. Eles ainda não provam que a CLI compõe

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import re
 import subprocess
@@ -33,6 +34,7 @@ from ai_engineering_harness.contracts.nodes import (
 )
 from ai_engineering_harness.contracts.policies import ContextSufficiencyPolicySpec
 from ai_engineering_harness.core.config import ConfigResolver
+from ai_engineering_harness.models.router import ModelRouter
 from ai_engineering_harness.persistence import (
     ExecutionBundle,
     ExecutionLock,
@@ -54,13 +56,18 @@ from .graph_executor import (
 )
 from .maf_adapter import MAFAdapter
 from .node_executors import NodeExecutorRegistry
+from .planner import Planner, PlanPrerequisiteError
 from .state_machine import VALID_STATE_TRANSITIONS, EventSourcedStateMachine
 
 APPROVAL_REQUESTED: Literal["APPROVAL_REQUESTED"] = "APPROVAL_REQUESTED"
 EXECUTION_APPROVED: Literal["EXECUTION_APPROVED"] = "EXECUTION_APPROVED"
 APPROVAL_INVALIDATED: Literal["APPROVAL_INVALIDATED"] = "APPROVAL_INVALIDATED"
 CONTEXT_EVALUATED: Literal["CONTEXT_EVALUATED"] = "CONTEXT_EVALUATED"
+PLAN_GENERATION_STARTED: Literal["PLAN_GENERATION_STARTED"] = "PLAN_GENERATION_STARTED"
+PLAN_GENERATED: Literal["PLAN_GENERATED"] = "PLAN_GENERATED"
 _CONTEXT_POLICY_REFERENCE = "policies/context_sufficiency.yaml"
+_TOOL_POLICY_REFERENCE = "policies/tool_policy.yaml"
+_VERIFICATION_POLICY_REFERENCE = "policies/verification_policy.yaml"
 
 _DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
@@ -118,6 +125,14 @@ class ContextLifecycleIntegrityError(ExecutionLifecycleError):
 
 class ContextRetryExhaustedError(ExecutionLifecycleError):
     """A new context retrieval was refused after the durable retry budget was consumed."""
+
+
+class PlanningLifecycleIntegrityError(ExecutionLifecycleError):
+    """Persisted planning events cannot be reconciled with the execution snapshot."""
+
+
+class PlanningPrerequisiteError(ExecutionLifecycleError):
+    """Typed fail-closed planning failure before the first graph node."""
 
 
 class _StrictFrozenModel(BaseModel):
@@ -181,6 +196,7 @@ class ExecutionLifecycleService:
         owner_id_factory: Callable[[], str] | None = None,
         git_identity_provider: Callable[[], tuple[str, str]] | None = None,
         context_assembler: ContextAssembler | None = None,
+        model_router_factory: Callable[[Mapping[str, object]], ModelRouter] | None = None,
     ) -> None:
         if not isinstance(storage, ResumeStateStorageProvider):
             raise TypeError("storage must implement ResumeStateStorageProvider")
@@ -210,6 +226,7 @@ class ExecutionLifecycleService:
         )
         self._git_identity_provider = git_identity_provider or self._read_git_identity
         self._context_assembler = context_assembler or ContextAssembler(self.project_root)
+        self._model_router_factory = model_router_factory or ModelRouter.from_effective_config
         self._graph_executor = GraphExecutor(
             storage,
             executors,
@@ -306,6 +323,13 @@ class ExecutionLifecycleService:
                 resolved_policy=resolved_policy,
                 policy=policy,
             )
+            self._prepare_plan(
+                artifact=artifact,
+                execution_id=selected_id,
+                request=envelope.context_request,
+                graph_input=envelope.graph_input,
+                effective_configuration=effective_configuration,
+            )
         return self._graph_executor.execute(artifact, selected_id, graph_input)
 
     def resume(
@@ -340,6 +364,14 @@ class ExecutionLifecycleService:
                     resolved_policy=resolved_policy,
                     policy=policy,
                 )
+            effective_configuration = self._configuration_from_bundle(bundle, execution_id)
+            self._prepare_plan(
+                artifact=artifact,
+                execution_id=execution_id,
+                request=envelope.context_request,
+                graph_input=envelope.graph_input,
+                effective_configuration=effective_configuration,
+            )
             return self._graph_executor.execute(
                 artifact,
                 execution_id,
@@ -735,6 +767,391 @@ class ExecutionLifecycleService:
             reason="context_prerequisite_invalid",
             lock=lock,
         )
+
+    def _prepare_plan(
+        self,
+        *,
+        artifact: CompiledGraphArtifact,
+        execution_id: str,
+        request: RetrievalRequest,
+        graph_input: dict[str, object],
+        effective_configuration: Mapping[str, object],
+    ) -> None:
+        """Durably generate or recover the only plan authorized for graph traversal."""
+        graph_input_digest = canonical_json_digest(canonical_json_object(graph_input))
+        lock = self._acquire(execution_id)
+        try:
+            self._recover_approval_locked(execution_id, lock)
+            machine = self._state_machine(execution_id, lock)
+            record = machine.recover(lock=lock)
+            ambiguous_effect = False
+            try:
+                if record.current_state != ExecutionState.PLANNING:
+                    raise PlanningLifecycleIntegrityError(
+                        "planning requires the canonical PLANNING state",
+                        execution_id=execution_id,
+                    )
+                events = self._storage.load_events(execution_id, lock=lock)
+                context_digest, report = self._planning_context(
+                    artifact=artifact,
+                    execution_id=execution_id,
+                    request=request,
+                    record=record,
+                    events=events,
+                    lock=lock,
+                )
+                started, generated = self._validated_plan_events(
+                    events,
+                    execution_id=execution_id,
+                    context_digest=context_digest,
+                    graph_input_digest=graph_input_digest,
+                    schema_digest=Planner.schema_digest(),
+                )
+                verification_policy = self._required_resolved_policy(
+                    artifact,
+                    _VERIFICATION_POLICY_REFERENCE,
+                )
+                tool_policy = self._required_resolved_policy(
+                    artifact,
+                    _TOOL_POLICY_REFERENCE,
+                )
+                router = self._model_router_factory(effective_configuration)
+                if not isinstance(router, ModelRouter):
+                    raise TypeError("model_router_factory must return ModelRouter")
+                planner = Planner(self.project_root, self._storage, router)
+
+                if generated is not None:
+                    plan_digest = generated.payload["plan_digest"]
+                    assert isinstance(plan_digest, str)
+                    planner.recover_plan(
+                        execution_id=execution_id,
+                        plan_digest=plan_digest,
+                        context_digest=context_digest,
+                        graph_input_digest=graph_input_digest,
+                        workflow_name=record.workflow_name,
+                        base_commit_sha=record.base_commit_sha,
+                        lock=lock,
+                    )
+                    return
+                if started is not None:
+                    ambiguous_effect = True
+                    raise PlanningLifecycleIntegrityError(
+                        "planning provider effect is ambiguous and cannot be retried automatically",
+                        execution_id=execution_id,
+                    )
+
+                planner.validate_route()
+                minimum = max(
+                    record.updated_at,
+                    events[-1].timestamp if events else record.updated_at,
+                )
+                started = self._append_plan_event(
+                    execution_id,
+                    PLAN_GENERATION_STARTED,
+                    {
+                        "attempt": 1,
+                        "context_digest": context_digest,
+                        "graph_input_digest": graph_input_digest,
+                        "schema_digest": Planner.schema_digest(),
+                    },
+                    timestamp=self._next_timestamp(minimum),
+                    lock=lock,
+                )
+                result = planner.create_plan(
+                    execution_id=execution_id,
+                    context_report=report,
+                    context_digest=context_digest,
+                    context_request=request,
+                    graph_input=graph_input,
+                    workflow_name=record.workflow_name,
+                    base_commit_sha=record.base_commit_sha,
+                    verification_policy=verification_policy,
+                    tool_policy=tool_policy,
+                    active_node_ids=tuple(node.id for node in artifact.graph.nodes),
+                    lock=lock,
+                )
+                response = result.response
+                self._append_plan_event(
+                    execution_id,
+                    PLAN_GENERATED,
+                    {
+                        "attempt": 1,
+                        "completion_tokens": response.completion_tokens,
+                        "context_digest": context_digest,
+                        "graph_input_digest": graph_input_digest,
+                        "model_name": response.model_name,
+                        "plan_digest": result.plan_digest,
+                        "prompt_tokens": response.prompt_tokens,
+                        "provider": response.provider,
+                        "request_id": response.request_id,
+                        "response_id": response.response_id,
+                        "total_tokens": response.total_tokens,
+                    },
+                    timestamp=self._next_timestamp(started.timestamp),
+                    lock=lock,
+                )
+            except (
+                PlanPrerequisiteError,
+                PlanningLifecycleIntegrityError,
+                StateStorageError,
+                TypeError,
+                ValueError,
+                ValidationError,
+            ) as exc:
+                current = machine.recover(lock=lock)
+                if current.current_state == ExecutionState.PLANNING:
+                    self._transition_planning_prerequisite(
+                        current,
+                        machine=machine,
+                        lock=lock,
+                        ambiguous=ambiguous_effect,
+                    )
+                raise PlanningPrerequisiteError(
+                    "execution planning failed before graph traversal",
+                    execution_id=execution_id,
+                ) from exc
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def _planning_context(
+        self,
+        *,
+        artifact: CompiledGraphArtifact,
+        execution_id: str,
+        request: RetrievalRequest,
+        record: ExecutionRecord,
+        events: tuple[ExecutionEvent, ...],
+        lock: ExecutionLock,
+    ) -> tuple[str, ContextSufficiencyReport]:
+        context_policy = self._resolved_context_policy(artifact)
+        if context_policy is None:
+            raise PlanningLifecycleIntegrityError(
+                "planning activation requires the compiled context policy",
+                execution_id=execution_id,
+            )
+        resolved, _ = context_policy
+        policy_digest = canonical_json_digest(
+            canonical_json_object(resolved.effective_policy)
+        )
+        decisions = self._validated_context_events(
+            events,
+            execution_id=execution_id,
+            commit_sha=record.base_commit_sha,
+            policy_digest=policy_digest,
+        )
+        if not decisions or decisions[-1].payload.get("outcome") != "sufficient":
+            raise PlanningLifecycleIntegrityError(
+                "planning has no sufficient canonical context decision",
+                execution_id=execution_id,
+            )
+        event = decisions[-1]
+        context_digest = event.payload.get("payload_digest")
+        if type(context_digest) is not str:
+            raise PlanningLifecycleIntegrityError(
+                "planning context digest is invalid",
+                execution_id=execution_id,
+            )
+        try:
+            report = ContextSufficiencyReport.model_validate(
+                self._storage.load_payload(execution_id, context_digest, lock=lock)
+            )
+        except (StateStorageError, TypeError, ValueError, ValidationError) as exc:
+            raise PlanningLifecycleIntegrityError(
+                "planning context payload is unavailable or invalid",
+                execution_id=execution_id,
+            ) from exc
+        query_digest = "sha256:" + hashlib.sha256(request.query.encode("utf-8")).hexdigest()
+        if (
+            not report.is_sufficient
+            or report.recommended_action != "proceed"
+            or report.gaps
+            or report.attempt != event.payload.get("attempt")
+            or report.commit_sha != record.base_commit_sha
+            or report.workflow_name != record.workflow_name
+            or report.policy_digest != policy_digest
+            or report.request.requirement_id != request.requirement_id
+            or report.request.graph_type != request.graph_type
+            or report.request.query_digest != query_digest
+        ):
+            raise PlanningLifecycleIntegrityError(
+                "planning context does not match the immutable execution",
+                execution_id=execution_id,
+            )
+        return context_digest, report
+
+    @staticmethod
+    def _required_resolved_policy(
+        artifact: CompiledGraphArtifact,
+        reference: str,
+    ) -> ResolvedPolicySpec:
+        matches = tuple(
+            policy
+            for policy in artifact.resolved_policies
+            if policy.requested_reference == reference
+        )
+        if len(matches) != 1:
+            raise PlanningLifecycleIntegrityError(
+                f"compiled planning policy must appear exactly once: {reference}"
+            )
+        return matches[0]
+
+    @staticmethod
+    def _validated_plan_events(
+        events: tuple[ExecutionEvent, ...],
+        *,
+        execution_id: str,
+        context_digest: str,
+        graph_input_digest: str,
+        schema_digest: str,
+    ) -> tuple[ExecutionEvent | None, ExecutionEvent | None]:
+        started_events = tuple(
+            (index, event)
+            for index, event in enumerate(events)
+            if event.event_type == PLAN_GENERATION_STARTED
+        )
+        generated_events = tuple(
+            (index, event)
+            for index, event in enumerate(events)
+            if event.event_type == PLAN_GENERATED
+        )
+        if len(started_events) > 1 or len(generated_events) > 1:
+            raise PlanningLifecycleIntegrityError(
+                "planning attempt or outcome is duplicated",
+                execution_id=execution_id,
+            )
+        started = started_events[0][1] if started_events else None
+        generated = generated_events[0][1] if generated_events else None
+        if generated is not None and (
+            started is None or generated_events[0][0] <= started_events[0][0]
+        ):
+            raise PlanningLifecycleIntegrityError(
+                "planning outcome has no preceding attempt",
+                execution_id=execution_id,
+            )
+        if started is not None:
+            payload = started.payload
+            if (
+                set(payload)
+                != {"attempt", "context_digest", "graph_input_digest", "schema_digest"}
+                or payload.get("attempt") != 1
+                or payload.get("context_digest") != context_digest
+                or payload.get("graph_input_digest") != graph_input_digest
+                or payload.get("schema_digest") != schema_digest
+            ):
+                raise PlanningLifecycleIntegrityError(
+                    "planning start event is invalid",
+                    execution_id=execution_id,
+                )
+        if generated is not None:
+            payload = generated.payload
+            expected_keys = {
+                "attempt",
+                "completion_tokens",
+                "context_digest",
+                "graph_input_digest",
+                "model_name",
+                "plan_digest",
+                "prompt_tokens",
+                "provider",
+                "request_id",
+                "response_id",
+                "total_tokens",
+            }
+            request_id = payload.get("request_id")
+            if (
+                set(payload) != expected_keys
+                or payload.get("attempt") != 1
+                or payload.get("context_digest") != context_digest
+                or payload.get("graph_input_digest") != graph_input_digest
+                or type(payload.get("plan_digest")) is not str
+                or _DIGEST_PATTERN.fullmatch(str(payload.get("plan_digest"))) is None
+                or not ExecutionLifecycleService._is_trimmed_string(payload.get("provider"))
+                or not ExecutionLifecycleService._is_trimmed_string(payload.get("model_name"))
+                or not ExecutionLifecycleService._is_trimmed_string(payload.get("response_id"))
+                or (
+                    request_id is not None
+                    and not ExecutionLifecycleService._is_trimmed_string(request_id)
+                )
+                or any(
+                    type(payload.get(key)) is not int or int(payload[key]) < 0
+                    for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+                )
+                or payload.get("total_tokens")
+                != int(payload.get("prompt_tokens", -1))
+                + int(payload.get("completion_tokens", -1))
+            ):
+                raise PlanningLifecycleIntegrityError(
+                    "planning outcome event is invalid",
+                    execution_id=execution_id,
+                )
+        return started, generated
+
+    def _append_plan_event(
+        self,
+        execution_id: str,
+        event_type: Literal["PLAN_GENERATION_STARTED", "PLAN_GENERATED"],
+        payload: dict[str, object],
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=event_type,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise PlanningLifecycleIntegrityError(
+                "cannot construct a canonical planning lifecycle event",
+                execution_id=execution_id,
+            ) from exc
+        return self._storage.append_event(execution_id, event, lock=lock)
+
+    @staticmethod
+    def _transition_planning_prerequisite(
+        record: ExecutionRecord,
+        *,
+        machine: EventSourcedStateMachine,
+        lock: ExecutionLock,
+        ambiguous: bool,
+    ) -> None:
+        machine.transition_to(
+            ExecutionState.BLOCKED_PREREQUISITE,
+            node_id=record.current_node_id,
+            attempt=record.attempt_by_node.get(record.current_node_id, 0),
+            reason=(
+                "planning_effect_ambiguous"
+                if ambiguous
+                else "planning_prerequisite_invalid"
+            ),
+            lock=lock,
+        )
+
+    @staticmethod
+    def _configuration_from_bundle(
+        bundle: ExecutionBundle,
+        execution_id: str,
+    ) -> dict[str, object]:
+        try:
+            configuration = json.loads(bundle.configuration_json)
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise PlanningPrerequisiteError(
+                "stored model configuration is unavailable or invalid",
+                execution_id=execution_id,
+            ) from exc
+        if type(configuration) is not dict:
+            raise PlanningPrerequisiteError(
+                "stored model configuration is not a JSON object",
+                execution_id=execution_id,
+            )
+        return configuration
+
+    @staticmethod
+    def _is_trimmed_string(value: object) -> bool:
+        return type(value) is str and bool(value.strip()) and value == value.strip()
 
     def approve(self, execution_id: str, *, approver: str) -> ExecutionRecord:
         """Approve exactly the currently paused immutable subject."""

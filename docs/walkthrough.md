@@ -67,8 +67,9 @@ flowchart TD
     C --> P{"Policy context_sufficiency compilada?"}
     P -->|Não| D["GraphExecutor valida e percorre arestas compiladas"]
     P -->|Sim| X["Lifecycle monta contexto e persiste CONTEXT_EVALUATED"]
-    X -->|Suficiente| L["Estado PLANNING; entrega somente graph_input"]
-    L --> D
+    X -->|Suficiente| L["Estado PLANNING; valida contexto e policies"]
+    L --> Q["Structured output tipado; payload + plan.json + PLAN_GENERATED"]
+    Q --> D
     X -->|Insuficiente| I["BLOCKED_INSUFFICIENT_CONTEXT antes do primeiro nó"]
     X -->|Pré-requisito inválido| J["BLOCKED_PREREQUISITE antes do primeiro nó"]
     D --> E["NodeExecutorRegistry exige backend do nó"]
@@ -84,6 +85,9 @@ Limitações importantes:
 - os quatro workflows F4.3 exigem envelope exato `context_request + graph_input`; a decisão usa a
   policy resolvida do artefato, o snapshot do commit e os manifestos de conhecimento, com até duas
   retomadas além da tentativa inicial;
+- a implementação local F4.4 valida rota/egress, relê evidência por digest, exige plano tipado
+  limitado às policies compiladas e persiste payload/projeção/eventos antes de entregar `graph_input`;
+  ela está consolidada no commit local, mas ainda não foi publicada ou promovida;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
 - promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,

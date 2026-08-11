@@ -22,6 +22,18 @@ from .graph import (
     TerminalStateSpec,
     ToolPermissionSpec,
 )
+from .planning import (
+    PLAN_SCHEMA_VERSION,
+    PlanAcceptanceCriterion,
+    PlanCompletionCondition,
+    PlanContent,
+    PlanDocument,
+    PlanRemainingGap,
+    PlanRisk,
+    PlanRollbackStrategy,
+    PlanStep,
+    PlanTarget,
+)
 from .policies import (
     AgentRoleSpec,
     EffectiveNodeToolPolicySpec,
@@ -59,6 +71,7 @@ from .structural_index import (
 
 __all__ = [
     "EXECUTION_RECORD_SCHEMA_VERSION",
+    "PLAN_SCHEMA_VERSION",
     "STRUCTURAL_SNAPSHOT_SCHEMA_VERSION",
     "AgentNodeSpec",
     "AgentRoleSpec",
@@ -83,6 +96,15 @@ __all__ = [
     "InvalidPolicyReferenceError",
     "InvalidPolicySchemaError",
     "NodeSpec",
+    "PlanAcceptanceCriterion",
+    "PlanCompletionCondition",
+    "PlanContent",
+    "PlanDocument",
+    "PlanRemainingGap",
+    "PlanRisk",
+    "PlanRollbackStrategy",
+    "PlanStep",
+    "PlanTarget",
     "PolicyNotFoundError",
     "PolicyRegistry",
     "PolicyRegistryError",
