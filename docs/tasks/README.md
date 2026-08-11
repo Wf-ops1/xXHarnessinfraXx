@@ -20,12 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não existe dossiê de implementação ativo. A [F4.6](completed/F4.6.md) foi incorporada pelo PR #44 no
-merge `a4fd1da`, com 11/11 checks no head final `00e8357` pelo run `31505324814` e 11/11 na CI
-pós-merge `31510277593`. A reconciliação administrativa está aberta no PR #45 a partir do head
-inicial `5882e42`; o run `31512347572` está em andamento, mas este registro produzirá um head
-posterior que exige nova CI integral. F4.7/F4.8/F3.7 não foram iniciadas e continuam bloqueadas até
-essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
+O único dossiê ativo é a [F4.7](active/F4.7.md), autorizada nominalmente e congelada para persistir a
+evidência de cada gate e guardar `COMPLETED`. A [F4.6](completed/F4.6.md) foi incorporada pelo PR #44
+no merge `a4fd1da`, com 11/11 checks no head final `00e8357` pelo run `31505324814` e 11/11 na CI
+pós-merge `31510277593`. Sua reconciliação administrativa PR #45 terminou no head `09ced2f`, run
+`31512605530`, merge `b578515` e CI pós-merge `31513097203`, todos 11/11. F4.8/F3.7 não foram
+iniciadas e permanecem fora do gate corrente.
 
 ## Ledger concluído
 
@@ -67,7 +67,7 @@ essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
 | F4 | F4.4 | [Plano tipado e específico](completed/F4.4.md) | PR #38 / merge `93ce4ce` / pós-merge `31445624269`; administrativo #39 / merge `94641d2` / pós-merge `31447628152` |
 | F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 / merge `362407f` / pós-merge `31455148050` |
 | F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 / merge `46b7070` / pós-merge `31459891130` |
-| F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 aberto |
+| F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
