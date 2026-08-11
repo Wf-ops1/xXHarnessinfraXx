@@ -162,17 +162,28 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
 
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/completed/F4.5.md" in panel
-    assert "F4.5 `PROMOTED`" in panel
-    assert "docs/promote-f4.5" in panel
+    assert "docs/tasks/active/F4.6.md" in panel
+    assert "F4.6 — detectar stack e resolver comandos efetivos" in panel
+    assert "46b70709b773a6bca0aa7adfd76d40b3cdf27e23" in panel
     assert "PR #42" in panel
-    assert "31457935429" in panel
-    assert "4ae0de7" in panel
+    assert "4ae0de798607cf4fec13c0469fddb93d8024ead5" in panel
     assert "31458482033" in panel
     assert "PR #43" in panel
-    assert "31459427729" in panel
-    assert "checkpoint/f4.5-ready" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "31459891130" in panel
+    assert "checkpoint/f4.6-ready" in panel
+    assert "checkpoint/f4.6-r1-ready" in panel
+    assert "checkpoint/f4.6-complete" in panel
+    assert "LOCAL_READY / PR_UPDATE_PENDING" in panel
+    assert "31463009231" in panel
+    assert "31463962634" in panel
+    assert "TerminalAdapter" in panel
+    assert "preserva seu path até o spawn" in panel
+    assert "f26c124" in panel
+    assert "736 passed, 3 skipped, 6 subtests passed" in panel
+    assert "checkpoint/f4.6-r3-ready" in panel
+    assert "167dbe5" in panel
+    assert "738 passed, 5 skipped, 6 subtests passed" in panel
+    assert "735 passed, 2 skipped, 6 subtests passed" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

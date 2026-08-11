@@ -10,10 +10,57 @@ from ai_engineering_harness.contracts import (
     CANONICAL_VERIFICATION_GATE_IDS,
     CompiledGraphArtifact,
 )
+from ai_engineering_harness.core.detector import StackDetector
+from ai_engineering_harness.security import PathGuard
 from ai_engineering_harness.verification import VerificationConfigurationError
 from ai_engineering_harness.verification.engine import VerificationEngine
 from ai_engineering_harness.verification.evaluator import VerificationEvaluator
 from ai_engineering_harness.versioning import ARTIFACT_SCHEMA_VERSION, PACKAGE_VERSION
+from ai_engineering_harness.workspace import (
+    ProvisionedWorktree,
+    WorktreeReference,
+    WorktreeStatus,
+)
+
+
+def _verification_worktree(root: Path) -> ProvisionedWorktree:
+    (root / "pyproject.toml").write_text(
+        """
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "sample"
+version = "0.1.0"
+[project.optional-dependencies]
+dev = ["pytest", "mypy", "ruff"]
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
+[tool.mypy]
+python_version = "3.11"
+[tool.ruff]
+line-length = 100
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    resolved = root.resolve(strict=True)
+    sha = "b" * 40
+    reference = WorktreeReference(
+        execution_id="phase5",
+        project_id="phase5",
+        project_root=resolved,
+        worktree_path=resolved,
+        base_commit_sha=sha,
+        original_branch="main",
+        worktree_branch="harness/phase5",
+        worktree_head_sha=sha,
+        status=WorktreeStatus.ACTIVE,
+        failure_code=None,
+        created_at="2026-08-11T05:00:00+00:00",
+        updated_at="2026-08-11T05:00:00+00:00",
+    )
+    return ProvisionedWorktree(reference=reference, path_guard=PathGuard(resolved))
 
 
 def test_compiler_governed_loops_success(tmp_path: Path):
@@ -85,7 +132,7 @@ contracts: []
         compiler.compile_graph(yaml_spec, "invalid_workflow")
     assert "retry_policy" in str(exc_info.value)
 
-def test_verification_evaluator_polyglot():
+def test_verification_evaluator_uses_detected_configuration(tmp_path: Path):
     assert VerificationEvaluator.canonical_gate_ids() == CANONICAL_VERIFICATION_GATE_IDS
     assert CANONICAL_VERIFICATION_GATE_IDS == (
         "typecheck",
@@ -94,18 +141,14 @@ def test_verification_evaluator_polyglot():
         "build",
         "security_scan",
     )
-    assert VerificationEvaluator.get_argv("python", "unit_test") == ("pytest",)
-    assert VerificationEvaluator.get_argv("ts", "lint") == ("eslint", ".")
-    assert VerificationEvaluator.get_argv("golang", "typecheck") == ("go", "vet", "./...")
-
-    py_cmd = VerificationEvaluator.get_command("python", "unit_test")
-    assert py_cmd == "pytest"
-
-    ts_cmd = VerificationEvaluator.get_command("typescript/javascript", "lint")
-    assert ts_cmd == "eslint ."
-
-    go_cmd = VerificationEvaluator.get_command("go", "typecheck")
-    assert go_cmd == "go vet ./..."
+    _verification_worktree(tmp_path)
+    stack = StackDetector(tmp_path).detect()
+    command = VerificationEvaluator.configured_command(stack, "unit_test")
+    assert command is not None
+    assert command.tool == "pytest"
+    assert command.argv_tail == ("-m", "pytest")
+    assert VerificationEvaluator.configured_command(stack, "security_scan") is None
+    assert VerificationEvaluator.configured_command(stack, "tests") is None
 
 
 @pytest.mark.parametrize(
@@ -123,25 +166,27 @@ def test_verification_runner_rejects_unexecutable_suite_before_effects(
     monkeypatch: pytest.MonkeyPatch,
     active_gates: list[str],
 ) -> None:
-    engine = VerificationEngine(language="python", working_dir=tmp_path)
+    engine = VerificationEngine(_verification_worktree(tmp_path))
 
-    def unexpected_adapter(_: str):
+    def unexpected_adapter(_suite):
         raise AssertionError("configuration errors must fail before terminal effects")
 
-    monkeypatch.setattr(engine.runner, "_adapter_for", unexpected_adapter)
+    monkeypatch.setattr(engine.runner, "_adapter_for_suite", unexpected_adapter)
 
     with pytest.raises(VerificationConfigurationError):
         engine.verify(active_gates=active_gates)
 
 
-def test_verification_runner_rejects_language_without_gate_mapping(tmp_path: Path) -> None:
-    engine = VerificationEngine(language="unknown", working_dir=tmp_path)
+def test_verification_runner_rejects_gate_without_configured_command(tmp_path: Path) -> None:
+    engine = VerificationEngine(_verification_worktree(tmp_path))
 
     with pytest.raises(VerificationConfigurationError, match="no configured command"):
-        engine.verify(active_gates=["typecheck"])
+        engine.verify(active_gates=["security_scan"])
 
 def test_verification_engine_run(tmp_path: Path):
-    engine = VerificationEngine(language="python", working_dir=tmp_path)
-    # Gates aplicáveis para Python
-    res = engine.verify(active_gates=["typecheck", "unit_test"])
-    assert res.total_gates == 2
+    engine = VerificationEngine(_verification_worktree(tmp_path))
+    suite = engine.resolve(active_gates=["typecheck", "unit_test"])
+    assert tuple(command.gate_id for command in suite.commands) == (
+        "typecheck",
+        "unit_test",
+    )

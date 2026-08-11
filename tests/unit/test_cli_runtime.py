@@ -262,8 +262,20 @@ def test_cli_help_lists_resume_approve_cancel_status_and_inspect() -> None:
     result = CliRunner().invoke(main, ["--help"])
 
     assert result.exit_code == 0
-    for command in ("run", "resume", "approve", "cancel", "status", "inspect"):
+    for command in ("run", "resume", "approve", "cancel", "status", "inspect", "verify"):
         assert command in result.output
+
+
+def test_cli_verify_requires_a_worktree_execution_id() -> None:
+    runner = CliRunner()
+    help_result = runner.invoke(main, ["verify", "--help"])
+    missing_result = runner.invoke(main, ["verify"])
+
+    assert help_result.exit_code == 0
+    assert "EXECUTION_ID" in help_result.output
+    assert "worktree validado" in help_result.output
+    assert missing_result.exit_code != 0
+    assert "Missing argument 'EXECUTION_ID'" in missing_result.output
 
 
 def _initialize_cli_git_repository(project_root: Path) -> str:

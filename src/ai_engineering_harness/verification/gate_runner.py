@@ -1,90 +1,67 @@
-"""Runner poliglota de tipos abstratos de gate de verificação."""
+"""Deterministic execution of a fully resolved verification suite."""
 
 from __future__ import annotations
 
-import os
-import shutil
-from pathlib import Path
-
-from ai_engineering_harness.security import PathGuard, Redactor
+from ai_engineering_harness.security import Redactor
 from ai_engineering_harness.tools.adapters.terminal import (
     CommandRequest,
     TerminalAdapter,
     TerminalAdapterError,
     TerminalConfigurationError,
 )
-from ai_engineering_harness.verification.evaluator import VerificationEvaluator
+from ai_engineering_harness.verification.resolver import (
+    ResolvedVerificationSuite,
+    VerificationCommandResolver,
+    VerificationConfigurationError,
+    VerificationPrerequisiteError,
+)
 from ai_engineering_harness.verification.results import GateResult, VerificationSuiteResult
-
-
-class VerificationConfigurationError(ValueError):
-    """A requested verification suite cannot be executed without ambiguity."""
+from ai_engineering_harness.workspace import ProvisionedWorktree
 
 
 class GateRunner:
-    """Executa somente verificadores estáticos aplicáveis ao projeto."""
+    """Resolve every prerequisite, then execute gates inside one validated worktree."""
 
-    _SAFE_ENVIRONMENT_NAMES = ("PATH", "SYSTEMROOT")
+    def __init__(self, worktree: ProvisionedWorktree):
+        self.worktree = worktree
+        self.resolver = VerificationCommandResolver(worktree)
 
-    def __init__(self, language: str, working_dir: Path):
-        self.language = language
-        self.working_dir = working_dir
-        self._path_guard = PathGuard(working_dir)
-        self._environment = self._capture_environment()
-        self._adapters: dict[str, TerminalAdapter] = {}
+    def resolve(self, active_gates: list[str]) -> ResolvedVerificationSuite:
+        """Expose effect-free resolution through the engine-owned runner."""
+
+        return self.resolver.resolve(active_gates)
 
     def run_applicable_gates(self, active_gates: list[str]) -> VerificationSuiteResult:
-        gates = tuple(active_gates)
-        if not gates:
-            raise VerificationConfigurationError(
-                "verification suite must contain at least one canonical gate"
-            )
-        if any(type(gate) is not str for gate in gates):
-            raise VerificationConfigurationError(
-                "verification gate ids must be exact canonical strings"
-            )
-        if len(set(gates)) != len(gates):
-            raise VerificationConfigurationError("verification gate ids must be unique")
+        """Execute only after the complete suite and executable policy are available."""
 
-        unknown_gates = tuple(
-            gate for gate in gates if not VerificationEvaluator.is_canonical_gate_id(gate)
-        )
-        if unknown_gates:
-            rendered = ", ".join(repr(gate) for gate in unknown_gates)
-            raise VerificationConfigurationError(
-                f"unknown verification gate id(s): {rendered}"
-            )
-
-        resolved: list[tuple[str, tuple[str, ...]]] = []
-        for gate in gates:
-            argv = VerificationEvaluator.get_argv(self.language, gate)
-            if argv is None:
-                raise VerificationConfigurationError(
-                    f"verification gate {gate!r} has no configured command "
-                    f"for language {self.language!r}"
-                )
-            resolved.append((gate, argv))
+        suite = self.resolve(active_gates)
+        try:
+            adapter = self._adapter_for_suite(suite)
+        except TerminalConfigurationError as exc:
+            raise VerificationPrerequisiteError(
+                "resolved verification executable policy is invalid"
+            ) from exc
 
         results: list[GateResult] = []
-
-        for gate, argv in resolved:
-            command = VerificationEvaluator.get_command(self.language, gate)
-            assert command is not None
-
+        for command in suite.commands:
             try:
-                adapter = self._adapter_for(argv[0])
                 term_res = adapter.execute(
                     CommandRequest(
-                        argv=argv,
-                        cwd=".",
+                        argv=command.argv,
+                        cwd=command.cwd,
                         timeout_seconds=30,
-                        env_allowlist=tuple(self._environment),
+                        env_allowlist=tuple(self.resolver.environment),
                         max_output_bytes=1_000_000,
                     )
                 )
                 passed = not term_res.timed_out and term_res.exit_code == 0
                 stdout = term_res.stdout
                 stderr = term_res.stderr
+            except TerminalConfigurationError as exc:
+                raise VerificationPrerequisiteError(
+                    "verification executable became unavailable before gate execution",
+                    gate_id=command.gate_id,
+                ) from exc
             except TerminalAdapterError as exc:
                 passed = False
                 stdout = ""
@@ -92,8 +69,8 @@ class GateRunner:
 
             results.append(
                 GateResult(
-                    gate_type=gate,
-                    command=command,
+                    gate_type=command.gate_id,
+                    command=" ".join(command.argv),
                     passed=passed,
                     stdout=stdout,
                     stderr=stderr,
@@ -107,42 +84,20 @@ class GateRunner:
             gate_results=results,
         )
 
-    def _adapter_for(self, executable_alias: str) -> TerminalAdapter:
-        adapter = self._adapters.get(executable_alias)
-        if adapter is not None:
-            return adapter
-
-        search_path = next(
-            (value for key, value in self._environment.items() if key.casefold() == "path"),
-            None,
+    def _adapter_for_suite(self, suite: ResolvedVerificationSuite) -> TerminalAdapter:
+        executables = {
+            command.executable_alias: command.executable_path
+            for command in suite.commands
+        }
+        return TerminalAdapter(
+            path_guard=self.worktree.path_guard,
+            executables=executables,
+            environment=self.resolver.environment,
         )
-        resolved = shutil.which(executable_alias, path=search_path)
-        if resolved is None:
-            raise TerminalConfigurationError("verification executable is not available")
-        try:
-            executable_path = Path(resolved).resolve(strict=True)
-        except (OSError, RuntimeError, ValueError) as exc:
-            raise TerminalConfigurationError(
-                "verification executable could not be resolved safely"
-            ) from exc
-        adapter = TerminalAdapter(
-            path_guard=self._path_guard,
-            executables={executable_alias: executable_path},
-            environment=self._environment,
-        )
-        self._adapters[executable_alias] = adapter
-        return adapter
-
-    @classmethod
-    def _capture_environment(cls) -> dict[str, str]:
-        captured: dict[str, str] = {}
-        current = {name.casefold(): (name, value) for name, value in os.environ.items()}
-        for allowed_name in cls._SAFE_ENVIRONMENT_NAMES:
-            entry = current.get(allowed_name.casefold())
-            if entry is not None:
-                name, value = entry
-                captured[name] = value
-        return captured
 
 
-__all__ = ["GateRunner", "VerificationConfigurationError"]
+__all__ = [
+    "GateRunner",
+    "VerificationConfigurationError",
+    "VerificationPrerequisiteError",
+]

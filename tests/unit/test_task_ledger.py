@@ -258,7 +258,7 @@ def test_f4_4_promotion_uses_the_certified_f4_3_baseline() -> None:
     assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in f4_4_dossier
     assert "31445624269" in f4_4_dossier
     assert "Autorizo o merge do PR #29" not in panel
-    assert "Autorizo publicar a branch" not in panel
+    assert "Autorizo publicar a branch docs/promote-f4.4" not in panel
     assert "Autorizo o merge do PR #30" not in panel
     assert "Autorizo iniciar a F4.1" not in panel
     assert "05f54dd8690f060008acb95cf3de5d6a3c12b9a0" in dossier
@@ -362,7 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "blocker corrente é somente sua reconciliação administrativa obrigatória" in panel
+    assert "F4.6 — detectar stack e resolver comandos efetivos" in panel
+    assert "31459891130" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -454,14 +455,28 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "31454615745" in dossier
     assert "SnapshotConflictError" in dossier
     assert "os.link" in dossier
-    assert "F4.5 `PROMOTED`" in panel
-    assert "docs/tasks/completed/F4.5.md" in panel
-    assert "docs/promote-f4.5" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    f4_6_dossier = _read(ACTIVE_ROOT / "F4.6.md")
+    assert "F4.6 — detectar stack e resolver comandos efetivos" in panel
+    assert "docs/tasks/active/F4.6.md" in panel
+    assert "46b70709b773a6bca0aa7adfd76d40b3cdf27e23" in panel
+    assert "31459891130" in panel
+    assert "> **Gate:** `READY`" in f4_6_dossier
+    assert "> **Lifecycle:** `LOCAL_READY / PR_UPDATE_PENDING`" in f4_6_dossier
+    assert "> **Revisão do gate:** `R3" in f4_6_dossier
+    assert "src/ai_engineering_harness/tools/adapters/terminal.py" in f4_6_dossier
+    assert "<sys.prefix>/bin/python" in f4_6_dossier
+    assert "path de lançamento" in f4_6_dossier
+    assert "checkpoint/f4.6-ready" in f4_6_dossier
+    assert "checkpoint/f4.6-r1-ready" in f4_6_dossier
+    assert "checkpoint/f4.6-complete" in f4_6_dossier
+    assert "507c216" in f4_6_dossier
+    assert "735 passed, 2 skipped, 6 subtests passed" in f4_6_dossier
+    assert "ERROR_PREREQUISITE" in f4_6_dossier
+    assert "ProvisionedWorktree" in f4_6_dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/43" in f4_5_dossier
     assert "b30416470b0ea4b266d2c4a65b9b1963858d51b8" in f4_5_dossier
     assert "31459427729" in f4_5_dossier
-    assert "checkpoint/f4.5-ready" in panel
+    assert "checkpoint/f4.6-ready" in panel
     assert not (ACTIVE_ROOT / "F4.5.md").exists()
     assert "> **Gate:** `READY`" in f4_5_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_5_dossier
@@ -488,7 +503,8 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "4ae0de7" in readme
     assert "31458482033" in readme
     assert "PR #43" in readme
-    assert "31459427729" in readme
+    assert "`46b7070`" in readme
+    assert "31459891130" in readme
     assert "completed/F4.C1.md" in task_index
     assert "PR #40 / merge `3905d02` / pós-merge `31453662008`" in task_index
     assert "administrativo #41 / merge `362407f` / pós-merge `31455148050`" in task_index
@@ -496,8 +512,19 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "PR #42" in task_index
     assert "completed/F4.5.md" in task_index
     assert "PR #42 / merge `4ae0de7` / pós-merge `31458482033`" in task_index
-    assert "administrativo #43 aberto" in task_index
-    assert "31459427729" in task_index
+    assert "administrativo #43 / merge `46b7070` / pós-merge `31459891130`" in task_index
+    assert "active/F4.6.md" in task_index
+    assert "LOCAL_READY / PR_UPDATE_PENDING" in task_index
+    assert "31463009231" in task_index
+    assert "31463962634" in task_index
+    assert "TerminalAdapter" in task_index
+    assert "f26c124" in f4_6_dossier
+    assert "736 passed, 3 skipped, 6 subtests passed" in f4_6_dossier
+    assert "checkpoint/f4.6-r3-ready" in f4_6_dossier
+    assert "checkpoint/f4.6-r3-complete" in f4_6_dossier
+    assert "ce07850" in f4_6_dossier
+    assert "167dbe5" in f4_6_dossier
+    assert "738 passed, 5 skipped, 6 subtests passed" in f4_6_dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

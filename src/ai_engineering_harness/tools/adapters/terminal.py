@@ -102,6 +102,14 @@ class CommandResult:
     stderr_truncated: bool
 
 
+@dataclass(frozen=True, slots=True)
+class _ExecutablePolicy:
+    """Preserve the launcher while pinning the authorized canonical target."""
+
+    launch_path: Path
+    resolved_target: Path
+
+
 @dataclass(slots=True)
 class _BoundedBytes:
     limit: int
@@ -350,7 +358,7 @@ class TerminalAdapter:
 
     _environment: Mapping[str, str]
     _environment_keys: Mapping[str, str]
-    _executables: Mapping[str, Path]
+    _executables: Mapping[str, _ExecutablePolicy]
     _path_guard: PathGuard
 
     def __init__(
@@ -466,11 +474,11 @@ class TerminalAdapter:
     @staticmethod
     def _normalize_executables(
         executables: Mapping[str, str | os.PathLike[str]],
-    ) -> dict[str, Path]:
+    ) -> dict[str, _ExecutablePolicy]:
         if not isinstance(executables, Mapping) or not executables:
             raise TerminalConfigurationError("at least one executable policy entry is required")
 
-        normalized: dict[str, Path] = {}
+        normalized: dict[str, _ExecutablePolicy] = {}
         for alias, configured_path in executables.items():
             if not isinstance(alias, str) or not alias or "\x00" in alias:
                 raise TerminalConfigurationError("executable aliases must be non-empty text")
@@ -485,12 +493,21 @@ class TerminalAdapter:
             if not raw_path.is_absolute():
                 raise TerminalConfigurationError("executable path must be absolute")
             try:
-                resolved_path = raw_path.resolve(strict=True)
-            except (OSError, RuntimeError, ValueError) as exc:
+                launch_path = Path(os.path.abspath(raw_path))
+                resolved_target = launch_path.resolve(strict=True)
+            except (OSError, RuntimeError, TypeError, ValueError) as exc:
                 raise TerminalConfigurationError("executable path must resolve to an existing file") from exc
-            if not resolved_path.is_file() or not os.access(resolved_path, os.X_OK):
+            if (
+                not launch_path.is_file()
+                or not os.access(launch_path, os.X_OK)
+                or not resolved_target.is_file()
+                or not os.access(resolved_target, os.X_OK)
+            ):
                 raise TerminalConfigurationError("executable path must be an executable file")
-            normalized[alias] = resolved_path
+            normalized[alias] = _ExecutablePolicy(
+                launch_path=launch_path,
+                resolved_target=resolved_target,
+            )
         return normalized
 
     @staticmethod
@@ -514,16 +531,22 @@ class TerminalAdapter:
         return normalized, lookup
 
     def _authorized_executable(self, alias: str) -> Path:
-        executable = self._executables.get(alias)
-        if executable is None:
+        policy = self._executables.get(alias)
+        if policy is None:
             raise ExecutableNotAllowedError("argv[0] is not allowed by executable policy")
         try:
-            current = executable.resolve(strict=True)
+            current_target = policy.launch_path.resolve(strict=True)
         except (OSError, RuntimeError, ValueError) as exc:
             raise TerminalConfigurationError("authorized executable is no longer available") from exc
-        if current != executable or not current.is_file() or not os.access(current, os.X_OK):
+        if (
+            current_target != policy.resolved_target
+            or not policy.launch_path.is_file()
+            or not os.access(policy.launch_path, os.X_OK)
+            or not current_target.is_file()
+            or not os.access(current_target, os.X_OK)
+        ):
             raise TerminalConfigurationError("authorized executable changed after policy creation")
-        return executable
+        return policy.launch_path
 
     def _selected_environment(self, requested_names: tuple[str, ...]) -> dict[str, str]:
         selected: dict[str, str] = {}

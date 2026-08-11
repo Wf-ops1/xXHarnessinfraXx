@@ -1,6 +1,17 @@
-"""Módulo Verification Engine Poliglota."""
+"""Configured, worktree-bound verification boundary."""
 
 from .engine import VerificationEngine
-from .gate_runner import GateRunner, VerificationConfigurationError
+from .resolver import (
+    ResolvedGateCommand,
+    ResolvedVerificationSuite,
+    VerificationConfigurationError,
+    VerificationPrerequisiteError,
+)
 
-__all__ = ["GateRunner", "VerificationConfigurationError", "VerificationEngine"]
+__all__ = [
+    "ResolvedGateCommand",
+    "ResolvedVerificationSuite",
+    "VerificationConfigurationError",
+    "VerificationEngine",
+    "VerificationPrerequisiteError",
+]

@@ -20,7 +20,6 @@ from ai_engineering_harness.runtime import (
     NodeExecutorRegistry,
     RuntimeEngine,
 )
-from ai_engineering_harness.verification.engine import VerificationEngine
 
 
 @dataclass
@@ -155,17 +154,12 @@ def test_full_lifecycle_e2e_python(tmp_path: Path):
     assert not (exec_dir / "workflow-state.json").exists()
     assert not (exec_dir / "evidence.json").exists()
 
-    # 7. Verification Engine
-    ver_engine = VerificationEngine(language="python", working_dir=tmp_path)
-    ver_res = ver_engine.verify(active_gates=["typecheck"])
-    assert ver_res.total_gates == 1
-
-    # 8. Re-index & Knowledge Sync
+    # 7. Re-index & Knowledge Sync
     knw_sync = KnowledgeSynchronizer(project_root=tmp_path)
     tx_status = knw_sync.sync_ki("tx-e2e-1", {"id": "ki-feature-1", "title": "New Feature Done"})
     assert tx_status == "COMMITTED"
 
-    # 9. Audit Trail & Hash Chain Verification
+    # 8. Audit Trail & Hash Chain Verification
     audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-e2e-audit")
     audit.log_event("WORKFLOW_COMPLETED", {"status": "SUCCESS"})
     is_valid, _ = audit.verify_integrity()
