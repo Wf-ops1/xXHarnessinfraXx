@@ -18,7 +18,7 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.5 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.6 — detectar stack e resolver comandos efetivos no worktree |
-| **Gate** | `READY / ACTIVE`; checkpoint local `checkpoint/f4.6-ready` deve preceder produto |
+| **Gate** | `READY / ACTIVE`; checkpoints locais `checkpoint/f4.6-ready` e `checkpoint/f4.6-r1-ready` |
 | **Executor ativo** | `Codex`, único escritor; autorização nominal em `2026-08-11T02:00:32-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f4.6-detect-stack-commands`, local, sem upstream |
@@ -52,6 +52,8 @@ F4.7. Essas fronteiras não podem ser antecipadas.
 - 31 testes focados de detector, F4.5, planner e planning lifecycle passaram;
 - problema reproduzido por import/execução read-only e registrado integralmente no dossiê;
 - allowlist, critérios positivos/negativos, rollback e auditoria de escopo congelados antes de produto.
+- a primeira regressão obteve 733 passes e duas interferências ambientais; R1 preserva toda a suíte
+  com `basetemp` e `LOCALAPPDATA` exclusivos fora do repositório.
 
 Não há blocker técnico conhecido para implementar o escopo congelado. Push, abertura/merge de PR,
 tag remota, exclusão de ref, force-push, bypass, F4.7, F4.8 e F3.7 não estão autorizados. Evidência
@@ -62,9 +64,9 @@ Evidência negativa sempre prevalece sobre sucesso anterior e exige recertifica�
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O COMMIT DOCUMENTAL E A TAG LOCAL checkpoint/f4.6-ready; DEPOIS IMPLEMENTAR SOMENTE A
-ALLOWLIST F4.6 E EXECUTAR TODO O ACEITE CONGELADO. NÃO PUBLICAR BRANCH/TAG, ABRIR OU MESCLAR PR,
-EXCLUIR REF, ALTERAR PROTEÇÃO OU INICIAR F4.7/F4.8/F3.7.
+CRIAR O CHECKPOINT LOCAL checkpoint/f4.6-r1-ready; REPETIR A REGRESSÃO INTEGRAL EM AMBIENTE
+TEMPORÁRIO ISOLADO E, SE VERDE, EXECUTAR O RESTANTE DO ACEITE. NÃO PUBLICAR BRANCH/TAG, ABRIR OU
+MESCLAR PR, EXCLUIR REF, ALTERAR PROTEÇÃO OU INICIAR F4.7/F4.8/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
