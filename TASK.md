@@ -37,11 +37,11 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.4 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.C1 concluída localmente, promoção pendente; F4.5 não iniciada |
-| **Gate** | F4.C1 `COMPLETED_LOCAL / PROMOTION_PENDING`; estado operacional `POST_PROMOTION_BLOCKED` |
+| **Gate** | F4.C1 `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #40 aberto, checks do head final pendentes |
 | **Última promoção** | F4.4 `PROMOTED` historicamente; PR administrativo #39 incorporado e CI pós-merge verde |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.c1-snapshot-publication-concurrency`; implementação `b4d212c`; sem upstream/push |
+| **Branch** | `task/f4.c1-snapshot-publication-concurrency`, rastreando upstream; PR #40; implementação `b4d212c`; head inicial publicado `ecd915c` |
 | **Baseline promovido** | `main == origin/main == 94641d2`; run `31447628152`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | path versionado anterior indisponível neste checkout; nenhum runtime será trocado silenciosamente |
@@ -72,17 +72,18 @@ administrativa da F4.C1.
 
 ## 6. Bloqueios atuais
 
-Não resta blocker técnico local conhecido dentro do escopo F4.C1. O bloqueio corrente é de promoção:
-a branch ainda não foi publicada e não há PR/CI do novo head, merge, CI pós-merge ou reconciliação.
-Até esses fatos serem observados, o estado permanece `POST_PROMOTION_BLOCKED` e F4.5/F3.7 continuam
-bloqueadas. Push, PR, merge, publicação remota de tag e exclusão de refs continuam sem autorização.
+Não resta blocker técnico local conhecido dentro do escopo F4.C1. O PR #40 está aberto; o run inicial
+`31452975479` começou no head `ecd915c`, mas este registro documental produz um head posterior e exige
+nova CI integral. Até checks do head final, merge, CI pós-merge e reconciliação serem observados, o
+estado permanece `POST_PROMOTION_BLOCKED` e F4.5/F3.7 continuam bloqueadas. Merge, publicação remota
+de tag e exclusão de refs continuam sem autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA PUBLICAR `task/f4.c1-snapshot-publication-concurrency` E ABRIR
-UM ÚNICO PR F4.C1. NÃO MESCLAR, PUBLICAR TAG REMOTA, EXCLUIR REFS OU INICIAR F4.5/F3.7. DEPOIS DA
-PUBLICAÇÃO, EXIGIR TODOS OS CHECKS DO HEAD FINAL, INCLUINDO `CI REQUIRED`.
+PUBLICAR SOMENTE ESTE REGISTRO DOCUMENTAL NO PR #40 E AGUARDAR TODOS OS CHECKS DO HEAD FINAL,
+INCLUINDO `CI REQUIRED`. NÃO MESCLAR, PUBLICAR TAG REMOTA, EXCLUIR REFS OU INICIAR F4.5/F3.7.
+DEPOIS DOS CHECKS VERDES, AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA O MERGE.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -107,4 +108,4 @@ PUBLICAÇÃO, EXIGIR TODOS OS CHECKS DO HEAD FINAL, INCLUINDO `CI REQUIRED`.
 
 ---
 
-*Atualizado em: 2026-08-10T23:28:21-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T23:39:09-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*

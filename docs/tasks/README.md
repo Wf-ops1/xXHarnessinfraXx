@@ -22,9 +22,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 O gate corretivo [`active/F4.C1.md`](active/F4.C1.md) está
 `COMPLETED_LOCAL / PROMOTION_PENDING`: claim concorrente, testes, regressão, quality e package/smoke
-estão verdes localmente, mas a branch ainda não foi publicada. F4.1–F4.4 permanecem historicamente
-`PROMOTED` e o estado operacional continua `POST_PROMOTION_BLOCKED`; F4.5 e F3.7 não foram iniciadas.
-A reconciliação F4.4 foi incorporada pelo PR #39 no merge `94641d2`, com CI pós-merge `31447628152`.
+estão verdes localmente. O PR #40 está aberto e o run inicial `31452975479` começou no head publicado;
+o commit documental de sincronização ainda exige nova CI do head final. F4.1–F4.4 permanecem
+historicamente `PROMOTED` e o estado operacional continua `POST_PROMOTION_BLOCKED`; F4.5 e F3.7 não
+foram iniciadas. A reconciliação F4.4 foi incorporada pelo PR #39 no merge `94641d2`, com CI pós-merge
+`31447628152`.
 
 ## Ledger concluído
 

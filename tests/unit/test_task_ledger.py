@@ -431,6 +431,9 @@ def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
     assert "docs/tasks/active/F4.C1.md" in panel
     assert "702 passed, 2 skipped, 6 subtests passed" in panel
     assert "b4d212c" in panel
+    assert "PR #40" in panel
+    assert "31452975479" in panel
+    assert "checks do head final pendentes" in panel
     assert "PR #38 encerrou no head `fbdb6ee`" in readme
     assert "docs/promote-f4.4" in readme
     assert "completed/F4.4.md" in task_index

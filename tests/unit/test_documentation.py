@@ -174,6 +174,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "F4.C1 concluída localmente" in panel
     assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "702 passed, 2 skipped, 6 subtests passed" in panel
+    assert "PR #40" in panel
+    assert "31452975479" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
