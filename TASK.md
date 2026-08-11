@@ -18,15 +18,15 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.6 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.7 — persistência e guard canônico dos resultados de verificação |
-| **Gate** | F4.7-R1 `READY / POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` |
+| **Gate** | F4.7-R1 `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T14:40:10-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f4.7-r1-concurrent-resume`, criada de `f7aa43a`; sem upstream |
 | **Main atual** | `main == origin/main == f7aa43a154e36d29f9882f060cf23294d8194b3e`; promoção F4.7 bloqueada |
 | **CI pós-merge** | run `31528955883`: 9 jobs verdes; Tests Windows 3.11 e `CI required` falharam |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
-| **Commits F4.7** | gate `d1e9b1f`; produto certificado `bbc2d93963c9c9fdfd5dfffa2d44c64439862c72` |
-| **PR F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46), aberto contra `main`; head inicial `054bf6e` |
+| **Commits F4.7** | produto `bbc2d93963c9c9fdfd5dfffa2d44c64439862c72`; gate R1 `311f3e4`; reparo R1 `2841346a` |
+| **PR F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46), incorporado em `f7aa43a`; PR corretivo R1 ainda não aberto |
 
 ## 3. Última promoção comprovada
 
@@ -63,35 +63,41 @@ O PR #46 passou 11/11 no head `0757e26` pelo run `31528005230` e foi incorporado
 skipped`), mas o E2E concorrente aceitou somente a interleaving “um ok + um verification_required”.
 No Windows 3.11 ambos os workers retornaram `ok` idempotente, mantendo efeito único e `VERIFYING`.
 
+O R1 alinhou somente a asserção E2E às duas interleavings seguras. A corrida passou `20/20`; os grupos
+resume/retry, focado, lifecycle e compatibilidade concluíram respectivamente `8 passed`, `45 passed,
+1 skipped`, `76 passed` e `128 passed, 2 skipped`. A regressão integral repetida concluiu `751 passed,
+5 skipped, 6 subtests passed`; mypy Windows/Linux, Ruff, compileall, diff check, build e smoke isolado
+da wheel estão verdes. O reparo está em `2841346a` e não altera `src/**`.
+
 Repair/retry, orçamento e reexecução pertencem à F4.8; promoção/rollback Git pertencem à F3.7.
 F3.7 permanece depois da F4.7. A F4.7 não pode criar worktree, implementar essas tarefas nem
 publicar efeitos remotos.
 
 ## 6. Bloqueios atuais
 
-O R1 precisa congelar e provar as duas interleavings seguras sem relaxar efeito único, journal único ou
-estado final. O gate documental e `checkpoint/f4.7-r1-ready` precedem qualquer mudança no teste.
-Produto, dependências, CI, schemas, defaults e policies permanecem fora do escopo. Novo push/PR,
-merge, tag remota, exclusão de refs e início de F4.8/F3.7 continuam bloqueados até recertificação.
+Não há bloqueio técnico local: o R1 está integralmente recertificado. A publicação da branch e a
+abertura do PR corretivo estão autorizadas; merge, tag remota, exclusão de refs e início de F4.8/F3.7
+continuam bloqueados até CI verde e autorização nominal nova.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR O GATE F4.7-R1, CRIAR O COMMIT DOCUMENTAL E `checkpoint/f4.7-r1-ready`. SOMENTE DEPOIS,
-AJUSTAR O TESTE CONCORRENTE NA ALLOWLIST E REPETIR A RECERTIFICAÇÃO INTEGRAL.
+CRIAR O COMMIT/CHECKPOINT LOCAL DA CERTIFICAÇÃO, PUBLICAR A BRANCH R1 E ABRIR O PR CORRETIVO.
+OBSERVAR TODOS OS CHECKS DO HEAD FINAL; NÃO MESCLAR SEM AUTORIZAÇÃO NOMINAL NOVA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/active/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch R1, main `f7aa43a`, PR #46, runs `31528005230`/`31528955883`, runtime 3.12.13 e
+3. Confirme branch R1, commits `311f3e4`/`2841346a`, main `f7aa43a`, PR #46,
+   runs `31528005230`/`31528955883`, runtime 3.12.13 e
    checkpoints `checkpoint/f4.7-ready`, `checkpoint/f4.7-complete` e
    `checkpoint/f4.7-r1-ready`.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T17:09:48-03:00 | Fonte: PR #46 + CI pós-merge 31528955883 + R1*
+*Atualizado em: 2026-08-11T17:22:41-03:00 | Fonte: PR #46 + CI pós-merge 31528955883 + recertificação R1*
