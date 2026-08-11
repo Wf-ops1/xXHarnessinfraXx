@@ -6,9 +6,9 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. O único dossiê ativo é o gate corretivo
-   [F4.C1](docs/tasks/active/F4.C1.md); a última promoção histórica permanece a
-   [F4.4](docs/tasks/completed/F4.4.md).
+2. Não existe dossiê de implementação ativo. A corretiva
+   [F4.C1](docs/tasks/completed/F4.C1.md) foi promovida e está em reconciliação administrativa local;
+   a última tarefa anterior permanece a [F4.4](docs/tasks/completed/F4.4.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
 5. [Índice histórico](docs/tasks/README.md): dossiês concluídos, PRs, merges e runs.
@@ -36,13 +36,13 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.4 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | F4.C1 concluída localmente, promoção pendente; F4.5 não iniciada |
-| **Gate** | F4.C1 `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #40 aberto, checks do head final pendentes |
-| **Última promoção** | F4.4 `PROMOTED` historicamente; PR administrativo #39 incorporado e CI pós-merge verde |
+| **Tarefa ativa** | nenhuma tarefa ativa de implementação; reconciliação administrativa F4.C1 local; F4.5 não iniciada |
+| **Gate** | F4.C1 `PROMOTED`; `docs/promote-f4.c1` em `LOCAL_READY / PUBLICATION_PENDING` |
+| **Última promoção** | F4.C1 `PROMOTED`; PR #40 incorporado e CI pós-merge verde no SHA exato |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.c1-snapshot-publication-concurrency`, rastreando upstream; PR #40; implementação `b4d212c`; head inicial publicado `ecd915c` |
-| **Baseline promovido** | `main == origin/main == 94641d2`; run `31447628152`, evento `push`, 11/11 verde |
+| **Branch** | `docs/promote-f4.c1`, local e sem upstream, criada de `main == origin/main == 3905d02` |
+| **Baseline promovido** | `main == origin/main == 3905d02`; run `31453662008`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **uv** | path versionado anterior indisponível neste checkout; nenhum runtime será trocado silenciosamente |
 
@@ -50,51 +50,49 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 
 | Evidência | Resultado |
 |---|---|
-| Tarefa | `F4.4` — plano tipado e específico, promovida e arquivada localmente |
-| PR de implementação | PR #38; head final `fbdb6ee3d2e1728cbc691b98f04846989475c614`; 11/11 no run `31442203348` |
-| Promoção da implementação | merge `93ce4ce9f4f0042c58d64103528b6c359a475bd9`; run `31445624269`, 11/11 |
-| Reconciliação administrativa | PR #39; head final `bb759c5`; merge `94641d27384d370faf013825e7e9955c721cf420`; run pós-merge `31447628152`, 11/11 |
-| Fronteira | branches remotas preservadas; nenhuma tag publicada ou exclusão de ref; F4.5/F3.7 não iniciadas |
+| Tarefa | `F4.C1` — imutabilidade concorrente da publicação de snapshots, promovida e arquivada localmente |
+| PR de implementação | PR #40; head final `65c54338b5753d31c0b0ed15ab6cf9ba1486f493`; 11/11 no run `31453116947` |
+| Promoção da implementação | merge `3905d02d575fc177d917f605b7e1a9b6a658c818`; run `31453662008`, 11/11 |
+| Reconciliação administrativa | branch local `docs/promote-f4.c1`; validação concluída, publicação pendente |
+| Fronteira | branch remota de implementação preservada; nenhuma tag publicada ou ref excluída; F4.5/F3.7 não iniciadas |
 
 ## 5. Tarefa ativa
 
-O gate [F4.C1](docs/tasks/active/F4.C1.md) corrigiu localmente a evidência negativa pós-promoção no
-contrato F4.1. A publicação agora prepara e sincroniza o temporário e usa `os.link` como claim atômico
-do destino ausente: escrita concorrente idêntica é idempotente; divergente recebe
-`SnapshotConflictError`; o vencedor nunca é substituído. A regressão integral concluiu
-`702 passed, 2 skipped, 6 subtests passed`; mypy Windows/Linux, Ruff, compileall, build e smoke ficaram
-verdes.
+Não existe implementação ativa. A F4.4 `PROMOTED` permanece como a última tarefa funcional anterior.
+A corretiva [F4.C1](docs/tasks/completed/F4.C1.md) substituiu o
+overwrite concorrente por claim atômico exclusivo com `os.link`, foi recertificada localmente em
+`702 passed, 2 skipped, 6 subtests passed` e promovida pelo PR #40. O head final `65c5433` recebeu
+11/11 checks no run `31453116947`; o merge `3905d02` recebeu 11/11 na CI de `push` `31453662008`.
 
-F4.1–F4.4 permanecem historicamente `PROMOTED`, mas o estado corrente é `POST_PROMOTION_BLOCKED`.
-F4.5 e F4.6–F4.8 continuam fora do escopo; F3.7 permanece depois da F4.7. Nenhuma delas, nem MCP ou
-memória semântica, pode começar antes da correção, recertificação integral, promoção e reconciliação
-administrativa da F4.C1.
+O estado anterior `POST_PROMOTION_BLOCKED` foi encerrado pela correção e recertificação no SHA
+promovido. A pausa corrente é exclusivamente administrativa: a branch `docs/promote-f4.c1` precisa
+ser validada, publicada, incorporada e receber CI pós-merge verde antes de qualquer novo gate. F4.5 e
+F4.6–F4.8 continuam fora do escopo; F3.7 permanece depois da F4.7. Nenhuma delas, nem MCP ou memória
+semântica, foi iniciada.
 
 ## 6. Bloqueios atuais
 
-Não resta blocker técnico local conhecido dentro do escopo F4.C1. O PR #40 está aberto; o run inicial
-`31452975479` começou no head `ecd915c`, mas este registro documental produz um head posterior e exige
-nova CI integral. Até checks do head final, merge, CI pós-merge e reconciliação serem observados, o
-estado permanece `POST_PROMOTION_BLOCKED` e F4.5/F3.7 continuam bloqueadas. Merge, publicação remota
-de tag e exclusão de refs continuam sem autorização.
+Não resta blocker técnico local conhecido dentro do escopo F4.C1. A implementação já foi incorporada e a CI
+pós-merge está verde; resta concluir a reconciliação administrativa obrigatória. Até seu PR, merge e
+CI pós-merge em `main`, F4.5/F3.7 continuam bloqueadas. Publicação/abertura do PR administrativo,
+merge administrativo, publicação remota de tag e exclusão de refs continuam sem autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR SOMENTE ESTE REGISTRO DOCUMENTAL NO PR #40 E AGUARDAR TODOS OS CHECKS DO HEAD FINAL,
-INCLUINDO `CI REQUIRED`. NÃO MESCLAR, PUBLICAR TAG REMOTA, EXCLUIR REFS OU INICIAR F4.5/F3.7.
-DEPOIS DOS CHECKS VERDES, AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA O MERGE.
+AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA PUBLICAR `docs/promote-f4.c1` E ABRIR O PR ADMINISTRATIVO.
+NÃO PUBLICAR, ABRIR/MESCLAR PR, PUBLICAR TAG REMOTA, EXCLUIR REFS OU INICIAR F4.5/F3.7 SEM ESSA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia `docs/tasks/active/F4.C1.md`, `docs/tasks/completed/F4.1.md`, DEC-015, DEC-014, as seções
+2. Leia `docs/tasks/completed/F4.C1.md`, `docs/tasks/completed/F4.1.md`, DEC-015, DEC-014, as seções
    1.1–1.2 e a Fase 4 do plano integralmente.
-3. Confirme F4.1–F4.4 historicamente `PROMOTED`, PR #39/merge `94641d2`, run `31447628152` e a
-   evidência negativa concorrente registrada no dossiê ativo.
-4. Confirme `.git`, branch `task/f4.c1-snapshot-publication-concurrency`, checkpoint READY, upstream,
-   `git status --short --branch`, `git log -10` e o baseline de `main`.
+3. Confirme F4.1–F4.4 historicamente `PROMOTED`, PR #40/head `65c5433`, merge `3905d02`, runs
+   `31453116947`/`31453662008` e a recertificação append-only registrada no dossiê concluído.
+4. Confirme `.git`, branch `docs/promote-f4.c1`, ausência de upstream, `git status --short --branch`,
+   `git log -10` e o baseline `main == origin/main == 3905d02`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
 
@@ -108,4 +106,4 @@ DEPOIS DOS CHECKS VERDES, AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA O MERGE.
 
 ---
 
-*Atualizado em: 2026-08-10T23:39:09-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-11T00:03:56-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
