@@ -85,12 +85,13 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `31453116947`. O PR #40 foi incorporado pelo merge `3905d02`, cuja CI de `push` `31453662008`
   também concluiu 11/11; a correção está promovida e o bloqueio técnico foi encerrado. A reconciliação
   administrativa PR #41 foi incorporada pelo merge `362407f`, e a CI de `push` `31455148050`
-  concluiu 11/11 checks verdes no SHA exato. A F4.5 foi publicada no PR #42, aberto no head inicial
-  `a77b4d9`, cujo run inicial `31457756495` começou antes do registro documental final. A tarefa
+  concluiu 11/11 checks verdes no SHA exato. A F4.5 foi promovida pelo PR #42: o head final `9e8dfe8`
+  recebeu 11/11 checks no run `31457935429`, e o merge `4ae0de7` recebeu 11/11 na CI de `push`
+  `31458482033`. A tarefa
   substitui `tests` por
   `unit_test`, centraliza os cinco IDs oficiais e bloqueia seleção vazia/desconhecida/duplicada ou sem
-  comando antes de qualquer efeito. O lifecycle está `PR_OPEN / CHECKS_PENDING` e requer CI integral
-  no novo head antes de autorização de merge; F3.7 continua dependente da F4.7.
+  comando antes de qualquer efeito. A reconciliação administrativa local `docs/promote-f4.5` ainda
+  precisa ser publicada e incorporada; F3.7 continua dependente da F4.7.
 
 ## Dívidas técnicas críticas
 
