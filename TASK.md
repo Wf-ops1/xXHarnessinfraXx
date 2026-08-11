@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F4.7](docs/tasks/completed/F4.7.md): dossiê promovido em reconciliação administrativa.
+2. [F4.8](docs/tasks/active/F4.8.md): único dossiê ativo e escopo congelado do repair loop.
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências.
 4. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e
    [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md): reconciliação e ownership.
@@ -17,16 +17,16 @@
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.7 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | nenhuma tarefa ativa de implementação; reconciliação administrativa da F4.7 |
-| **Gate** | F4.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T14:40:10-03:00` |
+| **Tarefa ativa** | F4.8 — repair loop orientado pelos gates |
+| **Gate** | F4.8 `READY / IMPLEMENTATION_NOT_STARTED`; checkpoint ainda pendente |
+| **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T19:59:55-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.7`, criada de `main == origin/main == 4aa701a`; upstream publicado |
-| **Main atual** | `main == origin/main == 4aa701a9394e5bdcb9c14dc5a9a715638c183258` |
-| **CI pós-merge** | run `31534918672`, evento `push`: 11/11 success no SHA exato de `main` |
+| **Branch** | `task/f4.8-verification-repair-loop`, criada de `main == origin/main == d4e34c7`; sem upstream |
+| **Main atual** | `main == origin/main == d4e34c7404d28a10969ab4b322748d01ae5805bf` |
+| **CI pós-merge** | run `31541047111`, evento `push`: 11/11 success no SHA exato de `main` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **PRs F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46) incorporado em `f7aa43a`; corretivo [#47](https://github.com/Wf-ops1/Harnessinfra/pull/47) incorporado em `4aa701a` |
-| **PR administrativo** | [#48](https://github.com/Wf-ops1/Harnessinfra/pull/48), aberto no head inicial `e198e5b7`; checks pendentes |
+| **PR administrativo** | [#48](https://github.com/Wf-ops1/Harnessinfra/pull/48), incorporado em `d4e34c7`; pós-merge verde |
 
 ## 3. Última promoção comprovada
 
@@ -61,33 +61,38 @@ O R1 em `2841346a` alterou somente o teste, passou a corrida `20/20` e toda a re
 e seu merge receberam 11/11 nos runs `31533353223` e `31534918672`, inclusive Windows 3.11 e
 `CI required`. O dossiê foi marcado `PROMOTED` e movido para `completed/` nesta reconciliação.
 
-Repair/retry, orçamento e reexecução pertencem à F4.8; promoção/rollback Git pertencem à F3.7. A
-F3.7 permanece depois da F4.7 e de seu fechamento administrativo. Essas tarefas não podem começar
-antes do PR administrativo e de sua CI pós-merge verde.
+A F4.8 foi autorizada após o fechamento administrativo da F4.7. O baseline focado reproduziu
+`6 passed, 1 warning`: a F4.7 recupera a mesma reprovação sem rerun, enquanto o `RetryContext` F2.6
+permanece restrito ao retry interno do grafo. O dossiê ativo congela a composição canônica,
+tentativas dirigidas seguidas de suíte integral e limites duráveis de nó, execução, tokens, custo e
+tempo. Nenhum código de produto foi alterado.
+
+A F4.7 está `PROMOTED / RECONCILED / CLOSED`. A F3.7 permanece depois da conclusão e reconciliação
+da F4.8; promoção/cherry-pick/revert Git continuam fora do escopo atual.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico da F4.7. O PR administrativo #48 está aberto; seu head documental final ainda
-precisa passar em todos os checks. Merge administrativo, tag remota, exclusão de refs e início de
-F4.8/F3.7 exigem autorização nominal nova.
+O gate documental F4.8 está `READY`, mas produto permanece bloqueado até o commit documental e
+`checkpoint/f4.8-ready`. O bloqueio técnico comprovado é a ausência da ligação entre resultado
+canônico F4.7 e nó corretor; orçamento hoje apenas transportado no payload não conta.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR O REGISTRO DO PR #48 E OBSERVAR TODOS OS CHECKS DO HEAD FINAL.
-NÃO MESCLAR SEM AUTORIZAÇÃO NOMINAL NOVA.
+REVALIDAR O DOSSIÊ READY, CRIAR O COMMIT DOCUMENTAL E checkpoint/f4.8-ready.
+NÃO ALTERAR PRODUTO ANTES DESSE CHECKPOINT.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia este arquivo e `docs/tasks/completed/F4.7.md` integralmente.
+1. Leia este arquivo, `docs/tasks/active/F4.8.md` e `docs/tasks/completed/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch `docs/promote-f4.7`, main `4aa701a`, PRs #46/#47/#48, runs
-   `31528005230`/`31528955883`/`31533353223`/`31534918672` e runtime 3.12.13.
+3. Confirme branch `task/f4.8-verification-repair-loop`, main `d4e34c7`, PRs #46/#47/#48, run
+   pós-administrativo `31541047111`, baseline focado `6 passed` e runtime 3.12.13.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T18:21:21-03:00 | Fonte: PRs #46/#47/#48 + CI pós-merge 31534918672 + DEC-014*
+*Atualizado em: 2026-08-11T19:59:55-03:00 | Fonte: F4.8 + PR #48 + CI 31541047111 + DEC-015*

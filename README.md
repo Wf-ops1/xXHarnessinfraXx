@@ -105,8 +105,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   promoção como `POST_PROMOTION_BLOCKED`. O R1 test-only em `2841346a` passou a corrida `20/20`, a
   regressão de `751 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke isolado. O PR
   corretivo #47 encerrou no head `b79e14d2` com 11/11 no run `31533353223`, foi incorporado no merge
-  `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A F4.7 está promovida e sua reconciliação
-  administrativa foi publicada no PR #48; F4.8 e F3.7 não foram iniciadas.
+  `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A reconciliação administrativa F4.7 foi
+  incorporada pelo PR #48 no merge `d4e34c7`, cuja CI pós-merge `31541047111` também concluiu 11/11.
+  A F4.8 iniciou somente seu gate documental; o produto F4.8 e a F3.7 ainda não foram implementados.
 
 ## Dívidas técnicas críticas
 
