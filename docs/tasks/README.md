@@ -22,8 +22,8 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 Não existe dossiê de implementação ativo. A corretiva [`completed/F4.C1.md`](completed/F4.C1.md)
 foi incorporada pelo PR #40 no merge `3905d02`, com 11/11 checks no head final pelo run
-`31453116947` e 11/11 na CI pós-merge `31453662008`. A reconciliação administrativa está local na
-branch `docs/promote-f4.c1`, ainda sem publicação ou PR. F4.5 e F3.7 não foram iniciadas e continuam
+`31453116947` e 11/11 na CI pós-merge `31453662008`. A reconciliação administrativa está aberta no
+PR #41 a partir do head inicial `39f7366`; o run `31454615745` permanece em andamento. F4.5 e F3.7 não foram iniciadas e continuam
 bloqueadas até essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
 
 ## Ledger concluído
@@ -64,7 +64,7 @@ bloqueadas até essa reconciliação ser incorporada e receber CI pós-merge ver
 | F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |
 | F4 | F4.3 | [Context sufficiency baseada em evidência](completed/F4.3.md) | PR #36 / merge `fa31ef8` / pós-merge `31419214233`; administrativo #37 / merge `5c8408d` / pós-merge `31433785637` |
 | F4 | F4.4 | [Plano tipado e específico](completed/F4.4.md) | PR #38 / merge `93ce4ce` / pós-merge `31445624269`; administrativo #39 / merge `94641d2` / pós-merge `31447628152` |
-| F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; reconciliação administrativa local pendente |
+| F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 aberto |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

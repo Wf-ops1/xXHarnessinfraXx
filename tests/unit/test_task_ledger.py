@@ -448,6 +448,10 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "3905d02d575fc177d917f605b7e1a9b6a658c818" in dossier
     assert "31453662008" in dossier
     assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/41" in dossier
+    assert "39f7366fcd4b9aebdcb7e5fb0b6964a9929c2a39" in dossier
+    assert "31454615745" in dossier
     assert "SnapshotConflictError" in dossier
     assert "os.link" in dossier
     assert "F4.C1 `PROMOTED`" in panel
@@ -455,12 +459,15 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "docs/promote-f4.c1" in panel
     assert "3905d02" in panel
     assert "31453662008" in panel
+    assert "PR #41" in panel
+    assert "31454615745" in panel
     assert "F4.5 não iniciada" in panel
     assert "PR #40 foi incorporado pelo merge `3905d02`" in readme
     assert "31453116947" in readme
     assert "31453662008" in readme
     assert "completed/F4.C1.md" in task_index
     assert "PR #40 / merge `3905d02` / pós-merge `31453662008`" in task_index
+    assert "administrativo #41 aberto" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

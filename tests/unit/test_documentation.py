@@ -166,12 +166,15 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31453116947" in panel
     assert "3905d02d575fc177d917f605b7e1a9b6a658c818" in panel
     assert "31453662008" in panel
+    assert "PR #41" in panel
+    assert "39f7366" in panel
+    assert "31454615745" in panel
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.4.md" in panel
     assert "docs/tasks/completed/F4.C1.md" in panel
     assert "nenhuma tarefa ativa de implementação" in panel
-    assert "LOCAL_READY / PUBLICATION_PENDING" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "702 passed, 2 skipped, 6 subtests passed" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
