@@ -18,7 +18,7 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.5 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.6 — detectar stack e resolver comandos efetivos no worktree |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING`; checkpoints locais `checkpoint/f4.6-ready`, `checkpoint/f4.6-r1-ready` e `checkpoint/f4.6-complete` |
+| **Gate** | `REPAIR_ACTIVE / PROMOTION_BLOCKED`; checkpoints locais `checkpoint/f4.6-ready`, `checkpoint/f4.6-r1-ready`, `checkpoint/f4.6-complete` e `checkpoint/f4.6-r2-ready` |
 | **Executor ativo** | `Codex`, único escritor; autorização nominal em `2026-08-11T02:00:32-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f4.6-detect-stack-commands`, local, sem upstream |
@@ -42,6 +42,10 @@ pré-requisitos antes do primeiro subprocesso. Configuração ausente, ambígua 
 suportada e ferramenta/módulo indisponível produzem `VerificationPrerequisiteError` com código
 `ERROR_PREREQUISITE`. O runner usa o `PathGuard` do worktree e o terminal tipado promovido.
 
+O PR #44 foi aberto no head `f258541`, mas a CI `31463009231` reabriu o gate: os jobs Tests Ubuntu
+3.11/3.14 executaram o Python base em vez do launcher `.venv/bin/python` e falharam com
+`No module named pytest`. A causa é a dereferência do symlink por `Path.resolve()` no resolver.
+
 Persistência de resultado, status/tempo/exit/output/digest, guard de `COMPLETED`, correção decisória da
 CLI e integração ao lifecycle pertencem à F4.7. Repair/retry pertence à F4.8; F3.7 permanece depois da
 F4.7. Essas fronteiras não podem ser antecipadas.
@@ -57,27 +61,27 @@ F4.7. Essas fronteiras não podem ser antecipadas.
   temporário do smoke, sem instalação global ou mudança no projeto;
 - escopo proibido permaneceu byte-idêntico e o workspace terminou limpo.
 
-Não há blocker técnico local conhecido. Push, abertura/merge de PR, tag remota, exclusão de ref,
-force-push, bypass, F4.7, F4.8 e F3.7 não estão autorizados. Evidência negativa nova reabre o gate e
-bloqueia promoção até correção e recertificação integral.
+O reparo R2 está limitado a preservar o launcher do venv e cobrir a regressão POSIX. Merge, tag
+remota, exclusão de ref, force-push, bypass, F4.7, F4.8 e F3.7 não estão autorizados. A evidência
+negativa bloqueia promoção até correção e recertificação integral.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL: “Autorizo publicar a branch task/f4.6-detect-stack-commands e abrir o
-PR único da F4.6.” NÃO PUBLICAR TAG, MESCLAR PR, EXCLUIR REF, ALTERAR PROTEÇÃO OU INICIAR
-F4.7/F4.8/F3.7.
+CRIAR O CHECKPOINT LOCAL checkpoint/f4.6-r2-ready; REPARAR SOMENTE A PRESERVAÇÃO DO LAUNCHER
+sys.executable EM POSIX; RECERTIFICAR O ACEITE INTEGRAL E ATUALIZAR O PR #44. NÃO PUBLICAR TAG,
+MESCLAR PR, EXCLUIR REF, ALTERAR PROTEÇÃO OU INICIAR F4.7/F4.8/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/active/F4.6.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e a DEC-015.
-3. Confirme branch, status, três checkpoints, baseline `46b70709`, run `31459891130` e runtime.
+3. Confirme branch, status, checkpoints, PR #44/run `31463009231`, baseline e runtime.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T02:36:49-03:00 | Fonte: aceite local F4.6 + plano + DEC-015*
+*Atualizado em: 2026-08-11T02:51:00-03:00 | Fonte: PR #44/run `31463009231` + gate R2 F4.6*
