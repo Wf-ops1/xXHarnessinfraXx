@@ -170,7 +170,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/active/F4.5.md" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "PR_OPEN / CHECKS_PENDING" in panel
+    assert "PR #42" in panel
+    assert "31457756495" in panel
     assert "checkpoint/f4.5-ready" in panel
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" not in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
