@@ -20,11 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não existe dossiê de implementação ativo. A corretiva [`completed/F4.C1.md`](completed/F4.C1.md)
-foi incorporada pelo PR #40 no merge `3905d02`, com 11/11 checks no head final pelo run
-`31453116947` e 11/11 na CI pós-merge `31453662008`. A reconciliação administrativa está aberta no
-PR #41 a partir do head inicial `39f7366`; o run `31454615745` permanece em andamento. F4.5 e F3.7 não foram iniciadas e continuam
-bloqueadas até essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
+A [F4.5](active/F4.5.md) está `READY / ACTIVE` na branch local `task/f4.5-normalize-gates`, criada do
+baseline promovido `362407f`. A corretiva [`completed/F4.C1.md`](completed/F4.C1.md) foi incorporada
+pelo PR #40 no merge `3905d02`; sua reconciliação administrativa PR #41 foi incorporada pelo merge
+`362407f`, e a CI pós-merge `31455148050` concluiu 11/11 checks verdes no SHA exato. F4.6+ e F3.7 não
+foram iniciadas; publicação, PR e merge da F4.5 aguardam aceite local e autorização nominal futura.
 
 ## Ledger concluído
 
