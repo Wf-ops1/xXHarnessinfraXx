@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -19,6 +21,7 @@ from ai_engineering_harness.indexer import (
     SnapshotManager,
     SnapshotNotFoundError,
     SnapshotWriteError,
+    StructuralIndexError,
     resolve_git_commit,
 )
 from ai_engineering_harness.persistence.base import canonical_json_digest, canonical_json_object
@@ -142,16 +145,89 @@ def test_snapshot_write_is_idempotent_but_never_overwrites_conflicting_content(t
     assert first.read_bytes() == original
 
 
+def test_concurrent_identical_snapshot_writes_are_idempotent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first_manager = SnapshotManager(tmp_path)
+    second_manager = SnapshotManager(tmp_path)
+    original_link = os.link
+    ready_to_claim = threading.Barrier(2)
+
+    def synchronized_link(source: Path, destination: Path) -> None:
+        ready_to_claim.wait(timeout=5)
+        original_link(source, destination)
+
+    monkeypatch.setattr(os, "link", synchronized_link)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(first_manager.save_snapshot, _SHA_A, [_symbol("same")])
+        second = pool.submit(second_manager.save_snapshot, _SHA_A, [_symbol("same")])
+        results = (first.result(timeout=10), second.result(timeout=10))
+
+    destination = first_manager.snapshot_path(_SHA_A)
+    assert results == (destination, destination)
+    assert first_manager.require_snapshot(_SHA_A).symbols[0].name == "same"
+    assert list(first_manager.index_dir.glob("*.tmp")) == []
+
+
+def test_concurrent_divergent_snapshot_write_conflicts_without_overwriting_winner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    managers = (SnapshotManager(tmp_path), SnapshotManager(tmp_path))
+    original_link = os.link
+    ready_to_claim = threading.Barrier(2)
+
+    def synchronized_link(source: Path, destination: Path) -> None:
+        ready_to_claim.wait(timeout=5)
+        original_link(source, destination)
+
+    def capture_write(manager: SnapshotManager, name: str) -> Path | StructuralIndexError:
+        try:
+            return manager.save_snapshot(_SHA_A, [_symbol(name)])
+        except StructuralIndexError as exc:
+            return exc
+
+    monkeypatch.setattr(os, "link", synchronized_link)
+    names = ("first", "second")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = {
+            name: pool.submit(capture_write, manager, name)
+            for name, manager in zip(names, managers, strict=True)
+        }
+        outcomes = {name: future.result(timeout=10) for name, future in futures.items()}
+
+    winners = [name for name, outcome in outcomes.items() if isinstance(outcome, Path)]
+    conflicts = [
+        outcome for outcome in outcomes.values() if isinstance(outcome, SnapshotConflictError)
+    ]
+    assert len(winners) == 1
+    assert len(conflicts) == 1
+    assert "immutable commit identity" in str(conflicts[0])
+
+    destination = managers[0].snapshot_path(_SHA_A)
+    winner = winners[0]
+    losing_name = next(name for name in names if name != winner)
+    winner_bytes = destination.read_bytes()
+    assert managers[0].require_snapshot(_SHA_A).symbols[0].name == winner
+
+    monkeypatch.setattr(os, "link", original_link)
+    with pytest.raises(SnapshotConflictError, match="immutable commit identity"):
+        managers[1].save_snapshot(_SHA_A, [_symbol(losing_name)])
+    assert destination.read_bytes() == winner_bytes
+    assert list(managers[0].index_dir.glob("*.tmp")) == []
+
+
 def test_atomic_write_failure_leaves_no_snapshot_or_temporary_file(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     manager = SnapshotManager(tmp_path)
 
-    def fail_replace(source: Path, destination: Path) -> None:
-        raise OSError("injected replace failure")
+    def fail_link(source: Path, destination: Path) -> None:
+        raise OSError("injected exclusive claim failure")
 
-    monkeypatch.setattr(os, "replace", fail_replace)
+    monkeypatch.setattr(os, "link", fail_link)
     with pytest.raises(SnapshotWriteError, match="atomically"):
         manager.save_snapshot(_SHA_A, [_symbol()])
 
