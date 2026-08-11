@@ -18,12 +18,12 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.6 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.7 — persistência e guard canônico dos resultados de verificação |
-| **Gate** | F4.7 `READY / PR_OPEN / CHECKS_PENDING`; aceite local integral verde |
+| **Gate** | F4.7-R1 `READY / POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` |
 | **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T14:40:10-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.7-persist-verification-results`, publicada com upstream homônimo |
-| **Baseline promovido** | `main == origin/main == b578515f9ee24b1d72dffcca8756b80586862fd8` antes da branch F4.7 |
-| **CI do baseline** | run `31513097203`, evento `push`, 11/11 verde em `3m05s`, inclusive `CI required` |
+| **Branch** | `task/f4.7-r1-concurrent-resume`, criada de `f7aa43a`; sem upstream |
+| **Main atual** | `main == origin/main == f7aa43a154e36d29f9882f060cf23294d8194b3e`; promoção F4.7 bloqueada |
+| **CI pós-merge** | run `31528955883`: 9 jobs verdes; Tests Windows 3.11 e `CI required` falharam |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **Commits F4.7** | gate `d1e9b1f`; produto certificado `bbc2d93963c9c9fdfd5dfffa2d44c64439862c72` |
 | **PR F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46), aberto contra `main`; head inicial `054bf6e` |
@@ -58,35 +58,40 @@ passed`. Mypy Windows/Linux passou em 106 arquivos; Ruff, compileall, diff check
 wheel isolada estão verdes. O produto certificado está em `bbc2d93`; detalhes e evidência negativa
 intermediária permanecem no dossiê F4.7.
 
+O PR #46 passou 11/11 no head `0757e26` pelo run `31528005230` e foi incorporado pelo merge
+`f7aa43a`. A CI pós-merge `31528955883` reabriu o gate: os unitários passaram (`738 passed, 4
+skipped`), mas o E2E concorrente aceitou somente a interleaving “um ok + um verification_required”.
+No Windows 3.11 ambos os workers retornaram `ok` idempotente, mantendo efeito único e `VERIFYING`.
+
 Repair/retry, orçamento e reexecução pertencem à F4.8; promoção/rollback Git pertencem à F3.7.
 F3.7 permanece depois da F4.7. A F4.7 não pode criar worktree, implementar essas tarefas nem
 publicar efeitos remotos.
 
 ## 6. Bloqueios atuais
 
-Não há blocker técnico local. A branch foi publicada e o PR #46 foi aberto mediante autorização
-nominal; a matriz obrigatória do head documental ainda precisa terminar verde. Merge, tag remota,
-exclusão de refs e início de F4.8/F3.7 continuam sem autorização. O checkpoint local
-`checkpoint/f4.7-ready` aponta para `d1e9b1f`; `checkpoint/f4.7-complete` aponta para a certificação
-`a706b7fb8ce6ca6ea7a3a2a65f7ad4ab7630bf6a`.
+O R1 precisa congelar e provar as duas interleavings seguras sem relaxar efeito único, journal único ou
+estado final. O gate documental e `checkpoint/f4.7-r1-ready` precedem qualquer mudança no teste.
+Produto, dependências, CI, schemas, defaults e policies permanecem fora do escopo. Novo push/PR,
+merge, tag remota, exclusão de refs e início de F4.8/F3.7 continuam bloqueados até recertificação.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-OBSERVAR TODOS OS CHECKS DO HEAD FINAL DO PR #46, INCLUSIVE `CI required`. NÃO FAZER MERGE, PUBLICAR
-TAG REMOTA, EXCLUIR REF OU INICIAR F4.8/F3.7 SEM AUTORIZAÇÃO ESPECÍFICA.
+VALIDAR O GATE F4.7-R1, CRIAR O COMMIT DOCUMENTAL E `checkpoint/f4.7-r1-ready`. SOMENTE DEPOIS,
+AJUSTAR O TESTE CONCORRENTE NA ALLOWLIST E REPETIR A RECERTIFICAÇÃO INTEGRAL.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/active/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme PR #46, branch/head remoto, produto `bbc2d93`, baseline `b578515`, run pós-merge
-   `31513097203`, runtime 3.12.13 e checkpoints `checkpoint/f4.7-ready`/`complete`.
+3. Confirme branch R1, main `f7aa43a`, PR #46, runs `31528005230`/`31528955883`, runtime 3.12.13 e
+   checkpoints `checkpoint/f4.7-ready`, `checkpoint/f4.7-complete` e
+   `checkpoint/f4.7-r1-ready`.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T16:26:00-03:00 | Fonte: aceite F4.7 + PR #46 + DEC-014/DEC-015*
+*Atualizado em: 2026-08-11T17:09:48-03:00 | Fonte: PR #46 + CI pós-merge 31528955883 + R1*
