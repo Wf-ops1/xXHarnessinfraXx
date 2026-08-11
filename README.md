@@ -46,7 +46,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
-| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`. A F4.7 persiste write-ahead/outcome e payloads commit-bound, recupera a suíte e impede `COMPLETED` sem ao menos um gate obrigatório executado e todos os obrigatórios aprovados | O PR #46 foi incorporado; a CI pós-merge abriu o R1 por uma expectativa concorrente excessivamente estrita. O reparo test-only está recertificado no PR #47 e aguarda CI; reprovação real permanece em `VERIFYING` porque repair/reexecução pertencem à F4.8 | Matriz integral fail-closed com repair/recovery operacional |
+| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`. A F4.7 promovida persiste write-ahead/outcome e payloads commit-bound, recupera a suíte e impede `COMPLETED` sem ao menos um gate obrigatório executado e todos os obrigatórios aprovados | Reprovação real permanece em `VERIFYING`; repair/reexecução pertencem à F4.8. O R1 corrigiu somente uma expectativa concorrente excessivamente estrita, sem alterar produto | Matriz integral fail-closed com repair/recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
@@ -103,9 +103,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   isolada verdes. O PR #46 passou 11/11 no head `0757e26` pelo run `31528005230` e foi incorporado em
   `f7aa43a`; a CI pós-merge `31528955883` falhou somente no E2E concorrente Windows 3.11 e reabriu a
   promoção como `POST_PROMOTION_BLOCKED`. O R1 test-only em `2841346a` passou a corrida `20/20`, a
-  regressão de `751 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke isolado; está em
-  `PR_OPEN / CHECKS_PENDING` no PR corretivo #47. A F4.8 não foi iniciada e F3.7 continua dependente
-  da promoção da F4.7.
+  regressão de `751 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke isolado. O PR
+  corretivo #47 encerrou no head `b79e14d2` com 11/11 no run `31533353223`, foi incorporado no merge
+  `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A F4.7 está promovida e sua reconciliação
+  administrativa está em curso; F4.8 e F3.7 não foram iniciadas.
 
 ## Dívidas técnicas críticas
 
@@ -132,9 +133,9 @@ operacionais:
   usa structured output roteado, relê evidência por digest, limita gates/tools às policies compiladas
   e participa do lifecycle com payload, `plan.json` atômico e eventos duráveis. A F4.5 normaliza IDs
   e bloqueia suítes não executáveis; a F4.6 promovida detecta stack/configuração, resolve a suíte no
-  worktree e preserva no terminal o launcher ativo selecionado por `sys.prefix`; a F4.7 persiste cada
-  outcome e impede `COMPLETED` sem suíte obrigatória aprovada. O PR #46 foi incorporado; o R1
-  concorrente está recertificado localmente e ainda precisa restaurar a CI antes da promoção;
+  worktree e preserva no terminal o launcher ativo selecionado por `sys.prefix`; a F4.7 promovida
+  persiste cada outcome e impede `COMPLETED` sem suíte obrigatória aprovada. O R1 concorrente restaurou
+  a CI no PR #47 e no merge `4aa701a`; repair/reexecução operacional continua pertencendo à F4.8;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em

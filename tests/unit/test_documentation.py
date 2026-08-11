@@ -131,8 +131,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #33" in readme
     assert "571a8eb" in readme
     assert "31329231458" in readme
-    assert "F3.7 continua" in readme
-    assert "dependente da promoção da F4.7" in readme
+    assert "F4.8 e F3.7 não foram iniciadas" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
@@ -161,22 +160,14 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "PR_OPEN / CHECKS_PENDING" in panel
+    assert "PROMOTED / ADMIN_RECONCILIATION_ACTIVE" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/active/F4.7.md" in panel
-    assert "F4.7-R1 `READY / PR_OPEN / CHECKS_PENDING`" in panel
-    assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
-    assert "b578515f9ee24b1d72dffcca8756b80586862fd8" in panel
-    assert "00e83574da789fa58f22f928b5290b9471264a63" in panel
-    assert "31505324814" in panel
-    assert "31510277593" in panel
-    assert "PR #45" in panel
-    assert "09ced2f8ca7aec6d76562b49511e97db21bdd29d" in panel
-    assert "31512605530" in panel
-    assert "31513097203" in panel
-    assert "checkpoint/f4.7-ready" in panel
-    assert "checkpoint/f4.7-complete" in panel
-    assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in panel
+    assert "docs/tasks/completed/F4.7.md" in panel
+    assert "F4.7 `PROMOTED / ADMIN_RECONCILIATION_ACTIVE`" in panel
+    assert "b79e14d2ba2c76514b7e6a6b22017b02348e6453" in panel
+    assert "4aa701a9394e5bdcb9c14dc5a9a715638c183258" in panel
+    assert "31533353223" in panel
+    assert "31534918672" in panel
     assert "751 passed, 5 skipped, 6 subtests" in panel
     assert "2841346a" in panel
     assert "20/20" in panel
