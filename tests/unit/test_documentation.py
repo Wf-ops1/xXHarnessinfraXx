@@ -160,21 +160,19 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F4.C1 `PROMOTED`" in panel
-    assert "PR #40" in panel
-    assert "3905d02" in panel
-    assert "31453662008" in panel
-    assert "PR #41" in panel
-    assert "362407f4abd3aa98ae37278fb243d6eb73f11681" in panel
-    assert "31455148050" in panel
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/active/F4.5.md" in panel
-    assert "PR_OPEN / CHECKS_PENDING" in panel
+    assert "docs/tasks/completed/F4.5.md" in panel
+    assert "F4.5 `PROMOTED`" in panel
+    assert "docs/promote-f4.5" in panel
     assert "PR #42" in panel
-    assert "31457756495" in panel
+    assert "31457935429" in panel
+    assert "4ae0de7" in panel
+    assert "31458482033" in panel
+    assert "PR #43" in panel
+    assert "31459427729" in panel
     assert "checkpoint/f4.5-ready" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" not in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

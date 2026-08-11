@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "blocker corrente é a certificação remota do head final do PR #42" in panel
+    assert "blocker corrente é somente sua reconciliação administrativa obrigatória" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -434,7 +434,7 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     panel = _read(TASK_PANEL)
     readme = _read(ROOT / "README.md")
     dossier = _read(COMPLETED_ROOT / "F4.C1.md")
-    f4_5_dossier = _read(ACTIVE_ROOT / "F4.5.md")
+    f4_5_dossier = _read(COMPLETED_ROOT / "F4.5.md")
     task_index = _read(TASKS_INDEX)
 
     assert not (ACTIVE_ROOT / "F4.C1.md").exists()
@@ -454,20 +454,24 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "31454615745" in dossier
     assert "SnapshotConflictError" in dossier
     assert "os.link" in dossier
-    assert "F4.C1 `PROMOTED`" in panel
-    assert "3905d02" in panel
-    assert "31453662008" in panel
-    assert "PR #41" in panel
-    assert "362407f4abd3aa98ae37278fb243d6eb73f11681" in panel
-    assert "31455148050" in panel
-    assert "PR_OPEN / CHECKS_PENDING" in panel
-    assert "docs/tasks/active/F4.5.md" in panel
+    assert "F4.5 `PROMOTED`" in panel
+    assert "docs/tasks/completed/F4.5.md" in panel
+    assert "docs/promote-f4.5" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/43" in f4_5_dossier
+    assert "b30416470b0ea4b266d2c4a65b9b1963858d51b8" in f4_5_dossier
+    assert "31459427729" in f4_5_dossier
     assert "checkpoint/f4.5-ready" in panel
+    assert not (ACTIVE_ROOT / "F4.5.md").exists()
     assert "> **Gate:** `READY`" in f4_5_dossier
-    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f4_5_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f4_5_dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/42" in f4_5_dossier
     assert "a77b4d9890a83a498c5f70db7efdcec92d92baed" in f4_5_dossier
     assert "31457756495" in f4_5_dossier
+    assert "9e8dfe80a8aaf0bcf4180866fb6e40eb117b0fc6" in f4_5_dossier
+    assert "31457935429" in f4_5_dossier
+    assert "4ae0de798607cf4fec13c0469fddb93d8024ead5" in f4_5_dossier
+    assert "31458482033" in f4_5_dossier
     assert "714 passed, 2 skipped, 6 subtests passed" in f4_5_dossier
     assert "bfb70fc216900e610fd80ffe1fd2da89382ce1b0" in f4_5_dossier
     assert "typecheck`, `lint`, `unit_test`, `build` e `security_scan`" in f4_5_dossier
@@ -479,13 +483,21 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "merge `362407f`" in readme
     assert "31455148050" in readme
     assert "PR #42" in readme
-    assert "31457756495" in readme
+    assert "9e8dfe8" in readme
+    assert "31457935429" in readme
+    assert "4ae0de7" in readme
+    assert "31458482033" in readme
+    assert "PR #43" in readme
+    assert "31459427729" in readme
     assert "completed/F4.C1.md" in task_index
     assert "PR #40 / merge `3905d02` / pós-merge `31453662008`" in task_index
-    assert "PR #41 foi incorporada pelo merge" in task_index
+    assert "administrativo #41 / merge `362407f` / pós-merge `31455148050`" in task_index
     assert "31455148050" in task_index
     assert "PR #42" in task_index
-    assert "31457756495" in task_index
+    assert "completed/F4.5.md" in task_index
+    assert "PR #42 / merge `4ae0de7` / pós-merge `31458482033`" in task_index
+    assert "administrativo #43 aberto" in task_index
+    assert "31459427729" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
