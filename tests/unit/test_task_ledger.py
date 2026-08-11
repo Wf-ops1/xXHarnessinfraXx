@@ -190,7 +190,7 @@ def test_normative_sources_agree_on_gate_and_post_merge_reconciliation() -> None
     assert "substituída pela reconciliação imediata" in task_index
 
 
-def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
+def test_f4_4_promotion_uses_the_certified_f4_3_baseline() -> None:
     panel = _read(TASK_PANEL)
     task_index = _read(TASKS_INDEX)
     f3_5_dossier = _read(COMPLETED_ROOT / "F3.5.md")
@@ -198,6 +198,7 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     f4_1_dossier = _read(COMPLETED_ROOT / "F4.1.md")
     f4_2_dossier = _read(COMPLETED_ROOT / "F4.2.md")
     f4_3_dossier = _read(COMPLETED_ROOT / "F4.3.md")
+    f4_4_dossier = _read(COMPLETED_ROOT / "F4.4.md")
     decision = _read(POST_MERGE_DECISION)
 
     assert not (ACTIVE_ROOT / "F3.5.md").exists()
@@ -210,10 +211,11 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "completed/F4.2.md" in task_index
     assert not (ACTIVE_ROOT / "F4.3.md").exists()
     assert (COMPLETED_ROOT / "F4.3.md").is_file()
-    assert "docs/tasks/completed/F4.3.md" in panel
-    assert "F4.3 `PROMOTED`" in panel
-    assert "docs/tasks/active/F4.4.md" in panel
-    assert (ACTIVE_ROOT / "F4.4.md").is_file()
+    assert not (ACTIVE_ROOT / "F4.4.md").exists()
+    assert (COMPLETED_ROOT / "F4.4.md").is_file()
+    assert "docs/tasks/completed/F4.4.md" in panel
+    assert "F4.4 `PROMOTED`" in panel
+    assert "> **Lifecycle:** `PROMOTED`" in f4_4_dossier
     assert "> **Gate:** `READY`" in f4_3_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_3_dossier
     assert "370569377a1b065db479c239edde4016e1de5c0a" in f4_3_dossier
@@ -250,11 +252,12 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "e6b5b84bbe8299f8e04b9ad28c0ca0a86269c98f" in dossier
     assert "31295594376" in dossier
     assert "checkpoint/f3.8-promotion-sync-ready" in dossier
-    assert "PR #36" in panel
-    assert "PR #37" in panel
+    assert "PR #38" in panel
     assert "11/11" in panel
-    assert "5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1" in panel
-    assert "31433785637" in panel
+    assert "fbdb6ee3d2e1728cbc691b98f04846989475c614" in panel
+    assert "31442203348" in panel
+    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in panel
+    assert "31445624269" in panel
     assert "Autorizo o merge do PR #29" not in panel
     assert "Autorizo publicar a branch" not in panel
     assert "Autorizo o merge do PR #30" not in panel
@@ -304,8 +307,8 @@ def test_f4_3_promotion_uses_the_certified_f4_2_baseline() -> None:
     assert "administrativo #35 / merge `3705693` / pós-merge `31346860397`" in task_index
     assert "completed/F4.3.md" in task_index
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
-    assert "fa31ef8987b1028d38014fe676247cd425daf9b6" in panel
-    assert "31419214233" in panel
+    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in panel
+    assert "31445624269" in panel
     assert "administrativo #33 / merge `571a8eb` / pós-merge `31329231458`" in task_index
     assert "O PR administrativo não cria reconciliação recursiva de si mesmo" in decision
 
@@ -388,15 +391,15 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert dossier.rfind("## Certificação final da promoção") > dossier.rfind("merge não autorizado")
 
 
-def test_f4_4_gate_tracks_authorized_local_implementation_without_promotion() -> None:
+def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
     panel = _read(TASK_PANEL)
     readme = _read(ROOT / "README.md")
-    dossier = _read(ACTIVE_ROOT / "F4.4.md")
+    dossier = _read(COMPLETED_ROOT / "F4.4.md")
     task_index = _read(TASKS_INDEX)
 
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
-    assert "> **Implementação:** `aplicada, certificada e consolidada em commit local; sem push/PR`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "> **Implementação:** `incorporada em main pelo PR #38 e certificada pela CI pós-merge`" in dossier
     assert "checkpoint/f4.4-ready" in dossier
     assert "task/f4.4-typed-specific-plan" in dossier
     assert "5c8408df9d1d1ce16d21508fbcb3a647ecf20ee1" in dossier
@@ -410,12 +413,24 @@ def test_f4_4_gate_tracks_authorized_local_implementation_without_promotion() ->
     assert "F4.5–F4.8" in dossier
     assert "Autorizo implementar a F4.4 conforme o gate READY e a DEC-015" in dossier
     assert "Autorizo criar o commit local de conclusão da F4.4" in dossier
-    assert "AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH" in panel
-    assert "F4.4 `READY`" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "implementação local autorizada" in readme
-    assert "está consolidada no commit local" in readme
-    assert "active/F4.4.md" in task_index
+    assert "Autorizo o merge do PR #38" in dossier
+    assert "fbdb6ee3d2e1728cbc691b98f04846989475c614" in dossier
+    assert "31442203348" in dossier
+    assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in dossier
+    assert "31445624269" in dossier
+    assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/39" in dossier
+    assert "63562bdd724213dbfbf47442e9c2f7e3354d662b" in dossier
+    assert "31447000037" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "AGUARDAR TODOS OS CHECKS DO HEAD FINAL DO PR #39" in panel
+    assert "F4.4 `PROMOTED`" in panel
+    assert "Nenhuma tarefa ativa" in panel
+    assert "PR #38 encerrou no head `fbdb6ee`" in readme
+    assert "docs/promote-f4.4" in readme
+    assert "completed/F4.4.md" in task_index
+    assert "PR #38 / merge `93ce4ce` / pós-merge `31445624269`" in task_index
+    assert "administrativo #39 aberto / checks pendentes" in task_index
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
 
 
@@ -478,7 +493,7 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "docs/tasks/completed/F4.3.md" in panel
+    assert "docs/tasks/completed/F4.4.md" in panel
     assert "F4.1" in panel
     assert "F3.7 permanece depois" in panel
     assert "Não restou achado blocker/high" in realignment

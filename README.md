@@ -45,7 +45,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
-| Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; a F4.3 calcula seis dimensões e aplica o dual gate; a implementação local F4.4 gera contrato tipado por structured output e persiste plano/eventos antes do grafo | Serena é opt-in; indexação é Python-only/full rebuild/explícita; F4.3 está promovida; F4.4 está consolidada somente em commit local, sem push, PR ou promoção | Backend Codebase-Memory compatível, memória semântica real e execução dos gates F4.5–F4.8 |
+| Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; a F4.3 calcula seis dimensões e aplica o dual gate; a F4.4 gera contrato tipado por structured output e persiste plano/eventos antes do grafo | Serena é opt-in; indexação é Python-only/full rebuild/explícita; F4.3 e F4.4 foram promovidas, e a reconciliação administrativa F4.4 está no PR #39 com checks pendentes | Backend Codebase-Memory compatível, memória semântica real e execução dos gates F4.5–F4.8 |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Suíte vazia/gate desconhecido podem passar `0/0` e a CLI pode retornar zero em reprovação; F4.5–F4.8 ainda não foram implementadas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -74,10 +74,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   incorporado pelo merge `fa31ef8`; a CI de `push` `31419214233` também concluiu 11/11 checks verdes.
   A reconciliação administrativa F4.3 fechou no head `a7f7053` com 11/11 checks no run
   `31430933615`, foi incorporada pelo PR #37 no merge `5c8408d` e a CI pós-merge `31433785637`
-  também concluiu 11/11. O gate F4.4 foi congelado na branch `task/f4.4-typed-specific-plan` e sua
-  implementação local autorizada substitui o plano genérico por contrato/structured output,
-  evidência por digest e persistência integrada ao lifecycle. Ela está consolidada no commit local,
-  mas ainda não foi publicada ou promovida. Nenhuma tag foi publicada, e F3.7 continua dependente da F4.7.
+  também concluiu 11/11. A F4.4 substituiu o plano genérico por contrato/structured output, evidência
+  por digest e persistência integrada ao lifecycle. O PR #38 encerrou no head `fbdb6ee` com 11/11
+  checks no run `31442203348`, foi incorporado pelo merge `93ce4ce` e a CI de `push` `31445624269`
+  também concluiu 11/11. Sua reconciliação administrativa está certificada na branch
+  `docs/promote-f4.4` e foi aberta no PR #39; os checks estão pendentes e o merge não foi autorizado.
+  Nenhuma tag foi publicada, e F3.7 continua dependente da F4.7.
 
 ## Dívidas técnicas críticas
 
@@ -100,9 +102,10 @@ operacionais:
 - [ContextAssembler](src/ai_engineering_harness/runtime/context_assembler.py) calcula as seis dimensões
   `Decimal`, aplica manifesto + threshold, persiste `context.json` sem conteúdo bruto e é chamado por
   `ExecutionLifecycleService` em start/resume para policies compiladas; a correção de tipo R5 e as
-  invariantes fail-closed R6 foram recertificadas e promovidas. Na implementação local F4.4, o planner usa
-  structured output roteado, relê evidência por digest, limita gates/tools às policies compiladas e
-  participa do lifecycle com payload, `plan.json` atômico e eventos duráveis; ainda não foi promovido;
+  invariantes fail-closed R6 foram recertificadas e promovidas. A F4.4 também foi promovida: o planner
+  usa structured output roteado, relê evidência por digest, limita gates/tools às policies compiladas
+  e participa do lifecycle com payload, `plan.json` atômico e eventos duráveis; normalização e execução
+  dos gates permanecem nas F4.5–F4.7;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em
