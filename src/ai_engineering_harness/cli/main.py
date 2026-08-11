@@ -28,7 +28,11 @@ from ai_engineering_harness.runtime import (
     StateMachineError,
 )
 from ai_engineering_harness.runtime.maf_adapter import ArtifactValidationError
-from ai_engineering_harness.verification.engine import VerificationEngine
+from ai_engineering_harness.verification import (
+    VerificationConfigurationError,
+    VerificationEngine,
+)
+from ai_engineering_harness.workspace import ExternalWorktreeManager, WorktreeError
 
 console = Console()
 
@@ -302,10 +306,29 @@ def cancel(execution_id):
         f"cancelada na revisão {record.revision}."
     )
 
-@main.command(help="Executa os verificadores poliglotas aplicáveis ao projeto.")
-def verify():
-    engine = VerificationEngine(language="python", working_dir=Path.cwd())
-    res = engine.verify(active_gates=["typecheck", "unit_test"])
+@main.command(help="Executa gates configurados em um worktree validado.")
+@click.argument("execution_id")
+@click.option("--project-id", default="default-proj", show_default=True)
+@click.option(
+    "--gate",
+    "active_gates",
+    type=click.Choice(
+        ["typecheck", "lint", "unit_test", "build", "security_scan"],
+        case_sensitive=True,
+    ),
+    multiple=True,
+    default=("typecheck", "unit_test"),
+    show_default=True,
+)
+def verify(execution_id: str, project_id: str, active_gates: tuple[str, ...]) -> None:
+    try:
+        worktree = ExternalWorktreeManager(Path.cwd(), project_id).load_worktree(
+            execution_id
+        )
+        engine = VerificationEngine(worktree)
+        res = engine.verify(active_gates=list(active_gates))
+    except (VerificationConfigurationError, WorktreeError) as exc:
+        raise click.ClickException(str(exc)) from exc
     status_color = "green" if res.all_passed else "red"
     console.print(f"[{status_color}]Verificação concluída. Aprovados: {res.passed_gates}/{res.total_gates}[/{status_color}]")
 
