@@ -169,9 +169,15 @@ class VerificationCommandResolver:
 
     @staticmethod
     def _python_executable() -> Path:
+        if type(sys.executable) is not str or not sys.executable:
+            raise VerificationPrerequisiteError(
+                "current Python executable could not be resolved"
+            )
         try:
-            executable = Path(sys.executable).resolve(strict=True)
-        except (OSError, RuntimeError, ValueError) as exc:
+            # Keep the venv launcher path. On POSIX it is normally a symlink; resolving
+            # it would execute the base interpreter without the venv's site-packages.
+            executable = Path(os.path.abspath(sys.executable))
+        except (OSError, TypeError, ValueError) as exc:
             raise VerificationPrerequisiteError(
                 "current Python executable could not be resolved"
             ) from exc

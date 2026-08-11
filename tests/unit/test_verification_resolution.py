@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,7 @@ from ai_engineering_harness.verification import (
     VerificationEngine,
     VerificationPrerequisiteError,
 )
+from ai_engineering_harness.verification.resolver import VerificationCommandResolver
 from ai_engineering_harness.workspace import (
     ExternalWorktreeManager,
     ProvisionedWorktree,
@@ -129,8 +131,40 @@ def test_engine_resolves_python_tools_from_pyproject_before_effects(tmp_path: Pa
         ("python", "-m", "build"),
     )
     assert all(command.cwd == "." for command in suite.commands)
-    assert all(command.executable_path == Path(sys.executable).resolve() for command in suite.commands)
+    assert all(
+        command.executable_path == Path(os.path.abspath(sys.executable))
+        for command in suite.commands
+    )
     assert all(command.source.startswith("pyproject.toml:") for command in suite.commands)
+
+
+def test_python_executable_does_not_dereference_launcher(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = Path(os.path.abspath(sys.executable))
+
+    def unexpected_resolve(*_args: object, **_kwargs: object) -> Path:
+        raise AssertionError("the Python launcher path must not be dereferenced")
+
+    monkeypatch.setattr(Path, "resolve", unexpected_resolve)
+
+    assert VerificationCommandResolver._python_executable() == expected
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX venv launchers are symlinks")
+def test_python_executable_preserves_real_posix_symlink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base_executable = Path(sys.executable).resolve(strict=True)
+    launcher = tmp_path / "venv-python"
+    launcher.symlink_to(base_executable)
+    monkeypatch.setattr(sys, "executable", str(launcher))
+
+    resolved = VerificationCommandResolver._python_executable()
+
+    assert resolved == launcher.absolute()
+    assert resolved != base_executable
 
 
 @pytest.mark.parametrize(
