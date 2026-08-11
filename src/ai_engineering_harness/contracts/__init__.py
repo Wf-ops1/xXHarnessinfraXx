@@ -35,6 +35,7 @@ from .planning import (
     PlanTarget,
 )
 from .policies import (
+    CANONICAL_VERIFICATION_GATE_IDS,
     AgentRoleSpec,
     EffectiveNodeToolPolicySpec,
     InvalidPolicyReferenceError,
@@ -49,6 +50,7 @@ from .policies import (
     ToolNotFoundError,
     ToolRegistrySpec,
     UnauthorizedToolError,
+    VerificationGateId,
 )
 from .policy_registry import PolicyRegistry
 from .registry import (
@@ -70,6 +72,7 @@ from .structural_index import (
 )
 
 __all__ = [
+    "CANONICAL_VERIFICATION_GATE_IDS",
     "EXECUTION_RECORD_SCHEMA_VERSION",
     "PLAN_SCHEMA_VERSION",
     "STRUCTURAL_SNAPSHOT_SCHEMA_VERSION",
@@ -125,5 +128,6 @@ __all__ = [
     "ToolRegistrySpec",
     "UnauthorizedToolError",
     "UntrustedPythonContractError",
+    "VerificationGateId",
     "validate_commit_sha",
 ]

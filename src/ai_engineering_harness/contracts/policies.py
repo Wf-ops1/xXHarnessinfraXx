@@ -9,6 +9,20 @@ from typing import Annotated, Any, Literal, Self, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 _NonEmptyStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+VerificationGateId: TypeAlias = Literal[
+    "typecheck",
+    "lint",
+    "unit_test",
+    "build",
+    "security_scan",
+]
+CANONICAL_VERIFICATION_GATE_IDS: tuple[VerificationGateId, ...] = (
+    "typecheck",
+    "lint",
+    "unit_test",
+    "build",
+    "security_scan",
+)
 
 
 class PolicyRegistryError(Exception):
@@ -434,7 +448,7 @@ class ToolGovernancePolicySpec(_StrictFrozenModel):
 
 
 class RequiredGateSpec(_StrictFrozenModel):
-    id: _NonEmptyStr
+    id: VerificationGateId
     executor: Literal["deterministic"]
     command: _NonEmptyStr
     blocking: bool
@@ -453,6 +467,17 @@ class VerificationPolicySpec(_StrictFrozenModel):
     @classmethod
     def freeze_sequences(cls, value: object) -> object:
         return _as_tuple(value)
+
+    @model_validator(mode="after")
+    def validate_required_gates(self) -> Self:
+        if not self.required_gates:
+            raise ValueError("required_gates must contain at least one gate")
+        gate_ids = tuple(gate.id for gate in self.required_gates)
+        if len(set(gate_ids)) != len(gate_ids):
+            raise ValueError("required_gates must use unique canonical ids")
+        if not any(gate.blocking for gate in self.required_gates):
+            raise ValueError("required_gates must contain at least one blocking gate")
+        return self
 
 
 PolicyDocument: TypeAlias = (
@@ -554,6 +579,7 @@ class ResolvedPolicySpec(_StrictFrozenModel):
 
 
 __all__ = [
+    "CANONICAL_VERIFICATION_GATE_IDS",
     "AgentRoleSpec",
     "ContextSufficiencyPolicySpec",
     "EffectiveNodeToolPolicySpec",
@@ -565,6 +591,7 @@ __all__ = [
     "PolicyNotFoundError",
     "PolicyRegistryError",
     "ProductionHealthPolicySpec",
+    "RequiredGateSpec",
     "ResolvedPolicySpec",
     "RetryCostPolicySpec",
     "RoleNotFoundError",
@@ -575,5 +602,6 @@ __all__ = [
     "ToolNotFoundError",
     "ToolRegistrySpec",
     "UnauthorizedToolError",
+    "VerificationGateId",
     "VerificationPolicySpec",
 ]

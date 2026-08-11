@@ -17,6 +17,10 @@ from ai_engineering_harness.verification.evaluator import VerificationEvaluator
 from ai_engineering_harness.verification.results import GateResult, VerificationSuiteResult
 
 
+class VerificationConfigurationError(ValueError):
+    """A requested verification suite cannot be executed without ambiguity."""
+
+
 class GateRunner:
     """Executa somente verificadores estáticos aplicáveis ao projeto."""
 
@@ -30,13 +34,40 @@ class GateRunner:
         self._adapters: dict[str, TerminalAdapter] = {}
 
     def run_applicable_gates(self, active_gates: list[str]) -> VerificationSuiteResult:
-        results = []
-        all_passed = True
+        gates = tuple(active_gates)
+        if not gates:
+            raise VerificationConfigurationError(
+                "verification suite must contain at least one canonical gate"
+            )
+        if any(type(gate) is not str for gate in gates):
+            raise VerificationConfigurationError(
+                "verification gate ids must be exact canonical strings"
+            )
+        if len(set(gates)) != len(gates):
+            raise VerificationConfigurationError("verification gate ids must be unique")
 
-        for gate in active_gates:
+        unknown_gates = tuple(
+            gate for gate in gates if not VerificationEvaluator.is_canonical_gate_id(gate)
+        )
+        if unknown_gates:
+            rendered = ", ".join(repr(gate) for gate in unknown_gates)
+            raise VerificationConfigurationError(
+                f"unknown verification gate id(s): {rendered}"
+            )
+
+        resolved: list[tuple[str, tuple[str, ...]]] = []
+        for gate in gates:
             argv = VerificationEvaluator.get_argv(self.language, gate)
             if argv is None:
-                continue
+                raise VerificationConfigurationError(
+                    f"verification gate {gate!r} has no configured command "
+                    f"for language {self.language!r}"
+                )
+            resolved.append((gate, argv))
+
+        results: list[GateResult] = []
+
+        for gate, argv in resolved:
             command = VerificationEvaluator.get_command(self.language, gate)
             assert command is not None
 
@@ -59,8 +90,6 @@ class GateRunner:
                 stdout = ""
                 stderr = Redactor.redact_text(str(exc))
 
-            if not passed:
-                all_passed = False
             results.append(
                 GateResult(
                     gate_type=gate,
@@ -72,7 +101,7 @@ class GateRunner:
             )
 
         return VerificationSuiteResult(
-            all_passed=all_passed,
+            all_passed=all(result.passed for result in results),
             total_gates=len(results),
             passed_gates=sum(1 for result in results if result.passed),
             gate_results=results,
@@ -114,3 +143,6 @@ class GateRunner:
                 name, value = entry
                 captured[name] = value
         return captured
+
+
+__all__ = ["GateRunner", "VerificationConfigurationError"]

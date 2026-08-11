@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 import ai_engineering_harness.contracts as public_contracts
 from ai_engineering_harness.contracts import (
+    CANONICAL_VERIFICATION_GATE_IDS,
     CompiledGraphArtifact,
     ContractRegistry,
     GraphSpec,
@@ -142,6 +143,71 @@ def test_all_packaged_policies_resolve_to_normalized_views() -> None:
     assert all(policy.policy_schema_version == "1.0" for policy in resolved)
     assert all("policy_id" not in policy.effective_policy for policy in resolved)
     assert all("definition_version" not in policy.effective_policy for policy in resolved)
+
+
+def test_default_verification_policy_uses_only_canonical_gate_ids() -> None:
+    policy = PolicyRegistry().resolve("policies/verification_policy.yaml")
+    gate_ids = tuple(gate["id"] for gate in policy.effective_policy["required_gates"])
+
+    assert gate_ids == ("typecheck", "lint", "unit_test", "build")
+    assert set(gate_ids) < set(CANONICAL_VERIFICATION_GATE_IDS)
+    assert "tests" not in gate_ids
+
+
+@pytest.mark.parametrize(
+    ("required_gates", "match"),
+    [
+        ([], "at least one gate"),
+        (
+            [
+                {
+                    "id": "unknown",
+                    "executor": "deterministic",
+                    "command": "unknown",
+                    "blocking": True,
+                }
+            ],
+            "Input should be",
+        ),
+        (
+            [
+                {
+                    "id": "lint",
+                    "executor": "deterministic",
+                    "command": "ruff check .",
+                    "blocking": True,
+                },
+                {
+                    "id": "lint",
+                    "executor": "deterministic",
+                    "command": "ruff check .",
+                    "blocking": True,
+                },
+            ],
+            "unique canonical ids",
+        ),
+        (
+            [
+                {
+                    "id": "security_scan",
+                    "executor": "deterministic",
+                    "command": "configured later",
+                    "blocking": False,
+                }
+            ],
+            "at least one blocking gate",
+        ),
+    ],
+)
+def test_verification_policy_gate_contract_fails_closed(
+    required_gates: list[dict[str, object]],
+    match: str,
+) -> None:
+    document = _load_yaml("policies/verification_policy.yaml")
+    document["required_gates"] = required_gates
+
+    with pytest.raises(InvalidPolicySchemaError, match=match):
+        PolicyRegistry(policy_documents={"policies/verification_policy.yaml": document})
 
 
 @pytest.mark.parametrize("reference", POLICY_REFERENCES)
