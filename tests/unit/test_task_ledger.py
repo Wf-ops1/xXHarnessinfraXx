@@ -528,9 +528,13 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in f4_6_dossier
     assert "31510277593" in f4_6_dossier
     assert "LOCAL_READY / PUBLICATION_PENDING" in f4_6_dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in f4_6_dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/45" in f4_6_dossier
+    assert "5882e42088f0ded00c88f5ad24451378e9adfebf" in f4_6_dossier
+    assert "31512347572" in f4_6_dossier
     assert "completed/F4.6.md" in task_index
     assert "PR #44 / merge `a4fd1da` / pós-merge `31510277593`" in task_index
-    assert "administrativo pendente" in task_index
+    assert "administrativo #45 aberto" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

@@ -18,11 +18,11 @@
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.6 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | nenhuma implementação ativa; reconciliação administrativa F4.6 local; F4.7/F4.8/F3.7 não iniciadas |
-| **Gate** | F4.6 `PROMOTED`; `docs/promote-f4.6` em `LOCAL_READY / PUBLICATION_PENDING` |
+| **Tarefa ativa** | nenhuma implementação ativa; PR administrativo F4.6 #45 aberto; F4.7/F4.8/F3.7 não iniciadas |
+| **Gate** | F4.6 `PROMOTED`; PR #45 em `ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor; reconciliação e arquivamento autorizados nominalmente em `2026-08-11T13:16:05-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.6`, local e sem upstream, criada de `main == origin/main == a4fd1da` |
+| **Branch** | `docs/promote-f4.6`, rastreando `origin/docs/promote-f4.6`; PR #45; head inicial `5882e42` |
 | **Baseline promovido** | `main == origin/main == a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d` |
 | **CI do baseline** | run `31510277593`, evento `push`, 11/11 verde em `2m47s`, inclusive `CI required` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
@@ -34,7 +34,7 @@
 | Tarefa | F4.6 — detectar stack e resolver comandos efetivos, promovida e arquivada localmente |
 | PR de implementação | PR #44; head final `00e83574da789fa58f22f928b5290b9471264a63`; run `31505324814`, 11/11 |
 | Promoção | merge `a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d`; run `31510277593`, 11/11 |
-| Reconciliação administrativa | branch local `docs/promote-f4.6`; validação concluída, publicação pendente |
+| Reconciliação administrativa | PR #45 aberto no head inicial `5882e42`; run inicial `31512347572` em andamento |
 | Fronteira | branch remota de implementação preservada; checkpoints somente locais; nenhuma tag publicada ou ref excluída |
 
 O histórico `POST_PROMOTION_BLOCKED` da F4.1 permanece encerrado pela corretiva F4.C1. As evidências
@@ -56,7 +56,8 @@ O aceite local concluiu `738 passed, 5 skipped, 6 subtests passed`.
 O head final `00e8357` recebeu 11/11 checks no run `31505324814`, inclusive Ubuntu 3.11/3.14. A
 primeira tentativa deixou o check Windows 3.14 órfão apesar dos passos verdes; a repetição restrita
 do job e do `CI required` encerrou a tentativa 2 integralmente verde. O merge `a4fd1da` recebeu 11/11
-na CI de `push` `31510277593`.
+na CI de `push` `31510277593`. A reconciliação administrativa está aberta no PR #45; o run inicial
+`31512347572` pertence ao head `5882e42`, anterior ao registro documental final desta observação.
 
 Persistência de resultado, status/tempo/exit/output/digest, guard de `COMPLETED`, decisão de exit da
 CLI e integração ao lifecycle pertencem à F4.7. Repair/retry pertence à F4.8; F3.7 permanece depois
@@ -68,30 +69,29 @@ Checkpoints locais preservados: `checkpoint/f4.6-ready`, `checkpoint/f4.6-r1-rea
 
 ## 6. Bloqueios atuais
 
-Não resta blocker técnico conhecido na F4.6. A implementação está incorporada e a CI pós-merge está
-verde; resta concluir a reconciliação administrativa obrigatória. Até seu PR, merge e CI pós-merge
-em `main`, F4.7/F4.8/F3.7 continuam bloqueadas. Tag remota e exclusão de refs permanecem fora do
-escopo autorizado.
+Não resta blocker técnico conhecido na F4.6. O PR administrativo #45 está aberto; o run inicial
+`31512347572` começou no head `5882e42`, mas este registro produzirá um head posterior e exigirá nova
+CI integral. Até checks do head final, merge e CI pós-merge em `main`, F4.7/F4.8/F3.7 continuam
+bloqueadas. Tag remota e exclusão de refs permanecem fora do escopo autorizado.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O COMMIT DO DIFF DOCUMENTAL CERTIFICADO DE `docs/promote-f4.6` E, DENTRO DA AUTORIZAÇÃO
-NOMINAL ATUAL, PUBLICAR/ABRIR O PR, EXIGIR CI INTEGRAL NO HEAD FINAL,
-MESCLAR POR MERGE COMMIT E VALIDAR A CI DE PUSH. NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR
-F4.7/F4.8/F3.7.
+PUBLICAR SOMENTE ESTE REGISTRO DOCUMENTAL NO PR #45 E EXIGIR CI INTEGRAL NO HEAD FINAL, INCLUINDO
+`CI REQUIRED`. DEPOIS DOS CHECKS VERDES, MESCLAR POR MERGE COMMIT DENTRO DA AUTORIZAÇÃO NOMINAL
+ATUAL E VALIDAR A CI DE PUSH. NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR F4.7/F4.8/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/completed/F4.6.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch/status, PR #44/head `00e8357`, merge `a4fd1da`, runs
-   `31505324814`/`31510277593`, checkpoints locais e ausência de tags remotas.
+3. Confirme branch/upstream, PR #45/head inicial `5882e42`, run inicial `31512347572`, PR #44/head
+   `00e8357`, merge `a4fd1da`, runs `31505324814`/`31510277593` e ausência de tags remotas.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T13:16:05-03:00 | Fonte: plano + DEC-014/DEC-015 + PR #44/CIs observados*
+*Atualizado em: 2026-08-11T13:26:18-03:00 | Fonte: plano + DEC-014/DEC-015 + PRs #44/#45 observados*

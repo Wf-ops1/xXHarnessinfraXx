@@ -168,7 +168,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f4.6-ready" in panel
     assert "checkpoint/f4.6-r1-ready" in panel
     assert "checkpoint/f4.6-complete" in panel
-    assert "LOCAL_READY / PUBLICATION_PENDING" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "31463009231" in panel
     assert "31463962634" in panel
     assert "TerminalAdapter" in panel
@@ -180,6 +180,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "00e83574da789fa58f22f928b5290b9471264a63" in panel
     assert "31505324814" in panel
     assert "31510277593" in panel
+    assert "PR #45" in panel
+    assert "5882e42" in panel
+    assert "31512347572" in panel
     assert "docs/promote-f4.6" in panel
     assert "nenhuma tarefa ativa" in panel.casefold()
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
