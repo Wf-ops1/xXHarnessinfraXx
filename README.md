@@ -45,7 +45,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
-| Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; a F4.3 calcula seis dimensões e aplica o dual gate; a F4.4 gera contrato tipado por structured output e persiste plano/eventos antes do grafo | Serena é opt-in; indexação é Python-only/full rebuild/explícita; F4.3 e F4.4 foram promovidas, e a reconciliação administrativa F4.4 está no PR #39 com checks pendentes | Backend Codebase-Memory compatível, memória semântica real e execução dos gates F4.5–F4.8 |
+| Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; a F4.3 calcula seis dimensões e aplica o dual gate; a F4.4 gera contrato tipado por structured output e persiste plano/eventos antes do grafo | Serena é opt-in; indexação é Python-only/full rebuild/explícita; F4.1–F4.4 foram promovidas, mas a publicação concorrente F4.1 está `POST_PROMOTION_BLOCKED` até a corretiva F4.C1 | Backend Codebase-Memory compatível, memória semântica real e execução dos gates F4.5–F4.8 |
 | Verificação e auditoria | Gates estáticos usam `argv`, `shell=False`, cwd confinado, ambiente controlado, timeout com filhos e saída limitada/redigida; hash chain local possui testes | Suíte vazia/gate desconhecido podem passar `0/0` e a CLI pode retornar zero em reprovação; F4.5–F4.8 ainda não foram implementadas | Matriz integral fail-closed e recovery operacional |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
@@ -77,9 +77,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   também concluiu 11/11. A F4.4 substituiu o plano genérico por contrato/structured output, evidência
   por digest e persistência integrada ao lifecycle. O PR #38 encerrou no head `fbdb6ee` com 11/11
   checks no run `31442203348`, foi incorporado pelo merge `93ce4ce` e a CI de `push` `31445624269`
-  também concluiu 11/11. Sua reconciliação administrativa está certificada na branch
-  `docs/promote-f4.4` e foi aberta no PR #39; os checks estão pendentes e o merge não foi autorizado.
-  Nenhuma tag foi publicada, e F3.7 continua dependente da F4.7.
+  também concluiu 11/11. Sua reconciliação administrativa na branch `docs/promote-f4.4` foi incorporada
+  pelo PR #39 no merge `94641d2`; a CI pós-merge `31447628152` concluiu 11/11. Evidência negativa posterior reproduziu
+  overwrite entre snapshots concorrentes divergentes do mesmo SHA; por isso a corretiva F4.C1 está
+  ativa e F4.5 permanece bloqueada. Nenhuma tag foi publicada, e F3.7 continua dependente da F4.7.
 
 ## Dívidas técnicas críticas
 

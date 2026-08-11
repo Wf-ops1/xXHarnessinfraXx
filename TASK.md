@@ -6,7 +6,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, tarefa ativa, bloqueios e próxima ação.
-2. Não há dossiê de implementação ativo; a última promoção certificada é a
+2. O único dossiê ativo é o gate corretivo
+   [F4.C1](docs/tasks/active/F4.C1.md); a última promoção histórica permanece a
    [F4.4](docs/tasks/completed/F4.4.md).
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências das fases.
 4. [Regras dos agentes](.agents/AGENTS.md): protocolo obrigatório de execução e Git.
@@ -35,15 +36,15 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.4 e corretivas F3.C1/F3.C2 promovidas; F3.7 permanece após F4.7 |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | Nenhuma tarefa ativa; F4.5 permanece planejada e não iniciada |
-| **Gate** | F4.4 `PROMOTED`; PR administrativo #39 aberto, checks pendentes |
-| **Última promoção** | F4.4 `PROMOTED` pelo PR #38; reconciliação administrativa em validação remota |
+| **Tarefa ativa** | F4.C1 — imutabilidade concorrente da publicação de snapshots; F4.5 não iniciada |
+| **Gate** | F4.C1 `READY / ACTIVE`; estado operacional `POST_PROMOTION_BLOCKED` |
+| **Última promoção** | F4.4 `PROMOTED` historicamente; PR administrativo #39 incorporado e CI pós-merge verde |
 | **Executor ativo** | `Codex`, único escritor |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.4`, rastreando `origin/docs/promote-f4.4`; PR #39; head inicial `63562bd` |
-| **Baseline promovido** | `main == origin/main == 93ce4ce`; run `31445624269`, evento `push`, 11/11 verde |
+| **Branch** | `task/f4.c1-snapshot-publication-concurrency`, criada de `main` limpa e sincronizada |
+| **Baseline promovido** | `main == origin/main == 94641d2`; run `31447628152`, evento `push`, 11/11 verde |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
-| **uv** | `.\build\f0.6-tools\uv\bin\uv.exe` — 0.11.32 |
+| **uv** | path versionado anterior indisponível neste checkout; nenhum runtime será trocado silenciosamente |
 
 ## 4. Última promoção comprovada
 
@@ -52,43 +53,45 @@ devem ser corrigidos para refletir a decisão. Nunca depender somente do histór
 | Tarefa | `F4.4` — plano tipado e específico, promovida e arquivada localmente |
 | PR de implementação | PR #38; head final `fbdb6ee3d2e1728cbc691b98f04846989475c614`; 11/11 no run `31442203348` |
 | Promoção da implementação | merge `93ce4ce9f4f0042c58d64103528b6c359a475bd9`; run `31445624269`, 11/11 |
-| Reconciliação administrativa | PR #39 aberto a partir de `docs/promote-f4.4`; head inicial `63562bd`; run `31447000037`, checks pendentes |
+| Reconciliação administrativa | PR #39; head final `bb759c5`; merge `94641d27384d370faf013825e7e9955c721cf420`; run pós-merge `31447628152`, 11/11 |
 | Fronteira | branches remotas preservadas; nenhuma tag publicada ou exclusão de ref; F4.5/F3.7 não iniciadas |
 
 ## 5. Tarefa ativa
 
-Não há implementação ativa. A F4.4 foi incorporada pelo PR #38 e certificada no
-[dossiê concluído](docs/tasks/completed/F4.4.md). `PlanDocument` é Pydantic estrito/frozen/versionado;
-o lifecycle liga contexto, plano e entrada por digest, persiste `PLAN_GENERATION_STARTED`, payload,
-`plan.json` e `PLAN_GENERATED` antes do primeiro nó e recupera o mesmo plano no resume sem nova chamada.
+O gate [F4.C1](docs/tasks/active/F4.C1.md) corrige uma evidência negativa pós-promoção no contrato
+F4.1: duas publicações concorrentes divergentes que observam o destino ausente podem concluir com
+sucesso e a segunda sobrescreve o snapshot validado pela primeira. A correção está congelada para
+claim exclusivo por SHA, idempotência concorrente, conflito divergente tipado e vencedor imutável.
 
-A F4.5 é a próxima tarefa planejada: normalizar IDs de gates conforme a Fase 4 e a
-[DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md). Seu gate não pode ser preparado nem
-sua implementação iniciada antes de a reconciliação administrativa F4.4 ser publicada, mesclada e
-ficar verde em `main`. F4.6–F4.8, MCP e memória semântica continuam fora do escopo. F3.7 permanece depois
-da F4.7.
+F4.1–F4.4 permanecem historicamente `PROMOTED`, mas o estado corrente é `POST_PROMOTION_BLOCKED`.
+F4.5 e F4.6–F4.8 continuam fora do escopo; F3.7 permanece depois da F4.7. Nenhuma delas, nem MCP ou
+memória semântica, pode começar antes da correção, recertificação integral, promoção e reconciliação
+administrativa da F4.C1.
 
 ## 6. Bloqueios atuais
 
-Não há blocker técnico conhecido localmente na F4.4. A pendência é exclusivamente administrativa: o PR
-#39 está aberto e seu `CI required` ainda precisa concluir no head final. Merge exige autorização
-nominal separada e CI verde. Até lá, F4.5/F3.7 permanecem bloqueadas. Publicação de tag e exclusão de
-refs permanecem proibidas.
+O blocker técnico reproduzido está na publicação concorrente de
+`src/ai_engineering_harness/indexer/snapshot_manager.py`: `first=success`, `second=success`,
+`final=second`. Até a F4.C1 ser promovida e reconciliada, F4.5/F3.7 permanecem bloqueadas. Push, PR,
+merge, publicação de tag e exclusão de refs continuam sem autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR TODOS OS CHECKS DO HEAD FINAL DO PR #39, INCLUINDO CI REQUIRED. DEPOIS DE VERDES, AGUARDAR
-AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA O MERGE. NÃO PUBLICAR TAG, EXCLUIR REFS OU INICIAR F4.5/F3.7.
+IMPLEMENTAR SOMENTE A F4.C1 DEPOIS DO CHECKPOINT READY; PROVAR IDEMPOTÊNCIA/CONFLITO CONCORRENTES E
+VENCEDOR IMUTÁVEL; REPETIR ACEITE F4.1–F4.4, REGRESSÃO, QUALITY E PACKAGE/SMOKE. NÃO PUBLICAR, ABRIR
+PR, MESCLAR, EXCLUIR REFS OU INICIAR F4.5/F3.7 SEM AUTORIZAÇÃO NOMINAL NOVA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo integralmente.
-2. Leia `docs/tasks/completed/F4.4.md`, DEC-015, DEC-014, as seções 1.1–1.2 e a Fase 4 do plano integralmente.
-3. Confirme F4.4 `PROMOTED`, PRs #38/#39, head `fbdb6ee`, merge `93ce4ce` e runs
-   `31442203348`/`31445624269`/`31447000037`.
-4. Confirme `.git`, `docs/promote-f4.4`, upstream, `git status --short --branch`, `git log -10` e o baseline de `main`.
+2. Leia `docs/tasks/active/F4.C1.md`, `docs/tasks/completed/F4.1.md`, DEC-015, DEC-014, as seções
+   1.1–1.2 e a Fase 4 do plano integralmente.
+3. Confirme F4.1–F4.4 historicamente `PROMOTED`, PR #39/merge `94641d2`, run `31447628152` e a
+   evidência negativa concorrente registrada no dossiê ativo.
+4. Confirme `.git`, branch `task/f4.c1-snapshot-publication-concurrency`, checkpoint READY, upstream,
+   `git status --short --branch`, `git log -10` e o baseline de `main`.
 5. Execute somente a próxima ação exata acima. Se escopo ou estado divergir, pare, registre a nova
    evidência e recongele antes de editar implementação.
 
@@ -102,4 +105,4 @@ AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA O MERGE. NÃO PUBLICAR TAG, EXCLUIR REFS O
 
 ---
 
-*Atualizado em: 2026-08-10T21:44:13-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
+*Atualizado em: 2026-08-10T23:11:37-03:00 | Fonte normativa: plano principal + DEC-012 + DEC-013 + DEC-014 + DEC-015*
