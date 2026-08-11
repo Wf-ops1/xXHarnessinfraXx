@@ -10,10 +10,10 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 |---|---|---|---|---|
 | Disparo | CLI `run` | Cria `execution_id` e chama o runtime | Experimental | Falta validar repositório, configuração e precondições fail-closed |
 | Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, identidade/digest e partição exata de evidência, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 `PROMOTED` | PR #36 e reconciliação #37 foram incorporados com CI pós-merge verde; a entrada ainda depende de artefatos e snapshot previamente produzidos |
-| Plano | `Planner` + `ExecutionLifecycleService` | Contrato Pydantic versionado, structured output roteado, evidência/policies por digest, payload/projeção/eventos antes do nó e resume idempotente possuem testes positivos e fail-closed | F4.4 implementada localmente; ainda não promovida | Provider/configuração operacional continuam injetáveis; F4.5–F4.8 ainda precisam executar gates e guardar `COMPLETED` |
+| Plano | `Planner` + `ExecutionLifecycleService` | Contrato Pydantic versionado, structured output roteado, evidência/policies por digest, payload/projeção/eventos antes do nó e resume idempotente possuem testes positivos e fail-closed | F4.4 `PROMOTED` | Provider/configuração operacional continuam injetáveis; F4.6–F4.8 ainda precisam executar gates e guardar `COMPLETED` |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados | Primitiva real/injetável | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |
-| Verificação | `VerificationEngine` | Executa subprocessos para gates selecionados | Experimental | Lista vazia/gate desconhecido podem passar 0/0 e CLI reprovada pode sair zero; correção fica em F4.5–F4.8 |
+| Verificação | `VerificationEngine` | F4.5 normaliza cinco IDs e bloqueia policy/suíte vazia, desconhecida, duplicada ou sem comando antes de efeitos | F4.5 local / promoção pendente | F4.6 resolve comandos; F4.7 persiste/guarda conclusão; CLI reprovada ainda pode sair zero; F4.8 compõe retry |
 | Reparo | Retry do `GraphExecutor` | Consome erro, tool call, saída redigida, gates, diff e orçamento | Implementado como contrato | Sem composição operacional das tools ainda não produz um reparo de produto de ponta a ponta |
 | Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos | Implementada como contrato | Aprovação exige `resume` explícito e ainda não aciona promoção Git segura |
 | Promoção | `PromotionManager` | Registra evento e retorna string | Simulado | Runtime força dry-run e recebe SHA sintético; caminho live possui fallbacks sintéticos |
@@ -28,7 +28,8 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 Os testes atuais também provam o dual gate de contexto, bloqueio antes de nós, envelope imutável,
 retry/exaustão e recuperação de decisão durável. Para F4.4, provam que plano tipado e ligado a
 contexto/input é persistido antes do primeiro nó, que tamper/duplicata/policy/output/persistência
-inválidos bloqueiam e que resume não repete o provider. Eles provam providers HTTP com servidores controlados,
+inválidos bloqueiam e que resume não repete o provider. Para F4.5, provam convergência da taxonomia e
+rejeição antes do terminal, inclusive do alias legado `tests`. Eles provam providers HTTP com servidores controlados,
 tool loop durável, worktree Git real, terminal por `argv`, edição confinada e transporte MCP Serena
 contra fixtures. Integrações live
 OpenAI/Serena continuam condicionadas a configuração externa. Eles ainda não provam que a CLI compõe

@@ -83,8 +83,8 @@ no commit local, mas ainda não foi publicada nem promovida.
 | P0 | Sucesso sem efeito | CLI falha fechada, mas promoção e memória isoladas ainda aceitam resultados sintéticos | F3.7/F4/F6 |
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
 | P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
-| P0 | Verificação `0/0` | Gate vazio/desconhecido pode passar e CLI reprovada pode retornar zero | F4.5–F4.7 |
-| P1 | Planejamento ainda não promovido | A implementação F4.4 liga contexto/plano/input e remove literais/write_text, mas possui somente commit local, sem push, PR ou CI remota | F4.4; publicação/promoção pendentes |
+| P0 | Verificação incompleta | F4.5 bloqueia `0/0`/ID desconhecido, mas a CLI reprovada ainda pode retornar zero e não existe resultado persistido/commit-bound | F4.6–F4.7 |
+| P1 | Normalização ainda não promovida | A implementação F4.5 está somente na branch local e ainda depende de publicação, PR e CI remota | F4.5; promoção pendente |
 | P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
 | P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |

@@ -213,8 +213,7 @@ def test_f4_4_promotion_uses_the_certified_f4_3_baseline() -> None:
     assert (COMPLETED_ROOT / "F4.3.md").is_file()
     assert not (ACTIVE_ROOT / "F4.4.md").exists()
     assert (COMPLETED_ROOT / "F4.4.md").is_file()
-    assert "docs/tasks/completed/F4.4.md" in panel
-    assert "F4.4 `PROMOTED`" in panel
+    assert "completed/F4.4.md" in task_index
     assert "> **Lifecycle:** `PROMOTED`" in f4_4_dossier
     assert "> **Gate:** `READY`" in f4_3_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_3_dossier
@@ -363,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "Não resta blocker técnico local" in panel
+    assert "blocker corrente é o próprio aceite da F4.5" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -435,6 +434,7 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     panel = _read(TASK_PANEL)
     readme = _read(ROOT / "README.md")
     dossier = _read(COMPLETED_ROOT / "F4.C1.md")
+    f4_5_dossier = _read(ACTIVE_ROOT / "F4.5.md")
     task_index = _read(TASKS_INDEX)
 
     assert not (ACTIVE_ROOT / "F4.C1.md").exists()
@@ -455,19 +455,30 @@ def test_f4_c1_promotion_records_recertification_and_post_merge_ci() -> None:
     assert "SnapshotConflictError" in dossier
     assert "os.link" in dossier
     assert "F4.C1 `PROMOTED`" in panel
-    assert "docs/tasks/completed/F4.C1.md" in panel
-    assert "docs/promote-f4.c1" in panel
     assert "3905d02" in panel
     assert "31453662008" in panel
     assert "PR #41" in panel
-    assert "31454615745" in panel
-    assert "F4.5 não iniciada" in panel
+    assert "362407f4abd3aa98ae37278fb243d6eb73f11681" in panel
+    assert "31455148050" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "docs/tasks/active/F4.5.md" in panel
+    assert "checkpoint/f4.5-ready" in panel
+    assert "> **Gate:** `READY`" in f4_5_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f4_5_dossier
+    assert "714 passed, 2 skipped, 6 subtests passed" in f4_5_dossier
+    assert "bfb70fc216900e610fd80ffe1fd2da89382ce1b0" in f4_5_dossier
+    assert "typecheck`, `lint`, `unit_test`, `build` e `security_scan`" in f4_5_dossier
+    assert "GateRunner" in f4_5_dossier
+    assert "F4.6" in f4_5_dossier
     assert "PR #40 foi incorporado pelo merge `3905d02`" in readme
     assert "31453116947" in readme
     assert "31453662008" in readme
+    assert "merge `362407f`" in readme
+    assert "31455148050" in readme
     assert "completed/F4.C1.md" in task_index
     assert "PR #40 / merge `3905d02` / pós-merge `31453662008`" in task_index
-    assert "administrativo #41 aberto" in task_index
+    assert "PR #41 foi incorporada pelo merge" in task_index
+    assert "31455148050" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
@@ -512,10 +523,8 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     realignment = _read(PHASE3_REALIGNMENT)
     order_decision = _read(PHASE3_ORDER_DECISION)
 
-    assert "DEC-012" in panel
     assert "DEC-012" in plan
     assert "DEC-012" in task_index
-    assert "DEC-013" in panel
     assert "DEC-013" in plan
     assert "DEC-013" in task_index
     assert "DEC-014" in panel
@@ -529,7 +538,7 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "não habilita efeito algum" in order_decision
     assert "PAUSA HUMANA OBRIGATÓRIA" in realignment
     assert "autorização explícita nova" in realignment
-    assert "docs/tasks/completed/F4.4.md" in panel
+    assert "completed/F4.4.md" in task_index
     assert "F4.1" in panel
     assert "F3.7 permanece depois" in panel
     assert "Não restou achado blocker/high" in realignment

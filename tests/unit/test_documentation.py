@@ -98,7 +98,7 @@ def test_current_docs_recognize_f4_2_indexing_without_claiming_f4_3_or_mcp() -> 
     assert ".harness/state/structural-index/snapshots/<sha>.json" in user_guide
     assert "SHA/schema/status/digest validados" in lifecycle
     assert "consulta ausente/inválida continua falhando" in walkthrough_audit
-    assert "a F4.3 calcula seis dimensões" in readme
+    assert "F4.3/F4.4 produzem contexto e plano persistidos" in readme
     assert "backend MCP ainda não" in lifecycle
 
 
@@ -157,25 +157,22 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31447628152" in readme
     assert "POST_PROMOTION_BLOCKED" in readme
     assert "`harness verify`" in readme
-    assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
+    assert "typecheck/lint/unit_test/build/security_scan" in readme
+    assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "`docs/promote-f4.c1`" in panel
     assert "F4.C1 `PROMOTED`" in panel
     assert "PR #40" in panel
-    assert "65c54338b5753d31c0b0ed15ab6cf9ba1486f493" in panel
-    assert "31453116947" in panel
-    assert "3905d02d575fc177d917f605b7e1a9b6a658c818" in panel
+    assert "3905d02" in panel
     assert "31453662008" in panel
     assert "PR #41" in panel
-    assert "39f7366" in panel
-    assert "31454615745" in panel
+    assert "362407f4abd3aa98ae37278fb243d6eb73f11681" in panel
+    assert "31455148050" in panel
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/completed/F4.4.md" in panel
-    assert "docs/tasks/completed/F4.C1.md" in panel
-    assert "nenhuma tarefa ativa de implementação" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
-    assert "702 passed, 2 skipped, 6 subtests passed" in panel
+    assert "docs/tasks/active/F4.5.md" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "checkpoint/f4.5-ready" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" not in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

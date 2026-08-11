@@ -85,9 +85,9 @@ Limitações importantes:
 - os quatro workflows F4.3 exigem envelope exato `context_request + graph_input`; a decisão usa a
   policy resolvida do artefato, o snapshot do commit e os manifestos de conhecimento, com até duas
   retomadas além da tentativa inicial;
-- a implementação local F4.4 valida rota/egress, relê evidência por digest, exige plano tipado
+- a F4.4 promovida valida rota/egress, relê evidência por digest, exige plano tipado
   limitado às policies compiladas e persiste payload/projeção/eventos antes de entregar `graph_input`;
-  ela está consolidada no commit local, mas ainda não foi publicada ou promovida;
+- a implementação local F4.5 normaliza os IDs e bloqueia suítes vazias/desconhecidas/duplicadas;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
 - promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
@@ -99,8 +99,9 @@ Limitações importantes:
 O `VerificationEngine` possui runners que executam processos reais pelo terminal tipado, com `argv`,
 cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. A F4 deverá ligar gates
 obrigatórios ao planejamento/runtime, bloquear ausência de gate e cobrir a matriz configurada.
-Até F4.5–F4.8, `0/0` e gate desconhecido ainda podem ser aceitos e a CLI pode encerrar com código zero
-após reprovação. A DEC-015 atribui a preparação ao lifecycle e o guard de conclusão à verificação
+F4.5 remove o falso sucesso `0/0`: gate ausente, desconhecido, duplicado ou sem comando bloqueia antes
+do terminal. A CLI ainda pode encerrar com código zero após uma reprovação realmente executada, e
+F4.6–F4.8 ainda precisam resolver comandos, persistir/guardar conclusão e reparar. A DEC-015 atribui a preparação ao lifecycle e o guard de conclusão à verificação
 persistida; chamar runners manualmente depois de `COMPLETED` não satisfaz a fase.
 
 ## Fluxo de auditoria e rollback
