@@ -17,7 +17,7 @@ required_gates:
     executor: deterministic
     command: "python -m ruff check ."
     blocking: true
-  - id: tests
+  - id: unit_test
     executor: deterministic
     command: "pytest --maxfail=1"
     blocking: true

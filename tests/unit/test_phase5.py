@@ -6,7 +6,11 @@ from pathlib import Path
 import pytest
 
 from ai_engineering_harness.compiler import GraphCompiler, GraphValidationError
-from ai_engineering_harness.contracts import CompiledGraphArtifact
+from ai_engineering_harness.contracts import (
+    CANONICAL_VERIFICATION_GATE_IDS,
+    CompiledGraphArtifact,
+)
+from ai_engineering_harness.verification import VerificationConfigurationError
 from ai_engineering_harness.verification.engine import VerificationEngine
 from ai_engineering_harness.verification.evaluator import VerificationEvaluator
 from ai_engineering_harness.versioning import ARTIFACT_SCHEMA_VERSION, PACKAGE_VERSION
@@ -82,6 +86,14 @@ contracts: []
     assert "retry_policy" in str(exc_info.value)
 
 def test_verification_evaluator_polyglot():
+    assert VerificationEvaluator.canonical_gate_ids() == CANONICAL_VERIFICATION_GATE_IDS
+    assert CANONICAL_VERIFICATION_GATE_IDS == (
+        "typecheck",
+        "lint",
+        "unit_test",
+        "build",
+        "security_scan",
+    )
     assert VerificationEvaluator.get_argv("python", "unit_test") == ("pytest",)
     assert VerificationEvaluator.get_argv("ts", "lint") == ("eslint", ".")
     assert VerificationEvaluator.get_argv("golang", "typecheck") == ("go", "vet", "./...")
@@ -94,6 +106,39 @@ def test_verification_evaluator_polyglot():
 
     go_cmd = VerificationEvaluator.get_command("go", "typecheck")
     assert go_cmd == "go vet ./..."
+
+
+@pytest.mark.parametrize(
+    "active_gates",
+    [
+        [],
+        ["unknown"],
+        ["tests"],
+        ["lint", "lint"],
+        ["security_scan"],
+    ],
+)
+def test_verification_runner_rejects_unexecutable_suite_before_effects(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    active_gates: list[str],
+) -> None:
+    engine = VerificationEngine(language="python", working_dir=tmp_path)
+
+    def unexpected_adapter(_: str):
+        raise AssertionError("configuration errors must fail before terminal effects")
+
+    monkeypatch.setattr(engine.runner, "_adapter_for", unexpected_adapter)
+
+    with pytest.raises(VerificationConfigurationError):
+        engine.verify(active_gates=active_gates)
+
+
+def test_verification_runner_rejects_language_without_gate_mapping(tmp_path: Path) -> None:
+    engine = VerificationEngine(language="unknown", working_dir=tmp_path)
+
+    with pytest.raises(VerificationConfigurationError, match="no configured command"):
+        engine.verify(active_gates=["typecheck"])
 
 def test_verification_engine_run(tmp_path: Path):
     engine = VerificationEngine(language="python", working_dir=tmp_path)

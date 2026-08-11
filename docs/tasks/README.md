@@ -20,11 +20,14 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não existe dossiê de implementação ativo. A corretiva [`completed/F4.C1.md`](completed/F4.C1.md)
-foi incorporada pelo PR #40 no merge `3905d02`, com 11/11 checks no head final pelo run
-`31453116947` e 11/11 na CI pós-merge `31453662008`. A reconciliação administrativa está aberta no
-PR #41 a partir do head inicial `39f7366`; o run `31454615745` permanece em andamento. F4.5 e F3.7 não foram iniciadas e continuam
-bloqueadas até essa reconciliação ser incorporada e receber CI pós-merge verde em `main`.
+A [F4.5](active/F4.5.md) está `PR_OPEN / CHECKS_PENDING` na branch publicada
+`task/f4.5-normalize-gates`, criada do baseline promovido `362407f`; o PR #42 foi aberto no head
+inicial `a77b4d9` e iniciou o run `31457756495`. Este registro produz um head posterior que ainda
+precisa de CI integral. A corretiva
+[`completed/F4.C1.md`](completed/F4.C1.md) foi incorporada
+pelo PR #40 no merge `3905d02`; sua reconciliação administrativa PR #41 foi incorporada pelo merge
+`362407f`, e a CI pós-merge `31455148050` concluiu 11/11 checks verdes no SHA exato. F4.6+ e F3.7 não
+foram iniciadas; merge, tag e exclusão de refs não estão autorizados.
 
 ## Ledger concluído
 
@@ -64,7 +67,7 @@ bloqueadas até essa reconciliação ser incorporada e receber CI pós-merge ver
 | F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |
 | F4 | F4.3 | [Context sufficiency baseada em evidência](completed/F4.3.md) | PR #36 / merge `fa31ef8` / pós-merge `31419214233`; administrativo #37 / merge `5c8408d` / pós-merge `31433785637` |
 | F4 | F4.4 | [Plano tipado e específico](completed/F4.4.md) | PR #38 / merge `93ce4ce` / pós-merge `31445624269`; administrativo #39 / merge `94641d2` / pós-merge `31447628152` |
-| F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 aberto |
+| F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 / merge `362407f` / pós-merge `31455148050` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

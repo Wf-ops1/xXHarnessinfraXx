@@ -50,7 +50,7 @@ def _valid_content() -> dict[str, object]:
                 "mitigation": "Run the compiled verification gates",
             }
         ],
-        "applicable_gates": ["typecheck", "lint", "tests", "build"],
+        "applicable_gates": ["typecheck", "lint", "unit_test", "build"],
         "rollback_strategy": {
             "triggers": ["A required gate fails"],
             "actions": ["Revert the target change"],
