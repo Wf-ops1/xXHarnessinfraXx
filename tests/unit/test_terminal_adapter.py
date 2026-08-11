@@ -19,6 +19,7 @@ from ai_engineering_harness.tools.adapters import (
     ExecutableNotAllowedError,
     LegacyShellCommandError,
     TerminalAdapter,
+    TerminalConfigurationError,
 )
 
 
@@ -103,6 +104,70 @@ def test_real_argv_execution_never_interprets_shell_metacharacters(
     assert result.cwd_relative == "."
     assert observed_shell == [False]
     assert not marker.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX venv launchers are symlinks")
+def test_authorized_symlink_launcher_is_preserved_at_spawn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launcher = tmp_path / "venv" / "bin" / "python"
+    launcher.parent.mkdir(parents=True)
+    launcher.symlink_to(Path(sys.executable).resolve(strict=True))
+    environment = _controlled_environment()
+    adapter = TerminalAdapter(
+        path_guard=PathGuard(tmp_path),
+        executables={"python": launcher},
+        environment=environment,
+    )
+    original_popen = subprocess.Popen
+    observed_argv0: list[Path] = []
+
+    def observing_popen(*args: object, **kwargs: object) -> subprocess.Popen[bytes]:
+        argv = args[0]
+        assert isinstance(argv, list)
+        observed_argv0.append(Path(argv[0]))
+        return original_popen(*args, **kwargs)  # type: ignore[call-overload,return-value]
+
+    monkeypatch.setattr(subprocess, "Popen", observing_popen)
+    result = adapter.execute(
+        CommandRequest(
+            argv=("python", "-c", "print('launcher-preserved')"),
+            cwd=".",
+            env_allowlist=_base_environment_names(environment),
+        )
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "launcher-preserved"
+    assert observed_argv0 == [launcher.absolute()]
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX symlink retargeting regression")
+def test_authorized_symlink_retarget_fails_before_spawn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launcher = tmp_path / "venv" / "bin" / "python"
+    launcher.parent.mkdir(parents=True)
+    launcher.symlink_to(Path(sys.executable).resolve(strict=True))
+    adapter = TerminalAdapter(
+        path_guard=PathGuard(tmp_path),
+        executables={"python": launcher},
+        environment=_controlled_environment(),
+    )
+    alternate = tmp_path / "alternate-python"
+    alternate.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    alternate.chmod(0o700)
+    launcher.unlink()
+    launcher.symlink_to(alternate)
+
+    def unexpected_popen(*_args: object, **_kwargs: object) -> subprocess.Popen[bytes]:
+        raise AssertionError("retargeted launcher must fail before spawn")
+
+    monkeypatch.setattr(subprocess, "Popen", unexpected_popen)
+    with pytest.raises(TerminalConfigurationError, match="changed after policy creation"):
+        adapter.execute(CommandRequest(argv=("python", "-V"), cwd="."))
 
 
 def test_executable_and_environment_policy_fail_before_effect(tmp_path: Path) -> None:

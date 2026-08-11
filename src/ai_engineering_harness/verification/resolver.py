@@ -169,14 +169,34 @@ class VerificationCommandResolver:
 
     @staticmethod
     def _python_executable() -> Path:
-        if type(sys.executable) is not str or not sys.executable:
+        prefix = getattr(sys, "prefix", None)
+        base_prefix = getattr(sys, "base_prefix", None)
+        if (
+            type(prefix) is not str
+            or not prefix
+            or type(base_prefix) is not str
+            or not base_prefix
+        ):
             raise VerificationPrerequisiteError(
-                "current Python executable could not be resolved"
+                "current Python environment could not be resolved"
             )
+        if prefix != base_prefix:
+            relative_launcher = (
+                Path("Scripts") / "python.exe"
+                if os.name == "nt"
+                else Path("bin") / "python"
+            )
+            configured_executable: str | os.PathLike[str] = Path(prefix) / relative_launcher
+        else:
+            if type(sys.executable) is not str or not sys.executable:
+                raise VerificationPrerequisiteError(
+                    "current Python executable could not be resolved"
+                )
+            configured_executable = sys.executable
         try:
-            # Keep the venv launcher path. On POSIX it is normally a symlink; resolving
-            # it would execute the base interpreter without the venv's site-packages.
-            executable = Path(os.path.abspath(sys.executable))
+            # Keep the environment launcher path. On POSIX it is normally a symlink;
+            # resolving it would execute the base interpreter without site-packages.
+            executable = Path(os.path.abspath(configured_executable))
         except (OSError, TypeError, ValueError) as exc:
             raise VerificationPrerequisiteError(
                 "current Python executable could not be resolved"

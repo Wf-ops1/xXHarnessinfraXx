@@ -29,6 +29,13 @@ _SHA = "a" * 40
 _TIMESTAMP = "2026-08-11T05:00:00+00:00"
 
 
+def _expected_python_launcher() -> Path:
+    if sys.prefix != sys.base_prefix:
+        relative = Path("Scripts") / "python.exe" if os.name == "nt" else Path("bin") / "python"
+        return Path(os.path.abspath(Path(sys.prefix) / relative))
+    return Path(os.path.abspath(sys.executable))
+
+
 def _provisioned(root: Path) -> ProvisionedWorktree:
     canonical = root.resolve(strict=True)
     reference = WorktreeReference(
@@ -132,7 +139,7 @@ def test_engine_resolves_python_tools_from_pyproject_before_effects(tmp_path: Pa
     )
     assert all(command.cwd == "." for command in suite.commands)
     assert all(
-        command.executable_path == Path(os.path.abspath(sys.executable))
+        command.executable_path == _expected_python_launcher()
         for command in suite.commands
     )
     assert all(command.source.startswith("pyproject.toml:") for command in suite.commands)
@@ -141,7 +148,7 @@ def test_engine_resolves_python_tools_from_pyproject_before_effects(tmp_path: Pa
 def test_python_executable_does_not_dereference_launcher(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    expected = Path(os.path.abspath(sys.executable))
+    expected = _expected_python_launcher()
 
     def unexpected_resolve(*_args: object, **_kwargs: object) -> Path:
         raise AssertionError("the Python launcher path must not be dereferenced")
@@ -157,14 +164,48 @@ def test_python_executable_preserves_real_posix_symlink(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     base_executable = Path(sys.executable).resolve(strict=True)
-    launcher = tmp_path / "venv-python"
+    venv_root = tmp_path / "venv"
+    launcher = venv_root / "bin" / "python"
+    launcher.parent.mkdir(parents=True)
     launcher.symlink_to(base_executable)
-    monkeypatch.setattr(sys, "executable", str(launcher))
+    monkeypatch.setattr(sys, "prefix", str(venv_root))
+    monkeypatch.setattr(sys, "base_prefix", str(tmp_path / "base"))
+    monkeypatch.setattr(sys, "executable", str(base_executable))
 
     resolved = VerificationCommandResolver._python_executable()
 
     assert resolved == launcher.absolute()
     assert resolved != base_executable
+
+
+def test_python_executable_uses_active_environment_prefix_over_base_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    venv_root = tmp_path / "venv"
+    relative = Path("Scripts") / "python.exe" if os.name == "nt" else Path("bin") / "python"
+    launcher = venv_root / relative
+    launcher.parent.mkdir(parents=True)
+    launcher.write_bytes(b"test launcher")
+    launcher.chmod(0o700)
+    base_executable = Path(sys.executable).resolve(strict=True)
+    monkeypatch.setattr(sys, "prefix", str(venv_root))
+    monkeypatch.setattr(sys, "base_prefix", str(tmp_path / "base"))
+    monkeypatch.setattr(sys, "executable", str(base_executable))
+
+    assert VerificationCommandResolver._python_executable() == launcher.absolute()
+
+
+def test_missing_active_environment_launcher_never_falls_back_to_base_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "prefix", str(tmp_path / "missing-venv"))
+    monkeypatch.setattr(sys, "base_prefix", str(tmp_path / "base"))
+    monkeypatch.setattr(sys, "executable", str(Path(sys.executable).resolve(strict=True)))
+
+    with pytest.raises(VerificationPrerequisiteError, match="not an executable file"):
+        VerificationCommandResolver._python_executable()
 
 
 @pytest.mark.parametrize(
