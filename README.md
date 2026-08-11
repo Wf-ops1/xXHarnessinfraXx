@@ -106,7 +106,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   regressão de `751 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke isolado. O PR
   corretivo #47 encerrou no head `b79e14d2` com 11/11 no run `31533353223`, foi incorporado no merge
   `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A F4.7 está promovida e sua reconciliação
-  administrativa está em curso; F4.8 e F3.7 não foram iniciadas.
+  administrativa foi publicada no PR #48; F4.8 e F3.7 não foram iniciadas.
 
 ## Dívidas técnicas críticas
 

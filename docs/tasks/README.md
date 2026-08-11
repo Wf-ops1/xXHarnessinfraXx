@@ -26,8 +26,9 @@ reconciliação administrativa. O [PR #46](https://github.com/Wf-ops1/Harnessinf
 O R1 test-only em `2841346a` preservou efeito/journal únicos e `VERIFYING`; o
 [PR corretivo #47](https://github.com/Wf-ops1/Harnessinfra/pull/47) passou 11/11 no head final
 `b79e14d2` pelo run `31533353223`, foi incorporado em `4aa701a` e recebeu 11/11 na CI pós-merge
-`31534918672`. A branch administrativa `docs/promote-f4.7` aguarda validação/publicação. F4.8/F3.7
-não foram iniciadas e permanecem bloqueadas até o fechamento administrativo.
+`31534918672`. O [PR administrativo #48](https://github.com/Wf-ops1/Harnessinfra/pull/48) foi aberto
+no head inicial `e198e5b7`; seu head documental final aguarda CI. F4.8/F3.7 não foram iniciadas e
+permanecem bloqueadas até o fechamento administrativo.
 
 ## Ledger concluído
 
@@ -70,7 +71,7 @@ não foram iniciadas e permanecem bloqueadas até o fechamento administrativo.
 | F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 / merge `362407f` / pós-merge `31455148050` |
 | F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 / merge `46b7070` / pós-merge `31459891130` |
 | F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
-| F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo pendente |
+| F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 aberto |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

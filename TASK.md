@@ -18,14 +18,15 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.7 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | nenhuma tarefa ativa de implementação; reconciliação administrativa da F4.7 |
-| **Gate** | F4.7 `PROMOTED / ADMIN_RECONCILIATION_ACTIVE` |
+| **Gate** | F4.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T14:40:10-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.7`, criada de `main == origin/main == 4aa701a`; sem upstream |
+| **Branch** | `docs/promote-f4.7`, criada de `main == origin/main == 4aa701a`; upstream publicado |
 | **Main atual** | `main == origin/main == 4aa701a9394e5bdcb9c14dc5a9a715638c183258` |
 | **CI pós-merge** | run `31534918672`, evento `push`: 11/11 success no SHA exato de `main` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **PRs F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46) incorporado em `f7aa43a`; corretivo [#47](https://github.com/Wf-ops1/Harnessinfra/pull/47) incorporado em `4aa701a` |
+| **PR administrativo** | [#48](https://github.com/Wf-ops1/Harnessinfra/pull/48), aberto no head inicial `e198e5b7`; checks pendentes |
 
 ## 3. Última promoção comprovada
 
@@ -66,27 +67,27 @@ antes do PR administrativo e de sua CI pós-merge verde.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico da F4.7. A reconciliação administrativa precisa passar localmente, ser
-publicada em PR próprio e concluir com CI pós-merge verde. Merge administrativo, tag remota, exclusão
-de refs e início de F4.8/F3.7 exigem autorização nominal nova.
+Não há bloqueio técnico da F4.7. O PR administrativo #48 está aberto; seu head documental final ainda
+precisa passar em todos os checks. Merge administrativo, tag remota, exclusão de refs e início de
+F4.8/F3.7 exigem autorização nominal nova.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR A RECONCILIAÇÃO F4.7, CRIAR O COMMIT LOCAL, PUBLICAR `docs/promote-f4.7` E ABRIR O PR
-ADMINISTRATIVO. OBSERVAR O HEAD FINAL; NÃO MESCLAR SEM AUTORIZAÇÃO NOMINAL NOVA.
+PUBLICAR O REGISTRO DO PR #48 E OBSERVAR TODOS OS CHECKS DO HEAD FINAL.
+NÃO MESCLAR SEM AUTORIZAÇÃO NOMINAL NOVA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo e `docs/tasks/completed/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch `docs/promote-f4.7`, main `4aa701a`, PRs #46/#47, runs
+3. Confirme branch `docs/promote-f4.7`, main `4aa701a`, PRs #46/#47/#48, runs
    `31528005230`/`31528955883`/`31533353223`/`31534918672` e runtime 3.12.13.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T18:14:58-03:00 | Fonte: PRs #46/#47 + CI pós-merge 31534918672 + DEC-014*
+*Atualizado em: 2026-08-11T18:21:21-03:00 | Fonte: PRs #46/#47/#48 + CI pós-merge 31534918672 + DEC-014*
