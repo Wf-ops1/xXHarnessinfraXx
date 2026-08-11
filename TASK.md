@@ -18,7 +18,7 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.5 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.6 — detectar stack e resolver comandos efetivos no worktree |
-| **Gate** | `REPAIR_ACTIVE / PROMOTION_BLOCKED`; checkpoints locais `checkpoint/f4.6-ready`, `checkpoint/f4.6-r1-ready`, `checkpoint/f4.6-complete` e `checkpoint/f4.6-r2-ready` |
+| **Gate** | `LOCAL_READY / PR_UPDATE_PENDING`; R2 verde localmente; checkpoints `checkpoint/f4.6-ready`, `checkpoint/f4.6-r1-ready`, `checkpoint/f4.6-complete`, `checkpoint/f4.6-r2-ready` e `checkpoint/f4.6-r2-complete` |
 | **Executor ativo** | `Codex`, único escritor; autorização nominal em `2026-08-11T02:00:32-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f4.6-detect-stack-commands`, local, sem upstream |
@@ -61,18 +61,19 @@ F4.7. Essas fronteiras não podem ser antecipadas.
   temporário do smoke, sem instalação global ou mudança no projeto;
 - escopo proibido permaneceu byte-idêntico e o workspace terminou limpo.
 
-O reparo R2 está limitado a preservar o launcher do venv e cobrir a regressão POSIX. Merge, tag
-remota, exclusão de ref, force-push, bypass, F4.7, F4.8 e F3.7 não estão autorizados. A evidência
-negativa bloqueia promoção até correção e recertificação integral.
+O reparo R2 `f26c124` preserva o launcher do venv e cobre a regressão POSIX. A recertificação local
+fechou em `736 passed, 3 skipped, 6 subtests passed`, quality e package/smoke verdes. Merge, tag
+remota, exclusão de ref, force-push, bypass, F4.7, F4.8 e F3.7 não estão autorizados; a promoção ainda
+depende da nova CI completa no PR #44.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL checkpoint/f4.6-r2-ready; REPARAR SOMENTE A PRESERVAÇÃO DO LAUNCHER
-sys.executable EM POSIX; RECERTIFICAR O ACEITE INTEGRAL E ATUALIZAR O PR #44. NÃO PUBLICAR TAG,
-MESCLAR PR, EXCLUIR REF, ALTERAR PROTEÇÃO OU INICIAR F4.7/F4.8/F3.7.
+CRIAR O CHECKPOINT LOCAL checkpoint/f4.6-r2-complete; PUBLICAR OS COMMITS R2 NA BRANCH JÁ AUTORIZADA
+E MONITORAR A NOVA CI DO PR #44. NÃO PUBLICAR TAG, MESCLAR PR, EXCLUIR REF, ALTERAR PROTEÇÃO OU
+INICIAR F4.7/F4.8/F3.7.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -84,4 +85,4 @@ MESCLAR PR, EXCLUIR REF, ALTERAR PROTEÇÃO OU INICIAR F4.7/F4.8/F3.7.
 
 ---
 
-*Atualizado em: 2026-08-11T02:51:00-03:00 | Fonte: PR #44/run `31463009231` + gate R2 F4.6*
+*Atualizado em: 2026-08-11T03:05:00-03:00 | Fonte: recertificação local R2 + PR #44*

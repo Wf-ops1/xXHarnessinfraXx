@@ -109,7 +109,7 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- reparo R2 e promoção do PR #44 da F4.6, seguido de persistência/guarda/retry em F4.7–F4.8.
+- atualização/CI do reparo R2 no PR #44 da F4.6, seguida de persistência/guarda/retry em F4.7–F4.8.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

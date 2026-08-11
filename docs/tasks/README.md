@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F4.6](active/F4.6.md) está em `REPAIR_ACTIVE / PROMOTION_BLOCKED` no
-[PR #44](https://github.com/Wf-ops1/Harnessinfra/pull/44). A CI `31463009231` mostrou que
-`Path.resolve()` dereferencia `.venv/bin/python` no Ubuntu e inicia o Python base sem `pytest`. O R2
-preserva o launcher do venv, recertifica toda a tarefa e mantém F4.7 dona da persistência/guarda de
-conclusão e F4.8 do repair loop. Merge e tags remotas não estão autorizados.
+A [F4.6](active/F4.6.md) está em `LOCAL_READY / PR_UPDATE_PENDING` no
+[PR #44](https://github.com/Wf-ops1/Harnessinfra/pull/44). Após a CI `31463009231` provar que
+`Path.resolve()` perdia o venv no Ubuntu, o R2 `f26c124` preservou o launcher e passou em
+`736 passed, 3 skipped, 6 subtests passed`, quality e package/smoke locais. O novo head ainda precisa
+ser publicado e recertificado pela matriz remota. F4.7/F4.8 permanecem fora do escopo; merge e tags
+remotas não estão autorizados.
 
 ## Ledger concluído
 
