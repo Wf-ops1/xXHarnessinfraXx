@@ -152,6 +152,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "merge `93ce4ce`" in readme
     assert "31445624269" in readme
     assert "`docs/promote-f4.4`" in readme
+    assert "PR #39" in readme
+    assert "checks estão pendentes" in readme
     assert "`harness verify`" in readme
     assert "Suíte vazia/gate desconhecido podem passar `0/0`" in readme
 
@@ -162,6 +164,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31442203348" in panel
     assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in panel
     assert "31445624269" in panel
+    assert "PR #39" in panel
+    assert "checks pendentes" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.4.md" in panel
     assert "Nenhuma tarefa ativa; F4.5 permanece planejada e não iniciada" in panel

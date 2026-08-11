@@ -419,13 +419,18 @@ def test_f4_4_promotion_records_implementation_and_post_merge_ci() -> None:
     assert "93ce4ce9f4f0042c58d64103528b6c359a475bd9" in dossier
     assert "31445624269" in dossier
     assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
-    assert "AGUARDAR AUTORIZAÇÃO NOMINAL EXPLÍCITA PARA PUBLICAR docs/promote-f4.4" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/39" in dossier
+    assert "63562bdd724213dbfbf47442e9c2f7e3354d662b" in dossier
+    assert "31447000037" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "AGUARDAR TODOS OS CHECKS DO HEAD FINAL DO PR #39" in panel
     assert "F4.4 `PROMOTED`" in panel
     assert "Nenhuma tarefa ativa" in panel
     assert "PR #38 encerrou no head `fbdb6ee`" in readme
     assert "docs/promote-f4.4" in readme
     assert "completed/F4.4.md" in task_index
     assert "PR #38 / merge `93ce4ce` / pós-merge `31445624269`" in task_index
+    assert "administrativo #39 aberto / checks pendentes" in task_index
     assert "administrativo #37 / merge `5c8408d` / pós-merge `31433785637`" in task_index
 
 
