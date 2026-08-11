@@ -395,8 +395,12 @@ class GraphExecutor:
         artifact: CompiledGraphArtifact,
         execution_id: str,
         initial_input: dict[str, object],
+        *,
+        defer_completion: bool = False,
     ) -> GraphExecutionResult | GraphExecutionPausedResult:
         """Traverse from the persisted current node under one execution lock."""
+        if type(defer_completion) is not bool:
+            raise TypeError("defer_completion must be a bool")
         detached_artifact = self._detach_artifact(artifact, execution_id=execution_id)
         try:
             current_payload = _copy_json_object(initial_input, path="initial_input")
@@ -418,6 +422,7 @@ class GraphExecutor:
                 current_payload,
                 lock,
                 resume_mode=False,
+                defer_completion=defer_completion,
             )
         finally:
             self._storage.release_execution_lock(lock)
@@ -426,8 +431,12 @@ class GraphExecutor:
         self,
         artifact: CompiledGraphArtifact,
         execution_id: str,
+        *,
+        defer_completion: bool = False,
     ) -> GraphExecutionResult | GraphExecutionPausedResult:
         """Recover durable node progress and continue without caller payload."""
+        if type(defer_completion) is not bool:
+            raise TypeError("defer_completion must be a bool")
         if not self._resume_enabled:
             raise InterruptedNodeExecutionError(
                 "graph executor was not configured for resume",
@@ -446,6 +455,7 @@ class GraphExecutor:
                 {},
                 lock,
                 resume_mode=True,
+                defer_completion=defer_completion,
             )
         finally:
             self._storage.release_execution_lock(lock)
@@ -458,6 +468,7 @@ class GraphExecutor:
         lock: ExecutionLock,
         *,
         resume_mode: bool,
+        defer_completion: bool,
     ) -> GraphExecutionResult | GraphExecutionPausedResult:
         nodes = {node.id: node for node in artifact.graph.nodes}
         terminals = {terminal.id: terminal for terminal in artifact.graph.terminal_states}
@@ -504,7 +515,10 @@ class GraphExecutor:
         initial_id = record.current_node_id
         initial_terminal = terminals.get(initial_id)
         if initial_terminal is not None:
-            expected_state = self._terminal_execution_state(initial_terminal)
+            expected_state = self._terminal_execution_state(
+                initial_terminal,
+                defer_completion=defer_completion,
+            )
             pending_terminal_transition = (
                 resume_mode and record.current_state == ExecutionState.EXECUTING
             )
@@ -522,6 +536,7 @@ class GraphExecutor:
                 None,
                 lock,
                 state_machine=state_machine if pending_terminal_transition else None,
+                defer_completion=defer_completion,
             )
 
         initial_node = nodes.get(initial_id)
@@ -581,6 +596,7 @@ class GraphExecutor:
                     last_failure,
                     lock,
                     state_machine=state_machine,
+                    defer_completion=defer_completion,
                 )
 
             node = nodes.get(current_id)
@@ -818,6 +834,7 @@ class GraphExecutor:
         lock: ExecutionLock,
         *,
         state_machine: EventSourcedStateMachine | None,
+        defer_completion: bool,
     ) -> GraphExecutionResult:
         executor = self._executors.select(terminal)
         executor.ensure_available()
@@ -836,16 +853,19 @@ class GraphExecutor:
             failure = last_failure or terminal_result.failure
         final_record = record
         if state_machine is not None:
-            final_state = self._terminal_execution_state(terminal)
+            final_state = self._terminal_execution_state(
+                terminal,
+                defer_completion=defer_completion,
+            )
             final_record = state_machine.transition_to(
                 final_state,
                 node_id=terminal.id,
                 attempt=0,
-                reason=(
-                    "graph_completed"
-                    if final_state == ExecutionState.COMPLETED
-                    else "graph_failed"
-                ),
+                reason={
+                    ExecutionState.COMPLETED: "graph_completed",
+                    ExecutionState.VERIFYING: "graph_ready_for_verification",
+                    ExecutionState.FAILED: "graph_failed",
+                }[final_state],
                 lock=lock,
             )
         return GraphExecutionResult(
@@ -862,9 +882,15 @@ class GraphExecutor:
     @staticmethod
     def _terminal_execution_state(
         terminal: TerminalStateSpec,
+        *,
+        defer_completion: bool,
     ) -> ExecutionState:
         if terminal.outcome == "success":
-            return ExecutionState.COMPLETED
+            return (
+                ExecutionState.VERIFYING
+                if defer_completion
+                else ExecutionState.COMPLETED
+            )
         return ExecutionState.FAILED
 
     @staticmethod

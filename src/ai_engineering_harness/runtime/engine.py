@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ai_engineering_harness.contracts.execution import ExecutionRecord
+from ai_engineering_harness.verification import VerificationSuiteResult
 
 from .execution_lifecycle import (
     ExecutionInspection,
@@ -104,6 +105,11 @@ class RuntimeEngine:
     def resume_execution(self) -> GraphExecutionResult | GraphExecutionPausedResult:
         """Resume the configured execution from its immutable bundle."""
         return self._require_lifecycle().resume(self.execution_id)
+
+    def verify_execution(self) -> VerificationSuiteResult:
+        """Run the policy-derived suite through the canonical lifecycle guard."""
+
+        return self._require_lifecycle().verify(self.execution_id)
 
     def approve_execution(self, *, approver: str) -> ExecutionRecord:
         """Approve the configured canonical execution subject."""

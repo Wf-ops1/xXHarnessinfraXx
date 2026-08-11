@@ -1,5 +1,6 @@
 """Suíte de Testes E2E do Ciclo de Vida do Harness (TASK-8.3)."""
 
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +21,7 @@ from ai_engineering_harness.runtime import (
     NodeExecutorRegistry,
     RuntimeEngine,
 )
+from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 
 @dataclass
@@ -52,7 +54,8 @@ terminal_states:
     outcome: success
   - id: failed
     outcome: failure
-policies: []
+policies:
+  - policies/verification_policy.yaml
 contracts: []
 """,
         encoding="utf-8",
@@ -62,18 +65,49 @@ contracts: []
 
 def test_full_lifecycle_e2e_python(tmp_path: Path):
     # 1. Setup projeto fixture
-    (tmp_path / "pyproject.toml").touch()
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.pytest.ini_options]\naddopts = '-p no:cacheprovider'\n",
+        encoding="utf-8",
+    )
     (tmp_path / "application.py").write_text(
         "def run_application():\n    return 'ready'\n",
         encoding="utf-8",
     )
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_application.py").write_text(
+        "from application import run_application\n\n\n"
+        "def test_application():\n    assert run_application() == 'ready'\n",
+        encoding="utf-8",
+    )
+    (tmp_path / ".harness" / "policies").mkdir(parents=True)
+    (tmp_path / ".harness" / "policies" / "verification_policy.yaml").write_text(
+        """policy_id: e2e-verification-v1
+policy_schema_version: "1.0"
+definition_version: "1.0.0"
+applies_to:
+  - new-feature
+required_gates:
+  - id: unit_test
+    executor: deterministic
+    command: "python -m pytest"
+    blocking: true
+termination_rule: ALL_REQUIRED_GATES_PASSED
+on_failure: route_to_failure_classifier
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / ".gitignore").write_text(
+        ".harness/state/\n.harness/artifacts/\n__pycache__/\n*.pyc\n",
+        encoding="utf-8",
+    )
+    yaml_spec = _write_runtime_graph(tmp_path, "new-feature")
     subprocess.run(["git", "init", "--quiet"], cwd=tmp_path, check=True, shell=False)
     subprocess.run(["git", "config", "user.name", "Lifecycle Test"], cwd=tmp_path, check=True, shell=False)
     subprocess.run(
         ["git", "config", "user.email", "lifecycle@example.invalid"], cwd=tmp_path, check=True, shell=False
     )
     subprocess.run(
-        ["git", "add", "pyproject.toml", "application.py"],
+        ["git", "add", "."],
         cwd=tmp_path,
         check=True,
         shell=False,
@@ -88,6 +122,15 @@ def test_full_lifecycle_e2e_python(tmp_path: Path):
         text=True,
         encoding="utf-8",
     ).stdout.strip().lower()
+    original_branch = subprocess.run(
+        ["git", "symbolic-ref", "--quiet", "--short", "HEAD"],
+        cwd=tmp_path,
+        check=True,
+        shell=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
 
     # 2. Detector
     detector = StackDetector(project_root=tmp_path)
@@ -100,7 +143,6 @@ def test_full_lifecycle_e2e_python(tmp_path: Path):
     assert all(r.is_healthy for r in doctor_results)
 
     # 4. Compile Graph
-    yaml_spec = _write_runtime_graph(tmp_path, "new-feature")
     compiler = GraphCompiler(project_root=tmp_path)
     compiled_maf = compiler.compile_graph(yaml_spec, "new-feature")
     assert compiled_maf.is_file()
@@ -114,18 +156,31 @@ def test_full_lifecycle_e2e_python(tmp_path: Path):
     assert {(symbol["kind"], symbol["qualified_name"]) for symbol in ast_data["symbols"]} == {
         ("module", "application"),
         ("function", "application.run_application"),
+        ("module", "tests.test_application"),
+        ("import", "application.run_application"),
+        ("function", "tests.test_application.test_application"),
     }
 
     # 6. Run through the canonical F2.5 lifecycle and immutable resume bundle
     execution_id = "exec-e2e-100"
     storage = AtomicFileStateStorage(tmp_path)
+    manager = ExternalWorktreeManager(
+        tmp_path,
+        "e2e-project",
+        external_base_dir=tmp_path.parent / f"{tmp_path.name}-worktrees",
+    )
+    worktree = manager.create_worktree(
+        execution_id,
+        expected_base_commit_sha=commit_sha,
+    )
     lifecycle = ExecutionLifecycleService(
         tmp_path,
         storage,
         NodeExecutorRegistry(
             deterministic=DeterministicNodeExecutor(_LifecycleBackend()),
         ),
-        git_identity_provider=lambda: ("a" * 40, "test"),
+        git_identity_provider=lambda: (commit_sha, original_branch),
+        verification_worktree_provider=manager.load_worktree,
     )
     engine = RuntimeEngine(
         project_root=tmp_path,
@@ -133,24 +188,38 @@ def test_full_lifecycle_e2e_python(tmp_path: Path):
         allowed_providers=[],
         lifecycle_service=lifecycle,
     )
-    result = engine.start_execution(
-        compiled_maf,
-        initial_input={"intent": "Deliver new feature"},
-        configuration={"profile": "e2e"},
-    )
-    assert result.outcome == "success"
-    assert result.executed_node_ids == ("step1",)
-    final_record = storage.load_execution(execution_id)
-    assert final_record.current_node_id == "completed"
-    assert final_record.current_state == ExecutionState.COMPLETED
-    assert final_record.revision == 3
-    assert engine.status_execution().current_state == ExecutionState.COMPLETED
-    assert engine.inspect_execution().event_count == 4
-    assert storage.load_execution_bundle(execution_id).execution_id == execution_id
+    try:
+        result = engine.start_execution(
+            compiled_maf,
+            initial_input={"intent": "Deliver new feature"},
+            configuration={"profile": "e2e"},
+        )
+        assert result.outcome == "success"
+        assert result.executed_node_ids == ("step1",)
+        assert storage.load_execution(execution_id).current_state == ExecutionState.VERIFYING
+
+        verification = engine.verify_execution()
+
+        assert verification.all_passed is True
+        assert verification.verified_commit_sha == commit_sha
+        assert verification.gate_results[0].argv == ("python", "-m", "pytest")
+        final_record = storage.load_execution(execution_id)
+        assert final_record.current_node_id == "completed"
+        assert final_record.current_state == ExecutionState.COMPLETED
+        assert final_record.revision == 4
+        assert engine.status_execution().current_state == ExecutionState.COMPLETED
+        assert engine.inspect_execution().event_count == 8
+        assert storage.load_execution_bundle(execution_id).execution_id == execution_id
+    finally:
+        for cache in tuple(worktree.worktree_path.rglob("__pycache__")):
+            shutil.rmtree(cache)
+        manager.cleanup_worktree(execution_id)
 
     exec_dir = tmp_path / ".harness" / "state" / "executions" / execution_id
+    bundle_dir = tmp_path / ".harness" / "artifacts" / "executions" / execution_id
     assert (exec_dir / "execution.json").is_file()
     assert (exec_dir / "event-journal.jsonl").is_file()
+    assert len(tuple((bundle_dir / "payloads").glob("*.json"))) == 4
     assert not (exec_dir / "workflow-state.json").exists()
     assert not (exec_dir / "evidence.json").exists()
 

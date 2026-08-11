@@ -34,6 +34,7 @@ from ai_engineering_harness.runtime import (
     NodeExecutionResult,
     NodeExecutorRegistry,
     NodeExecutorUnavailableError,
+    VerificationLifecyclePrerequisiteError,
 )
 
 _BASE_TIME = datetime(2026, 8, 7, 12, 0, tzinfo=UTC)
@@ -182,13 +183,34 @@ def test_start_bundle_payload_status_inspect_and_public_views(tmp_path: Path) ->
 
     status = service.status("exec-start-public")
     inspection = service.inspect("exec-start-public")
-    assert status.current_state == ExecutionState.COMPLETED
+    assert status.current_state == ExecutionState.VERIFYING
     assert status.approval_status == ApprovalStatus.NOT_REQUIRED
     assert inspection.status == status
     assert inspection.event_count == len(storage.load_events("exec-start-public"))
     rendered = inspection.model_dump_json()
     assert "deliver" not in rendered
     assert "isolated" not in rendered
+
+
+def test_lifecycle_without_verification_policy_cannot_complete(tmp_path: Path) -> None:
+    artifact = _compiled_graph(tmp_path, workflow="missing-verification-policy")
+    service, storage, _ = _service(tmp_path)
+    service.start(
+        artifact,
+        execution_id="exec-missing-verification-policy",
+        initial_input={},
+        configuration={},
+    )
+
+    with pytest.raises(
+        VerificationLifecyclePrerequisiteError,
+        match="does not contain a verification policy",
+    ):
+        service.verify("exec-missing-verification-policy")
+
+    assert storage.load_execution(
+        "exec-missing-verification-policy"
+    ).current_state == ExecutionState.BLOCKED_PREREQUISITE
 
 
 def test_start_unavailable_backend_fails_before_any_bundle_or_record(tmp_path: Path) -> None:
@@ -293,7 +315,7 @@ def test_approval_pause_approve_resume_uses_immutable_snapshot(tmp_path: Path) -
     assert result.executed_node_ids == ("approval",)
     assert trace == []
     final = storage.load_execution("exec-approval-resume")
-    assert final.current_state == ExecutionState.COMPLETED
+    assert final.current_state == ExecutionState.VERIFYING
     events = storage.load_events("exec-approval-resume")
     assert [event.event_type for event in events].count("APPROVAL_REQUESTED") == 1
     assert [event.event_type for event in events].count("EXECUTION_APPROVED") == 1

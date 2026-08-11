@@ -13,6 +13,7 @@ from ai_engineering_harness import __version__
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.compiler import GraphCompiler, GraphCompilerError
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
+from ai_engineering_harness.contracts import ExecutionState
 from ai_engineering_harness.doctor.checker import DoctorChecker
 from ai_engineering_harness.doctor.report import DoctorReport
 from ai_engineering_harness.indexer import PythonAstIndexer, StructuralIndexError
@@ -28,21 +29,25 @@ from ai_engineering_harness.runtime import (
     StateMachineError,
 )
 from ai_engineering_harness.runtime.maf_adapter import ArtifactValidationError
-from ai_engineering_harness.verification import (
-    VerificationConfigurationError,
-    VerificationEngine,
-)
-from ai_engineering_harness.workspace import ExternalWorktreeManager, WorktreeError
+from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 console = Console()
 
 
-def _lifecycle_service(project_root: Path) -> ExecutionLifecycleService:
+def _lifecycle_service(
+    project_root: Path,
+    *,
+    project_id: str = "default-proj",
+) -> ExecutionLifecycleService:
     """Build the canonical lifecycle with deliberately unavailable real backends."""
     return ExecutionLifecycleService(
         project_root,
         AtomicFileStateStorage(project_root),
         NodeExecutorRegistry(),
+        verification_worktree_provider=ExternalWorktreeManager(
+            project_root,
+            project_id,
+        ).load_worktree,
     )
 
 
@@ -173,7 +178,8 @@ def run(workflow_name, approval_required, input_json):
         raise click.ClickException(str(exc)) from exc
 
     try:
-        result = _lifecycle_service(project_root).start(
+        service = _lifecycle_service(project_root)
+        result = service.start(
             compiled_file,
             initial_input=initial_input,
         )
@@ -191,6 +197,13 @@ def run(workflow_name, approval_required, input_json):
         console.print(
             f"[yellow]Execução {result.execution_id} pausada para aprovação "
             f"no node {result.node_id}.[/yellow]"
+        )
+        return
+    current_state = service.status(result.execution_id).current_state
+    if current_state == ExecutionState.VERIFYING:
+        console.print(
+            f"[yellow]Workflow {workflow_name} concluiu a travessia e aguarda verificação "
+            f"canônica. Execution ID: [bold cyan]{result.execution_id}[/bold cyan].[/yellow]"
         )
         return
     console.print(
@@ -309,28 +322,28 @@ def cancel(execution_id):
 @main.command(help="Executa gates configurados em um worktree validado.")
 @click.argument("execution_id")
 @click.option("--project-id", default="default-proj", show_default=True)
-@click.option(
-    "--gate",
-    "active_gates",
-    type=click.Choice(
-        ["typecheck", "lint", "unit_test", "build", "security_scan"],
-        case_sensitive=True,
-    ),
-    multiple=True,
-    default=("typecheck", "unit_test"),
-    show_default=True,
-)
-def verify(execution_id: str, project_id: str, active_gates: tuple[str, ...]) -> None:
+def verify(execution_id: str, project_id: str) -> None:
     try:
-        worktree = ExternalWorktreeManager(Path.cwd(), project_id).load_worktree(
-            execution_id
+        result = _lifecycle_service(
+            Path.cwd(),
+            project_id=project_id,
+        ).verify(execution_id)
+    except (
+        ArtifactValidationError,
+        ExecutionLifecycleError,
+        StateMachineError,
+        StateStorageError,
+    ) as exc:
+        _raise_lifecycle_click_error(exc)
+    if not result.all_passed:
+        raise click.ClickException(
+            "verificação bloqueou a conclusão: "
+            f"{result.passed_gates}/{result.total_gates} gates aprovados"
         )
-        engine = VerificationEngine(worktree)
-        res = engine.verify(active_gates=list(active_gates))
-    except (VerificationConfigurationError, WorktreeError) as exc:
-        raise click.ClickException(str(exc)) from exc
-    status_color = "green" if res.all_passed else "red"
-    console.print(f"[{status_color}]Verificação concluída. Aprovados: {res.passed_gates}/{res.total_gates}[/{status_color}]")
+    console.print(
+        f"[green]Verificação persistida. Aprovados: "
+        f"{result.passed_gates}/{result.total_gates}[/green]"
+    )
 
 @main.command(help="Valida a integridade da Hash Chain dos logs de auditoria.")
 @click.argument("execution_id")

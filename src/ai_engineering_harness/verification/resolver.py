@@ -20,6 +20,7 @@ from ai_engineering_harness.core.detector import (
     StackDetector,
 )
 from ai_engineering_harness.verification.evaluator import VerificationEvaluator
+from ai_engineering_harness.verification.results import GateRequirement
 from ai_engineering_harness.workspace import ProvisionedWorktree, WorktreeStatus
 
 
@@ -58,6 +59,7 @@ class ResolvedVerificationSuite(BaseModel):
 
     stack: DetectedStack
     worktree_root: Path
+    requirements: tuple[GateRequirement, ...]
     commands: tuple[ResolvedGateCommand, ...]
 
 
@@ -81,6 +83,17 @@ class VerificationCommandResolver:
         """Resolve the entire suite atomically with respect to terminal effects."""
 
         gates = self._validated_gates(active_gates)
+        return self.resolve_requirements(
+            tuple(GateRequirement(gate_id=gate, required=True) for gate in gates)
+        )
+
+    def resolve_requirements(
+        self,
+        requirements: tuple[GateRequirement, ...],
+    ) -> ResolvedVerificationSuite:
+        """Resolve policy-derived required gates before any terminal effect."""
+
+        requirements = self._validated_requirements(requirements)
         try:
             stack = self._detector.detect()
         except StackDetectionError as exc:
@@ -89,7 +102,8 @@ class VerificationCommandResolver:
             ) from exc
 
         resolved: list[ResolvedGateCommand] = []
-        for gate in gates:
+        for requirement in requirements:
+            gate = requirement.gate_id
             try:
                 configured = VerificationEvaluator.configured_command(stack, gate)
             except ValueError as exc:
@@ -98,18 +112,48 @@ class VerificationCommandResolver:
                     gate_id=gate,
                 ) from exc
             if configured is None:
+                if not requirement.required:
+                    continue
                 raise VerificationPrerequisiteError(
                     f"required verification gate {gate!r} has no configured command",
                     gate_id=gate,
                 )
-            resolved.append(self._resolve_command(gate, configured))
+            try:
+                resolved.append(self._resolve_command(gate, configured))
+            except VerificationPrerequisiteError:
+                if requirement.required:
+                    raise
 
         self._validate_aliases(tuple(resolved))
         return ResolvedVerificationSuite(
             stack=stack,
             worktree_root=self.worktree_root,
+            requirements=requirements,
             commands=tuple(resolved),
         )
+
+    @staticmethod
+    def _validated_requirements(
+        requirements: tuple[GateRequirement, ...],
+    ) -> tuple[GateRequirement, ...]:
+        if type(requirements) is not tuple or not requirements:
+            raise VerificationConfigurationError(
+                "verification suite must contain at least one policy-derived gate"
+            )
+        if any(not isinstance(requirement, GateRequirement) for requirement in requirements):
+            raise VerificationConfigurationError(
+                "verification requirements must use GateRequirement contracts"
+            )
+        gate_ids = tuple(requirement.gate_id for requirement in requirements)
+        if len(set(gate_ids)) != len(gate_ids):
+            raise VerificationConfigurationError(
+                "verification requirements must use unique gate ids"
+            )
+        if not any(requirement.required for requirement in requirements):
+            raise VerificationConfigurationError(
+                "verification suite must contain at least one required gate"
+            )
+        return requirements
 
     @staticmethod
     def _validated_gates(active_gates: list[str]) -> tuple[VerificationGateId, ...]:

@@ -787,6 +787,38 @@ def test_linear_execution_persists_events_cas_terminal_and_fencing(tmp_path: Pat
     assert events[-1]["payload"]["to_state"] == "COMPLETED"
 
 
+def test_lifecycle_can_defer_success_terminal_to_verifying(tmp_path: Path) -> None:
+    artifact = _artifact([_deterministic_node("first", "completed")])
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(artifact, "exec-deferred-verification"))
+
+    result = _executor(
+        storage,
+        NodeExecutorRegistry(
+            deterministic=DeterministicNodeExecutor(_TraceBackend([])),
+        ),
+    ).execute(
+        artifact,
+        "exec-deferred-verification",
+        {"trace": []},
+        defer_completion=True,
+    )
+
+    assert result.outcome == "success"
+    assert storage.load_execution("exec-deferred-verification").current_state == (
+        ExecutionState.VERIFYING
+    )
+    assert _journal(tmp_path, "exec-deferred-verification")[-1]["payload"] == {
+        "attempt": 0,
+        "fencing_token": result.fencing_token,
+        "from_state": "EXECUTING",
+        "node_id": "completed",
+        "reason": "graph_ready_for_verification",
+        "record_revision": result.final_revision,
+        "to_state": "VERIFYING",
+    }
+
+
 def test_valid_input_contract_and_output_contract_complete(tmp_path: Path) -> None:
     artifact = _agent_artifact()
     storage = AtomicFileStateStorage(tmp_path)

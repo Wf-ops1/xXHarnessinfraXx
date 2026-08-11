@@ -209,7 +209,7 @@ def test_retry_context_survives_crash_and_corrects_on_second_attempt(
     assert trace[3][2].origin_node_id == "verify"
     assert _SECRET not in trace[2][2].model_dump_json()
     record = storage.load_execution("exec-retry-resume-e2e")
-    assert record.current_state == ExecutionState.COMPLETED
+    assert record.current_state == ExecutionState.VERIFYING
     assert record.attempt_by_node == {"code": 2, "verify": 2}
     secret_bytes = _SECRET.encode("utf-8")
     assert all(

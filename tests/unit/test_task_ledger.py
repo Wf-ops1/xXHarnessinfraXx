@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "POST_PROMOTION_BLOCKED" in panel
-    assert "F4.6 `PROMOTED`" in panel
+    assert "F4.7 `READY / PR_OPEN / CHECKS_PENDING`" in panel
     assert "31510277593" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
@@ -456,11 +456,26 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "SnapshotConflictError" in dossier
     assert "os.link" in dossier
     f4_6_dossier = _read(COMPLETED_ROOT / "F4.6.md")
+    f4_7_dossier = _read(ACTIVE_ROOT / "F4.7.md")
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
-    assert "F4.6 `PROMOTED`" in panel
-    assert "docs/tasks/completed/F4.6.md" in panel
+    assert (ACTIVE_ROOT / "F4.7.md").is_file()
+    assert "F4.7 `READY / PR_OPEN / CHECKS_PENDING`" in panel
+    assert "docs/tasks/active/F4.7.md" in panel
     assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
     assert "31510277593" in panel
+    assert "b578515f9ee24b1d72dffcca8756b80586862fd8" in panel
+    assert "31513097203" in panel
+    assert "> **Gate:** `READY`" in f4_7_dossier
+    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f4_7_dossier
+    assert "checkpoint/f4.7-ready" in f4_7_dossier
+    assert "checkpoint/f4.7-complete" in f4_7_dossier
+    assert "a706b7fb8ce6ca6ea7a3a2a65f7ad4ab7630bf6a" in f4_7_dossier
+    assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in f4_7_dossier
+    assert "751 passed, 5 skipped, 6 subtests passed" in f4_7_dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/46" in f4_7_dossier
+    assert "054bf6e31b45e00aa7f27e35f0405b871111647b" in f4_7_dossier
+    assert "SKIPPED_NOT_APPLICABLE" in f4_7_dossier
+    assert "ao menos um gate obrigatório" in f4_7_dossier
     assert "> **Gate:** `READY`" in f4_6_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_6_dossier
     assert "> **Revisão do gate:** `R3" in f4_6_dossier
@@ -477,7 +492,7 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/43" in f4_5_dossier
     assert "b30416470b0ea4b266d2c4a65b9b1963858d51b8" in f4_5_dossier
     assert "31459427729" in f4_5_dossier
-    assert "checkpoint/f4.6-ready" in panel
+    assert "checkpoint/f4.7-ready" in panel
     assert not (ACTIVE_ROOT / "F4.5.md").exists()
     assert "> **Gate:** `READY`" in f4_5_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_5_dossier
@@ -534,7 +549,7 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "31512347572" in f4_6_dossier
     assert "completed/F4.6.md" in task_index
     assert "PR #44 / merge `a4fd1da` / pós-merge `31510277593`" in task_index
-    assert "administrativo #45 aberto" in task_index
+    assert "administrativo #45 / merge `b578515` / pós-merge `31513097203`" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

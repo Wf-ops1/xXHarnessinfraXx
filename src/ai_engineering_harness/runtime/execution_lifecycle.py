@@ -32,7 +32,10 @@ from ai_engineering_harness.contracts.nodes import (
     ContextSufficiencyReport,
     RetrievalRequest,
 )
-from ai_engineering_harness.contracts.policies import ContextSufficiencyPolicySpec
+from ai_engineering_harness.contracts.policies import (
+    ContextSufficiencyPolicySpec,
+    VerificationPolicySpec,
+)
 from ai_engineering_harness.core.config import ConfigResolver
 from ai_engineering_harness.models.router import ModelRouter
 from ai_engineering_harness.persistence import (
@@ -42,6 +45,19 @@ from ai_engineering_harness.persistence import (
     StateStorageError,
     canonical_json_digest,
     canonical_json_object,
+)
+from ai_engineering_harness.verification import (
+    GateRequirement,
+    GateResult,
+    ResolvedGateCommand,
+    VerificationConfigurationError,
+    VerificationEngine,
+    VerificationPrerequisiteError,
+    VerificationSuiteResult,
+)
+from ai_engineering_harness.workspace import (
+    ProvisionedWorktree,
+    WorktreeError,
 )
 
 from .context_assembler import (
@@ -65,6 +81,15 @@ APPROVAL_INVALIDATED: Literal["APPROVAL_INVALIDATED"] = "APPROVAL_INVALIDATED"
 CONTEXT_EVALUATED: Literal["CONTEXT_EVALUATED"] = "CONTEXT_EVALUATED"
 PLAN_GENERATION_STARTED: Literal["PLAN_GENERATION_STARTED"] = "PLAN_GENERATION_STARTED"
 PLAN_GENERATED: Literal["PLAN_GENERATED"] = "PLAN_GENERATED"
+VERIFICATION_GATE_STARTED: Literal["VERIFICATION_GATE_STARTED"] = (
+    "VERIFICATION_GATE_STARTED"
+)
+VERIFICATION_GATE_RECORDED: Literal["VERIFICATION_GATE_RECORDED"] = (
+    "VERIFICATION_GATE_RECORDED"
+)
+VERIFICATION_SUITE_RECORDED: Literal["VERIFICATION_SUITE_RECORDED"] = (
+    "VERIFICATION_SUITE_RECORDED"
+)
 _CONTEXT_POLICY_REFERENCE = "policies/context_sufficiency.yaml"
 _TOOL_POLICY_REFERENCE = "policies/tool_policy.yaml"
 _VERIFICATION_POLICY_REFERENCE = "policies/verification_policy.yaml"
@@ -73,6 +98,50 @@ _DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 _APPROVAL_EVENT_TYPES = frozenset(
     {APPROVAL_REQUESTED, EXECUTION_APPROVED, APPROVAL_INVALIDATED}
+)
+_VERIFICATION_EVENT_TYPES = frozenset(
+    {
+        VERIFICATION_GATE_STARTED,
+        VERIFICATION_GATE_RECORDED,
+        VERIFICATION_SUITE_RECORDED,
+    }
+)
+_VERIFICATION_GATE_STARTED_KEYS = frozenset(
+    {
+        "attempt",
+        "gate_index",
+        "gate_id",
+        "required",
+        "argv",
+        "cwd",
+        "policy_digest",
+        "verified_commit_sha",
+        "fencing_token",
+    }
+)
+_VERIFICATION_GATE_RECORDED_KEYS = frozenset(
+    {
+        "attempt",
+        "gate_index",
+        "gate_id",
+        "required",
+        "status",
+        "result_digest",
+        "policy_digest",
+        "verified_commit_sha",
+        "fencing_token",
+    }
+)
+_VERIFICATION_SUITE_RECORDED_KEYS = frozenset(
+    {
+        "attempt",
+        "policy_digest",
+        "verified_commit_sha",
+        "result_digest",
+        "gate_result_digests",
+        "all_passed",
+        "fencing_token",
+    }
 )
 _SECRET_KEYS = frozenset(
     {
@@ -133,6 +202,18 @@ class PlanningLifecycleIntegrityError(ExecutionLifecycleError):
 
 class PlanningPrerequisiteError(ExecutionLifecycleError):
     """Typed fail-closed planning failure before the first graph node."""
+
+
+class VerificationLifecycleIntegrityError(ExecutionLifecycleError):
+    """Persisted verification evidence cannot be reconciled fail-closed."""
+
+
+class VerificationLifecyclePrerequisiteError(ExecutionLifecycleError):
+    """The canonical verification suite cannot run in the active worktree."""
+
+
+class VerificationRequiredError(ExecutionLifecycleError):
+    """Graph traversal ended and the execution awaits canonical verification."""
 
 
 class _StrictFrozenModel(BaseModel):
@@ -197,6 +278,8 @@ class ExecutionLifecycleService:
         git_identity_provider: Callable[[], tuple[str, str]] | None = None,
         context_assembler: ContextAssembler | None = None,
         model_router_factory: Callable[[Mapping[str, object]], ModelRouter] | None = None,
+        verification_worktree_provider: Callable[[str], ProvisionedWorktree]
+        | None = None,
     ) -> None:
         if not isinstance(storage, ResumeStateStorageProvider):
             raise TypeError("storage must implement ResumeStateStorageProvider")
@@ -204,6 +287,10 @@ class ExecutionLifecycleService:
             raise TypeError("executors must be a NodeExecutorRegistry")
         if context_assembler is not None and not isinstance(context_assembler, ContextAssembler):
             raise TypeError("context_assembler must be a ContextAssembler")
+        if verification_worktree_provider is not None and not callable(
+            verification_worktree_provider
+        ):
+            raise TypeError("verification_worktree_provider must be callable")
         if (
             isinstance(lock_timeout_seconds, bool)
             or not isinstance(lock_timeout_seconds, (int, float))
@@ -227,6 +314,7 @@ class ExecutionLifecycleService:
         self._git_identity_provider = git_identity_provider or self._read_git_identity
         self._context_assembler = context_assembler or ContextAssembler(self.project_root)
         self._model_router_factory = model_router_factory or ModelRouter.from_effective_config
+        self._verification_worktree_provider = verification_worktree_provider
         self._graph_executor = GraphExecutor(
             storage,
             executors,
@@ -251,6 +339,7 @@ class ExecutionLifecycleService:
         """Create one exact revision-zero execution and begin traversal."""
         artifact = MAFAdapter.load_and_validate(Path(compiled_artifact_path))
         context_policy = self._resolved_context_policy(artifact)
+        self._resolved_verification_policy(artifact)
         envelope = (
             self._context_envelope(initial_input, artifact)
             if context_policy is not None
@@ -330,7 +419,12 @@ class ExecutionLifecycleService:
                 graph_input=envelope.graph_input,
                 effective_configuration=effective_configuration,
             )
-        return self._graph_executor.execute(artifact, selected_id, graph_input)
+        return self._graph_executor.execute(
+            artifact,
+            selected_id,
+            graph_input,
+            defer_completion=True,
+        )
 
     def resume(
         self,
@@ -344,6 +438,12 @@ class ExecutionLifecycleService:
                 execution_id=execution_id,
             )
         context_policy = self._resolved_context_policy(artifact)
+        self._resolved_verification_policy(artifact)
+        if record.current_state == ExecutionState.VERIFYING:
+            raise VerificationRequiredError(
+                "execution requires canonical verification before resume",
+                execution_id=execution_id,
+            )
         if context_policy is not None and record.current_state in {
             ExecutionState.INITIATED,
             ExecutionState.CONTEXT_ASSEMBLING,
@@ -376,6 +476,7 @@ class ExecutionLifecycleService:
                 artifact,
                 execution_id,
                 envelope.graph_input,
+                defer_completion=True,
             )
         if record.current_state == ExecutionState.INITIATED:
             initial_input = self._storage.load_payload(
@@ -386,8 +487,642 @@ class ExecutionLifecycleService:
                 artifact,
                 execution_id,
                 initial_input,
+                defer_completion=True,
             )
-        return self._graph_executor.resume(artifact, execution_id)
+        return self._graph_executor.resume(
+            artifact,
+            execution_id,
+            defer_completion=True,
+        )
+
+    def verify(self, execution_id: str) -> VerificationSuiteResult:
+        """Persist and guard the only policy-derived verification suite."""
+
+        record, _, artifact = self._prepare_resume(execution_id)
+        if record.current_state == ExecutionState.COMPLETED:
+            raise VerificationLifecycleIntegrityError(
+                "completed execution cannot run verification again",
+                execution_id=execution_id,
+            )
+        if record.current_state != ExecutionState.VERIFYING:
+            raise VerificationLifecycleIntegrityError(
+                "canonical verification requires the VERIFYING state",
+                execution_id=execution_id,
+            )
+        policy_context = self._resolved_verification_policy(artifact)
+        if policy_context is None:
+            self._block_verification_prerequisite(execution_id)
+            raise VerificationLifecyclePrerequisiteError(
+                "compiled artifact does not contain a verification policy",
+                execution_id=execution_id,
+            )
+        worktree = self._verification_worktree(execution_id, record)
+        engine = VerificationEngine(worktree, clock=self._clock)
+        return self._verify_execution(
+            artifact=artifact,
+            execution_id=execution_id,
+            engine=engine,
+            policy_context=policy_context,
+        )
+
+    @staticmethod
+    def _resolved_verification_policy(
+        artifact: CompiledGraphArtifact,
+    ) -> tuple[ResolvedPolicySpec, VerificationPolicySpec] | None:
+        matches = tuple(
+            resolved
+            for resolved in artifact.resolved_policies
+            if resolved.requested_reference == _VERIFICATION_POLICY_REFERENCE
+        )
+        if not matches:
+            return None
+        if len(matches) != 1:
+            raise ExecutionConfigurationError(
+                "compiled artifact contains duplicate verification policies"
+            )
+        resolved = matches[0]
+        try:
+            policy = VerificationPolicySpec.model_validate(
+                {
+                    "policy_id": resolved.policy_id,
+                    "policy_schema_version": resolved.policy_schema_version,
+                    "definition_version": resolved.definition_version,
+                    **resolved.effective_policy,
+                }
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ExecutionConfigurationError(
+                "compiled verification policy is invalid"
+            ) from exc
+        if (
+            policy.policy_id != resolved.policy_id
+            or policy.policy_schema_version != resolved.policy_schema_version
+            or policy.definition_version != resolved.definition_version
+            or policy.termination_rule != "ALL_REQUIRED_GATES_PASSED"
+        ):
+            raise ExecutionConfigurationError(
+                "compiled verification policy identity or termination rule is invalid"
+            )
+        return resolved, policy
+
+    def _verification_worktree(
+        self,
+        execution_id: str,
+        record: ExecutionRecord,
+    ) -> ProvisionedWorktree:
+        provider = self._verification_worktree_provider
+        try:
+            if provider is None:
+                raise VerificationConfigurationError(
+                    "verification worktree provider is not configured"
+                )
+            worktree = provider(execution_id)
+            if not isinstance(worktree, ProvisionedWorktree):
+                raise VerificationConfigurationError(
+                    "verification worktree provider returned an invalid contract"
+                )
+            reference = worktree.reference
+            if (
+                reference.execution_id != execution_id
+                or reference.base_commit_sha != record.base_commit_sha
+                or reference.original_branch != record.original_branch
+            ):
+                raise VerificationConfigurationError(
+                    "verification worktree identity does not match the execution"
+                )
+            self._validate_verification_worktree_commit(
+                worktree,
+                expected_commit_sha=reference.worktree_head_sha,
+            )
+            return worktree
+        except (VerificationConfigurationError, WorktreeError, OSError, ValueError) as exc:
+            self._block_verification_prerequisite(execution_id)
+            raise VerificationLifecyclePrerequisiteError(
+                "verification worktree could not be validated",
+                execution_id=execution_id,
+            ) from exc
+
+    def _verify_execution(
+        self,
+        *,
+        artifact: CompiledGraphArtifact,
+        execution_id: str,
+        engine: VerificationEngine,
+        policy_context: tuple[ResolvedPolicySpec, VerificationPolicySpec],
+    ) -> VerificationSuiteResult:
+        del artifact
+        resolved_policy, policy = policy_context
+        policy_digest = canonical_json_digest(
+            canonical_json_object(resolved_policy.model_dump(mode="json"))
+        )
+        requirements = tuple(
+            GateRequirement(gate_id=gate.id, required=gate.blocking)
+            for gate in policy.required_gates
+        )
+        verified_commit_sha = engine.worktree.reference.worktree_head_sha
+        if verified_commit_sha is None:
+            self._block_verification_prerequisite(execution_id)
+            raise VerificationLifecyclePrerequisiteError(
+                "verification worktree is missing its validated commit",
+                execution_id=execution_id,
+            )
+
+        lock = self._acquire(execution_id)
+        try:
+            machine = self._state_machine(execution_id, lock)
+            record = machine.recover(lock=lock)
+            if record.current_state != ExecutionState.VERIFYING:
+                raise VerificationLifecycleIntegrityError(
+                    "verification state changed before the canonical suite acquired its lock",
+                    execution_id=execution_id,
+                )
+            events = self._storage.load_events(execution_id, lock=lock)
+            recovered = self._recover_verification_suite(
+                execution_id=execution_id,
+                events=events,
+                requirements=requirements,
+                policy_digest=policy_digest,
+                verified_commit_sha=verified_commit_sha,
+                lock=lock,
+            )
+            if recovered is not None:
+                if recovered.all_passed:
+                    machine.transition_to(
+                        ExecutionState.COMPLETED,
+                        node_id=record.current_node_id,
+                        attempt=0,
+                        reason="verification_passed",
+                        lock=lock,
+                    )
+                return recovered
+
+            last_timestamp = max(
+                record.updated_at,
+                events[-1].timestamp if events else record.updated_at,
+            )
+            pending: tuple[
+                int,
+                GateRequirement,
+                ResolvedGateCommand | None,
+                int,
+            ] | None = None
+            gate_result_digests: list[str] = []
+            next_gate_index = 0
+
+            def append_event(
+                event_type: Literal[
+                    "VERIFICATION_GATE_STARTED",
+                    "VERIFICATION_GATE_RECORDED",
+                    "VERIFICATION_SUITE_RECORDED",
+                ],
+                payload: dict[str, object],
+            ) -> ExecutionEvent:
+                nonlocal last_timestamp
+                last_timestamp = self._next_timestamp(last_timestamp)
+                return self._append_verification_event(
+                    execution_id,
+                    event_type,
+                    payload,
+                    timestamp=last_timestamp,
+                    lock=lock,
+                )
+
+            def before_gate(
+                requirement: GateRequirement,
+                command: ResolvedGateCommand | None,
+            ) -> None:
+                nonlocal pending
+                if pending is not None:
+                    raise VerificationLifecycleIntegrityError(
+                        "a verification gate started before the prior outcome was durable",
+                        execution_id=execution_id,
+                    )
+                self._validate_verification_worktree_commit(
+                    engine.worktree,
+                    expected_commit_sha=verified_commit_sha,
+                )
+                index = next_gate_index
+                append_event(
+                    VERIFICATION_GATE_STARTED,
+                    {
+                        "attempt": 1,
+                        "gate_index": index,
+                        "gate_id": requirement.gate_id,
+                        "required": requirement.required,
+                        "argv": list(command.argv) if command is not None else [],
+                        "cwd": command.cwd if command is not None else ".",
+                        "policy_digest": policy_digest,
+                        "verified_commit_sha": verified_commit_sha,
+                        "fencing_token": lock.fencing_token,
+                    },
+                )
+                pending = (index, requirement, command, lock.fencing_token)
+
+            def after_gate(result: GateResult) -> None:
+                nonlocal pending, next_gate_index
+                if pending is None:
+                    raise VerificationLifecycleIntegrityError(
+                        "verification outcome has no matching write-ahead event",
+                        execution_id=execution_id,
+                    )
+                self._validate_verification_worktree_commit(
+                    engine.worktree,
+                    expected_commit_sha=verified_commit_sha,
+                )
+                index, requirement, command, fencing_token = pending
+                expected_argv = command.argv if command is not None else ()
+                if (
+                    result.gate_id != requirement.gate_id
+                    or result.required != requirement.required
+                    or result.argv != expected_argv
+                    or result.verified_commit_sha != verified_commit_sha
+                ):
+                    raise VerificationLifecycleIntegrityError(
+                        "verification outcome diverges from its write-ahead identity",
+                        execution_id=execution_id,
+                    )
+                result_digest = self._storage.store_payload(
+                    execution_id,
+                    result.model_dump(mode="json"),
+                    lock=lock,
+                )
+                append_event(
+                    VERIFICATION_GATE_RECORDED,
+                    {
+                        "attempt": 1,
+                        "gate_index": index,
+                        "gate_id": result.gate_id,
+                        "required": result.required,
+                        "status": result.status.value,
+                        "result_digest": result_digest,
+                        "policy_digest": policy_digest,
+                        "verified_commit_sha": verified_commit_sha,
+                        "fencing_token": fencing_token,
+                    },
+                )
+                gate_result_digests.append(result_digest)
+                next_gate_index += 1
+                pending = None
+
+            try:
+                suite = engine.verify_requirements(
+                    requirements,
+                    before_gate=before_gate,
+                    after_gate=after_gate,
+                )
+            except (VerificationConfigurationError, VerificationPrerequisiteError) as exc:
+                current = machine.recover(lock=lock)
+                if current.current_state == ExecutionState.VERIFYING:
+                    machine.transition_to(
+                        ExecutionState.BLOCKED_PREREQUISITE,
+                        node_id=current.current_node_id,
+                        attempt=0,
+                        reason="verification_prerequisite_invalid",
+                        lock=lock,
+                    )
+                raise VerificationLifecyclePrerequisiteError(
+                    "verification prerequisites failed before suite completion",
+                    execution_id=execution_id,
+                ) from exc
+            except (TypeError, ValueError, ValidationError) as exc:
+                raise VerificationLifecycleIntegrityError(
+                    "verification result contract is invalid",
+                    execution_id=execution_id,
+                ) from exc
+            if pending is not None or len(gate_result_digests) != len(requirements):
+                raise VerificationLifecycleIntegrityError(
+                    "verification suite ended with incomplete gate persistence",
+                    execution_id=execution_id,
+                )
+            suite_digest = self._storage.store_payload(
+                execution_id,
+                suite.model_dump(mode="json"),
+                lock=lock,
+            )
+            append_event(
+                VERIFICATION_SUITE_RECORDED,
+                {
+                    "attempt": 1,
+                    "policy_digest": policy_digest,
+                    "verified_commit_sha": verified_commit_sha,
+                    "result_digest": suite_digest,
+                    "gate_result_digests": gate_result_digests,
+                    "all_passed": suite.all_passed,
+                    "fencing_token": lock.fencing_token,
+                },
+            )
+            certified = self._recover_verification_suite(
+                execution_id=execution_id,
+                events=self._storage.load_events(execution_id, lock=lock),
+                requirements=requirements,
+                policy_digest=policy_digest,
+                verified_commit_sha=verified_commit_sha,
+                lock=lock,
+            )
+            if certified is None:
+                raise VerificationLifecycleIntegrityError(
+                    "persisted verification suite could not be recovered",
+                    execution_id=execution_id,
+                )
+            if certified.all_passed:
+                machine.transition_to(
+                    ExecutionState.COMPLETED,
+                    node_id=record.current_node_id,
+                    attempt=0,
+                    reason="verification_passed",
+                    lock=lock,
+                )
+            return certified
+        except StateStorageError as exc:
+            raise VerificationLifecycleIntegrityError(
+                "verification evidence could not be persisted or recovered",
+                execution_id=execution_id,
+            ) from exc
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    @staticmethod
+    def _validate_verification_worktree_commit(
+        worktree: ProvisionedWorktree,
+        *,
+        expected_commit_sha: str | None,
+    ) -> None:
+        if (
+            type(expected_commit_sha) is not str
+            or _GIT_SHA_PATTERN.fullmatch(expected_commit_sha) is None
+        ):
+            raise VerificationConfigurationError(
+                "verification worktree commit identity is invalid"
+            )
+        commands = (
+            ("rev-parse", "--show-toplevel"),
+            ("rev-parse", "--verify", "HEAD^{commit}"),
+            ("status", "--porcelain=v1", "--untracked-files=all"),
+        )
+        outputs: list[str] = []
+        for argv in commands:
+            try:
+                completed = subprocess.run(
+                    ("git", *argv),
+                    cwd=worktree.worktree_path,
+                    check=False,
+                    shell=False,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="strict",
+                    timeout=30,
+                )
+            except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+                raise VerificationConfigurationError(
+                    "verification worktree Git identity could not be read"
+                ) from exc
+            if completed.returncode != 0:
+                raise VerificationConfigurationError(
+                    "verification worktree Git identity command failed"
+                )
+            outputs.append(completed.stdout.strip())
+        try:
+            observed_root = Path(outputs[0]).resolve(strict=True)
+            expected_root = worktree.worktree_path.resolve(strict=True)
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise VerificationConfigurationError(
+                "verification worktree Git root could not be resolved"
+            ) from exc
+        if observed_root != expected_root:
+            raise VerificationConfigurationError(
+                "verification path is not the exact Git worktree root"
+            )
+        if outputs[1].lower() != expected_commit_sha:
+            raise VerificationConfigurationError(
+                "verification worktree HEAD changed from the recorded commit"
+            )
+        if outputs[2]:
+            raise VerificationConfigurationError(
+                "verification worktree must be clean for commit-bound evidence"
+            )
+
+    def _recover_verification_suite(
+        self,
+        *,
+        execution_id: str,
+        events: tuple[ExecutionEvent, ...],
+        requirements: tuple[GateRequirement, ...],
+        policy_digest: str,
+        verified_commit_sha: str,
+        lock: ExecutionLock,
+    ) -> VerificationSuiteResult | None:
+        verification_events = tuple(
+            event
+            for event in events
+            if event.event_type in _VERIFICATION_EVENT_TYPES
+        )
+        if not verification_events:
+            return None
+        expected_count = len(requirements) * 2 + 1
+        if len(verification_events) != expected_count:
+            raise VerificationLifecycleIntegrityError(
+                "verification journal contains an incomplete or duplicate suite",
+                execution_id=execution_id,
+            )
+
+        recovered_results: list[GateResult] = []
+        recovered_digests: list[str] = []
+        observed_fencing_token: int | None = None
+        for index, requirement in enumerate(requirements):
+            started = verification_events[index * 2]
+            recorded = verification_events[index * 2 + 1]
+            if (
+                started.event_type != VERIFICATION_GATE_STARTED
+                or recorded.event_type != VERIFICATION_GATE_RECORDED
+                or set(started.payload) != _VERIFICATION_GATE_STARTED_KEYS
+                or set(recorded.payload) != _VERIFICATION_GATE_RECORDED_KEYS
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "verification gate event sequence or payload schema is invalid",
+                    execution_id=execution_id,
+                )
+            start_payload = started.payload
+            result_payload = recorded.payload
+            fencing_token = start_payload.get("fencing_token")
+            if (
+                type(fencing_token) is not int
+                or fencing_token <= 0
+                or result_payload.get("fencing_token") != fencing_token
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "verification gate fencing identity is invalid",
+                    execution_id=execution_id,
+                )
+            if observed_fencing_token is None:
+                observed_fencing_token = fencing_token
+            elif observed_fencing_token != fencing_token:
+                raise VerificationLifecycleIntegrityError(
+                    "one verification suite spans multiple fencing tokens",
+                    execution_id=execution_id,
+                )
+            shared_identity = (
+                start_payload.get("attempt") == 1
+                and result_payload.get("attempt") == 1
+                and start_payload.get("gate_index") == index
+                and result_payload.get("gate_index") == index
+                and start_payload.get("gate_id") == requirement.gate_id
+                and result_payload.get("gate_id") == requirement.gate_id
+                and start_payload.get("required") is requirement.required
+                and result_payload.get("required") is requirement.required
+                and start_payload.get("policy_digest") == policy_digest
+                and result_payload.get("policy_digest") == policy_digest
+                and start_payload.get("verified_commit_sha")
+                == verified_commit_sha
+                and result_payload.get("verified_commit_sha")
+                == verified_commit_sha
+            )
+            argv = start_payload.get("argv")
+            cwd = start_payload.get("cwd")
+            result_digest = result_payload.get("result_digest")
+            if (
+                not shared_identity
+                or type(argv) is not list
+                or any(type(part) is not str or not part for part in argv)
+                or type(cwd) is not str
+                or not cwd
+                or type(result_digest) is not str
+                or _DIGEST_PATTERN.fullmatch(result_digest) is None
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "verification gate identity or result digest is invalid",
+                    execution_id=execution_id,
+                )
+            try:
+                gate_result = GateResult.model_validate_json(
+                    json.dumps(
+                        self._storage.load_payload(
+                            execution_id,
+                            result_digest,
+                            lock=lock,
+                        ),
+                        ensure_ascii=False,
+                        allow_nan=False,
+                    )
+                )
+            except (TypeError, ValueError, ValidationError) as exc:
+                raise VerificationLifecycleIntegrityError(
+                    "persisted gate result violates the F4.7 contract",
+                    execution_id=execution_id,
+                ) from exc
+            if (
+                gate_result.gate_id != requirement.gate_id
+                or gate_result.required != requirement.required
+                or list(gate_result.argv) != argv
+                or gate_result.cwd != cwd
+                or gate_result.verified_commit_sha != verified_commit_sha
+                or result_payload.get("status") != gate_result.status.value
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "persisted gate result diverges from its journal identity",
+                    execution_id=execution_id,
+                )
+            recovered_results.append(gate_result)
+            recovered_digests.append(result_digest)
+
+        suite_event = verification_events[-1]
+        suite_payload = suite_event.payload
+        if (
+            suite_event.event_type != VERIFICATION_SUITE_RECORDED
+            or set(suite_payload) != _VERIFICATION_SUITE_RECORDED_KEYS
+            or suite_payload.get("attempt") != 1
+            or suite_payload.get("policy_digest") != policy_digest
+            or suite_payload.get("verified_commit_sha") != verified_commit_sha
+            or suite_payload.get("fencing_token") != observed_fencing_token
+            or suite_payload.get("gate_result_digests") != recovered_digests
+            or type(suite_payload.get("all_passed")) is not bool
+        ):
+            raise VerificationLifecycleIntegrityError(
+                "persisted verification suite event is invalid",
+                execution_id=execution_id,
+            )
+        suite_digest = suite_payload.get("result_digest")
+        if (
+            type(suite_digest) is not str
+            or _DIGEST_PATTERN.fullmatch(suite_digest) is None
+        ):
+            raise VerificationLifecycleIntegrityError(
+                "persisted verification suite digest is invalid",
+                execution_id=execution_id,
+            )
+        suite = VerificationSuiteResult(
+            verified_commit_sha=verified_commit_sha,
+            gate_results=tuple(recovered_results),
+        )
+        stored_suite = self._storage.load_payload(
+            execution_id,
+            suite_digest,
+            lock=lock,
+        )
+        if (
+            stored_suite != suite.model_dump(mode="json")
+            or suite.all_passed is not suite_payload["all_passed"]
+            or tuple(
+                GateRequirement(gate_id=result.gate_id, required=result.required)
+                for result in suite.gate_results
+            )
+            != requirements
+        ):
+            raise VerificationLifecycleIntegrityError(
+                "persisted suite result diverges from gate evidence or policy",
+                execution_id=execution_id,
+            )
+        return suite
+
+    def _append_verification_event(
+        self,
+        execution_id: str,
+        event_type: Literal[
+            "VERIFICATION_GATE_STARTED",
+            "VERIFICATION_GATE_RECORDED",
+            "VERIFICATION_SUITE_RECORDED",
+        ],
+        payload: dict[str, object],
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=event_type,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise VerificationLifecycleIntegrityError(
+                "cannot construct a canonical verification event",
+                execution_id=execution_id,
+            ) from exc
+        return self._storage.append_event(execution_id, event, lock=lock)
+
+    def _block_verification_prerequisite(self, execution_id: str) -> None:
+        lock = self._acquire(execution_id)
+        try:
+            machine = self._state_machine(execution_id, lock)
+            record = machine.recover(lock=lock)
+            if record.current_state == ExecutionState.BLOCKED_PREREQUISITE:
+                return
+            if record.current_state != ExecutionState.VERIFYING:
+                raise VerificationLifecycleIntegrityError(
+                    "verification prerequisite failure occurred outside VERIFYING",
+                    execution_id=execution_id,
+                )
+            machine.transition_to(
+                ExecutionState.BLOCKED_PREREQUISITE,
+                node_id=record.current_node_id,
+                attempt=0,
+                reason="verification_prerequisite_invalid",
+                lock=lock,
+            )
+        finally:
+            self._storage.release_execution_lock(lock)
 
     @staticmethod
     def _resolved_context_policy(

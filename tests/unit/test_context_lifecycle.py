@@ -329,7 +329,7 @@ def test_start_persists_envelope_decision_event_and_enters_graph_from_planning(
     assert isinstance(result, GraphExecutionResult)
     assert result.outcome == "success"
     assert calls == [{"intent": "deliver"}]
-    assert storage.load_execution("exec-context-success").current_state == ExecutionState.COMPLETED
+    assert storage.load_execution("exec-context-success").current_state == ExecutionState.VERIFYING
     bundle = storage.load_execution_bundle("exec-context-success")
     assert storage.load_payload("exec-context-success", bundle.initial_input_digest) == _envelope()
     events = _context_events(storage, "exec-context-success")

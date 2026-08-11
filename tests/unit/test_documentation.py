@@ -131,7 +131,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #33" in readme
     assert "571a8eb" in readme
     assert "31329231458" in readme
-    assert "F3.7 continua dependente da F4.7" in readme
+    assert "F3.7 continua" in readme
+    assert "dependente da promoção da F4.7" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
@@ -162,29 +163,24 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
 
     assert "POST_PROMOTION_BLOCKED" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/completed/F4.6.md" in panel
-    assert "F4.6 `PROMOTED`" in panel
+    assert "docs/tasks/active/F4.7.md" in panel
+    assert "F4.7 `READY / PR_OPEN / CHECKS_PENDING`" in panel
     assert "a4fd1dabe09c9f6064f7c34b0ddb6bc62761135d" in panel
-    assert "checkpoint/f4.6-ready" in panel
-    assert "checkpoint/f4.6-r1-ready" in panel
-    assert "checkpoint/f4.6-complete" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
-    assert "31463009231" in panel
-    assert "31463962634" in panel
-    assert "TerminalAdapter" in panel
-    assert "preserva o path" in panel
-    assert "f26c124" in panel
-    assert "checkpoint/f4.6-r3-ready" in panel
-    assert "167dbe5" in panel
-    assert "738 passed, 5 skipped, 6 subtests passed" in panel
+    assert "b578515f9ee24b1d72dffcca8756b80586862fd8" in panel
     assert "00e83574da789fa58f22f928b5290b9471264a63" in panel
     assert "31505324814" in panel
     assert "31510277593" in panel
     assert "PR #45" in panel
-    assert "5882e42" in panel
-    assert "31512347572" in panel
-    assert "docs/promote-f4.6" in panel
-    assert "nenhuma tarefa ativa" in panel.casefold()
+    assert "09ced2f8ca7aec6d76562b49511e97db21bdd29d" in panel
+    assert "31512605530" in panel
+    assert "31513097203" in panel
+    assert "checkpoint/f4.7-ready" in panel
+    assert "checkpoint/f4.7-complete" in panel
+    assert "bbc2d93963c9c9fdfd5dfffa2d44c64439862c72" in panel
+    assert "751 passed, 5 skipped, 6 subtests" in panel
+    assert "github.com/Wf-ops1/Harnessinfra/pull/46" in panel
+    assert "write-ahead/outcome" in panel
+    assert "F4.8" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

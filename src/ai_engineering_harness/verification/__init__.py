@@ -7,11 +7,16 @@ from .resolver import (
     VerificationConfigurationError,
     VerificationPrerequisiteError,
 )
+from .results import GateRequirement, GateResult, GateStatus, VerificationSuiteResult
 
 __all__ = [
+    "GateRequirement",
+    "GateResult",
+    "GateStatus",
     "ResolvedGateCommand",
     "ResolvedVerificationSuite",
     "VerificationConfigurationError",
     "VerificationEngine",
     "VerificationPrerequisiteError",
+    "VerificationSuiteResult",
 ]
