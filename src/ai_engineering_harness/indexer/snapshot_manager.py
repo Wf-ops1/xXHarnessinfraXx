@@ -123,14 +123,13 @@ class SnapshotManager:
         destination = self.snapshot_path(snapshot.commit_sha)
         self._ensure_index_directory()
 
-        if destination.exists() or destination.is_symlink():
+        try:
+            _atomic_create_text(destination, snapshot.canonical_json())
+        except FileExistsError:
             existing = self.get_snapshot(snapshot.commit_sha)
             if existing == snapshot:
                 return destination
             raise SnapshotConflictError("snapshot content conflicts with the immutable commit identity")
-
-        try:
-            _atomic_replace_text(destination, snapshot.canonical_json())
         except OSError as exc:
             raise SnapshotWriteError("structural snapshot could not be published atomically") from exc
 
@@ -230,7 +229,9 @@ def _reject_json_constant(value: str) -> None:
     raise SnapshotIntegrityError(f"structural snapshot contains invalid JSON constant {value!r}")
 
 
-def _atomic_replace_text(destination: Path, content: str) -> None:
+def _atomic_create_text(destination: Path, content: str) -> None:
+    """Publish complete content by claiming an absent destination without overwrite."""
+
     descriptor: int | None = None
     temp_path: Path | None = None
     try:
@@ -245,8 +246,7 @@ def _atomic_replace_text(destination: Path, content: str) -> None:
             stream.write(content.encode("utf-8"))
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp_path, destination)
-        temp_path = None
+        os.link(temp_path, destination)
         _fsync_directory(destination.parent)
     finally:
         if descriptor is not None:
