@@ -5,88 +5,95 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F4.8](docs/tasks/completed/F4.8.md): dossiê promovido e em reconciliação administrativa.
-3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências.
-4. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e
-   [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md): reconciliação e ownership.
-5. [Regras dos agentes](.agents/AGENTS.md) e [índice histórico](docs/tasks/README.md).
+2. [F3.7](docs/tasks/active/F3.7.md): único dossiê ativo e contrato da promoção Git segura.
+3. [F4.8](docs/tasks/completed/F4.8.md): última tarefa promovida e reconciliada.
+4. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e tarefa F3.7.
+5. [DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md),
+   [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e
+   [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md).
+6. [Regras dos agentes](.agents/AGENTS.md) e [índice histórico](docs/tasks/README.md).
 
 ## 2. Estado atual
 
 | Campo | Estado observado |
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.8 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
-| **Fase ativa** | Pausa administrativa pós-F4.8; nenhuma implementação ativa |
-| **Tarefa ativa** | nenhuma tarefa ativa; somente reconciliação documental da F4.8 |
-| **Gate** | F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Executor ativo** | `Codex`, único escritor da reconciliação administrativa |
+| **Fase ativa** | Fase 3 — fechamento da promoção Git segura após gates F4 promovidos |
+| **Tarefa ativa** | F3.7 — promoção Git segura |
+| **Gate** | F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`; recertificação integral aguarda publicação |
+| **Executor ativo** | `Codex`, único escritor; autorizado em `2026-08-12T00:48:45-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.8`, publicada e rastreando `origin/docs/promote-f4.8`; criada de `main == origin/main == 72f89e3ede8c4d7457857c13115f690d87df4aad` |
-| **Checkpoints F4.8** | somente locais: READY `bb6752c1f1524b8c747cddc55e74ed7e6491e845`; COMPLETE `5bf0d75e6878f0d1362e0b2053a228a95ec80cef` |
-| **PR F4.8** | [#49](https://github.com/Wf-ops1/Harnessinfra/pull/49), head final `f9c8c2d5d2e1f53ef857119886c16b8b2b2c1d8d`; run `31550975708`, 11/11 success |
-| **Main atual** | `main == origin/main == 72f89e3ede8c4d7457857c13115f690d87df4aad` |
-| **CI pós-merge** | run `31551685950`, evento `push`: 11/11 success no SHA exato de `main` |
+| **Branch** | `task/f3.7-safe-promotion`, rastreando `origin/task/f3.7-safe-promotion`, criada de `9f75e35db38fc6648497c01bd8f81dcdecec8029` |
+| **Main atual** | `main == origin/main == 9f75e35db38fc6648497c01bd8f81dcdecec8029` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
-| **PR administrativo anterior** | [#48](https://github.com/Wf-ops1/Harnessinfra/pull/48), incorporado em `d4e34c7`; pós-merge `31541047111` verde |
-| **PR administrativo F4.8** | [#50](https://github.com/Wf-ops1/Harnessinfra/pull/50), aberto contra `main`; head inicial `3d571cadaffa798c7be1387431e54eaf0463346a`; checks pendentes |
+| **Checkpoint READY** | `checkpoint/f3.7-ready` → commit documental deste gate |
+| **Produto local** | `cb80f8b2d86b9ff38075e6f0068e32b62ba4dbb5` — produto intacto; certificação reaberta por falha de teste |
+| **Checkpoint de conclusão inicial** | `checkpoint/f3.7-complete` → `ac1d3e2`, somente local |
+| **Reparo R1** | `d31227694344ea89303bfb6853eb238c4ca6d8f7` — prova direta do cherry-pick, produto inalterado |
+| **Checkpoint R1** | `checkpoint/f3.7-r1-ready` → `6333217`; `checkpoint/f3.7-r1-complete` → recertificação final, somente locais |
+| **Checkpoint R2** | `checkpoint/f3.7-r2-ready` → `ef0cf5d`; `checkpoint/f3.7-r2-complete` → recertificação final, somente locais |
+| **Reparo R2** | `9cf15d43e906fc8c3611ca4c6c0863218e33784c` — duas provas E2E diretas, produto inalterado |
+| **Pull request** | [#51](https://github.com/Wf-ops1/Harnessinfra/pull/51), não-draft contra `main`; head falho `5c80162` |
 
 ## 3. Última promoção comprovada
 
 | Evidência | Resultado observado |
 |---|---|
 | Tarefa | F4.8 — repair loop orientado pelos gates |
-| Produto | `8e5e11d81c685c53ba349bab4d95cdd61ee19ba6`; certificação `5bf0d75e6878f0d1362e0b2053a228a95ec80cef` |
-| Pull request | PR #49; head final `f9c8c2d5d2e1f53ef857119886c16b8b2b2c1d8d`; run `31550975708`, 11/11 success |
-| Promoção | merge `72f89e3ede8c4d7457857c13115f690d87df4aad`; run pós-merge `31551685950`, 11/11 success |
-| Reconciliação | PR administrativo #50 aberto no head inicial `3d571ca`; checks pendentes |
-| Fronteira | branch de produto remota preservada; checkpoints somente locais; nenhuma tag publicada ou ref excluída |
+| Produto | [PR #49](https://github.com/Wf-ops1/Harnessinfra/pull/49), head `f9c8c2d`; merge `72f89e3`; pós-merge `31551685950`, 11/11 |
+| Reconciliação | [PR #50](https://github.com/Wf-ops1/Harnessinfra/pull/50), head `a15b918`; run `31554671587`, 11/11 |
+| Fechamento administrativo | merge `9f75e35db38fc6648497c01bd8f81dcdecec8029`; run pós-merge `31557794240`, 11/11 |
+| Estado | F4.8 `PROMOTED / RECONCILED / CLOSED`; PR administrativo não gera reconciliação recursiva |
+| Fronteira | branches remotas preservadas; checkpoints F4.8 somente locais; nenhuma tag publicada |
 
-A CI do PR e a CI de `push` no merge exato estão verdes. Nenhuma evidência negativa posterior foi
-observada. O atraso restante é exclusivamente documental e está isolado pela DEC-014.
+Nenhuma evidência negativa posterior foi observada. A F3.7 começou somente após esse fechamento e
+autorização nominal separada.
 
 ## 5. Tarefa ativa
 
-Não existe tarefa de implementação ativa. A F4.8 consumiu a última reprovação canônica F4.7,
-construiu `RetryContext` redigido para o `on_failure` compilado e persistiu contexto, deadline,
-policy, orçamento e cursor antes do efeito corretivo. Após o reparo, o lifecycle executa os gates
-antes reprovados e exige a suíte integral no mesmo commit limpo antes de `COMPLETED`. Os limites por
-nó, execução, tokens, custo e tempo terminam duravelmente em `FAILED_RETRY_EXHAUSTED`.
+O baseline F3.7 comprovou SHA sintético, `git add .` no checkout configurado e fallback positivo. O
+produto local substituiu esse caminho por candidate commit real e singular no worktree F3.6,
+referência durável, composição opt-in no lifecycle, suíte full vinculada ao candidate SHA, aprovação
+canônica e promoção exclusivamente por `git cherry-pick <candidate_sha>`.
 
-O aceite local final concluiu `758 passed, 5 skipped`; mypy, Ruff, compileall, diff check, build PEP
-517 e smoke externo da wheel `0.1.0` ficaram verdes. O E2E cobre commit quebrado, novo commit de
-reparo, targeted → full, crash-resume no CAS do cursor sem duplicar efeito e exaustão dos limites.
+O checkout original é revalidado imediatamente antes do efeito. Base divergente termina em
+`BLOCKED_BASE_CHANGED`; dry-run preserva o checkout e termina em `DRY_RUN_COMPLETED`; write-ahead,
+outcome e recovery impedem repetição cega após interrupção. Sem injeção F3.7, a semântica promovida
+F4.7/F4.8 permanece compatível.
 
-O PR #49 encerrou no head `f9c8c2d`, recebeu 11/11 checks no run `31550975708`, foi incorporado pelo
-merge `72f89e3` e recebeu 11/11 na CI pós-merge `31551685950`. A F4.8 está `PROMOTED`; o dossiê foi
-movido para `completed/` e a reconciliação local passou no gate documental, Ruff e diff check.
-
-A F3.7 não foi iniciada e permanece fora do escopo até o PR administrativo da F4.8 ser incorporado e
-sua CI pós-merge ficar verde.
+Certificação observada: gate focado `74 passed`; regressão integral única `774 passed, 5 skipped,
+6 subtests passed`; mypy em 106 arquivos, Ruff, compileall, build PEP 517 e smoke oficial offline da
+wheel verdes. O smoke carregou `ai-engineering-harness 0.1.0` de origem externa ao checkout.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico ou documental conhecido na F4.8. A reconciliação está
-`ADMIN_PR_OPEN / CHECKS_PENDING` no PR #50. O merge, qualquer tag remota, exclusão de refs e início da
-F3.7 não estão autorizados; primeiro é necessário auditar todos os checks no head final.
+O R1 corrigiu a assertion unitária. No run
+[31567250425](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31567250425), a suíte unitária
+Ubuntu ficou verde (`749/1/6`), mas duas assertions equivalentes remanesceram no E2E: Python 3.11
+falhou `2/26/1`, Python 3.14 falhou `1/27/1`, e `CI required` agregou failure. Os oito outros jobs
+passaram. O R2 corrigiu somente esses E2E e recertificou pelo menos `10/10` cada, gate focado `74`,
+regressão integral `774/5/6`, mypy/Ruff/compileall, build e smoke offline. Produto e `src/` permanecem
+intactos. Merge continua bloqueado até 11/11 checks verdes no novo head remoto.
 
-Evidência negativa nova sempre prevalece sobre sucesso anterior e exige recertificação integral.
+Tag remota, exclusão de ref e início de outra tarefa não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AUDITAR TODOS OS CHECKS DO PR ADMINISTRATIVO #50 NO HEAD FINAL.
-NÃO FAZER MERGE SEM NOVA AUTORIZAÇÃO EXPLÍCITA.
-NÃO INICIAR F3.7.
+PUBLICAR A RECERTIFICAÇÃO R2 NO PR #51 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
+MESCLAR SOMENTE APÓS 11/11 VERDES NO SHA EXATO.
+NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR OUTRA TAREFA.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia este arquivo e `docs/tasks/completed/F4.8.md` integralmente.
-2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch `docs/promote-f4.8`, base/main `72f89e3`, PR #49 no head `f9c8c2d`, run do PR
-   `31550975708`, run pós-merge `31551685950`, PR administrativo #50 e runtime 3.12.13.
-4. Confirme que não há dossiê de implementação ativo e execute somente a próxima ação exata.
+1. Leia este arquivo e `docs/tasks/active/F3.7.md` integralmente.
+2. Leia as seções 1.1–1.2 e F3.7 do plano, além das DEC-013/014/015.
+3. Confirme branch `task/f3.7-safe-promotion`, baseline/main `9f75e35`, CI pós-merge
+   `31557794240`, workspace limpo e Python 3.12.13.
+4. Confirme `checkpoint/f3.7-ready == f84af68`, gate focado 74, regressão integral 774/5/6 e
+   build/smoke verdes antes de criar ou validar `checkpoint/f3.7-complete`.
 
 ---
 
-*Atualizado em: 2026-08-11T22:42:55-03:00 | Fonte: F4.8 + PR #49 + merge 72f89e3 + CI 31551685950 + PR administrativo #50 + DEC-014/DEC-015*
+*Atualizado em: 2026-08-12T03:01:02-03:00 | Fonte: F3.7 R2 9cf15d4/774/5/6 + PR #51 + CI histórica 31567250425 + R1 + F3.6 + F4.7/F4.8 + DEC-013/014/015*

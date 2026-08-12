@@ -70,6 +70,10 @@ class DirtyWorktreeError(WorktreeCleanupError):
     """Raised when cleanup would discard changes from the external worktree."""
 
 
+class CandidateCommitError(WorktreeError):
+    """Raised when a real candidate commit cannot be created or recovered safely."""
+
+
 class WorktreeStatus(str, Enum):
     """Durable lifecycle states for one external worktree."""
 
@@ -315,15 +319,137 @@ class ExternalWorktreeManager:
         if reference.worktree_head_sha is None:
             raise WorktreeValidationError("ACTIVE worktree reference is missing its validated HEAD")
 
-        validated_head = self._validate_worktree(
+        self._validate_worktree(
             reference.worktree_path,
             expected_branch=reference.worktree_branch,
             expected_head=reference.worktree_head_sha,
         )
-        if validated_head != reference.base_commit_sha:
-            raise WorktreeValidationError("worktree HEAD no longer matches the recorded base commit")
         guard = PathGuard(reference.worktree_path)
         return ProvisionedWorktree(reference=reference, path_guard=guard)
+
+    def create_candidate_commit(
+        self,
+        execution_id: str,
+        *,
+        message: str | None = None,
+    ) -> ProvisionedWorktree:
+        """Commit the authorized worktree changes and durably advance its recorded HEAD.
+
+        The original checkout is inspected before and after the effect and is never staged or
+        committed. If Git committed successfully but reference publication was interrupted, a retry
+        recovers the single clean child commit instead of creating a duplicate.
+        """
+
+        safe_execution_id = self._validate_identifier("execution_id", execution_id)
+        commit_message = message or f"feat: candidate for {safe_execution_id}"
+        if (
+            type(commit_message) is not str
+            or not commit_message.strip()
+            or commit_message != commit_message.strip()
+            or "\x00" in commit_message
+            or "\n" in commit_message
+            or "\r" in commit_message
+        ):
+            raise WorktreeConfigurationError("candidate commit message must be one trimmed line")
+
+        reference = self._read_reference(safe_execution_id)
+        self._validate_reference_owner(reference)
+        if reference.status is not WorktreeStatus.ACTIVE:
+            raise CandidateCommitError("candidate commit requires an ACTIVE worktree reference")
+        if reference.worktree_head_sha is None:
+            raise CandidateCommitError("candidate commit requires a recorded worktree HEAD")
+
+        original = self._inspect_repository(require_clean=True)
+        if (
+            original.head_sha != reference.base_commit_sha
+            or original.branch != reference.original_branch
+        ):
+            raise BaseCommitMismatchError(
+                "original branch or HEAD changed before candidate commit creation"
+            )
+
+        observed_head = self._validate_worktree(
+            reference.worktree_path,
+            expected_branch=reference.worktree_branch,
+            expected_head=None,
+        )
+        self._run_git(("add", "--all", "--", "."), cwd=reference.worktree_path)
+        candidate_tree = self._run_git(
+            ("write-tree",),
+            cwd=reference.worktree_path,
+        ).stdout.strip().lower()
+        base_tree = self._run_git(
+            ("rev-parse", "--verify", f"{reference.base_commit_sha}^{{tree}}"),
+            cwd=reference.worktree_path,
+        ).stdout.strip().lower()
+        if candidate_tree == base_tree:
+            raise CandidateCommitError("candidate worktree contains no changes to commit")
+
+        observed_parent = self._commit_parent(
+            reference.worktree_path,
+            observed_head,
+        )
+        status_before = self._run_git(
+            ("status", "--porcelain=v1", "--untracked-files=all"),
+            cwd=reference.worktree_path,
+        ).stdout
+        if (
+            observed_parent == reference.base_commit_sha
+            and not status_before.strip()
+            and observed_head != reference.base_commit_sha
+        ):
+            candidate_sha = observed_head
+        else:
+            candidate_sha = self._run_git(
+                (
+                    "commit-tree",
+                    candidate_tree,
+                    "-p",
+                    reference.base_commit_sha,
+                    "-m",
+                    commit_message,
+                ),
+                cwd=reference.worktree_path,
+            ).stdout.strip().lower()
+            if self._FULL_SHA.fullmatch(candidate_sha) is None:
+                raise CandidateCommitError("Git did not return a full candidate commit SHA")
+            self._run_git(
+                (
+                    "update-ref",
+                    f"refs/heads/{reference.worktree_branch}",
+                    candidate_sha,
+                    observed_head,
+                ),
+                cwd=reference.worktree_path,
+            )
+            candidate_sha = self._validate_worktree(
+                reference.worktree_path,
+                expected_branch=reference.worktree_branch,
+                expected_head=candidate_sha,
+            )
+        if self._commit_parent(reference.worktree_path, candidate_sha) != reference.base_commit_sha:
+            raise CandidateCommitError("candidate commit is not the single child of the base commit")
+        status = self._run_git(
+            ("status", "--porcelain=v1", "--untracked-files=all"),
+            cwd=reference.worktree_path,
+        ).stdout
+        if status.strip():
+            raise CandidateCommitError("candidate worktree is not clean after commit")
+
+        after = self._inspect_repository(require_clean=True)
+        if after != original:
+            raise CandidateCommitError("candidate creation changed the original checkout")
+
+        updated = replace(
+            reference,
+            worktree_head_sha=candidate_sha,
+            updated_at=self._now(),
+        )
+        self._write_reference(updated)
+        return ProvisionedWorktree(
+            reference=updated,
+            path_guard=PathGuard(updated.worktree_path),
+        )
 
     def cleanup_worktree(self, execution_id: str) -> WorktreeReference:
         """Explicitly remove a clean worktree without forcing or deleting its branch."""
@@ -454,6 +580,19 @@ class ExternalWorktreeManager:
         )
         if result.returncode == 0:
             raise WorktreeCollisionError("worktree branch already exists")
+
+    def _commit_parent(self, repository: Path, commit_sha: str) -> str | None:
+        result = self._run_git(
+            ("rev-parse", "--verify", f"{commit_sha}^"),
+            cwd=repository,
+            allowed_returncodes=(0, 128),
+        )
+        if result.returncode == 128:
+            return None
+        parent = result.stdout.strip().lower()
+        if self._FULL_SHA.fullmatch(parent) is None:
+            raise CandidateCommitError("candidate parent is not a full commit SHA")
+        return parent
 
     def _external_base_dir(self) -> Path:
         if self._configured_external_base is None:
@@ -682,6 +821,7 @@ class ExternalWorktreeManager:
 
 __all__ = [
     "BaseCommitMismatchError",
+    "CandidateCommitError",
     "DetachedHeadError",
     "DirtyRepositoryError",
     "DirtyWorktreeError",

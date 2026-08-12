@@ -111,6 +111,22 @@ class RuntimeEngine:
 
         return self._require_lifecycle().verify(self.execution_id)
 
+    def prepare_candidate(self, *, message: str | None = None) -> ExecutionRecord:
+        """Create or recover the real candidate commit for this execution."""
+
+        return self._require_lifecycle().prepare_candidate(
+            self.execution_id,
+            message=message,
+        )
+
+    def promote_execution(self, *, dry_run: bool = False) -> ExecutionRecord:
+        """Promote the approved and verified candidate, or record a dry-run."""
+
+        return self._require_lifecycle().promote(
+            self.execution_id,
+            dry_run=dry_run,
+        )
+
     def approve_execution(self, *, approver: str) -> ExecutionRecord:
         """Approve the configured canonical execution subject."""
         return self._require_lifecycle().approve(self.execution_id, approver=approver)

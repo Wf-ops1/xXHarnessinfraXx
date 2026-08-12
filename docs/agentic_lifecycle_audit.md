@@ -15,8 +15,8 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |
 | Verificação | `VerificationEngine` + `ExecutionLifecycleService` | F4.5 normaliza cinco IDs; F4.6 resolve a suíte no `ProvisionedWorktree`; F4.7 persiste resultados commit-bound e guarda `COMPLETED`; F4.8 executa targeted → full após reparo | F4.7/F4.8 `PROMOTED` | Provider e worktree permanecem injetados no E2E |
 | Reparo | `ExecutionLifecycleService` + `GraphExecutor` | Reprovação F4.7 vira `RetryContext` redigido para o `on_failure` compilado; schedule, deadline e budgets são duráveis; crash-resume e limites possuem E2E | F4.8 `PROMOTED` | Sem composição automática das tools/worktree/provider, o caminho padrão ainda não executa reparo autônomo em repositório externo |
-| Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos | Implementada como contrato | Aprovação exige `resume` explícito e ainda não aciona promoção Git segura |
-| Promoção | `PromotionManager` | Registra evento e retorna string | Simulado | Runtime força dry-run e recebe SHA sintético; caminho live possui fallbacks sintéticos |
+| Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos; F3.7 exige `ApprovalStatus.APPROVED` antes do efeito | Implementada como contrato | Aprovação exige `resume` explícito e ainda não é vinculada ao conteúdo/diff do candidate |
+| Promoção | `PromotionManager` + `ExecutionLifecycleService` | Candidate real no worktree, full suite no mesmo SHA, write-ahead/outcome, cherry-pick único, dry-run e recovery possuem E2E | F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING` | Composição permanece opt-in; CLI/defaults não constroem manager/provider automaticamente e a promoção remota ainda não ocorreu |
 | Memória | `PythonAstIndexer` + `CodebaseMemoryAdapter` + `SnapshotManager` | Rebuild AST de blobs Python do commit exato e snapshot canônico com SHA/schema/status/digest validados; F4.3 consome o snapshot commit-bound | Backend local implementado | Execução do índice é explícita por `harness index`; o lifecycle não reindexa automaticamente e o backend MCP ainda não substitui esse backend |
 | Knowledge sync | `KnowledgeSynchronizer` | Transação local em etapas | Experimental | Falta integrar backend real, idempotência/recovery e política no caminho crítico |
 | Evidência | `RuntimeEngine` e audit trail | `evidence.json` e hash chain locais | Experimental | Evidência pode registrar SHA/efeitos simulados e não prova alteração entregue |
@@ -36,9 +36,10 @@ pré-requisito e persistência canônica por gate. Para F4.8, provam commit queb
 provam providers HTTP com servidores controlados,
 tool loop durável, worktree Git real, terminal por `argv`, edição confinada e transporte MCP Serena
 contra fixtures. Integrações live
-OpenAI/Serena continuam condicionadas a configuração externa. Eles ainda não provam que a CLI compõe
-essas primitivas numa execução autônoma, nem promoção/reversão segura sobre um repositório externo. O
-E2E atual usa diretórios temporários e backends determinísticos injetados; não cobre o gate final do
+OpenAI/Serena continuam condicionadas a configuração externa. A F3.7 prova promoção segura sobre
+repositório/worktree externos temporários, incluindo falhas e recovery, mas por composição explícita.
+Eles ainda não provam que a CLI compõe todas as primitivas numa execução autônoma nem reversão segura.
+O E2E atual usa diretórios temporários e backends determinísticos injetados; não cobre o gate final do
 produto sem mocks.
 
 ## Gate para mudar uma linha para “implementada”

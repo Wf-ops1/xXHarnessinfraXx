@@ -361,7 +361,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "31551685950" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
@@ -460,10 +460,10 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
     assert not (ACTIVE_ROOT / "F4.7.md").exists()
     assert (COMPLETED_ROOT / "F4.7.md").is_file()
-    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
-    assert "72f89e3ede8c4d7457857c13115f690d87df4aad" in panel
-    assert "31551685950" in panel
+    assert "9f75e35db38fc6648497c01bd8f81dcdecec8029" in panel
+    assert "31557794240" in panel
     assert "> **Gate:** `READY`" in f4_7_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_7_dossier
     assert "checkpoint/f4.7-ready" in f4_7_dossier
@@ -600,15 +600,61 @@ def test_f4_8_promotion_records_repair_loop_and_post_merge_ci() -> None:
     assert dossier.rfind("## Publicação administrativa") > dossier.rfind(
         "## Certificação final da promoção"
     )
-    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/50" in dossier
     assert "3d571cadaffa798c7be1387431e54eaf0463346a" in dossier
-    assert "nenhuma tarefa ativa" in panel
-    assert "A F3.7 não foi iniciada" in panel
+    assert (ACTIVE_ROOT / "F3.7.md").is_file()
+    assert "F3.7 — promoção Git segura" in panel
     assert "A F4.8 foi promovida pelo PR #49" in readme
     assert "completed/F4.8.md" in task_index
     assert "PR #49 / merge `72f89e3` / pós-merge `31551685950`" in task_index
+
+
+def test_f3_7_r2_recovers_only_after_integral_local_recertification() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F3.7.md")
+    task_index = _read(TASKS_INDEX)
+
+    assert "> **Gate:** `CERTIFIED (R2)`" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "task/f3.7-safe-promotion" in dossier
+    assert "9f75e35db38fc6648497c01bd8f81dcdecec8029" in dossier
+    assert "31557794240" in dossier
+    assert "sha-promoted-37" in dossier
+    assert "git add ." in dossier
+    assert "sha-fallback-<execution_id>" in dossier
+    assert "candidate_commit_sha" in dossier
+    assert "promotion_commit_sha" in dossier
+    assert "BLOCKED_BASE_CHANGED" in dossier
+    assert "DRY_RUN_COMPLETED" in dossier
+    assert "git cherry-pick <candidate_sha>" in dossier
+    assert "ApprovalStatus.APPROVED" in dossier
+    assert "última suíte canônica F4.7 passou no mesmo candidate SHA" in dossier
+    assert "write-ahead durável" in dossier
+    assert "tests/e2e/test_safe_promotion.py" in dossier
+    assert "checkpoint/f3.7-ready" in dossier
+    assert "checkpoint/f3.7-complete" in dossier
+    assert "checkpoint/f3.7-r1-ready" in dossier
+    assert "checkpoint/f3.7-r1-complete" in dossier
+    assert "checkpoint/f3.7-r2-ready" in dossier
+    assert "checkpoint/f3.7-r2-complete" in dossier
+    assert "774 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "d31227694344ea89303bfb6853eb238c4ca6d8f7" in dossier
+    assert "31565797052" in dossier
+    assert "94017253149" in dossier
+    assert "94017253186" in dossier
+    assert "31567250425" in dossier
+    assert "94021523104" in dossier
+    assert "94021523172" in dossier
+    assert "9cf15d43e906fc8c3611ca4c6c0863218e33784c" in dossier
+    assert "exatamente uma chamada `git cherry-pick <candidate_sha>`" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/51" in dossier
+    assert "ac1d3e2ad5bda0111d5da7e7569d23318c9d762a" in dossier
+    assert "docs/tasks/active/F3.7.md" in panel
+    assert "F4.8 `PROMOTED / RECONCILED / CLOSED`" in panel
+    assert "administrativo #50 / merge `9f75e35` / pós-merge `31557794240`" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
@@ -670,5 +716,5 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "autorização explícita nova" in realignment
     assert "completed/F4.4.md" in task_index
     assert "F4.1" in panel
-    assert "A F3.7 não foi iniciada" in panel
+    assert "F3.7 — promoção Git segura" in panel
     assert "Não restou achado blocker/high" in realignment

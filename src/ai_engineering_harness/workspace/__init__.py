@@ -2,6 +2,7 @@
 
 from .git_worktree import (
     BaseCommitMismatchError,
+    CandidateCommitError,
     DetachedHeadError,
     DirtyRepositoryError,
     DirtyWorktreeError,
@@ -23,6 +24,7 @@ from .sandbox import SandboxProvider
 
 __all__ = [
     "BaseCommitMismatchError",
+    "CandidateCommitError",
     "DetachedHeadError",
     "DirtyRepositoryError",
     "DirtyWorktreeError",
