@@ -20,7 +20,7 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.8 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 3 — fechamento da promoção Git segura após gates F4 promovidos |
 | **Tarefa ativa** | F3.7 — promoção Git segura |
-| **Gate** | F3.7 R2 `REPAIR_ACTIVE / PROMOTION_BLOCKED`; CI R1 falhou nos E2E Ubuntu do head `5c80162` |
+| **Gate** | F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`; recertificação integral aguarda publicação |
 | **Executor ativo** | `Codex`, único escritor; autorizado em `2026-08-12T00:48:45-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.7-safe-promotion`, rastreando `origin/task/f3.7-safe-promotion`, criada de `9f75e35db38fc6648497c01bd8f81dcdecec8029` |
@@ -31,7 +31,8 @@
 | **Checkpoint de conclusão inicial** | `checkpoint/f3.7-complete` → `ac1d3e2`, somente local |
 | **Reparo R1** | `d31227694344ea89303bfb6853eb238c4ca6d8f7` — prova direta do cherry-pick, produto inalterado |
 | **Checkpoint R1** | `checkpoint/f3.7-r1-ready` → `6333217`; `checkpoint/f3.7-r1-complete` → recertificação final, somente locais |
-| **Checkpoint R2** | `checkpoint/f3.7-r2-ready` → próximo commit documental; somente local |
+| **Checkpoint R2** | `checkpoint/f3.7-r2-ready` → `ef0cf5d`; `checkpoint/f3.7-r2-complete` → recertificação final, somente locais |
+| **Reparo R2** | `9cf15d43e906fc8c3611ca4c6c0863218e33784c` — duas provas E2E diretas, produto inalterado |
 | **Pull request** | [#51](https://github.com/Wf-ops1/Harnessinfra/pull/51), não-draft contra `main`; head falho `5c80162` |
 
 ## 3. Última promoção comprovada
@@ -66,20 +67,21 @@ wheel verdes. O smoke carregou `ai-engineering-harness 0.1.0` de origem externa 
 
 ## 6. Bloqueios atuais
 
-O R1 corrigiu a assertion unitária e passou localmente `10/10`, gate focado `74`, regressão integral
-`774 passed, 5 skipped, 6 subtests passed`, mypy/Ruff/compileall, build e smoke. No run
+O R1 corrigiu a assertion unitária. No run
 [31567250425](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31567250425), a suíte unitária
 Ubuntu ficou verde (`749/1/6`), mas duas assertions equivalentes remanesceram no E2E: Python 3.11
 falhou `2/26/1`, Python 3.14 falhou `1/27/1`, e `CI required` agregou failure. Os oito outros jobs
-passaram. Produto e `src/` permanecem intactos; R2 limita-se aos E2E e estado documental.
+passaram. O R2 corrigiu somente esses E2E e recertificou pelo menos `10/10` cada, gate focado `74`,
+regressão integral `774/5/6`, mypy/Ruff/compileall, build e smoke offline. Produto e `src/` permanecem
+intactos. Merge continua bloqueado até 11/11 checks verdes no novo head remoto.
 
 Tag remota, exclusão de ref e início de outra tarefa não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR CHECKPOINT F3.7-R2-READY, REPARAR AS DUAS ASSERTIONS E2E E REPETIR TODO O ACEITE.
-PUBLICAR O R2 E MESCLAR SOMENTE APÓS 11/11 VERDES NO SHA EXATO.
+PUBLICAR A RECERTIFICAÇÃO R2 NO PR #51 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
+MESCLAR SOMENTE APÓS 11/11 VERDES NO SHA EXATO.
 NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR OUTRA TAREFA.
 ```
 
@@ -94,4 +96,4 @@ NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR OUTRA TAREFA.
 
 ---
 
-*Atualizado em: 2026-08-12T02:44:52-03:00 | Fonte: F3.7 R2 + PR #51 + CI 31567250425 + R1 d312276/774/5/6 + F3.6 + F4.7/F4.8 + DEC-013/014/015*
+*Atualizado em: 2026-08-12T03:01:02-03:00 | Fonte: F3.7 R2 9cf15d4/774/5/6 + PR #51 + CI histórica 31567250425 + R1 + F3.6 + F4.7/F4.8 + DEC-013/014/015*
