@@ -163,13 +163,14 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
+    assert "`LOCAL_READY / PUBLICATION_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
-    assert "31616226652" in panel
-    assert "PR #52" in panel
+    assert "31629604755" in panel
+    assert "31630446370" in panel
     assert "DEC-014" in panel
-    assert "docs/tasks/active/F5.1.md" in panel
-    assert "846c59e78e6db9c9417ff1d8a69c560d2d08356e" in panel
+    assert "docs/tasks/completed/F5.1.md" in panel
+    assert "c46910e50ede1196c9beb1242cb7bd708905d666" in panel
     assert "F4.8" in panel
     assert "F3.7 — promoção Git segura" in panel
     assert "F5.1" in panel

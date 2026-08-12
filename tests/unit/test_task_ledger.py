@@ -362,7 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
+    assert "`LOCAL_READY / PUBLICATION_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "31568908128" in panel
@@ -465,8 +466,8 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "F5.1 — resolver configuração no início da execução" in panel
     assert "checkpoint/f5.1-ready" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
-    assert "846c59e78e6db9c9417ff1d8a69c560d2d08356e" in panel
-    assert "31568908128" in panel
+    assert "c46910e50ede1196c9beb1242cb7bd708905d666" in panel
+    assert "31630446370" in panel
     assert "> **Gate:** `READY`" in f4_7_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_7_dossier
     assert "checkpoint/f4.7-ready" in f4_7_dossier
@@ -670,6 +671,35 @@ def test_f3_7_promotion_records_r2_and_post_merge_ci() -> None:
     assert "completed/F3.7.md" in task_index
     assert "PR #51 / merge `10d75408` / pós-merge `31568908128`" in task_index
     assert "administrativo #50 / merge `9f75e35` / pós-merge `31557794240`" in task_index
+
+
+def test_f5_1_promotion_records_configuration_and_post_merge_ci() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(COMPLETED_ROOT / "F5.1.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+
+    assert not (ACTIVE_ROOT / "F5.1.md").exists()
+    assert (COMPLETED_ROOT / "F5.1.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "checkpoint/f5.1-ready" in dossier
+    assert "checkpoint/f5.1-complete" in dossier
+    assert "f246feb2a70bb83f08ff31341525fd29bd6d10f8" in dossier
+    assert "f42af272c54b2610554eb34acd75dc895a011974" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in dossier
+    assert "31629604755" in dossier
+    assert "c46910e50ede1196c9beb1242cb7bd708905d666" in dossier
+    assert "31630446370" in dossier
+    assert "792 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "docs/promote-f5.1" in dossier
+    assert "nenhuma tarefa ativa" in panel
+    assert "docs/tasks/completed/F5.1.md" in panel
+    assert "F5.2 está somente planejada e não autorizada" in panel
+    assert "completed/F5.1.md" in task_index
+    assert "PR #53 / merge `c46910e` / pós-merge `31630446370`" in task_index
+    assert "F5.1 foi promovida pelo" in readme
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

@@ -20,12 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O dossiê [F5.1](active/F5.1.md) está `PR_OPEN / CHECKS_PENDING` no
-[PR #53](https://github.com/Wf-ops1/Harnessinfra/pull/53), branch `task/f5.1-resolve-config`, criada do
-merge administrativo `846c59e`. A F3.7 permanece `PROMOTED` em
-[seu dossiê concluído](completed/F3.7.md); a PR administrativa #52 foi incorporada em `846c59e` e o
-workflow `CI` run `31616226652` passou no SHA exato da `main`. Merge da F5.1, tags remotas e início da
-F5.2 permanecem não autorizados.
+Não há implementação ativa. A [F5.1](completed/F5.1.md) está `PROMOTED`: o PR #53 encerrou no head
+`f42af27`, passou 11/11 checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu
+11/11 na CI pós-merge `31630446370`. A reconciliação administrativa está
+`LOCAL_READY / PUBLICATION_PENDING` em `docs/promote-f5.1`. F5.2, merge administrativo, tags remotas e
+remoção de refs permanecem não autorizados.
 
 ## Ledger concluído
 
@@ -60,7 +59,7 @@ F5.2 permanecem não autorizados.
 | F3 | F3.4 | [Path guard](completed/F3.4.md) | PR #25 / merge `8fac2d0` / pós-merge `31272502445` |
 | F3 | F3.6 | [Worktree Git externo](completed/F3.6.md) | PR #26 / merge `6757fbf` / pós-merge `31279967619` |
 | F3 | F3.5 | [Terminal seguro por argv](completed/F3.5.md) | PR #27 / merge `b6a4a24` / pós-merge `31285547886` |
-| F3 | F3.7 | [Promoção Git segura](completed/F3.7.md) | PR #51 / merge `10d75408` / pós-merge `31568908128`; reconciliação administrativa pendente |
+| F3 | F3.7 | [Promoção Git segura](completed/F3.7.md) | PR #51 / merge `10d75408` / pós-merge `31568908128`; administrativo #52 / merge `846c59e` / CI `31616226652` (`workflow_dispatch`) |
 | F3 | F3.8 | [Edição real confinada e Serena MCP explícito](completed/F3.8.md) | PR #29 / merge `e6b5b84` / pós-merge `31295594376`; administrativo #30 / merge `c2aa89b` / pós-merge `31316853244` |
 | F4 | F4.1 | [Armazenamento íntegro do índice estrutural](completed/F4.1.md) | PR #32 / merge `12ce3b7` / pós-merge `31323952381`; administrativo #33 / merge `571a8eb` / pós-merge `31329231458` |
 | F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |
@@ -71,6 +70,7 @@ F5.2 permanecem não autorizados.
 | F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
 | F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 / merge `d4e34c7` / pós-merge `31541047111` |
 | F4 | F4.8 | [Repair loop orientado pelos gates](completed/F4.8.md) | PR #49 / merge `72f89e3` / pós-merge `31551685950`; administrativo #50 / merge `9f75e35` / pós-merge `31557794240` |
+| F5 | F5.1 | [Configuração efetiva no início da execução](completed/F5.1.md) | PR #53 / merge `c46910e` / pós-merge `31630446370`; reconciliação administrativa pendente |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
