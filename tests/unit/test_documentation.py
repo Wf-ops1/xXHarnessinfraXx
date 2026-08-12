@@ -181,7 +181,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.2 — política unificada de autorização de tools" in panel
-    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "31629604755" in panel

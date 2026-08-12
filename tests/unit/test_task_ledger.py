@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -714,12 +714,15 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
 
     assert (ACTIVE_ROOT / "F5.2.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
     assert "checkpoint/f5.2-ready" in dossier
+    assert "checkpoint/f5.2-complete" in dossier
     assert "task/f5.2-unified-policy" in dossier
     assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in dossier
     assert "policy_default_allows_unknown=True" in dossier
     assert "116 passed in 15.69s" in dossier
+    assert "ac665b945a2cfbadaa7672855219e624d7eca45e" in dossier
+    assert "811 passed, 5 skipped, 6 subtests passed" in dossier
     for dimension in (
         "role",
         "node_id",
@@ -736,7 +739,7 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "F5.6" in dossier
     assert "docs/tasks/active/F5.2.md" in panel
     assert "active/F5.2.md" in task_index
-    assert "F5.2 está `READY / ACTIVE / LOCAL_ONLY`" in readme
+    assert "F5.2 está `COMPLETED_LOCAL / PROMOTION_PENDING`" in readme
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
