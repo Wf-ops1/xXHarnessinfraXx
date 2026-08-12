@@ -361,7 +361,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F3.7 `PR_OPEN / CHECKS_PENDING`" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "31551685950" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
@@ -460,7 +460,7 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
     assert not (ACTIVE_ROOT / "F4.7.md").exists()
     assert (COMPLETED_ROOT / "F4.7.md").is_file()
-    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F3.7 `PR_OPEN / CHECKS_PENDING`" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "9f75e35db38fc6648497c01bd8f81dcdecec8029" in panel
     assert "31557794240" in panel
@@ -600,7 +600,7 @@ def test_f4_8_promotion_records_repair_loop_and_post_merge_ci() -> None:
     assert dossier.rfind("## Publicação administrativa") > dossier.rfind(
         "## Certificação final da promoção"
     )
-    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F3.7 `PR_OPEN / CHECKS_PENDING`" in panel
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/50" in dossier
     assert "3d571cadaffa798c7be1387431e54eaf0463346a" in dossier
@@ -617,7 +617,7 @@ def test_f3_7_gate_freezes_safe_promotion_after_f4_8_reconciliation() -> None:
     task_index = _read(TASKS_INDEX)
 
     assert "> **Gate:** `CERTIFIED`" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in dossier
     assert "task/f3.7-safe-promotion" in dossier
     assert "9f75e35db38fc6648497c01bd8f81dcdecec8029" in dossier
     assert "31557794240" in dossier
@@ -636,7 +636,9 @@ def test_f3_7_gate_freezes_safe_promotion_after_f4_8_reconciliation() -> None:
     assert "checkpoint/f3.7-ready" in dossier
     assert "checkpoint/f3.7-complete" in dossier
     assert "774 passed, 5 skipped, 6 subtests passed" in dossier
-    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F3.7 `PR_OPEN / CHECKS_PENDING`" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/51" in dossier
+    assert "ac1d3e2ad5bda0111d5da7e7569d23318c9d762a" in dossier
     assert "docs/tasks/active/F3.7.md" in panel
     assert "F4.8 `PROMOTED / RECONCILED / CLOSED`" in panel
     assert "administrativo #50 / merge `9f75e35` / pós-merge `31557794240`" in task_index
