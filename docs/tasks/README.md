@@ -20,12 +20,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há implementação ativa. A [F5.1](completed/F5.1.md) está `PROMOTED`: o PR #53 encerrou no head
-`f42af27`, passou 11/11 checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu
-11/11 na CI pós-merge `31630446370`. A reconciliação administrativa está
-`ADMIN_PR_OPEN / CHECKS_PENDING` no [PR #54](https://github.com/Wf-ops1/Harnessinfra/pull/54), branch
-`docs/promote-f5.1`. F5.2, merge administrativo, tags remotas e remoção de refs permanecem não
-autorizados.
+A [F5.2](active/F5.2.md) está `READY / ACTIVE / LOCAL_ONLY` na branch
+`task/f5.2-unified-policy`, criada do baseline `fe95a91` e sem upstream. A autorização corrente cobre
+somente implementação, commits e checkpoints locais. Push, PR, merge, tags remotas e remoção de refs
+permanecem não autorizados.
+
+A [F5.1](completed/F5.1.md) permanece `PROMOTED`: o PR #53 encerrou no head `f42af27`, passou 11/11
+checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/11 na CI pós-merge
+`31630446370`. A reconciliação administrativa PR #54 foi incorporada pelo merge `fe95a91`; a CI de
+`push` final `31633748837` passou 11/11 no SHA exato.
 
 ## Ledger concluído
 
@@ -71,7 +74,7 @@ autorizados.
 | F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
 | F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 / merge `d4e34c7` / pós-merge `31541047111` |
 | F4 | F4.8 | [Repair loop orientado pelos gates](completed/F4.8.md) | PR #49 / merge `72f89e3` / pós-merge `31551685950`; administrativo #50 / merge `9f75e35` / pós-merge `31557794240` |
-| F5 | F5.1 | [Configuração efetiva no início da execução](completed/F5.1.md) | PR #53 / merge `c46910e` / pós-merge `31630446370`; administrativo #54 com checks pendentes |
+| F5 | F5.1 | [Configuração efetiva no início da execução](completed/F5.1.md) | PR #53 / merge `c46910e` / pós-merge `31630446370`; administrativo #54 / merge `fe95a91` / pós-merge `31633748837` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

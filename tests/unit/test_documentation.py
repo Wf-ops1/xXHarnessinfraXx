@@ -162,19 +162,22 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.2 — política unificada de autorização de tools" in panel
+    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "31629604755" in panel
     assert "31630446370" in panel
+    assert "31633748837" in panel
     assert "DEC-014" in panel
+    assert "docs/tasks/active/F5.2.md" in panel
     assert "docs/tasks/completed/F5.1.md" in panel
-    assert "c46910e50ede1196c9beb1242cb7bd708905d666" in panel
+    assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in panel
     assert "F4.8" in panel
     assert "F3.7 — promoção Git segura" in panel
     assert "F5.1" in panel
     assert "checkpoint/f5.1-ready" in panel
+    assert "checkpoint/f5.2-ready" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

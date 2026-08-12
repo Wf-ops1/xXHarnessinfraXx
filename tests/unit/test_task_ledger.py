@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -697,12 +697,46 @@ def test_f5_1_promotion_records_configuration_and_post_merge_ci() -> None:
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in dossier
     assert "f7e117303bb01cbc1afbc604781efd09ab9c94c8" in dossier
-    assert "nenhuma tarefa ativa" in panel
+    assert "F5.2 — política unificada de autorização de tools" in panel
     assert "docs/tasks/completed/F5.1.md" in panel
-    assert "F5.2 está somente planejada e não autorizada" in panel
+    assert "31633748837" in panel
+    assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in panel
     assert "completed/F5.1.md" in task_index
-    assert "PR #53 / merge `c46910e` / pós-merge `31630446370`" in task_index
+    assert "administrativo #54 / merge `fe95a91` / pós-merge `31633748837`" in task_index
     assert "F5.1 foi promovida pelo" in readme
+
+
+def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.2.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+
+    assert (ACTIVE_ROOT / "F5.2.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "checkpoint/f5.2-ready" in dossier
+    assert "task/f5.2-unified-policy" in dossier
+    assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in dossier
+    assert "policy_default_allows_unknown=True" in dossier
+    assert "116 passed in 15.69s" in dossier
+    for dimension in (
+        "role",
+        "node_id",
+        "workflow",
+        "trust_mode",
+        "tool",
+        "operation",
+        "path",
+    ):
+        assert dimension in dossier
+    assert "default-deny" in dossier
+    assert "TOOL_CALLED" in dossier
+    assert "F5.3" in dossier
+    assert "F5.6" in dossier
+    assert "docs/tasks/active/F5.2.md" in panel
+    assert "active/F5.2.md" in task_index
+    assert "F5.2 está `READY / ACTIVE / LOCAL_ONLY`" in readme
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

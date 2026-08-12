@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração | A F5.1 promovida resolve seis níveis por `importlib.resources`, valida a configuração completa por Pydantic e persiste somente projeção redigida + digest imutável | A reconciliação administrativa ainda não chegou à `main`; secrets injetáveis, budgets duráveis e policy unificada pertencem às tarefas seguintes | Configuração operacional completa junto da conclusão da Fase 5 |
+| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`, valida a configuração completa por Pydantic e persiste somente projeção redigida + digest imutável | A F5.2 está em implementação local para unificar policy default-deny; secrets injetáveis, budgets duráveis e trust boundary integrado pertencem às tarefas seguintes | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limites duráveis e resume por digest. A F4.8 promovida adiciona o reparo orientado pela suíte canônica | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
@@ -125,9 +125,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   O head final `f42af27` recebeu 11/11 checks no run `31629604755`, foi incorporado pelo merge
   `c46910e` e recebeu 11/11 na CI de `push` pós-merge `31630446370`. A certificação local passou
   `792 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke externo da wheel. A
-  reconciliação administrativa está aberta no [PR #54](https://github.com/Wf-ops1/Harnessinfra/pull/54)
-  e aguarda checks no head final; F5.2, merge administrativo, tags remotas e remoção de refs
-  permanecem não autorizados.
+  reconciliação administrativa [PR #54](https://github.com/Wf-ops1/Harnessinfra/pull/54) foi
+  incorporada pelo merge `fe95a91`; a CI de `push` `31633748837` passou 11/11 nesse SHA exato. A
+  F5.2 está `READY / ACTIVE / LOCAL_ONLY` para unificar a autorização de tools com default-deny e
+  evidência durável. Push, PR, merge, tags remotas e remoção de refs não estão autorizados.
 
 ## Dívidas técnicas críticas
 

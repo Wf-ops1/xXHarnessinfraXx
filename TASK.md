@@ -5,11 +5,13 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.1](docs/tasks/completed/F5.1.md): promoção comprovada e reconciliação administrativa corrente.
-3. [F3.7 — promoção Git segura](docs/tasks/completed/F3.7.md), pós-merge `31568908128`, e
-   [F4.8](docs/tasks/completed/F4.8.md): entregas promovidas anteriores.
-4. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 5.
-5. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md),
+2. [F5.2](docs/tasks/active/F5.2.md): contrato congelado e evidência corrente.
+3. [F5.1](docs/tasks/completed/F5.1.md): produto e promoção anteriores.
+4. [F4.8](docs/tasks/completed/F4.8.md) e
+   [F3.7 — promoção Git segura](docs/tasks/completed/F3.7.md): entregas anteriores; a F3.7 recebeu
+   CI pós-merge `31568908128`.
+5. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 5.
+6. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md),
    [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md) e
    [regras dos agentes](.agents/AGENTS.md).
 
@@ -19,19 +21,14 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
-| **Tarefa ativa** | nenhuma tarefa ativa; F5.2 está somente planejada e não autorizada |
-| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Executor ativo** | `Codex`, único escritor; reconciliação autorizada nominalmente em `2026-08-12T16:17:23-03:00` |
+| **Tarefa ativa** | F5.2 — política unificada de autorização de tools |
+| **Gate** | `READY / ACTIVE / LOCAL_ONLY` |
+| **Executor ativo** | `Codex`, único escritor; autorizado nominalmente em `2026-08-12T17:34:35-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch administrativa** | `docs/promote-f5.1`, publicada e rastreando `origin/docs/promote-f5.1` |
-| **Baseline** | `main == origin/main == c46910e50ede1196c9beb1242cb7bd708905d666` antes da branch |
-| **Produto F5.1** | `f246feb2a70bb83f08ff31341525fd29bd6d10f8` |
-| **Head final do PR** | `f42af272c54b2610554eb34acd75dc895a011974` |
-| **CI do PR** | run [31629604755](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31629604755), `pull_request`, 11/11 success no head final |
-| **Promoção F5.1** | PR [#53](https://github.com/Wf-ops1/Harnessinfra/pull/53), merge `c46910e50ede1196c9beb1242cb7bd708905d666` |
-| **CI pós-merge** | run [31630446370](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31630446370), `push`, 11/11 success no merge exato |
-| **Reconciliação** | PR administrativo [#54](https://github.com/Wf-ops1/Harnessinfra/pull/54), aberto e não draft; head inicial `f7e1173` |
-| **Checkpoints** | `checkpoint/f5.1-ready` e `checkpoint/f5.1-complete` somente locais |
+| **Branch** | `task/f5.2-unified-policy`, somente local e sem upstream |
+| **Baseline** | `main == origin/main == fe95a91648a79c404565583c87c1cf357e8ab3a2` antes da branch |
+| **Gate F5.2** | [dossiê ativo](docs/tasks/active/F5.2.md); `checkpoint/f5.2-ready` no commit documental |
+| **Baseline focado** | 116 testes passaram; nenhuma alteração de produto |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -39,47 +36,52 @@
 | Evidência | Resultado observado |
 |---|---|
 | Tarefa | F5.1 — resolver configuração no início da execução |
-| Produto | commit `f246feb`; certificação local integral `792 passed, 5 skipped, 6 subtests passed` |
-| Pull request | #53, head final `f42af27`, CI `31629604755` com 11/11 success |
-| Merge | `c46910e`, preservando a branch de produto |
-| Pós-merge | CI `31630446370`, evento `push`, 11/11 success no SHA exato |
-| Fronteira | checkpoints somente locais; nenhuma tag/ref remota removida |
+| Produto | commit `f246feb`; certificação local `792 passed, 5 skipped, 6 subtests passed` |
+| PR de produto | [#53](https://github.com/Wf-ops1/Harnessinfra/pull/53), head final `f42af27`, CI `31629604755`, 11/11 success |
+| Merge de produto | `c46910e50ede1196c9beb1242cb7bd708905d666`; CI de `push` pós-merge `31630446370`, 11/11 success |
+| Reconciliação | PR administrativo [#54](https://github.com/Wf-ops1/Harnessinfra/pull/54), merge `fe95a91` |
+| CI final | run `31633748837`, evento `push`, 11/11 success no SHA exato `fe95a91` |
+| Fronteira | `checkpoint/f5.1-ready` e `checkpoint/f5.1-complete` somente locais; branches remotas preservadas; nenhuma tag/ref remota removida |
 
 Nova evidência negativa prevalece sobre sucesso anterior e exige correção sem relaxamento,
 recertificação integral e reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Existe um único executor/escritor: `Codex`. A reconciliação pode alterar apenas `README.md`,
-`TASK.md`, `docs/tasks/README.md`, o dossiê F5.1 movido para `completed/` e testes documentais/de
-ledger afetados. Produto, dependências, schemas, defaults, lockfile e CI estão proibidos.
+Existe um único executor/escritor: `Codex`. A F5.2 pode alterar somente os módulos de policy,
+router/tool loop, persistência da decisão, testes diretamente afetados e documentação listados no
+dossiê. F5.3–F5.6, dependências, lockfile, CI, schemas/defaults de policy e composição automática do
+lifecycle permanecem fora do escopo.
 
 ## 5. Tarefa ativa
 
-Não há nenhuma tarefa ativa de implementação. A F5.1 está promovida no Git/GitHub, mas sua
-reconciliação documental ainda precisa ser publicada, revisada e incorporada. A F5.2 permanece apenas
-planejada no plano principal; nenhum gate F5.2 foi congelado ou autorizado.
+A [F5.2](docs/tasks/active/F5.2.md) está `READY / ACTIVE / LOCAL_ONLY`. O baseline comprovou dois
+verificadores divergentes e `PolicyEngine` default-allow para tool desconhecida. O contrato congela
+um engine tipado default-deny, decisão pelos oito eixos exigidos, preflight do lote e persistência da
+regra aplicada antes do efeito, preservando replay histórico e as fronteiras das tarefas seguintes.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A branch foi publicada e o PR administrativo #54 foi aberto. A
-autorização corrente não inclui o merge desse PR. Tag remota, exclusão de branch/ref, force-push,
-bypass e início da F5.2 continuam proibidos.
+Não há bloqueio técnico conhecido. A autorização corrente cobre implementação, commits e tags de
+checkpoint somente locais. Push, PR, merge, tags remotas, remoção de branch/ref, force-push e bypass
+não estão autorizados. O trust mode é somente uma dimensão da decisão nesta tarefa; as restrições
+operacionais abrangentes pertencem à F5.3.
 
 ## 7. Próxima ação exata
 
 ```text
-OBSERVAR TODOS OS CHECKS DO HEAD FINAL DO PR ADMINISTRATIVO #54.
-NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.2 SEM NOVA AUTORIZAÇÃO.
+IMPLEMENTAR LOCALMENTE O CONTRATO CONGELADO DA F5.2 E EXECUTAR OS GATES FOCADOS.
+NÃO PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.1.md` e a DEC-014.
-2. Confirme branch `docs/promote-f5.1`, PR #54, baseline `c46910e` e diff estritamente documental.
-3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist administrativa.
-4. Execute somente a próxima ação exata; o merge administrativo e a F5.2 exigem nova autorização.
+1. Leia `.agents/AGENTS.md`, este painel e `docs/tasks/active/F5.2.md` integralmente.
+2. Confirme branch `task/f5.2-unified-policy`, checkpoint READY e baseline `fe95a91`.
+3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist do dossiê.
+4. Reproduza qualquer evidência negativa nova e não reduza critérios para obter verde.
+5. Execute somente a próxima ação exata; efeitos remotos exigem autorização nominal nova.
 
 ---
 
-*Atualizado em: 2026-08-12T16:25:41-03:00 | Fonte: F5.1 + PRs #53/#54 + runs 31629604755/31630446370 + merge c46910e*
+*Atualizado em: 2026-08-12T17:34:35-03:00 | Fonte: F5.2 + PRs #53/#54 + runs 31629604755/31630446370/31633748837 + merge fe95a91*
