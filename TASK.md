@@ -23,17 +23,17 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | nenhuma tarefa ativa; F5.3 está somente planejada e não autorizada |
-| **Gate** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL` |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor da reconciliação iniciada em `2026-08-12T19:22:50-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch administrativa** | `docs/promote-f5.2`, local e sem upstream |
+| **Branch administrativa** | `docs/promote-f5.2` rastreando `origin/docs/promote-f5.2` |
 | **Baseline** | `main == origin/main == df5fee5b97e4c0613327043a71bc665eacf46aa1` antes da branch |
 | **Produto F5.2** | `ac665b945a2cfbadaa7672855219e624d7eca45e` |
 | **Head final do PR** | `4dccce3877d4b8d715efb7ab8212ff1ee0bff1a2` |
 | **CI do PR** | run [31644174160](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31644174160), `pull_request`, 11/11 success no head final |
 | **Promoção F5.2** | PR [#55](https://github.com/Wf-ops1/Harnessinfra/pull/55), merge `df5fee5b97e4c0613327043a71bc665eacf46aa1` |
 | **CI pós-merge** | run [31646282269](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31646282269), `push`, 11/11 success no merge exato |
-| **Reconciliação** | commit local `5a853b7535a86a53fcc84bbb5ff637881168bb25`; `LOCAL_READY / PUBLICATION_PENDING` |
+| **Reconciliação** | PR [#56](https://github.com/Wf-ops1/Harnessinfra/pull/56), não draft; head inicial `73fb40d`; `ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Checkpoints** | `checkpoint/f5.2-ready` e `checkpoint/f5.2-complete` somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
@@ -66,14 +66,14 @@ permanece apenas planejada no plano principal; nenhum gate F5.3 foi congelado ou
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Publicar `docs/promote-f5.2`, abrir ou mesclar seu PR
-administrativo, publicar tags, remover branch/ref, fazer force-push/bypass ou iniciar a F5.3 não
-estão autorizados.
+Não há bloqueio técnico conhecido. A branch administrativa foi publicada e o PR #56 está aberto; a
+publicação deste registro cria o head documental final, que exige CI integral. Mesclar o PR, publicar
+tags, remover branch/ref, fazer force-push/bypass ou iniciar a F5.3 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO PARA PUBLICAR A BRANCH E ABRIR O PR ADMINISTRATIVO ÚNICO DA F5.2.
+AUDITAR TODOS OS CHECKS DO HEAD FINAL DO PR ADMINISTRATIVO #56 APÓS PUBLICAR ESTE REGISTRO.
 NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.3 SEM NOVA AUTORIZAÇÃO.
 ```
 
@@ -86,4 +86,4 @@ NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.3 SEM NOVA AUTORIZAÇÃO
 
 ---
 
-*Atualizado em: 2026-08-12T19:22:50-03:00 | Fonte: F5.2 + PR #55 + runs 31644174160/31646282269 + merge df5fee5*
+*Atualizado em: 2026-08-12T19:54:59-03:00 | Fonte: F5.2 + PRs #55/#56 + runs 31644174160/31646282269 + merge df5fee5*

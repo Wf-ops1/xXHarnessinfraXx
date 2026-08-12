@@ -131,8 +131,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `4dccce3` recebeu 11/11 checks no run `31644174160`, foi incorporado pelo merge `df5fee5` e recebeu
   11/11 na CI de `push` pós-merge `31646282269`. O produto `ac665b9` passou localmente
   `811 passed, 5 skipped, 6 subtests passed`, qualidade, build limpo e smoke isolado da wheel. A
-  reconciliação administrativa está local em `docs/promote-f5.2` e ainda não foi publicada. Os
-  checkpoints permanecem locais; F5.3, tags remotas e remoção de refs não estão autorizados.
+  reconciliação administrativa está aberta no [PR #56](https://github.com/Wf-ops1/Harnessinfra/pull/56)
+  em `docs/promote-f5.2`, aguardando checks do head final. Os checkpoints permanecem locais; merge
+  administrativo, F5.3, tags remotas e remoção de refs não estão autorizados.
 
 ## Dívidas técnicas críticas
 

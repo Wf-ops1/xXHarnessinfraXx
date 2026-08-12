@@ -23,8 +23,9 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 Não há implementação ativa. A [F5.2](completed/F5.2.md) está `PROMOTED`: o PR #55 encerrou no head
 `4dccce3`, passou 11/11 checks no run `31644174160`, foi incorporado pelo merge `df5fee5` e recebeu
 11/11 na CI pós-merge `31646282269`. A reconciliação administrativa está
-`LOCAL_READY / PUBLICATION_PENDING` em `docs/promote-f5.2`. F5.3, publicação/PR/merge administrativo,
-tags remotas e remoção de refs permanecem não autorizados.
+`ADMIN_PR_OPEN / CHECKS_PENDING` no [PR #56](https://github.com/Wf-ops1/Harnessinfra/pull/56),
+branch `docs/promote-f5.2`. F5.3, merge administrativo, tags remotas e remoção de refs permanecem não
+autorizados.
 
 A [F5.1](completed/F5.1.md) permanece `PROMOTED`: o PR #53 encerrou no head `f42af27`, passou 11/11
 checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/11 na CI pós-merge

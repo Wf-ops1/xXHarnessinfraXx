@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.3 está somente planejada e não autorizada" in panel
-    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
+    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -737,6 +737,9 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "31646282269" in dossier
     assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
     assert "docs/promote-f5.2" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/56" in dossier
+    assert "73fb40d14f6405a5eea766bbc5bb9a3898077854" in dossier
     assert "811 passed, 5 skipped, 6 subtests passed" in dossier
     for dimension in (
         "role",
