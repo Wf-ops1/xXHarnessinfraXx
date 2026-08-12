@@ -20,13 +20,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há dossiê de implementação ativo. A [F4.8](completed/F4.8.md) está `PROMOTED`: o
-[PR #49](https://github.com/Wf-ops1/Harnessinfra/pull/49) encerrou no head `f9c8c2d`, recebeu 11/11
-checks no run `31550975708`, foi incorporado pelo merge `72f89e3` e recebeu 11/11 na CI pós-merge
-`31551685950`. A reconciliação administrativa está `ADMIN_PR_OPEN / CHECKS_PENDING`: o
-[PR #50](https://github.com/Wf-ops1/Harnessinfra/pull/50) foi aberto contra `main` no head inicial
-`3d571ca`. Checkpoints permanecem somente locais; nenhuma tag foi publicada. A F3.7 não foi iniciada
-e segue bloqueada até o PR administrativo e sua CI pós-merge ficarem verdes.
+A [F3.7](active/F3.7.md) é o único dossiê ativo. Seu gate está `READY` na branch local
+`task/f3.7-safe-promotion`, criada de `main == origin/main == 9f75e35`. O baseline comprovou SHA
+sintético, `git add .` no checkout configurado e fallback sintético no `PromotionManager`; nenhum
+arquivo de produto mudou antes do checkpoint `checkpoint/f3.7-ready`. A F4.8 está
+`PROMOTED / RECONCILED / CLOSED`: o PR #50 encerrou no head `a15b918`, passou 11/11 no run
+`31554671587`, foi incorporado pelo merge `9f75e35` e recebeu 11/11 na CI pós-merge `31557794240`.
+Checkpoints permanecem locais e nenhuma tag foi publicada.
 
 ## Ledger concluído
 
@@ -70,7 +70,7 @@ e segue bloqueada até o PR administrativo e sua CI pós-merge ficarem verdes.
 | F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 / merge `46b7070` / pós-merge `31459891130` |
 | F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
 | F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 / merge `d4e34c7` / pós-merge `31541047111` |
-| F4 | F4.8 | [Repair loop orientado pelos gates](completed/F4.8.md) | PR #49 / merge `72f89e3` / pós-merge `31551685950`; administrativo #50 aberto / checks pendentes |
+| F4 | F4.8 | [Repair loop orientado pelos gates](completed/F4.8.md) | PR #49 / merge `72f89e3` / pós-merge `31551685950`; administrativo #50 / merge `9f75e35` / pós-merge `31557794240` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

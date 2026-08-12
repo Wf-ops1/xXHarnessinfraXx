@@ -110,8 +110,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   A F4.8 foi promovida pelo PR #49: o produto `8e5e11d` passou na regressão final com `758 passed,
   5 skipped`, qualidade, build e smoke externo da wheel verdes; o head final `f9c8c2d` recebeu 11/11
   checks no run `31550975708`, foi incorporado pelo merge `72f89e3` e recebeu 11/11 na CI pós-merge
-  `31551685950`. A reconciliação administrativa foi publicada no PR #50, aberto no head inicial
-  `3d571ca` e com checks pendentes; nenhuma tag remota F4.8 existe, e a F3.7 ainda não foi iniciada.
+  `31551685950`. A reconciliação administrativa encerrou no head `a15b918`, passou 11/11 no run
+  `31554671587`, foi incorporada pelo PR #50 no merge `9f75e35` e recebeu 11/11 na CI pós-merge
+  `31557794240`. Nenhuma tag remota F4.8 existe. A F3.7 iniciou no gate documental `READY`; o produto
+  ainda conserva a promoção sintética até a implementação posterior ao checkpoint local.
 
 ## Dívidas técnicas críticas
 

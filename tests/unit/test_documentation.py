@@ -132,7 +132,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "571a8eb" in readme
     assert "31329231458" in readme
     assert "A F4.8 foi promovida pelo PR #49" in readme
-    assert "a F3.7 ainda não foi iniciada" in readme
+    assert "A F3.7 iniciou no gate documental `READY`" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
@@ -161,24 +161,21 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F3.7 `READY`" in panel
     assert "DEC-015" in panel
+    assert "docs/tasks/active/F3.7.md" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
-    assert "31541047111" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/49" in panel
-    assert "8e5e11d81c685c53ba349bab4d95cdd61ee19ba6" in panel
-    assert "bb6752c1f1524b8c747cddc55e74ed7e6491e845" in panel
-    assert "f9c8c2d5d2e1f53ef857119886c16b8b2b2c1d8d" in panel
-    assert "31550975708" in panel
-    assert "72f89e3ede8c4d7457857c13115f690d87df4aad" in panel
     assert "31551685950" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/50" in panel
-    assert "3d571cadaffa798c7be1387431e54eaf0463346a" in panel
-    assert "758 passed, 5 skipped" in panel
-    assert "github.com/Wf-ops1/Harnessinfra/pull/48" in panel
+    assert "a15b918" in panel
+    assert "31554671587" in panel
+    assert "9f75e35db38fc6648497c01bd8f81dcdecec8029" in panel
+    assert "31557794240" in panel
     assert "F4.8" in panel
-    assert "nenhuma tarefa ativa" in panel
-    assert "A F3.7 não foi iniciada" in panel
+    assert "F3.7 — promoção Git segura" in panel
+    assert "sha-promoted-*" in panel
+    assert "sha-fallback-*" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
