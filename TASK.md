@@ -22,12 +22,13 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.2 — política unificada de autorização de tools |
-| **Gate** | `COMPLETED_LOCAL / BRANCH_PUBLISHED / PR_PENDING` |
+| **Gate** | `COMPLETED_LOCAL / PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor; autorizado nominalmente em `2026-08-12T17:34:35-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.2-unified-policy` rastreando `origin/task/f5.2-unified-policy` |
 | **Baseline** | `main == origin/main == fe95a91648a79c404565583c87c1cf357e8ab3a2` antes da branch |
 | **Produto F5.2** | `ac665b945a2cfbadaa7672855219e624d7eca45e` |
+| **PR F5.2** | [#55](https://github.com/Wf-ops1/Harnessinfra/pull/55); snapshot `5198275`, CI `31643363586`, 11/11 success |
 | **Checkpoints F5.2** | `checkpoint/f5.2-ready`; `checkpoint/f5.2-complete` no commit documental final, ambos locais |
 | **Certificação local** | `811 passed, 5 skipped, 6 subtests passed`; mypy, Ruff, compileall, build limpo e smoke da wheel verdes |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
@@ -60,20 +61,22 @@ A [F5.2](docs/tasks/active/F5.2.md) está `COMPLETED_LOCAL / PROMOTION_PENDING`.
 policy em um engine tipado default-deny, avalia os oito eixos exigidos, pré-autoriza o lote e persiste
 a regra antes do efeito com digest no outcome. Novas gravações exigem decisão; replay histórico
 permanece compatível. A wheel limpa e seu smoke confirmam que os módulos duplicados foram removidos.
+O PR [#55](https://github.com/Wf-ops1/Harnessinfra/pull/55) está aberto; o head pré-registro
+`5198275` recebeu 11/11 checks no run `31643363586`.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A branch foi publicada e o upstream configurado; os checkpoints
-continuam locais. Abertura de PR, merge, tags remotas, remoção de branch/ref, force-push, bypass e
-início da F5.3 não estão autorizados. O trust mode é somente uma dimensão da decisão nesta tarefa;
-as restrições operacionais abrangentes continuam pertencendo à F5.3.
+Não há bloqueio técnico conhecido. A branch e o PR #55 foram publicados; os checkpoints continuam
+locais. A CI `31643363586` ficou verde no snapshot `5198275`, mas a publicação deste registro cria
+novo head documental e exige novos checks antes de qualquer promoção. Merge, tags remotas, remoção
+de branch/ref, force-push, bypass e início da F5.3 não estão autorizados. O trust mode é somente uma
+dimensão da decisão nesta tarefa; as restrições operacionais abrangentes continuam pertencendo à F5.3.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR O REGISTRO ADMINISTRATIVO E ABRIR O PR F5.2.
-O WORKFLOW CI PARA task/** COMEÇA NO EVENTO pull_request CONTRA main, NÃO NO push DA BRANCH.
-NÃO ABRIR PR, MESCLAR, CRIAR TAG REMOTA, REMOVER REFS OU INICIAR F5.3.
+AUDITAR TODOS OS CHECKS DO HEAD FINAL DO PR #55 APÓS PUBLICAR ESTE REGISTRO AUTORIZADO.
+NÃO MESCLAR, CRIAR TAG REMOTA, REMOVER REFS OU INICIAR F5.3 SEM NOVA AUTORIZAÇÃO NOMINAL.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -87,4 +90,4 @@ NÃO ABRIR PR, MESCLAR, CRIAR TAG REMOTA, REMOVER REFS OU INICIAR F5.3.
 
 ---
 
-*Atualizado em: 2026-08-12T18:25:54-03:00 | Fonte: F5.2/ac665b9/6f5d096 + publicação origin/task/f5.2-unified-policy + baseline fe95a91*
+*Atualizado em: 2026-08-12T18:43:44-03:00 | Fonte: F5.2/ac665b9/5198275 + PR #55/run 31643363586 + baseline fe95a91*

@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`COMPLETED_LOCAL / BRANCH_PUBLISHED / PR_PENDING`" in panel
+    assert "`COMPLETED_LOCAL / PR_OPEN / CHECKS_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -718,6 +718,7 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "checkpoint/f5.2-ready" in dossier
     assert "checkpoint/f5.2-complete" in dossier
     assert "BRANCH_PUBLISHED / PR_PENDING" in dossier
+    assert "PR_OPEN / CHECKS_PENDING" in dossier
     assert "origin/task/f5.2-unified-policy" in dossier
     assert "push` somente em `main` e `phase/**" in dossier
     assert "evento `pull_request` contra `main`" in dossier
@@ -726,6 +727,9 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "policy_default_allows_unknown=True" in dossier
     assert "116 passed in 15.69s" in dossier
     assert "ac665b945a2cfbadaa7672855219e624d7eca45e" in dossier
+    assert "5198275a640ebc42eed5d151aa51a3047f7d4726" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/55" in dossier
+    assert "31643363586" in dossier
     assert "811 passed, 5 skipped, 6 subtests passed" in dossier
     for dimension in (
         "role",
