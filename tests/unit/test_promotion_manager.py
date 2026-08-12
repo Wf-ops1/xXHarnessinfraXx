@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Collection
 from pathlib import Path
 
 import pytest
@@ -126,15 +127,56 @@ def test_dry_run_returns_candidate_without_mutating_original(tmp_path: Path) -> 
     assert (repository / "tracked.txt").read_text(encoding="utf-8") == "base\n"
 
 
-def test_live_promotion_cherry_picks_and_recovers_the_exact_real_sha(tmp_path: Path) -> None:
+def test_live_promotion_cherry_picks_and_recovers_the_exact_real_sha(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     repository, _, promotion, base_sha, branch = _candidate(tmp_path)
     candidate = promotion.load_candidate("exec-promote")
+    git_operations: list[tuple[str, ...]] = []
+    run_git = promotion._run_git
+
+    def record_git_operation(
+        arguments: Collection[str],
+        *,
+        cwd: Path,
+        allowed_returncodes: Collection[int] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        git_operations.append(tuple(arguments))
+        return run_git(
+            arguments,
+            cwd=cwd,
+            allowed_returncodes=allowed_returncodes,
+        )
+
+    monkeypatch.setattr(promotion, "_run_git", record_git_operation)
 
     promoted = promotion.promote(candidate, dry_run=False)
     recovered = promotion.promote(candidate, dry_run=False)
 
     assert promoted.promotion_commit_sha is not None
-    assert promoted.promotion_commit_sha != candidate.candidate_commit_sha
+    mutating_operations = [
+        operation
+        for operation in git_operations
+        if operation
+        and operation[0]
+        in {
+            "add",
+            "am",
+            "apply",
+            "checkout",
+            "cherry-pick",
+            "commit",
+            "merge",
+            "rebase",
+            "reset",
+            "restore",
+            "revert",
+            "switch",
+            "update-ref",
+        }
+    ]
+    assert mutating_operations == [("cherry-pick", candidate.candidate_commit_sha)]
     assert promoted.original_branch == branch
     assert promoted.dry_run is False
     assert _git(repository, "rev-parse", "HEAD").stdout.strip().lower() == (
