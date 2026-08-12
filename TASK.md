@@ -19,7 +19,7 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.1 — resolver configuração no início da execução |
-| **Gate** | `READY / ACTIVE`; implementação autorizada e ainda não iniciada |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING`; aceite integral verde |
 | **Executor ativo** | `Codex`, único escritor; autorização nominal registrada em `2026-08-12T14:35:03-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.1-resolve-config`, local e sem upstream |
@@ -27,40 +27,58 @@
 | **Fechamento administrativo anterior** | PR #52 mesclado em `846c59e`; não gera reconciliação recursiva |
 | **CI do baseline** | run [31616226652](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31616226652), `workflow_dispatch`, success no SHA exato `846c59e` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13; `uv`, `python` e `py` indisponíveis no PATH |
-| **Checkpoint READY** | tag local `checkpoint/f5.1-ready`, a materializar no commit documental antes do produto |
+| **Checkpoint READY** | `checkpoint/f5.1-ready` → `930cabd2b22672048357df2b91385c74af1b248f` |
+| **Checkpoint COMPLETE** | tag local `checkpoint/f5.1-complete`, a materializar no commit de produto |
+| **Aceite local** | `792 passed, 5 skipped, 6 subtests passed`; Ruff, mypy, compileall, build e smoke da wheel verdes |
 
 O evento do run `31616226652` é registrado como `workflow_dispatch`; não é apresentado como CI de
 `push`. A PR administrativa #52 está fechada/mesclada e a referência remota `main` aponta para o mesmo
 SHA validado pelo workflow. Nenhuma evidência negativa posterior foi observada.
 
-## 3. Problema e fronteira da F5.1
+## 3. Última promoção comprovada
 
-O `ConfigResolver` atual mantém defaults hard-coded, aceita campos não tipados fora da rota de modelos
-e o CLI não transporta perfil/overrides de configuração. A F5.1 deve resolver e validar as seis
-camadas antes de criar estado, persistir somente a projeção redigida com digest e retomar
-exclusivamente pelo bundle imutável.
+| Evidência | Resultado observado |
+|---|---|
+| Tarefa | F3.7 — promoção Git segura |
+| Produto | PR #51, merge `10d75408`, CI pós-merge `31568908128` |
+| Reconciliação | PR administrativo #52 incorporado em `846c59e` |
+| Baseline seguinte | workflow `CI` `31616226652`, success no SHA exato `846c59e` |
+| Fronteira | checkpoints anteriores somente locais; nenhuma tag/ref remota removida |
+
+Nova evidência negativa prevalece sobre sucesso anterior e exige correção sem relaxamento,
+recertificação integral e reconciliação antes de restaurar estado positivo.
+
+## 4. Coordenação
+
+Existe um único executor/escritor: `Codex`. O workspace não possuía mudanças preexistentes antes da
+branch F5.1; todo o diff corrente deve permanecer dentro da allowlist do dossiê ativo.
+
+## 5. Tarefa ativa
+
+O `ConfigResolver` agora lê defaults do pacote instalado, resolve as seis camadas, valida a
+configuração inteira por Pydantic e entrega ao lifecycle somente uma projeção redigida. CLI e runtime
+usam o mesmo resolvedor; `resume` valida a projeção e o digest do bundle sem reler arquivos vivos.
 
 O escopo está limitado a configuração, resource empacotado, composição CLI/runtime, persistência já
 existente do bundle, testes e documentação associada. F5.2+, dependências, CI, schemas, providers,
 tools, worktree e promoção estão fora da autorização.
 
-## 4. Bloqueios e fronteiras externas
+## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A implementação só começa depois do commit documental e da tag
-local `checkpoint/f5.1-ready`.
+Não há bloqueio técnico conhecido. A tarefa está concluída localmente e aguarda somente consolidação
+do commit/tag COMPLETE e autorização externa separada para publicação.
 
 Push, abertura ou merge de PR, tag remota, exclusão de refs, force-push, bypass e início de F5.2 não
 estão autorizados.
 
-## 5. Próxima ação exata
+## 7. Próxima ação exata
 
 ```text
-MATERIALIZAR O CHECKPOINT READY DOCUMENTAL DA F5.1.
-DEPOIS IMPLEMENTAR SOMENTE A ALLOWLIST E EXECUTAR O ACEITE CONGELADO.
+CONSOLIDAR O COMMIT LOCAL E A TAG checkpoint/f5.1-complete.
 NÃO PUBLICAR BRANCH, ABRIR PR, MESCLAR OU INICIAR F5.2.
 ```
 
-## 6. Retomada após perda de contexto
+## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.1.md`, seções 1.1–1.2 e F5.1 do plano.
 2. Confirme branch `task/f5.1-resolve-config`, baseline `846c59e`, checkpoint READY e workspace limpo

@@ -192,7 +192,7 @@ on_failure: route_to_failure_classifier
         result = engine.start_execution(
             compiled_maf,
             initial_input={"intent": "Deliver new feature"},
-            configuration={"profile": "e2e"},
+            configuration={"project": {"test_label": "e2e"}},
         )
         assert result.outcome == "success"
         assert result.executed_node_ids == ("step1",)

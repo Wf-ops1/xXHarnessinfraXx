@@ -62,8 +62,11 @@ manifesto de versão e rollback de inicialização previstos na F7.
 
 ```mermaid
 flowchart TD
-    A["CLI cria execution_id"] --> B["Localiza ou auto-compila grafo"]
-    B --> C["ExecutionLifecycleService persiste bundle canônico"]
+    A["CLI recebe input, profile e overrides"] --> B["Localiza ou auto-compila grafo"]
+    B --> R["ConfigResolver aplica seis níveis + Pydantic"]
+    R -->|Inválida| Z["Erro tipado; zero estado persistido"]
+    R -->|Válida| S["Projeção redigida + configuration_digest"]
+    S --> C["ExecutionLifecycleService persiste bundle canônico"]
     C --> P{"Policy context_sufficiency compilada?"}
     P -->|Não| D["GraphExecutor valida e percorre arestas compiladas"]
     P -->|Sim| X["Lifecycle monta contexto e persiste CONTEXT_EVALUATED"]
@@ -80,6 +83,9 @@ flowchart TD
 
 Limitações importantes:
 
+- defaults são lidos do pacote instalado por `importlib.resources`; `run --profile` seleciona o
+  perfil e `--config-json` ocupa a maior precedência. `resume` usa somente a projeção redigida e o
+  digest do bundle, sem adotar mudanças posteriores do disco;
 - o runtime percorre nós/arestas pelo `GraphExecutor`, mas a CLI constrói um registry de executores
   deliberadamente vazio e falha antes de efeitos;
 - os quatro workflows F4.3 exigem envelope exato `context_request + graph_input`; a decisão usa a

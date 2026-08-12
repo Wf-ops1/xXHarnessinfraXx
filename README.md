@@ -14,8 +14,8 @@ permanece incompleta. A promoção Git segura F3.7 foi promovida, mas continua d
 composição opt-in explícita; CLI/defaults ainda não constroem automaticamente essa fronteira.
 
 Não use `harness run`, `harness doctor`, `harness verify` ou `harness rollback` como garantia de segurança em um
-repositório valioso. Embora a Fase 2 esteja implementada, as Fases 3–7 ainda não estão concluídas;
-execute esses comandos somente em cópias descartáveis.
+repositório valioso. Embora as Fases 0–4 estejam implementadas no escopo planejado, as Fases 5–7
+ainda não estão concluídas; execute esses comandos somente em cópias descartáveis.
 
 ## Objetivo do produto
 
@@ -41,7 +41,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
+| Configuração | F5.1 concluída localmente resolve seis níveis por `importlib.resources`, valida a configuração completa por Pydantic e persiste somente projeção redigida + digest imutável | A branch ainda aguarda promoção; secrets injetáveis, budgets duráveis e policy unificada pertencem às tarefas seguintes | Configuração operacional promovida junto da conclusão da Fase 5 |
+| CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limites duráveis e resume por digest. A F4.8 promovida adiciona o reparo orientado pela suíte canônica | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
@@ -117,7 +118,13 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   test-only: o head final `40f81375` recebeu 11/11 checks no run `31568577459`, foi incorporado pelo
   merge `10d75408` e recebeu 11/11 na CI pós-merge `31568908128`. A recertificação integral R2 passou
   `774 passed, 5 skipped, 6 subtests passed`, além de mypy, Ruff, compileall, build e smoke externo da
-  wheel. A composição permanece opt-in e nenhuma tag remota F3.7 existe.
+  wheel. A reconciliação administrativa foi incorporada pela PR #52 no merge `846c59e`; o workflow
+  `CI` `31616226652` passou nesse SHA exato. A composição permanece opt-in e nenhuma tag remota F3.7
+  existe.
+- **Fase 5 ativa:** a F5.1 está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
+  `task/f5.1-resolve-config`, com `792 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke
+  da wheel verdes. Ela limita-se à configuração efetiva; F5.2+ e efeitos remotos permanecem não
+  autorizados.
 
 ## Dívidas técnicas críticas
 

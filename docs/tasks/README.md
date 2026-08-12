@@ -20,7 +20,7 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O dossiê [F5.1](active/F5.1.md) está ativo em gate `READY` na branch
+O dossiê [F5.1](active/F5.1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
 `task/f5.1-resolve-config`, criada do merge administrativo `846c59e`. A F3.7 permanece `PROMOTED` em
 [seu dossiê concluído](completed/F3.7.md); a PR administrativa #52 foi incorporada em `846c59e` e o
 workflow `CI` run `31616226652` passou no SHA exato da `main`. Publicação da F5.1 e início da F5.2

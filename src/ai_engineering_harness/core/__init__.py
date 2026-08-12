@@ -1,5 +1,17 @@
 """Módulo Core: Configuração, Detector, Manifesto e Contexto."""
 
-from .config import ConfigResolver
+from .config import (
+    ConfigDocumentError,
+    ConfigResolutionError,
+    ConfigResolver,
+    ConfigValidationError,
+    EffectiveConfiguration,
+)
 
-__all__ = ["ConfigResolver"]
+__all__ = [
+    "ConfigDocumentError",
+    "ConfigResolutionError",
+    "ConfigResolver",
+    "ConfigValidationError",
+    "EffectiveConfiguration",
+]

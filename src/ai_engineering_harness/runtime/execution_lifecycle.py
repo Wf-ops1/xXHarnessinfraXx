@@ -41,8 +41,12 @@ from ai_engineering_harness.contracts.policies import (
     RetryCostPolicySpec,
     VerificationPolicySpec,
 )
-from ai_engineering_harness.core.config import ConfigResolver
-from ai_engineering_harness.models.router import ModelRouter
+from ai_engineering_harness.core.config import ConfigResolutionError, ConfigResolver
+from ai_engineering_harness.models.router import (
+    ModelEgressDeniedError,
+    ModelRouter,
+    ModelRoutingConfigurationError,
+)
 from ai_engineering_harness.persistence import (
     ExecutionBundle,
     ExecutionLock,
@@ -161,19 +165,6 @@ _VERIFICATION_SUITE_RECORDED_KEYS = frozenset(
         "fencing_token",
     }
 )
-_SECRET_KEYS = frozenset(
-    {
-        "access_key",
-        "api_key",
-        "credential",
-        "password",
-        "private_key",
-        "secret",
-        "token",
-    }
-)
-
-
 class ExecutionLifecycleError(Exception):
     """Base class for public F2.5 lifecycle failures."""
 
@@ -407,15 +398,27 @@ class ExecutionLifecycleService:
         self._resolved_verification_policy(artifact)
         envelope = self._context_envelope(initial_input, artifact) if context_policy is not None else None
         graph_input = envelope.graph_input if envelope is not None else initial_input
-        effective_configuration = (
-            configuration
-            if configuration is not None
-            else self._config_resolver.resolve(
-                profile_name=profile_name,
-                cli_overrides=cli_overrides,
+        if configuration is not None and cli_overrides is not None:
+            raise ExecutionConfigurationError(
+                "configuration and cli_overrides cannot be supplied together"
             )
-        )
-        self._reject_secret_configuration(effective_configuration)
+        try:
+            effective_configuration = self._config_resolver.resolve(
+                profile_name=profile_name,
+                cli_overrides=(
+                    configuration
+                    if configuration is not None
+                    else cli_overrides
+                ),
+            )
+        except (
+            ConfigResolutionError,
+            ModelEgressDeniedError,
+            ModelRoutingConfigurationError,
+        ) as exc:
+            raise ExecutionConfigurationError(
+                f"effective configuration is invalid: {exc}"
+            ) from exc
         try:
             configuration_json = canonical_json_object(effective_configuration)
             initial_input_json = canonical_json_object(initial_input)
@@ -3176,24 +3179,37 @@ class ExecutionLifecycleService:
             lock=lock,
         )
 
-    @staticmethod
     def _configuration_from_bundle(
+        self,
         bundle: ExecutionBundle,
         execution_id: str,
     ) -> dict[str, object]:
         try:
             configuration = json.loads(bundle.configuration_json)
         except (TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise PlanningPrerequisiteError(
-                "stored model configuration is unavailable or invalid",
+            raise ExecutionConfigurationError(
+                "stored effective configuration is unavailable or invalid",
                 execution_id=execution_id,
             ) from exc
         if type(configuration) is not dict:
-            raise PlanningPrerequisiteError(
-                "stored model configuration is not a JSON object",
+            raise ExecutionConfigurationError(
+                "stored effective configuration is not a JSON object",
                 execution_id=execution_id,
             )
-        return configuration
+        try:
+            validated = self._config_resolver.validate_persisted(configuration)
+            canonical = canonical_json_object(validated)
+        except (ModelEgressDeniedError, ValueError) as exc:
+            raise ExecutionConfigurationError(
+                "stored effective configuration is not a typed redacted projection",
+                execution_id=execution_id,
+            ) from exc
+        if canonical != bundle.configuration_json:
+            raise ExecutionConfigurationError(
+                "stored effective configuration changed during typed validation",
+                execution_id=execution_id,
+            )
+        return validated
 
     @staticmethod
     def _is_trimmed_string(value: object) -> bool:
@@ -3217,6 +3233,7 @@ class ExecutionLifecycleService:
                     execution_id=execution_id,
                 )
             bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
+            self._configuration_from_bundle(bundle, execution_id)
             artifact = MAFAdapter.validate_snapshot(
                 bundle.artifact_json,
                 expected_digest=record.artifact_digest,
@@ -3814,25 +3831,6 @@ class ExecutionLifecycleService:
                 }
             )
         )
-
-    @staticmethod
-    def _reject_secret_configuration(configuration: object) -> None:
-        def visit(value: object) -> None:
-            if type(value) is dict:
-                for raw_key, child in value.items():
-                    if type(raw_key) is not str:
-                        raise ExecutionConfigurationError("configuration keys must be strings")
-                    key = raw_key.casefold().replace("-", "_")
-                    if key in _SECRET_KEYS or any(
-                        key.endswith(f"_{suffix}") for suffix in ("password", "secret", "token")
-                    ):
-                        raise ExecutionConfigurationError("raw secret-bearing configuration is unsupported before F5")
-                    visit(child)
-            elif type(value) is list:
-                for child in value:
-                    visit(child)
-
-        visit(configuration)
 
     def _read_git_identity(self) -> tuple[str, str]:
         try:

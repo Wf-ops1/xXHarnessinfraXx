@@ -361,7 +361,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F3.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.1 — resolver configuração no início da execução" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "31568908128" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
@@ -460,9 +461,10 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
     assert not (ACTIVE_ROOT / "F4.7.md").exists()
     assert (COMPLETED_ROOT / "F4.7.md").is_file()
-    assert "F3.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.1 — resolver configuração no início da execução" in panel
+    assert "checkpoint/f5.1-ready" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
-    assert "10d75408f10ce83ffa232f117d203aa2f26bedb0" in panel
+    assert "846c59e78e6db9c9417ff1d8a69c560d2d08356e" in panel
     assert "31568908128" in panel
     assert "> **Gate:** `READY`" in f4_7_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_7_dossier
@@ -600,7 +602,7 @@ def test_f4_8_promotion_records_repair_loop_and_post_merge_ci() -> None:
     assert dossier.rfind("## Publicação administrativa") > dossier.rfind(
         "## Certificação final da promoção"
     )
-    assert "F3.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.1 — resolver configuração no início da execução" in panel
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/50" in dossier
     assert "3d571cadaffa798c7be1387431e54eaf0463346a" in dossier
@@ -644,7 +646,7 @@ def test_f3_7_promotion_records_r2_and_post_merge_ci() -> None:
     assert "checkpoint/f3.7-r2-ready" in dossier
     assert "checkpoint/f3.7-r2-complete" in dossier
     assert "774 passed, 5 skipped, 6 subtests passed" in dossier
-    assert "F3.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.1 — resolver configuração no início da execução" in panel
     assert "d31227694344ea89303bfb6853eb238c4ca6d8f7" in dossier
     assert "31565797052" in dossier
     assert "94017253149" in dossier

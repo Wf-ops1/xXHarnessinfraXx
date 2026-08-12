@@ -6,7 +6,7 @@ from collections.abc import Mapping
 
 import pytest
 
-from ai_engineering_harness.core.config import ConfigResolver
+from ai_engineering_harness.core.config import ConfigResolver, ConfigValidationError
 from ai_engineering_harness.governance import BudgetExceededError, BudgetTracker
 from ai_engineering_harness.models import (
     CancellationToken,
@@ -366,5 +366,11 @@ def test_cancel_after_response_blocks_budget_and_return() -> None:
     ],
 )
 def test_invalid_effective_route_configuration_fails_resolution(tmp_path, override) -> None:
-    with pytest.raises((ModelRoutingConfigurationError, ModelEgressDeniedError)):
+    with pytest.raises(
+        (
+            ConfigValidationError,
+            ModelRoutingConfigurationError,
+            ModelEgressDeniedError,
+        )
+    ):
         ConfigResolver(project_root=tmp_path).resolve(cli_overrides=override)

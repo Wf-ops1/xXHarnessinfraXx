@@ -14,6 +14,7 @@ from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.compiler import GraphCompiler, GraphCompilerError
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
 from ai_engineering_harness.contracts import ExecutionState
+from ai_engineering_harness.core import ConfigResolver
 from ai_engineering_harness.doctor.checker import DoctorChecker
 from ai_engineering_harness.doctor.report import DoctorReport
 from ai_engineering_harness.indexer import PythonAstIndexer, StructuralIndexError
@@ -44,6 +45,7 @@ def _lifecycle_service(
         project_root,
         AtomicFileStateStorage(project_root),
         NodeExecutorRegistry(),
+        config_resolver=ConfigResolver(project_root),
         verification_worktree_provider=ExternalWorktreeManager(
             project_root,
             project_id,
@@ -51,13 +53,13 @@ def _lifecycle_service(
     )
 
 
-def _parse_json_object(raw: str) -> dict[str, object]:
+def _parse_json_object(raw: str, *, option_name: str = "--input-json") -> dict[str, object]:
     try:
         value = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise click.ClickException("--input-json must be valid JSON") from exc
+        raise click.ClickException(f"{option_name} must be valid JSON") from exc
     if type(value) is not dict:
-        raise click.ClickException("--input-json must be a JSON object")
+        raise click.ClickException(f"{option_name} must be a JSON object")
     return value
 
 
@@ -156,13 +158,30 @@ def index():
     show_default=True,
     help="Objeto JSON usado como input inicial canônico.",
 )
-def run(workflow_name, approval_required, input_json):
+@click.option(
+    "--profile",
+    "profile_name",
+    default="default",
+    show_default=True,
+    help="Perfil de configuração efetiva selecionado.",
+)
+@click.option(
+    "--config-json",
+    default=None,
+    help="Objeto JSON de overrides com a maior precedência de configuração.",
+)
+def run(workflow_name, approval_required, input_json, profile_name, config_json):
     project_root = Path.cwd()
     if approval_required:
         raise click.ClickException(
             "--approval-required is unsupported; approval is declared by an explicit human node"
         )
     initial_input = _parse_json_object(input_json)
+    cli_overrides = (
+        None
+        if config_json is None
+        else _parse_json_object(config_json, option_name="--config-json")
+    )
     try:
         compiler = GraphCompiler(project_root=project_root)
         compiled_file = compiler.compiled_path(workflow_name)
@@ -182,6 +201,8 @@ def run(workflow_name, approval_required, input_json):
         result = service.start(
             compiled_file,
             initial_input=initial_input,
+            profile_name=profile_name,
+            cli_overrides=cli_overrides,
         )
     except (
         ArtifactValidationError,

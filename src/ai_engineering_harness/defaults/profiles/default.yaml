@@ -1,14 +1,12 @@
 version: "1.0"
-profile:
-  name: "default"
-  description: "Perfil de execução padrão do AI-Engineering-Harness"
-  context_sufficiency_threshold: 0.72
-  approval_policy: "strict"
-  data_egress:
-    allowed_providers:
-      - "openai"
-      - "anthropic"
-      - "local"
+profile_name: "default"
+context_sufficiency_threshold: 0.72
+approval_policy: "strict"
+data_egress:
+  allowed_providers:
+    - "openai"
+    - "anthropic"
+    - "local"
 models:
   providers:
     openai:
@@ -28,3 +26,5 @@ models:
     fallback_providers: []
 budget:
   max_tokens: 100000
+verification:
+  enforce_applicable_only: true

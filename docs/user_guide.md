@@ -34,14 +34,43 @@ uv run python -m build
 | `harness doctor` | Renderiza quatro componentes em seis estágios | Simulado: retorna saudável sem conectividade real |
 | `harness compile <yaml>` | Compila pelo `GraphCompiler` canônico do pacote | Implementado como contrato interno; estabilidade/migração externa ainda não fechadas |
 | `harness index` | Usa `PythonAstIndexer` para reconstruir módulos, classes, funções/métodos e imports dos blobs `.py` do commit Git atual e publica `.harness/state/structural-index/snapshots/<sha>.json` | Implementado para Python por full rebuild; working tree/untracked não entram, erro Git/encoding/sintaxe falha sem snapshot parcial |
-| `harness run <workflow>` | Compila/carrega artefato e inicia o lifecycle canônico | Fail-closed: o wiring padrão possui registry de executores vazio e não executa modelos/tools automaticamente |
+| `harness run <workflow> [--profile <nome>] [--config-json <objeto>]` | Compila/carrega artefato, resolve a configuração tipada e inicia o lifecycle canônico | Fail-closed: configuração inválida não cria execução; o wiring padrão possui registry de executores vazio e não executa modelos/tools automaticamente |
 | `harness status <id>` | Lê a visão canônica do estado persistido | Implementado como leitura local |
 | `harness inspect <id>` | Exibe digests, eventos e aprovação sem secrets | Implementado como inspeção local |
 | `harness approve <id>` | Persiste decisão ligada à revisão corrente | Exige retomada explícita e ainda não promove por Git |
-| `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Implementado como contrato; depende dos mesmos backends explicitamente injetados |
-| `harness verify <execution_id> [--gate <id> ...]` | Carrega o `ProvisionedWorktree`, detecta configuração e executa gates canônicos selecionados | F4.5/F4.6 bloqueiam seleção ou pré-requisito inválido antes de efeitos; ainda é inseguro como decisão porque reprovação executada pode retornar exit zero e resultados não são persistidos/ligados ao commit |
+| `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Não aceita perfil/override novo nem relê configuração viva; depende dos mesmos backends explicitamente injetados |
+| `harness verify <execution_id> [--project-id <id>]` | Carrega o `ProvisionedWorktree`, detecta configuração e executa a suíte canônica compilada | F4.5–F4.8 bloqueiam pré-requisito inválido, persistem resultados commit-bound e exigem targeted → full após reparo; worktree/provider ainda precisam existir |
 | `harness audit <id>` | Verifica/exporta o diário local | Implementação local; não prova efeitos reais |
 | `harness rollback <id>` | Registra compensação e possui caminho Git legado | Não usar em repo valioso; não está ligado ao worktree/terminal tipado nem reexecuta gates |
+
+## Configuração efetiva F5.1
+
+No início de `run`, o único `ConfigResolver` aplica seis níveis, da menor para a maior prioridade:
+
+1. `defaults/profiles/default.yaml` do pacote instalado, lido por `importlib.resources`;
+2. perfil empacotado ou `.harness/profiles/<nome>.yaml` selecionado por `--profile`;
+3. `.harness/project.yaml`, preservado sob a chave `project`;
+4. `.harness/bmad/custom/*.toml` do time, em ordem de nome;
+5. `.harness/bmad/custom/*.user.toml` pessoais, em ordem de nome;
+6. o objeto de `--config-json`.
+
+A configuração completa passa por modelos Pydantic estritos antes da criação do bundle ou record.
+Chave raiz desconhecida, tipo inválido, perfil ausente/traversal, YAML/TOML malformado, rota não
+configurada ou provider fora de egress falham sem estado parcial. A configuração persistida em
+`configuration.json` é a projeção canônica redigida; `api_key_env` guarda apenas o nome da variável,
+nunca seu valor. O `configuration_digest` do bundle e do record refere-se exatamente a essa projeção.
+
+Exemplo:
+
+```powershell
+$configJson = '{"context_sufficiency_threshold":0.85,"models":{"routing":{"primary_provider":"local","fallback_providers":[]}}}'
+$inputJson = '{"context_request":{"requirement_id":"req-1","graph_type":"new_feature","query":"Adicionar logging"},"graph_input":{"requirement_id":"req-1","graph_type":"new_feature","query":"Adicionar logging"}}'
+harness run new-feature --profile default --config-json $configJson --input-json $inputJson
+```
+
+`resume` valida novamente a projeção persistida e seu digest, mas não relê profile, manifesto ou
+overrides vivos. Portanto, alterar configuração no disco nunca muda silenciosamente uma execução em
+andamento; é necessário iniciar uma nova execução.
 
 ## Envelope e gate de contexto F4.3
 
