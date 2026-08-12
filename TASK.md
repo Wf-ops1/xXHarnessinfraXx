@@ -65,16 +65,17 @@ intersectada com policy/allowlists, sem antecipar as F5.4–F5.7.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A autorização corrente cobre implementação, commits e checkpoint
-somente locais. Push, PR, merge, tags remotas, remoção de branch/ref, force-push e bypass não estão
-autorizados. Marcador, modo `trusted` ou configuração do projeto nunca podem substituir policy,
-allowlist, worktree exato ou aprovação.
+Não há bloqueio técnico conhecido. A autorização corrente encerrou-se com o gate documental, commit
+e checkpoint locais; a implementação ainda não começou e exige nova autorização nominal. Push, PR,
+merge, tags remotas, remoção de branch/ref, force-push e bypass também não estão autorizados.
+Marcador, modo `trusted` ou configuração do projeto nunca podem substituir policy, allowlist,
+worktree exato ou aprovação.
 
 ## 7. Próxima ação exata
 
 ```text
-IMPLEMENTAR LOCALMENTE O CONTRATO CONGELADO DA F5.3 E EXECUTAR OS GATES FOCADOS.
-NÃO PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA IMPLEMENTAR LOCALMENTE O CONTRATO CONGELADO DA F5.3.
+NÃO EDITAR PRODUTO, PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS.
 ```
 
 ## 8. Retomada após perda de contexto

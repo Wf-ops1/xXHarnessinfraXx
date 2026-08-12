@@ -134,7 +134,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   reconciliação administrativa [PR #56](https://github.com/Wf-ops1/Harnessinfra/pull/56) foi
   incorporada pelo merge `0607a0b`; a CI de `push` `31650131258` passou 11/11 nesse SHA exato. A
   F5.3 está `READY / ACTIVE / LOCAL_ONLY` em `task/f5.3-trust-boundary`, com baseline focado de
-  `101 passed, 2 skipped`. Push, PR, merge, tags remotas e remoção de refs não estão autorizados.
+  `101 passed, 2 skipped`; sua implementação ainda não começou e exige autorização nominal nova.
+  Push, PR, merge, tags remotas e remoção de refs também não estão autorizados.
 
 ## Dívidas técnicas críticas
 

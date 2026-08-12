@@ -794,6 +794,8 @@ def test_f5_3_ready_gate_freezes_integrated_trust_boundary() -> None:
     assert "docs/tasks/active/F5.3.md" in panel
     assert "active/F5.3.md" in task_index
     assert "F5.3 está `READY / ACTIVE / LOCAL_ONLY`" in readme
+    assert "implementação ainda não começou" in readme
+    assert "exige nova autorização nominal" in dossier
     assert "administrativo #56 / merge `0607a0b` / pós-merge `31650131258`" in task_index
 
 

@@ -22,8 +22,8 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 A [F5.3](active/F5.3.md) está `READY / ACTIVE / LOCAL_ONLY` na branch
 `task/f5.3-trust-boundary`, criada do baseline `0607a0b` e sem upstream. A autorização corrente cobre
-somente implementação, commits e checkpoint locais. Push, PR, merge, tags remotas e remoção de refs
-permanecem não autorizados.
+somente o gate documental, commit e checkpoint locais já concluídos. Implementação, push, PR, merge,
+tags remotas e remoção de refs permanecem não autorizados.
 
 A [F5.2](completed/F5.2.md) permanece `PROMOTED`: o PR #55 encerrou no head `4dccce3`, passou 11/11
 checks no run `31644174160`, foi incorporado pelo merge `df5fee5` e recebeu 11/11 na CI pós-merge
