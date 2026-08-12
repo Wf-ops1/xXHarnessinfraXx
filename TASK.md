@@ -18,10 +18,11 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.7 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
 | **Tarefa ativa** | F4.8 — repair loop orientado pelos gates |
-| **Gate** | F4.8 `READY / IMPLEMENTATION_NOT_STARTED`; checkpoint ainda pendente |
+| **Gate** | F4.8 `COMPLETED_LOCAL / PROMOTION_PENDING`; produto e certificação local verdes |
 | **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T19:59:55-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f4.8-verification-repair-loop`, criada de `main == origin/main == d4e34c7`; sem upstream |
+| **Branch** | `task/f4.8-verification-repair-loop`, head local de produto `8e5e11d81c685c53ba349bab4d95cdd61ee19ba6`; criada de `main == origin/main == d4e34c7`; sem upstream |
+| **Checkpoint READY** | `checkpoint/f4.8-ready` → `bb6752c1f1524b8c747cddc55e74ed7e6491e845` |
 | **Main atual** | `main == origin/main == d4e34c7404d28a10969ab4b322748d01ae5805bf` |
 | **CI pós-merge** | run `31541047111`, evento `push`: 11/11 success no SHA exato de `main` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
@@ -61,38 +62,45 @@ O R1 em `2841346a` alterou somente o teste, passou a corrida `20/20` e toda a re
 e seu merge receberam 11/11 nos runs `31533353223` e `31534918672`, inclusive Windows 3.11 e
 `CI required`. O dossiê foi marcado `PROMOTED` e movido para `completed/` nesta reconciliação.
 
-A F4.8 foi autorizada após o fechamento administrativo da F4.7. O baseline focado reproduziu
-`6 passed, 1 warning`: a F4.7 recupera a mesma reprovação sem rerun, enquanto o `RetryContext` F2.6
-permanece restrito ao retry interno do grafo. O dossiê ativo congela a composição canônica,
-tentativas dirigidas seguidas de suíte integral e limites duráveis de nó, execução, tokens, custo e
-tempo. Nenhum código de produto foi alterado.
+A F4.8 foi autorizada após o fechamento administrativo da F4.7 e implementada no commit local
+`8e5e11d`. O lifecycle agora transforma somente a última reprovação canônica F4.7 em `RetryContext`,
+agenda o `on_failure` compilado pelo `GraphExecutor` e persiste contexto, deadline, policy, orçamento e
+cursor antes do efeito corretivo. Depois do reparo, executa apenas os gates antes reprovados e, se
+passarem, exige a suíte integral no mesmo commit limpo antes de `COMPLETED`. Limites por nó, execução,
+tokens, custo contábil da policy e tempo terminam duravelmente em `FAILED_RETRY_EXHAUSTED`.
+
+O E2E real cobre commit quebrado, reparo com novo commit, targeted → full, recuperação de crash no CAS
+do cursor sem efeito duplicado e exaustão dos quatro orçamentos. A regressão final concluiu
+`758 passed, 5 skipped`; mypy em 106 módulos, Ruff, compileall, diff check, build PEP 517 e smoke externo
+da wheel `0.1.0` estão verdes.
 
 A F4.7 está `PROMOTED / RECONCILED / CLOSED`. A F3.7 permanece depois da conclusão e reconciliação
 da F4.8; promoção/cherry-pick/revert Git continuam fora do escopo atual.
 
 ## 6. Bloqueios atuais
 
-O gate documental F4.8 está `READY`, mas produto permanece bloqueado até o commit documental e
-`checkpoint/f4.8-ready`. O bloqueio técnico comprovado é a ausência da ligação entre resultado
-canônico F4.7 e nó corretor; orçamento hoje apenas transportado no payload não conta.
+Não resta bloqueio técnico local da F4.8. A promoção permanece bloqueada apenas por processo: branch,
+commit de certificação e tags ainda são locais; nenhum push, PR, CI remota ou merge F4.8 ocorreu. A
+F3.7 continua fora do escopo até promoção e reconciliação da F4.8.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-REVALIDAR O DOSSIÊ READY, CRIAR O COMMIT DOCUMENTAL E checkpoint/f4.8-ready.
-NÃO ALTERAR PRODUTO ANTES DESSE CHECKPOINT.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH E ABRIR O PR F4.8.
+NÃO FAZER PUSH, PR, MERGE, TAG REMOTA, RECONCILIAÇÃO OU INICIAR F3.7 ANTES DISSO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia este arquivo, `docs/tasks/active/F4.8.md` e `docs/tasks/completed/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch `task/f4.8-verification-repair-loop`, main `d4e34c7`, PRs #46/#47/#48, run
-   pós-administrativo `31541047111`, baseline focado `6 passed` e runtime 3.12.13.
+3. Confirme branch `task/f4.8-verification-repair-loop`, produto `8e5e11d`, checkpoint READY
+   `bb6752c`, main `d4e34c7`, run pós-administrativo `31541047111`, regressão `758 passed` e runtime
+   3.12.13.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T19:59:55-03:00 | Fonte: F4.8 + PR #48 + CI 31541047111 + DEC-015*
+*Atualizado em: 2026-08-11T21:03:29-03:00 | Fonte: F4.8 + produto 8e5e11d + PR #48 + CI 31541047111 + DEC-015*

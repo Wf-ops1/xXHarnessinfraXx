@@ -87,8 +87,8 @@ Limitações importantes:
   retomadas além da tentativa inicial;
 - a F4.4 promovida valida rota/egress, relê evidência por digest, exige plano tipado
   limitado às policies compiladas e persiste payload/projeção/eventos antes de entregar `graph_input`;
-- a F4.5 promovida normaliza os IDs e bloqueia suítes vazias/desconhecidas/duplicadas; a F4.6 local
-  resolve configuração/argv e pré-requisitos no worktree antes de efeitos;
+- a F4.5 promovida normaliza os IDs e bloqueia suítes vazias/desconhecidas/duplicadas; a F4.6
+  promovida resolve configuração/argv e pré-requisitos no worktree antes de efeitos;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
 - promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
@@ -98,15 +98,14 @@ Limitações importantes:
 ## Fluxo de verificação
 
 O `VerificationEngine` possui runners que executam processos reais pelo terminal tipado, com `argv`,
-cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. A F4 deverá ligar gates
-obrigatórios ao planejamento/runtime, bloquear ausência de gate e cobrir a matriz configurada.
-F4.5 remove o falso sucesso `0/0`: gate ausente, desconhecido, duplicado ou sem comando bloqueia antes
-do terminal. A F4.6 local exige um `ProvisionedWorktree`, detecta stack/ferramentas pela configuração,
-resolve a suíte inteira como `argv` antes de efeitos e transforma pré-requisito ausente em
-`ERROR_PREREQUISITE`. A CLI ainda pode encerrar com código zero após uma reprovação realmente
-executada; F4.7 precisa persistir/guardar conclusão e F4.8 reparar. A DEC-015 atribui a preparação ao
-lifecycle e o guard de conclusão à verificação persistida; chamar runners manualmente depois de
-`COMPLETED` não satisfaz a fase.
+cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. F4.5 remove o falso
+sucesso `0/0`; F4.6 exige `ProvisionedWorktree`, resolve a suíte inteira antes de efeitos e transforma
+pré-requisito ausente em `ERROR_PREREQUISITE`; F4.7 persiste cada resultado e impede conclusão sem
+suíte obrigatória aprovada. A F4.8 local recupera a última reprovação canônica, agenda somente o
+`on_failure` compilado com contexto redigido e orçamento durável, executa primeiro os gates reprovados
+e exige a suíte integral no mesmo commit limpo antes de `COMPLETED`. O E2E prova crash-resume sem
+duplicar o efeito e exaustão por nó, execução, tokens, custo e deadline. A composição automática de
+worktree/provider/tools e a promoção remota da F4.8 permanecem pendentes.
 
 ## Fluxo de auditoria e rollback
 

@@ -10,11 +10,11 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 |---|---|---|---|---|
 | Disparo | CLI `run` | Cria `execution_id` e chama o runtime | Experimental | Falta validar repositório, configuração e precondições fail-closed |
 | Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, identidade/digest e partição exata de evidência, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 `PROMOTED` | PR #36 e reconciliação #37 foram incorporados com CI pós-merge verde; a entrada ainda depende de artefatos e snapshot previamente produzidos |
-| Plano | `Planner` + `ExecutionLifecycleService` | Contrato Pydantic versionado, structured output roteado, evidência/policies por digest, payload/projeção/eventos antes do nó e resume idempotente possuem testes positivos e fail-closed | F4.4 `PROMOTED` | Provider/configuração operacional continuam injetáveis; F4.7 ainda precisa persistir gates e guardar `COMPLETED`, e F4.8 compor retry |
+| Plano | `Planner` + `ExecutionLifecycleService` | Contrato Pydantic versionado, structured output roteado, evidência/policies por digest, payload/projeção/eventos antes do nó e resume idempotente possuem testes positivos e fail-closed | F4.4 `PROMOTED` | Provider/configuração operacional continuam injetáveis; verificação e reparo posteriores já compõem o lifecycle, mas não tornam os backends automáticos |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados | Primitiva real/injetável | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
 | Ferramentas | `ToolRouter` e factory operacional | Policy, dispatch durável e oito registrations opt-in possuem testes | Primitiva real/injetável | Lifecycle padrão não constrói o registry nem injeta worktree/adapters; ausência de backend falha fechada |
-| Verificação | `VerificationEngine` | F4.5 promovida normaliza cinco IDs; F4.6 detecta configuração, resolve a suíte inteira e valida executáveis no `ProvisionedWorktree` antes de efeitos; R3 preserva o launcher do venv até o spawn | F4.6 R3 `LOCAL_READY / PR_UPDATE_PENDING` | PR #44 ainda precisa receber o R3 e passar a CI POSIX; depois da promoção, F4.7 persiste/guarda conclusão e F4.8 compõe retry |
-| Reparo | Retry do `GraphExecutor` | Consome erro, tool call, saída redigida, gates, diff e orçamento | Implementado como contrato | Sem composição operacional das tools ainda não produz um reparo de produto de ponta a ponta |
+| Verificação | `VerificationEngine` + `ExecutionLifecycleService` | F4.5 normaliza cinco IDs; F4.6 resolve a suíte no `ProvisionedWorktree`; F4.7 persiste resultados commit-bound e guarda `COMPLETED`; F4.8 local executa targeted → full após reparo | F4.7 `PROMOTED`; F4.8 `COMPLETED_LOCAL` | F4.8 ainda precisa de promoção/CI remota; provider e worktree permanecem injetados no E2E |
+| Reparo | `ExecutionLifecycleService` + `GraphExecutor` | Reprovação F4.7 vira `RetryContext` redigido para o `on_failure` compilado; schedule, deadline e budgets são duráveis; crash-resume e limites possuem E2E | F4.8 `COMPLETED_LOCAL / PROMOTION_PENDING` | Sem composição automática das tools/worktree/provider, o caminho padrão ainda não executa reparo autônomo em repositório externo |
 | Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos | Implementada como contrato | Aprovação exige `resume` explícito e ainda não aciona promoção Git segura |
 | Promoção | `PromotionManager` | Registra evento e retorna string | Simulado | Runtime força dry-run e recebe SHA sintético; caminho live possui fallbacks sintéticos |
 | Memória | `PythonAstIndexer` + `CodebaseMemoryAdapter` + `SnapshotManager` | Rebuild AST de blobs Python do commit exato e snapshot canônico com SHA/schema/status/digest validados; F4.3 consome o snapshot commit-bound | Backend local implementado | Execução do índice é explícita por `harness index`; o lifecycle não reindexa automaticamente e o backend MCP ainda não substitui esse backend |
@@ -29,9 +29,11 @@ Os testes atuais também provam o dual gate de contexto, bloqueio antes de nós,
 retry/exaustão e recuperação de decisão durável. Para F4.4, provam que plano tipado e ligado a
 contexto/input é persistido antes do primeiro nó, que tamper/duplicata/policy/output/persistência
 inválidos bloqueiam e que resume não repete o provider. Para F4.5, provam convergência da taxonomia e
-rejeição antes do terminal, inclusive do alias legado `tests`. Para F4.6, provam detecção pela
-configuração, resolução integral antes de subprocessos, worktree externo real e erro tipado de
-pré-requisito. Eles provam providers HTTP com servidores controlados,
+rejeição antes do terminal, inclusive do alias legado `tests`. Para F4.6/F4.7, provam detecção pela
+configuração, resolução integral antes de subprocessos, worktree externo real, erro tipado de
+pré-requisito e persistência canônica por gate. Para F4.8, provam commit quebrado → reparo → targeted
+→ full, recuperação de cursor sem efeito duplicado e exaustão durável de todos os limites. Eles
+provam providers HTTP com servidores controlados,
 tool loop durável, worktree Git real, terminal por `argv`, edição confinada e transporte MCP Serena
 contra fixtures. Integrações live
 OpenAI/Serena continuam condicionadas a configuração externa. Eles ainda não provam que a CLI compõe

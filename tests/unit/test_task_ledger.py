@@ -361,7 +361,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F4.8 `READY / IMPLEMENTATION_NOT_STARTED`" in panel
+    assert "F4.8 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
     assert "31541047111" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
@@ -461,7 +461,7 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert not (ACTIVE_ROOT / "F4.7.md").exists()
     assert (COMPLETED_ROOT / "F4.7.md").is_file()
     assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
-    assert "F4.8 `READY / IMPLEMENTATION_NOT_STARTED`" in panel
+    assert "F4.8 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "docs/tasks/completed/F4.7.md" in panel
     assert "d4e34c7404d28a10969ab4b322748d01ae5805bf" in panel
     assert "31541047111" in panel
