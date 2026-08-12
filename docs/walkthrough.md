@@ -101,11 +101,11 @@ O `VerificationEngine` possui runners que executam processos reais pelo terminal
 cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. F4.5 remove o falso
 sucesso `0/0`; F4.6 exige `ProvisionedWorktree`, resolve a suíte inteira antes de efeitos e transforma
 pré-requisito ausente em `ERROR_PREREQUISITE`; F4.7 persiste cada resultado e impede conclusão sem
-suíte obrigatória aprovada. A F4.8 local recupera a última reprovação canônica, agenda somente o
+suíte obrigatória aprovada. A F4.8 promovida recupera a última reprovação canônica, agenda somente o
 `on_failure` compilado com contexto redigido e orçamento durável, executa primeiro os gates reprovados
 e exige a suíte integral no mesmo commit limpo antes de `COMPLETED`. O E2E prova crash-resume sem
 duplicar o efeito e exaustão por nó, execução, tokens, custo e deadline. A composição automática de
-worktree/provider/tools e a promoção remota da F4.8 permanecem pendentes.
+worktree/provider/tools permanece pendente.
 
 ## Fluxo de auditoria e rollback
 
