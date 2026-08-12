@@ -28,7 +28,8 @@
 | **CI do baseline** | run [31616226652](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31616226652), `workflow_dispatch`, success no SHA exato `846c59e` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13; `uv`, `python` e `py` indisponíveis no PATH |
 | **Checkpoint READY** | `checkpoint/f5.1-ready` → `930cabd2b22672048357df2b91385c74af1b248f` |
-| **Checkpoint COMPLETE** | tag local `checkpoint/f5.1-complete`, a materializar no commit de produto |
+| **Checkpoint COMPLETE** | `checkpoint/f5.1-complete` → `f246feb2a70bb83f08ff31341525fd29bd6d10f8` |
+| **Produto F5.1** | `f246feb2a70bb83f08ff31341525fd29bd6d10f8` |
 | **Aceite local** | `792 passed, 5 skipped, 6 subtests passed`; Ruff, mypy, compileall, build e smoke da wheel verdes |
 
 O evento do run `31616226652` é registrado como `workflow_dispatch`; não é apresentado como CI de
@@ -65,8 +66,8 @@ tools, worktree e promoção estão fora da autorização.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A tarefa está concluída localmente e aguarda somente consolidação
-do commit/tag COMPLETE e autorização externa separada para publicação.
+Não há bloqueio técnico conhecido. A tarefa está concluída localmente, com commit/tag COMPLETE
+materializados, e aguarda autorização externa separada para publicação.
 
 Push, abertura ou merge de PR, tag remota, exclusão de refs, force-push, bypass e início de F5.2 não
 estão autorizados.
@@ -74,7 +75,7 @@ estão autorizados.
 ## 7. Próxima ação exata
 
 ```text
-CONSOLIDAR O COMMIT LOCAL E A TAG checkpoint/f5.1-complete.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH E ABRIR O PR ÚNICO DA F5.1.
 NÃO PUBLICAR BRANCH, ABRIR PR, MESCLAR OU INICIAR F5.2.
 ```
 
