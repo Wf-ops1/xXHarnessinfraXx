@@ -91,7 +91,7 @@ Limitações importantes:
   promovida resolve configuração/argv e pré-requisitos no worktree antes de efeitos;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
 - o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
-- promoção permanece sintética; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
+- promoção F3.7 usa candidate/cherry-pick reais quando explicitamente injetada; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
   mas o lifecycle ainda não executa `harness index` automaticamente;
 - o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.
 

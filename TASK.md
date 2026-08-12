@@ -20,13 +20,14 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.8 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 3 — fechamento da promoção Git segura após gates F4 promovidos |
 | **Tarefa ativa** | F3.7 — promoção Git segura |
-| **Gate** | F3.7 `READY`; produto ainda intocado até o checkpoint local |
+| **Gate** | F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`; certificação local verde, publicação não autorizada |
 | **Executor ativo** | `Codex`, único escritor; autorizado em `2026-08-12T00:48:45-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.7-safe-promotion`, local, sem upstream, criada de `9f75e35db38fc6648497c01bd8f81dcdecec8029` |
 | **Main atual** | `main == origin/main == 9f75e35db38fc6648497c01bd8f81dcdecec8029` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **Checkpoint READY** | `checkpoint/f3.7-ready` → commit documental deste gate |
+| **Checkpoint de conclusão** | `checkpoint/f3.7-complete` → será criado no commit local certificado |
 
 ## 3. Última promoção comprovada
 
@@ -44,32 +45,34 @@ autorização nominal separada.
 
 ## 5. Tarefa ativa
 
-O baseline F3.7 confirmou que `PromotionManager` ainda fabrica `sha-promoted-*` no dry-run, executa
-`git add .` no checkout configurado e converte falhas em `sha-fallback-*`. O componente não consome a
-identidade durável F3.6, a aprovação canônica, o candidate SHA do record nem a suíte F4.7/F4.8.
+O baseline F3.7 comprovou SHA sintético, `git add .` no checkout configurado e fallback positivo. O
+produto local substituiu esse caminho por candidate commit real e singular no worktree F3.6,
+referência durável, composição opt-in no lifecycle, suíte full vinculada ao candidate SHA, aprovação
+canônica e promoção exclusivamente por `git cherry-pick <candidate_sha>`.
 
-O gate congela uma composição opt-in: candidate commit real somente no worktree externo; suíte full
-aprovada no SHA candidato; aprovação canônica; revalidação imediata de branch/base/limpeza; promoção
-somente por `git cherry-pick <candidate_sha>` e captura do SHA real. Base divergente termina em
-`BLOCKED_BASE_CHANGED`; dry-run preserva o checkout original e termina em `DRY_RUN_COMPLETED`.
+O checkout original é revalidado imediatamente antes do efeito. Base divergente termina em
+`BLOCKED_BASE_CHANGED`; dry-run preserva o checkout e termina em `DRY_RUN_COMPLETED`; write-ahead,
+outcome e recovery impedem repetição cega após interrupção. Sem injeção F3.7, a semântica promovida
+F4.7/F4.8 permanece compatível.
 
-O gate PREPARING passou com `27 passed, 6 subtests passed`, Ruff e diff check verdes. Até o commit e
-checkpoint READY, apenas os arquivos documentais deste gate podem mudar.
+Certificação observada: gate focado `74 passed`; regressão integral única `774 passed, 5 skipped,
+6 subtests passed`; mypy em 106 arquivos, Ruff, compileall, build PEP 517 e smoke oficial offline da
+wheel verdes. O smoke carregou `ai-engineering-harness 0.1.0` de origem externa ao checkout.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio documental conhecido. O produto só pode começar depois do commit/tag local READY.
-Push, PR, merge, tag remota, exclusão de ref e qualquer operação Git F3.7 fora de repositórios
-temporários de teste não estão autorizados.
+Não há bloqueio técnico local conhecido. Faltam somente o commit/checkpoint local de conclusão e uma
+autorização nominal separada para publicar a branch/abrir o PR. Push, PR, merge, tag remota, exclusão
+de ref e promoção sobre o repositório de desenvolvimento não estão autorizados.
 
 Evidência negativa nova sempre prevalece sobre sucesso anterior e exige recongelamento/recertificação.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O COMMIT E CHECKPOINT LOCAL checkpoint/f3.7-ready.
-DEPOIS, INICIAR PELOS TESTES FOCADOS DO CONTRATO F3.7.
-NÃO PUBLICAR BRANCH/TAG NEM EXECUTAR PROMOÇÃO NO REPOSITÓRIO DE DESENVOLVIMENTO.
+VALIDAR A DOCUMENTAÇÃO FINAL, CRIAR O COMMIT LOCAL E checkpoint/f3.7-complete.
+DEPOIS, AGUARDAR AUTORIZAÇÃO SEPARADA PARA PUSH E ABERTURA DO PR F3.7.
+NÃO PUBLICAR TAG NEM EXECUTAR PROMOÇÃO NO REPOSITÓRIO DE DESENVOLVIMENTO.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -78,8 +81,9 @@ NÃO PUBLICAR BRANCH/TAG NEM EXECUTAR PROMOÇÃO NO REPOSITÓRIO DE DESENVOLVIME
 2. Leia as seções 1.1–1.2 e F3.7 do plano, além das DEC-013/014/015.
 3. Confirme branch `task/f3.7-safe-promotion`, baseline/main `9f75e35`, CI pós-merge
    `31557794240`, workspace limpo e Python 3.12.13.
-4. Confirme que nenhum arquivo de produto mudou antes do checkpoint READY.
+4. Confirme `checkpoint/f3.7-ready == f84af68`, gate focado 74, regressão integral 774/5/6 e
+   build/smoke verdes antes de criar ou validar `checkpoint/f3.7-complete`.
 
 ---
 
-*Atualizado em: 2026-08-12T00:48:45-03:00 | Fonte: F3.7 + F3.6 + F4.7/F4.8 + PR #50 + CI 31557794240 + DEC-013/014/015*
+*Atualizado em: 2026-08-12T01:46:44-03:00 | Fonte: F3.7 + F3.6 + F4.7/F4.8 + regressão 774/5/6 + PR #50 + CI 31557794240 + DEC-013/014/015*

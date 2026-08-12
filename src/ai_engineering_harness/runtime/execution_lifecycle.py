@@ -87,6 +87,12 @@ from .node_executors import (
     RetryContext,
 )
 from .planner import Planner, PlanPrerequisiteError
+from .promotion_manager import (
+    CandidateCommit,
+    PromotionBaseChangedError,
+    PromotionError,
+    PromotionManager,
+)
 from .state_machine import VALID_STATE_TRANSITIONS, EventSourcedStateMachine
 
 APPROVAL_REQUESTED: Literal["APPROVAL_REQUESTED"] = "APPROVAL_REQUESTED"
@@ -95,15 +101,14 @@ APPROVAL_INVALIDATED: Literal["APPROVAL_INVALIDATED"] = "APPROVAL_INVALIDATED"
 CONTEXT_EVALUATED: Literal["CONTEXT_EVALUATED"] = "CONTEXT_EVALUATED"
 PLAN_GENERATION_STARTED: Literal["PLAN_GENERATION_STARTED"] = "PLAN_GENERATION_STARTED"
 PLAN_GENERATED: Literal["PLAN_GENERATED"] = "PLAN_GENERATED"
-VERIFICATION_GATE_STARTED: Literal["VERIFICATION_GATE_STARTED"] = (
-    "VERIFICATION_GATE_STARTED"
-)
-VERIFICATION_GATE_RECORDED: Literal["VERIFICATION_GATE_RECORDED"] = (
-    "VERIFICATION_GATE_RECORDED"
-)
-VERIFICATION_SUITE_RECORDED: Literal["VERIFICATION_SUITE_RECORDED"] = (
-    "VERIFICATION_SUITE_RECORDED"
-)
+VERIFICATION_GATE_STARTED: Literal["VERIFICATION_GATE_STARTED"] = "VERIFICATION_GATE_STARTED"
+VERIFICATION_GATE_RECORDED: Literal["VERIFICATION_GATE_RECORDED"] = "VERIFICATION_GATE_RECORDED"
+VERIFICATION_SUITE_RECORDED: Literal["VERIFICATION_SUITE_RECORDED"] = "VERIFICATION_SUITE_RECORDED"
+CANDIDATE_COMMIT_STARTED: Literal["CANDIDATE_COMMIT_STARTED"] = "CANDIDATE_COMMIT_STARTED"
+CANDIDATE_COMMIT_RECORDED: Literal["CANDIDATE_COMMIT_RECORDED"] = "CANDIDATE_COMMIT_RECORDED"
+PROMOTION_STARTED: Literal["PROMOTION_STARTED"] = "PROMOTION_STARTED"
+PROMOTION_COMPLETED: Literal["PROMOTION_COMPLETED"] = "PROMOTION_COMPLETED"
+PROMOTION_DRY_RUN_RECORDED: Literal["PROMOTION_DRY_RUN_RECORDED"] = "PROMOTION_DRY_RUN_RECORDED"
 _CONTEXT_POLICY_REFERENCE = "policies/context_sufficiency.yaml"
 _TOOL_POLICY_REFERENCE = "policies/tool_policy.yaml"
 _VERIFICATION_POLICY_REFERENCE = "policies/verification_policy.yaml"
@@ -111,9 +116,7 @@ _RETRY_COST_POLICY_REFERENCE = "policies/retry_cost_policy.yaml"
 
 _DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
-_APPROVAL_EVENT_TYPES = frozenset(
-    {APPROVAL_REQUESTED, EXECUTION_APPROVED, APPROVAL_INVALIDATED}
-)
+_APPROVAL_EVENT_TYPES = frozenset({APPROVAL_REQUESTED, EXECUTION_APPROVED, APPROVAL_INVALIDATED})
 _VERIFICATION_EVENT_TYPES = frozenset(
     {
         VERIFICATION_GATE_STARTED,
@@ -237,6 +240,22 @@ class VerificationRetryExhaustedError(ExecutionLifecycleError):
     classification = "retry_exhausted"
 
 
+class PromotionLifecycleError(ExecutionLifecycleError):
+    """Base class for candidate and promotion lifecycle failures."""
+
+
+class PromotionLifecyclePrerequisiteError(PromotionLifecycleError):
+    """Promotion was refused because a durable prerequisite is absent."""
+
+
+class PromotionLifecycleIntegrityError(PromotionLifecycleError):
+    """Git effects and the execution journal cannot be reconciled exactly."""
+
+
+class PromotionLifecycleBaseChangedError(PromotionLifecyclePrerequisiteError):
+    """The immutable original branch or base changed before promotion."""
+
+
 @dataclass(frozen=True, slots=True)
 class _VerificationAttempt:
     attempt: int
@@ -324,8 +343,8 @@ class ExecutionLifecycleService:
         git_identity_provider: Callable[[], tuple[str, str]] | None = None,
         context_assembler: ContextAssembler | None = None,
         model_router_factory: Callable[[Mapping[str, object]], ModelRouter] | None = None,
-        verification_worktree_provider: Callable[[str], ProvisionedWorktree]
-        | None = None,
+        verification_worktree_provider: Callable[[str], ProvisionedWorktree] | None = None,
+        promotion_manager: PromotionManager | None = None,
     ) -> None:
         if not isinstance(storage, ResumeStateStorageProvider):
             raise TypeError("storage must implement ResumeStateStorageProvider")
@@ -333,10 +352,13 @@ class ExecutionLifecycleService:
             raise TypeError("executors must be a NodeExecutorRegistry")
         if context_assembler is not None and not isinstance(context_assembler, ContextAssembler):
             raise TypeError("context_assembler must be a ContextAssembler")
-        if verification_worktree_provider is not None and not callable(
-            verification_worktree_provider
-        ):
+        if verification_worktree_provider is not None and not callable(verification_worktree_provider):
             raise TypeError("verification_worktree_provider must be callable")
+        resolved_project_root = Path(project_root).resolve()
+        if promotion_manager is not None and not isinstance(promotion_manager, PromotionManager):
+            raise TypeError("promotion_manager must be a PromotionManager")
+        if promotion_manager is not None and promotion_manager.project_root != resolved_project_root:
+            raise ValueError("promotion_manager project root must match project_root")
         if (
             isinstance(lock_timeout_seconds, bool)
             or not isinstance(lock_timeout_seconds, (int, float))
@@ -344,23 +366,20 @@ class ExecutionLifecycleService:
             or lock_timeout_seconds < 0
         ):
             raise ValueError("lock_timeout_seconds must be non-negative")
-        self.project_root = Path(project_root).resolve()
+        self.project_root = resolved_project_root
         self._storage = storage
         self._executors = executors
         self._config_resolver = config_resolver or ConfigResolver(self.project_root)
         self._lock_timeout_seconds = float(lock_timeout_seconds)
         self._clock = clock or (lambda: datetime.now(UTC))
         self._execution_id_factory = execution_id_factory or self._default_execution_id
-        self._event_id_factory = event_id_factory or (
-            lambda: f"lifecycle-event-{uuid.uuid4().hex}"
-        )
-        self._owner_id_factory = owner_id_factory or (
-            lambda: f"execution-lifecycle-{uuid.uuid4().hex}"
-        )
+        self._event_id_factory = event_id_factory or (lambda: f"lifecycle-event-{uuid.uuid4().hex}")
+        self._owner_id_factory = owner_id_factory or (lambda: f"execution-lifecycle-{uuid.uuid4().hex}")
         self._git_identity_provider = git_identity_provider or self._read_git_identity
         self._context_assembler = context_assembler or ContextAssembler(self.project_root)
         self._model_router_factory = model_router_factory or ModelRouter.from_effective_config
         self._verification_worktree_provider = verification_worktree_provider
+        self._promotion_manager = promotion_manager
         self._graph_executor = GraphExecutor(
             storage,
             executors,
@@ -386,11 +405,7 @@ class ExecutionLifecycleService:
         artifact = MAFAdapter.load_and_validate(Path(compiled_artifact_path))
         context_policy = self._resolved_context_policy(artifact)
         self._resolved_verification_policy(artifact)
-        envelope = (
-            self._context_envelope(initial_input, artifact)
-            if context_policy is not None
-            else None
-        )
+        envelope = self._context_envelope(initial_input, artifact) if context_policy is not None else None
         graph_input = envelope.graph_input if envelope is not None else initial_input
         effective_configuration = (
             configuration
@@ -405,9 +420,7 @@ class ExecutionLifecycleService:
             configuration_json = canonical_json_object(effective_configuration)
             initial_input_json = canonical_json_object(initial_input)
         except ValueError as exc:
-            raise ExecutionConfigurationError(
-                "configuration and initial input must be finite JSON objects"
-            ) from exc
+            raise ExecutionConfigurationError("configuration and initial input must be finite JSON objects") from exc
         selected_id = execution_id or self._execution_id_factory()
         self._graph_executor.preflight(
             artifact,
@@ -482,7 +495,7 @@ class ExecutionLifecycleService:
             raise ExecutionCancellationError(
                 "cancelled execution cannot be resumed",
                 execution_id=execution_id,
-        )
+            )
         context_policy = self._resolved_context_policy(artifact)
         verification_policy = self._resolved_verification_policy(artifact)
         if record.current_state == ExecutionState.VERIFYING:
@@ -565,6 +578,17 @@ class ExecutionLifecycleService:
                 execution_id=execution_id,
             )
         worktree = self._verification_worktree(execution_id, record)
+        if self._promotion_manager is not None:
+            candidate_sha = record.candidate_commit_sha
+            if (
+                candidate_sha is None
+                or worktree.reference.worktree_head_sha != candidate_sha
+                or record.worktree_path != str(worktree.worktree_path)
+            ):
+                raise VerificationLifecyclePrerequisiteError(
+                    "promotion-enabled verification requires the recorded candidate commit",
+                    execution_id=execution_id,
+                )
         engine = VerificationEngine(worktree, clock=self._clock)
         return self._verify_execution(
             artifact=artifact,
@@ -572,6 +596,613 @@ class ExecutionLifecycleService:
             engine=engine,
             policy_context=policy_context,
         )
+
+    def prepare_candidate(
+        self,
+        execution_id: str,
+        *,
+        message: str | None = None,
+    ) -> ExecutionRecord:
+        """Create or recover the real candidate commit and bind it durably."""
+
+        manager = self._required_promotion_manager(execution_id)
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._recover_promotion_fields_locked(execution_id, lock)
+            record = self._state_machine(execution_id, lock).recover(lock=lock)
+            if record.current_state != ExecutionState.VERIFYING:
+                raise PromotionLifecycleIntegrityError(
+                    "candidate creation requires the VERIFYING state",
+                    execution_id=execution_id,
+                )
+            if record.candidate_commit_sha is not None:
+                try:
+                    existing = manager.load_candidate(execution_id)
+                except PromotionError:
+                    existing = None
+                if existing is not None and self._candidate_matches_record(existing, record):
+                    return record
+
+            events = self._storage.load_events(execution_id, lock=lock)
+            last_timestamp = max(
+                record.updated_at,
+                events[-1].timestamp if events else record.updated_at,
+            )
+            started_at = self._next_timestamp(last_timestamp)
+            self._append_promotion_event(
+                execution_id,
+                CANDIDATE_COMMIT_STARTED,
+                {
+                    "base_commit_sha": record.base_commit_sha,
+                    "original_branch": record.original_branch,
+                    "fencing_token": lock.fencing_token,
+                },
+                timestamp=started_at,
+                lock=lock,
+            )
+            try:
+                candidate = manager.create_candidate(execution_id, message=message)
+            except PromotionError as exc:
+                raise PromotionLifecyclePrerequisiteError(
+                    "candidate commit could not be created or recovered",
+                    execution_id=execution_id,
+                ) from exc
+            self._validate_candidate_identity(
+                candidate,
+                record,
+                execution_id,
+                allow_replacement=True,
+            )
+            recorded_at = self._next_timestamp(started_at)
+            self._append_promotion_event(
+                execution_id,
+                CANDIDATE_COMMIT_RECORDED,
+                {
+                    "base_commit_sha": candidate.base_commit_sha,
+                    "candidate_commit_sha": candidate.candidate_commit_sha,
+                    "original_branch": candidate.original_branch,
+                    "worktree_path": str(candidate.worktree_path),
+                    "record_revision": record.revision + 1,
+                    "fencing_token": lock.fencing_token,
+                },
+                timestamp=recorded_at,
+                lock=lock,
+            )
+            replacement = self._git_replacement(
+                record,
+                candidate_commit_sha=candidate.candidate_commit_sha,
+                promotion_commit_sha=record.promotion_commit_sha,
+                worktree_path=str(candidate.worktree_path),
+                revision=record.revision + 1,
+                updated_at=recorded_at,
+            )
+            return self._storage.compare_and_set_execution(
+                execution_id,
+                record.revision,
+                replacement,
+                lock=lock,
+            )
+        except StateStorageError as exc:
+            raise PromotionLifecycleIntegrityError(
+                "candidate evidence could not be persisted or recovered",
+                execution_id=execution_id,
+            ) from exc
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def promote(self, execution_id: str, *, dry_run: bool = False) -> ExecutionRecord:
+        """Promote only an approved, fully verified candidate or record a dry-run."""
+
+        manager = self._required_promotion_manager(execution_id)
+        _, _, artifact = self._prepare_resume(execution_id)
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._recover_promotion_fields_locked(execution_id, lock)
+            machine = self._state_machine(execution_id, lock)
+            record = machine.recover(lock=lock)
+            allowed_states = (
+                {ExecutionState.VERIFYING} if dry_run else {ExecutionState.VERIFYING, ExecutionState.PROMOTING}
+            )
+            if record.current_state not in allowed_states:
+                raise PromotionLifecycleIntegrityError(
+                    "promotion requires the VERIFYING or recoverable PROMOTING state",
+                    execution_id=execution_id,
+                )
+            if record.approval_status is not ApprovalStatus.APPROVED:
+                raise PromotionLifecyclePrerequisiteError(
+                    "promotion requires canonical APPROVED status",
+                    execution_id=execution_id,
+                )
+            try:
+                candidate = manager.load_candidate(execution_id)
+            except PromotionError as exc:
+                raise PromotionLifecyclePrerequisiteError(
+                    "recorded candidate commit could not be validated",
+                    execution_id=execution_id,
+                ) from exc
+            self._validate_candidate_identity(candidate, record, execution_id)
+            self._require_passing_candidate_suite(
+                execution_id=execution_id,
+                artifact=artifact,
+                candidate=candidate,
+                lock=lock,
+            )
+
+            events = self._storage.load_events(execution_id, lock=lock)
+            last_timestamp = max(
+                record.updated_at,
+                events[-1].timestamp if events else record.updated_at,
+            )
+            if dry_run:
+                already_recorded = any(
+                    event.event_type == PROMOTION_DRY_RUN_RECORDED
+                    and event.payload.get("candidate_commit_sha") == candidate.candidate_commit_sha
+                    for event in events
+                )
+                if not already_recorded:
+                    try:
+                        result = manager.promote(candidate, dry_run=True)
+                    except PromotionError as exc:
+                        raise PromotionLifecyclePrerequisiteError(
+                            "dry-run promotion prerequisites changed",
+                            execution_id=execution_id,
+                        ) from exc
+                    if result.promotion_commit_sha is not None:
+                        raise PromotionLifecycleIntegrityError(
+                            "dry-run promotion unexpectedly reported a live commit",
+                            execution_id=execution_id,
+                        )
+                    last_timestamp = self._next_timestamp(last_timestamp)
+                    self._append_promotion_event(
+                        execution_id,
+                        PROMOTION_DRY_RUN_RECORDED,
+                        {
+                            "base_commit_sha": candidate.base_commit_sha,
+                            "candidate_commit_sha": candidate.candidate_commit_sha,
+                            "original_branch": candidate.original_branch,
+                            "fencing_token": lock.fencing_token,
+                        },
+                        timestamp=last_timestamp,
+                        lock=lock,
+                    )
+                return machine.transition_to(
+                    ExecutionState.DRY_RUN_COMPLETED,
+                    node_id=record.current_node_id,
+                    attempt=0,
+                    reason="promotion_dry_run_completed",
+                    lock=lock,
+                )
+
+            if record.current_state == ExecutionState.VERIFYING:
+                last_timestamp = self._next_timestamp(last_timestamp)
+                self._append_promotion_event(
+                    execution_id,
+                    PROMOTION_STARTED,
+                    {
+                        "base_commit_sha": candidate.base_commit_sha,
+                        "candidate_commit_sha": candidate.candidate_commit_sha,
+                        "original_branch": candidate.original_branch,
+                        "fencing_token": lock.fencing_token,
+                    },
+                    timestamp=last_timestamp,
+                    lock=lock,
+                )
+                record = machine.transition_to(
+                    ExecutionState.PROMOTING,
+                    node_id=record.current_node_id,
+                    attempt=0,
+                    reason="promotion_started",
+                    lock=lock,
+                )
+
+            try:
+                result = manager.promote(candidate, dry_run=False)
+            except PromotionBaseChangedError as exc:
+                current = machine.recover(lock=lock)
+                if current.current_state == ExecutionState.PROMOTING:
+                    machine.transition_to(
+                        ExecutionState.BLOCKED_BASE_CHANGED,
+                        node_id=current.current_node_id,
+                        attempt=0,
+                        reason="promotion_base_changed",
+                        lock=lock,
+                    )
+                raise PromotionLifecycleBaseChangedError(
+                    "original base changed before exact candidate promotion",
+                    execution_id=execution_id,
+                ) from exc
+            except PromotionError as exc:
+                raise PromotionLifecycleIntegrityError(
+                    "promotion effect could not be completed or reconciled",
+                    execution_id=execution_id,
+                ) from exc
+            promotion_sha = result.promotion_commit_sha
+            if promotion_sha is None:
+                raise PromotionLifecycleIntegrityError(
+                    "live promotion did not produce a provable commit",
+                    execution_id=execution_id,
+                )
+
+            record = self._recover_promotion_fields_locked(execution_id, lock)
+            record = machine.recover(lock=lock)
+            if record.promotion_commit_sha is None:
+                events = self._storage.load_events(execution_id, lock=lock)
+                last_timestamp = max(
+                    record.updated_at,
+                    events[-1].timestamp if events else record.updated_at,
+                )
+                completed_at = self._next_timestamp(last_timestamp)
+                self._append_promotion_event(
+                    execution_id,
+                    PROMOTION_COMPLETED,
+                    {
+                        "base_commit_sha": candidate.base_commit_sha,
+                        "candidate_commit_sha": candidate.candidate_commit_sha,
+                        "promotion_commit_sha": promotion_sha,
+                        "original_branch": candidate.original_branch,
+                        "record_revision": record.revision + 1,
+                        "fencing_token": lock.fencing_token,
+                    },
+                    timestamp=completed_at,
+                    lock=lock,
+                )
+                replacement = self._git_replacement(
+                    record,
+                    candidate_commit_sha=candidate.candidate_commit_sha,
+                    promotion_commit_sha=promotion_sha,
+                    worktree_path=record.worktree_path,
+                    revision=record.revision + 1,
+                    updated_at=completed_at,
+                )
+                record = self._storage.compare_and_set_execution(
+                    execution_id,
+                    record.revision,
+                    replacement,
+                    lock=lock,
+                )
+            elif record.promotion_commit_sha != promotion_sha:
+                raise PromotionLifecycleIntegrityError(
+                    "promotion snapshot diverges from the proven Git effect",
+                    execution_id=execution_id,
+                )
+            return machine.transition_to(
+                ExecutionState.COMPLETED,
+                node_id=record.current_node_id,
+                attempt=0,
+                reason="promotion_completed",
+                lock=lock,
+            )
+        except StateStorageError as exc:
+            raise PromotionLifecycleIntegrityError(
+                "promotion evidence could not be persisted or recovered",
+                execution_id=execution_id,
+            ) from exc
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def _required_promotion_manager(self, execution_id: str) -> PromotionManager:
+        manager = self._promotion_manager
+        if manager is None:
+            raise PromotionLifecyclePrerequisiteError(
+                "promotion manager is not configured",
+                execution_id=execution_id,
+            )
+        return manager
+
+    @staticmethod
+    def _candidate_matches_record(
+        candidate: CandidateCommit,
+        record: ExecutionRecord,
+    ) -> bool:
+        return bool(
+            candidate.execution_id == record.execution_id
+            and candidate.base_commit_sha == record.base_commit_sha
+            and candidate.original_branch == record.original_branch
+            and candidate.candidate_commit_sha == record.candidate_commit_sha
+            and str(candidate.worktree_path) == record.worktree_path
+        )
+
+    def _validate_candidate_identity(
+        self,
+        candidate: CandidateCommit,
+        record: ExecutionRecord,
+        execution_id: str,
+        *,
+        allow_replacement: bool = False,
+    ) -> None:
+        if (
+            candidate.execution_id != execution_id
+            or candidate.base_commit_sha != record.base_commit_sha
+            or candidate.original_branch != record.original_branch
+        ):
+            raise PromotionLifecycleIntegrityError(
+                "candidate identity diverges from the immutable execution",
+                execution_id=execution_id,
+            )
+        if (
+            not allow_replacement
+            and record.candidate_commit_sha is not None
+            and not self._candidate_matches_record(candidate, record)
+        ):
+            raise PromotionLifecycleIntegrityError(
+                "candidate Git state diverges from the durable snapshot",
+                execution_id=execution_id,
+            )
+
+    def _require_passing_candidate_suite(
+        self,
+        *,
+        execution_id: str,
+        artifact: CompiledGraphArtifact,
+        candidate: CandidateCommit,
+        lock: ExecutionLock,
+    ) -> None:
+        policy_context = self._resolved_verification_policy(artifact)
+        if policy_context is None:
+            raise PromotionLifecyclePrerequisiteError(
+                "promotion requires the compiled verification policy",
+                execution_id=execution_id,
+            )
+        resolved_policy, policy = policy_context
+        policy_digest = canonical_json_digest(canonical_json_object(resolved_policy.model_dump(mode="json")))
+        requirements = tuple(GateRequirement(gate_id=gate.id, required=gate.blocking) for gate in policy.required_gates)
+        attempts = self._recover_verification_attempts(
+            execution_id=execution_id,
+            events=self._storage.load_events(execution_id, lock=lock),
+            requirements=requirements,
+            policy_digest=policy_digest,
+            lock=lock,
+        )
+        if not attempts:
+            raise PromotionLifecyclePrerequisiteError(
+                "promotion requires a durable verification suite",
+                execution_id=execution_id,
+            )
+        latest = attempts[-1]
+        if (
+            not latest.full_suite
+            or not latest.suite.all_passed
+            or latest.suite.verified_commit_sha != candidate.candidate_commit_sha
+        ):
+            raise PromotionLifecyclePrerequisiteError(
+                "promotion requires the latest full suite to pass on the candidate SHA",
+                execution_id=execution_id,
+            )
+
+    def _recover_promotion_fields_locked(
+        self,
+        execution_id: str,
+        lock: ExecutionLock,
+    ) -> ExecutionRecord:
+        record = self._storage.load_execution(execution_id, lock=lock)
+        latest_candidate: tuple[str, str] | None = None
+        latest_promotion: str | None = None
+        pending: tuple[ExecutionEvent, str, str | None] | None = None
+        last_record_revision = -1
+        promotion_types = {
+            CANDIDATE_COMMIT_STARTED,
+            CANDIDATE_COMMIT_RECORDED,
+            PROMOTION_STARTED,
+            PROMOTION_COMPLETED,
+            PROMOTION_DRY_RUN_RECORDED,
+        }
+        for event in self._storage.load_events(execution_id, lock=lock):
+            if event.event_type not in promotion_types:
+                continue
+            payload = event.payload
+            if event.event_type == CANDIDATE_COMMIT_STARTED:
+                expected_keys = {
+                    "base_commit_sha",
+                    "original_branch",
+                    "fencing_token",
+                }
+            elif event.event_type == CANDIDATE_COMMIT_RECORDED:
+                expected_keys = {
+                    "base_commit_sha",
+                    "candidate_commit_sha",
+                    "original_branch",
+                    "worktree_path",
+                    "record_revision",
+                    "fencing_token",
+                }
+            elif event.event_type == PROMOTION_COMPLETED:
+                expected_keys = {
+                    "base_commit_sha",
+                    "candidate_commit_sha",
+                    "promotion_commit_sha",
+                    "original_branch",
+                    "record_revision",
+                    "fencing_token",
+                }
+            else:
+                expected_keys = {
+                    "base_commit_sha",
+                    "candidate_commit_sha",
+                    "original_branch",
+                    "fencing_token",
+                }
+            fencing_token = payload.get("fencing_token")
+            if (
+                set(payload) != expected_keys
+                or payload.get("base_commit_sha") != record.base_commit_sha
+                or payload.get("original_branch") != record.original_branch
+                or type(fencing_token) is not int
+                or fencing_token <= 0
+            ):
+                raise PromotionLifecycleIntegrityError(
+                    "candidate or promotion event identity is invalid",
+                    execution_id=execution_id,
+                )
+            if event.event_type == CANDIDATE_COMMIT_STARTED:
+                continue
+            candidate_sha = payload.get("candidate_commit_sha")
+            if type(candidate_sha) is not str or _GIT_SHA_PATTERN.fullmatch(candidate_sha) is None:
+                raise PromotionLifecycleIntegrityError(
+                    "promotion event candidate SHA is invalid",
+                    execution_id=execution_id,
+                )
+            if event.event_type in {PROMOTION_STARTED, PROMOTION_DRY_RUN_RECORDED}:
+                if latest_candidate is None or candidate_sha != latest_candidate[0]:
+                    raise PromotionLifecycleIntegrityError(
+                        "promotion event is not bound to the latest candidate",
+                        execution_id=execution_id,
+                    )
+                continue
+
+            revision = payload.get("record_revision")
+            if type(revision) is not int or revision < 1 or revision <= last_record_revision:
+                raise PromotionLifecycleIntegrityError(
+                    "candidate and promotion record revisions must increase",
+                    execution_id=execution_id,
+                )
+            last_record_revision = revision
+            worktree_path: str | None = None
+            if event.event_type == CANDIDATE_COMMIT_RECORDED:
+                observed_path = payload.get("worktree_path")
+                if type(observed_path) is not str or not observed_path.strip():
+                    raise PromotionLifecycleIntegrityError(
+                        "candidate event worktree path is invalid",
+                        execution_id=execution_id,
+                    )
+                worktree_path = observed_path
+                outcome_value = candidate_sha
+                outcome_kind = "candidate"
+            else:
+                promotion_sha = payload.get("promotion_commit_sha")
+                if (
+                    type(promotion_sha) is not str
+                    or _GIT_SHA_PATTERN.fullmatch(promotion_sha) is None
+                    or latest_candidate is None
+                    or candidate_sha != latest_candidate[0]
+                ):
+                    raise PromotionLifecycleIntegrityError(
+                        "promotion outcome identity is invalid",
+                        execution_id=execution_id,
+                    )
+                outcome_value = promotion_sha
+                outcome_kind = "promotion"
+
+            if revision <= record.revision:
+                if pending is not None:
+                    raise PromotionLifecycleIntegrityError(
+                        "committed promotion outcome follows a pending outcome",
+                        execution_id=execution_id,
+                    )
+                if outcome_kind == "candidate":
+                    latest_candidate = (outcome_value, worktree_path or "")
+                else:
+                    latest_promotion = outcome_value
+            else:
+                if pending is not None or revision != record.revision + 1:
+                    raise PromotionLifecycleIntegrityError(
+                        "promotion outcome is not the next recoverable revision",
+                        execution_id=execution_id,
+                    )
+                pending = (event, outcome_kind, worktree_path)
+                if outcome_kind == "candidate":
+                    latest_candidate = (outcome_value, worktree_path or "")
+                else:
+                    latest_promotion = outcome_value
+
+        if pending is not None:
+            event, outcome_kind, worktree_path = pending
+            payload = event.payload
+            candidate_sha = str(payload["candidate_commit_sha"])
+            promotion_sha = (
+                str(payload["promotion_commit_sha"]) if outcome_kind == "promotion" else record.promotion_commit_sha
+            )
+            replacement = self._git_replacement(
+                record,
+                candidate_commit_sha=(candidate_sha if outcome_kind == "candidate" else record.candidate_commit_sha),
+                promotion_commit_sha=promotion_sha,
+                worktree_path=(worktree_path if outcome_kind == "candidate" else record.worktree_path),
+                revision=record.revision + 1,
+                updated_at=event.timestamp,
+            )
+            record = self._storage.compare_and_set_execution(
+                execution_id,
+                record.revision,
+                replacement,
+                lock=lock,
+            )
+
+        if latest_candidate is None:
+            if record.candidate_commit_sha is not None or record.worktree_path is not None:
+                raise PromotionLifecycleIntegrityError(
+                    "candidate snapshot has no canonical event history",
+                    execution_id=execution_id,
+                )
+        elif record.candidate_commit_sha != latest_candidate[0] or record.worktree_path != latest_candidate[1]:
+            raise PromotionLifecycleIntegrityError(
+                "candidate snapshot diverges from committed event history",
+                execution_id=execution_id,
+            )
+        if latest_promotion is None:
+            if record.promotion_commit_sha is not None:
+                raise PromotionLifecycleIntegrityError(
+                    "promotion snapshot has no canonical outcome event",
+                    execution_id=execution_id,
+                )
+        elif record.promotion_commit_sha != latest_promotion:
+            raise PromotionLifecycleIntegrityError(
+                "promotion snapshot diverges from committed event history",
+                execution_id=execution_id,
+            )
+        return record
+
+    def _append_promotion_event(
+        self,
+        execution_id: str,
+        event_type: Literal[
+            "CANDIDATE_COMMIT_STARTED",
+            "CANDIDATE_COMMIT_RECORDED",
+            "PROMOTION_STARTED",
+            "PROMOTION_COMPLETED",
+            "PROMOTION_DRY_RUN_RECORDED",
+        ],
+        payload: dict[str, object],
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=event_type,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise PromotionLifecycleIntegrityError(
+                "cannot construct a canonical promotion event",
+                execution_id=execution_id,
+            ) from exc
+        return self._storage.append_event(execution_id, event, lock=lock)
+
+    @staticmethod
+    def _git_replacement(
+        record: ExecutionRecord,
+        *,
+        candidate_commit_sha: str | None,
+        promotion_commit_sha: str | None,
+        worktree_path: str | None,
+        revision: int,
+        updated_at: datetime,
+    ) -> ExecutionRecord:
+        document = record.model_dump(mode="python")
+        document.update(
+            {
+                "candidate_commit_sha": candidate_commit_sha,
+                "promotion_commit_sha": promotion_commit_sha,
+                "worktree_path": worktree_path,
+                "revision": revision,
+                "updated_at": updated_at,
+            }
+        )
+        return ExecutionRecord.model_validate(document)
 
     @staticmethod
     def _resolved_verification_policy(
@@ -585,9 +1216,7 @@ class ExecutionLifecycleService:
         if not matches:
             return None
         if len(matches) != 1:
-            raise ExecutionConfigurationError(
-                "compiled artifact contains duplicate verification policies"
-            )
+            raise ExecutionConfigurationError("compiled artifact contains duplicate verification policies")
         resolved = matches[0]
         try:
             policy = VerificationPolicySpec.model_validate(
@@ -599,18 +1228,14 @@ class ExecutionLifecycleService:
                 }
             )
         except (TypeError, ValueError, ValidationError) as exc:
-            raise ExecutionConfigurationError(
-                "compiled verification policy is invalid"
-            ) from exc
+            raise ExecutionConfigurationError("compiled verification policy is invalid") from exc
         if (
             policy.policy_id != resolved.policy_id
             or policy.policy_schema_version != resolved.policy_schema_version
             or policy.definition_version != resolved.definition_version
             or policy.termination_rule != "ALL_REQUIRED_GATES_PASSED"
         ):
-            raise ExecutionConfigurationError(
-                "compiled verification policy identity or termination rule is invalid"
-            )
+            raise ExecutionConfigurationError("compiled verification policy identity or termination rule is invalid")
         return resolved, policy
 
     @staticmethod
@@ -625,9 +1250,7 @@ class ExecutionLifecycleService:
         if not matches:
             return None
         if len(matches) != 1:
-            raise ExecutionConfigurationError(
-                "compiled artifact contains duplicate retry cost policies"
-            )
+            raise ExecutionConfigurationError("compiled artifact contains duplicate retry cost policies")
         resolved = matches[0]
         try:
             policy = RetryCostPolicySpec.model_validate(
@@ -639,9 +1262,7 @@ class ExecutionLifecycleService:
                 }
             )
         except (TypeError, ValueError, ValidationError) as exc:
-            raise ExecutionConfigurationError(
-                "compiled retry cost policy is invalid"
-            ) from exc
+            raise ExecutionConfigurationError("compiled retry cost policy is invalid") from exc
         return resolved, policy
 
     @staticmethod
@@ -651,20 +1272,15 @@ class ExecutionLifecycleService:
         origins = tuple(
             node
             for node in artifact.graph.nodes
-            if isinstance(node, DeterministicNodeSpec)
-            and node.policy_ref == _VERIFICATION_POLICY_REFERENCE
+            if isinstance(node, DeterministicNodeSpec) and node.policy_ref == _VERIFICATION_POLICY_REFERENCE
         )
         if len(origins) != 1:
-            raise ExecutionConfigurationError(
-                "verification repair requires one deterministic policy node"
-            )
+            raise ExecutionConfigurationError("verification repair requires one deterministic policy node")
         origin = origins[0]
         nodes = {node.id: node for node in artifact.graph.nodes}
         target = nodes.get(origin.on_failure)
         if target is None or target.retry_policy is None:
-            raise ExecutionConfigurationError(
-                "verification correction edge is absent or unbounded"
-            )
+            raise ExecutionConfigurationError("verification correction edge is absent or unbounded")
         return origin, target
 
     def _resume_verification_repair(
@@ -692,14 +1308,9 @@ class ExecutionLifecycleService:
         verification_digest = canonical_json_digest(
             canonical_json_object(resolved_verification.model_dump(mode="json"))
         )
-        requirements = tuple(
-            GateRequirement(gate_id=gate.id, required=gate.blocking)
-            for gate in policy.required_gates
-        )
+        requirements = tuple(GateRequirement(gate_id=gate.id, required=gate.blocking) for gate in policy.required_gates)
         resolved_retry, retry_policy = retry_policy_context
-        retry_policy_digest = canonical_json_digest(
-            canonical_json_object(resolved_retry.model_dump(mode="json"))
-        )
+        retry_policy_digest = canonical_json_digest(canonical_json_object(resolved_retry.model_dump(mode="json")))
 
         lock = self._acquire(execution_id)
         try:
@@ -743,11 +1354,7 @@ class ExecutionLifecycleService:
                 )
 
             now = self._clock()
-            if (
-                not isinstance(now, datetime)
-                or now.tzinfo is None
-                or now.utcoffset() is None
-            ):
+            if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
                 raise VerificationLifecycleIntegrityError(
                     "verification retry clock must be timezone-aware",
                     execution_id=execution_id,
@@ -756,9 +1363,7 @@ class ExecutionLifecycleService:
             deadline = (
                 schedules[0].deadline_at
                 if schedules
-                else now + timedelta(
-                    seconds=retry_policy.cost_budget.max_retry_duration_seconds
-                )
+                else now + timedelta(seconds=retry_policy.cost_budget.max_retry_duration_seconds)
             )
             tokens_by_node, consumed_cost = self._verification_retry_usage(
                 execution_id=execution_id,
@@ -776,19 +1381,11 @@ class ExecutionLifecycleService:
             reason: str | None = None
             if len(schedules) >= retry_policy.model_routing.retry_max:
                 reason = "verification_execution_retry_exhausted"
-            elif (
-                current.attempt_by_node.get(target.id, 0) + 1
-                > target_retry_policy.max_iterations
-            ):
+            elif current.attempt_by_node.get(target.id, 0) + 1 > target_retry_policy.max_iterations:
                 reason = "verification_node_retry_exhausted"
-            elif any(
-                tokens >= retry_policy.cost_budget.max_tokens_per_node
-                for tokens in tokens_by_node.values()
-            ):
+            elif any(tokens >= retry_policy.cost_budget.max_tokens_per_node for tokens in tokens_by_node.values()):
                 reason = "verification_token_budget_exhausted"
-            elif consumed_cost >= Decimal(
-                str(retry_policy.cost_budget.max_cost_per_execution_usd)
-            ):
+            elif consumed_cost >= Decimal(str(retry_policy.cost_budget.max_cost_per_execution_usd)):
                 reason = "verification_cost_budget_exhausted"
             elif now >= deadline:
                 reason = "verification_time_budget_exhausted"
@@ -815,21 +1412,14 @@ class ExecutionLifecycleService:
                     "failed verification suite has no failed required gate",
                     execution_id=execution_id,
                 )
-            remaining_tokens = (
-                retry_policy.cost_budget.max_tokens_per_node - consumed_tokens
-            )
+            remaining_tokens = retry_policy.cost_budget.max_tokens_per_node - consumed_tokens
             remaining_cost = max(
                 Decimal(0),
-                Decimal(str(retry_policy.cost_budget.max_cost_per_execution_usd))
-                - consumed_cost,
+                Decimal(str(retry_policy.cost_budget.max_cost_per_execution_usd)) - consumed_cost,
             )
             remaining_time = (deadline - now).total_seconds()
-            stdout = "\n".join(
-                f"[{result.gate_id}]\n{result.stdout}" for result in failed_results
-            )
-            stderr = "\n".join(
-                f"[{result.gate_id}]\n{result.stderr}" for result in failed_results
-            )
+            stdout = "\n".join(f"[{result.gate_id}]\n{result.stdout}" for result in failed_results)
+            stderr = "\n".join(f"[{result.gate_id}]\n{result.stderr}" for result in failed_results)
             context = RetryContext(
                 origin_node_id=origin.id,
                 current_attempt=current.attempt_by_node.get(target.id, 0) + 1,
@@ -847,8 +1437,7 @@ class ExecutionLifecycleService:
                 ),
                 correction_instruction=Redactor.redact_text(
                     "Correct the failed required gates on commit "
-                    f"{latest.suite.verified_commit_sha}: "
-                    + ", ".join(result.gate_id for result in failed_results)
+                    f"{latest.suite.verified_commit_sha}: " + ", ".join(result.gate_id for result in failed_results)
                 ),
             )
             request = VerificationRepairRequest(
@@ -880,23 +1469,17 @@ class ExecutionLifecycleService:
         provider = self._verification_worktree_provider
         try:
             if provider is None:
-                raise VerificationConfigurationError(
-                    "verification worktree provider is not configured"
-                )
+                raise VerificationConfigurationError("verification worktree provider is not configured")
             worktree = provider(execution_id)
             if not isinstance(worktree, ProvisionedWorktree):
-                raise VerificationConfigurationError(
-                    "verification worktree provider returned an invalid contract"
-                )
+                raise VerificationConfigurationError("verification worktree provider returned an invalid contract")
             reference = worktree.reference
             if (
                 reference.execution_id != execution_id
                 or reference.base_commit_sha != record.base_commit_sha
                 or reference.original_branch != record.original_branch
             ):
-                raise VerificationConfigurationError(
-                    "verification worktree identity does not match the execution"
-                )
+                raise VerificationConfigurationError("verification worktree identity does not match the execution")
             self._validate_verification_worktree_commit(
                 worktree,
                 expected_commit_sha=reference.worktree_head_sha,
@@ -918,12 +1501,9 @@ class ExecutionLifecycleService:
         policy_context: tuple[ResolvedPolicySpec, VerificationPolicySpec],
     ) -> VerificationSuiteResult:
         resolved_policy, policy = policy_context
-        policy_digest = canonical_json_digest(
-            canonical_json_object(resolved_policy.model_dump(mode="json"))
-        )
+        policy_digest = canonical_json_digest(canonical_json_object(resolved_policy.model_dump(mode="json")))
         full_requirements = tuple(
-            GateRequirement(gate_id=gate.id, required=gate.blocking)
-            for gate in policy.required_gates
+            GateRequirement(gate_id=gate.id, required=gate.blocking) for gate in policy.required_gates
         )
         verified_commit_sha = engine.worktree.reference.worktree_head_sha
         if verified_commit_sha is None:
@@ -951,9 +1531,7 @@ class ExecutionLifecycleService:
                 lock=lock,
             )
             schedules: tuple[_RepairSchedule, ...] = ()
-            if any(
-                event.event_type == VERIFICATION_REPAIR_SCHEDULED for event in events
-            ):
+            if any(event.event_type == VERIFICATION_REPAIR_SCHEDULED for event in events):
                 retry_context = self._resolved_retry_cost_policy(artifact)
                 if retry_context is None:
                     raise VerificationLifecycleIntegrityError(
@@ -961,9 +1539,7 @@ class ExecutionLifecycleService:
                         execution_id=execution_id,
                     )
                 resolved_retry, _ = retry_context
-                retry_digest = canonical_json_digest(
-                    canonical_json_object(resolved_retry.model_dump(mode="json"))
-                )
+                retry_digest = canonical_json_digest(canonical_json_object(resolved_retry.model_dump(mode="json")))
                 origin, target = self._verification_repair_nodes(artifact)
                 schedules = self._recover_repair_schedules(
                     execution_id=execution_id,
@@ -991,13 +1567,14 @@ class ExecutionLifecycleService:
                             "verified worktree changed after the passing full suite",
                             execution_id=execution_id,
                         )
-                    machine.transition_to(
-                        ExecutionState.COMPLETED,
-                        node_id=record.current_node_id,
-                        attempt=0,
-                        reason="verification_passed",
-                        lock=lock,
-                    )
+                    if self._promotion_manager is None:
+                        machine.transition_to(
+                            ExecutionState.COMPLETED,
+                            node_id=record.current_node_id,
+                            attempt=0,
+                            reason="verification_passed",
+                            lock=lock,
+                        )
                     return latest.suite
                 if schedules and recovered[-1].event_index < schedules[-1].event_index:
                     source = recovered[-1]
@@ -1072,15 +1649,9 @@ class ExecutionLifecycleService:
             for result in attempt.suite.gate_results
             if result.required and result.status is not GateStatus.PASSED
         }
-        selected = tuple(
-            requirement
-            for requirement in attempt.requirements
-            if requirement.gate_id in failed_ids
-        )
+        selected = tuple(requirement for requirement in attempt.requirements if requirement.gate_id in failed_ids)
         if not selected:
-            raise VerificationLifecycleIntegrityError(
-                "failed verification attempt has no failed required gate"
-            )
+            raise VerificationLifecycleIntegrityError("failed verification attempt has no failed required gate")
         return selected
 
     @classmethod
@@ -1094,19 +1665,12 @@ class ExecutionLifecycleService:
     ) -> None:
         for index, schedule in enumerate(schedules):
             source = attempts[schedule.source_verification_attempt - 1]
-            next_schedule_index = (
-                schedules[index + 1].event_index
-                if index + 1 < len(schedules)
-                else None
-            )
+            next_schedule_index = schedules[index + 1].event_index if index + 1 < len(schedules) else None
             post_attempts = tuple(
                 attempt
                 for attempt in attempts
                 if attempt.event_index > schedule.event_index
-                and (
-                    next_schedule_index is None
-                    or attempt.event_index < next_schedule_index
-                )
+                and (next_schedule_index is None or attempt.event_index < next_schedule_index)
             )
             if len(post_attempts) > 2:
                 raise VerificationLifecycleIntegrityError(
@@ -1119,8 +1683,7 @@ class ExecutionLifecycleService:
             if (
                 targeted.requirements != cls._failed_requirements(source)
                 or targeted.full_suite
-                or targeted.suite.verified_commit_sha
-                == source.suite.verified_commit_sha
+                or targeted.suite.verified_commit_sha == source.suite.verified_commit_sha
             ):
                 raise VerificationLifecycleIntegrityError(
                     "repair did not produce the exact targeted verification attempt",
@@ -1132,8 +1695,7 @@ class ExecutionLifecycleService:
                     not targeted.suite.all_passed
                     or not final.full_suite
                     or final.requirements != full_requirements
-                    or final.suite.verified_commit_sha
-                    != targeted.suite.verified_commit_sha
+                    or final.suite.verified_commit_sha != targeted.suite.verified_commit_sha
                 ):
                     raise VerificationLifecycleIntegrityError(
                         "full verification does not follow a passing targeted attempt",
@@ -1154,12 +1716,15 @@ class ExecutionLifecycleService:
         lock: ExecutionLock,
         machine: EventSourcedStateMachine,
     ) -> tuple[_VerificationAttempt, datetime]:
-        pending: tuple[
-            int,
-            GateRequirement,
-            ResolvedGateCommand | None,
-            int,
-        ] | None = None
+        pending: (
+            tuple[
+                int,
+                GateRequirement,
+                ResolvedGateCommand | None,
+                int,
+            ]
+            | None
+        ) = None
         gate_result_digests: list[str] = []
         next_gate_index = 0
 
@@ -1313,15 +1878,16 @@ class ExecutionLifecycleService:
             lock=lock,
         )
         certified = attempts[-1]
-        if (
-            certified.attempt != attempt_number
-            or certified.suite_digest != suite_digest
-        ):
+        if certified.attempt != attempt_number or certified.suite_digest != suite_digest:
             raise VerificationLifecycleIntegrityError(
                 "persisted verification attempt could not be recovered",
                 execution_id=execution_id,
             )
-        if certified.full_suite and certified.suite.all_passed:
+        if (
+            certified.full_suite
+            and certified.suite.all_passed
+            and self._promotion_manager is None
+        ):
             current = machine.recover(lock=lock)
             machine.transition_to(
                 ExecutionState.COMPLETED,
@@ -1338,13 +1904,8 @@ class ExecutionLifecycleService:
         *,
         expected_commit_sha: str | None,
     ) -> None:
-        if (
-            type(expected_commit_sha) is not str
-            or _GIT_SHA_PATTERN.fullmatch(expected_commit_sha) is None
-        ):
-            raise VerificationConfigurationError(
-                "verification worktree commit identity is invalid"
-            )
+        if type(expected_commit_sha) is not str or _GIT_SHA_PATTERN.fullmatch(expected_commit_sha) is None:
+            raise VerificationConfigurationError("verification worktree commit identity is invalid")
         commands = (
             ("rev-parse", "--show-toplevel"),
             ("rev-parse", "--verify", "HEAD^{commit}"),
@@ -1365,33 +1926,21 @@ class ExecutionLifecycleService:
                     timeout=30,
                 )
             except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
-                raise VerificationConfigurationError(
-                    "verification worktree Git identity could not be read"
-                ) from exc
+                raise VerificationConfigurationError("verification worktree Git identity could not be read") from exc
             if completed.returncode != 0:
-                raise VerificationConfigurationError(
-                    "verification worktree Git identity command failed"
-                )
+                raise VerificationConfigurationError("verification worktree Git identity command failed")
             outputs.append(completed.stdout.strip())
         try:
             observed_root = Path(outputs[0]).resolve(strict=True)
             expected_root = worktree.worktree_path.resolve(strict=True)
         except (OSError, RuntimeError, ValueError) as exc:
-            raise VerificationConfigurationError(
-                "verification worktree Git root could not be resolved"
-            ) from exc
+            raise VerificationConfigurationError("verification worktree Git root could not be resolved") from exc
         if observed_root != expected_root:
-            raise VerificationConfigurationError(
-                "verification path is not the exact Git worktree root"
-            )
+            raise VerificationConfigurationError("verification path is not the exact Git worktree root")
         if outputs[1].lower() != expected_commit_sha:
-            raise VerificationConfigurationError(
-                "verification worktree HEAD changed from the recorded commit"
-            )
+            raise VerificationConfigurationError("verification worktree HEAD changed from the recorded commit")
         if outputs[2]:
-            raise VerificationConfigurationError(
-                "verification worktree must be clean for commit-bound evidence"
-            )
+            raise VerificationConfigurationError("verification worktree must be clean for commit-bound evidence")
 
     def _recover_verification_attempts(
         self,
@@ -1403,15 +1952,11 @@ class ExecutionLifecycleService:
         lock: ExecutionLock,
     ) -> tuple[_VerificationAttempt, ...]:
         verification_events = tuple(
-            (index, event)
-            for index, event in enumerate(events)
-            if event.event_type in _VERIFICATION_EVENT_TYPES
+            (index, event) for index, event in enumerate(events) if event.event_type in _VERIFICATION_EVENT_TYPES
         )
         if not verification_events:
             return ()
-        requirement_by_id = {
-            requirement.gate_id: requirement for requirement in requirements
-        }
+        requirement_by_id = {requirement.gate_id: requirement for requirement in requirements}
         recovered: list[_VerificationAttempt] = []
         cursor = 0
         expected_attempt = 1
@@ -1424,8 +1969,7 @@ class ExecutionLifecycleService:
             gate_index = 0
             while (
                 cursor < len(verification_events)
-                and verification_events[cursor][1].event_type
-                == VERIFICATION_GATE_STARTED
+                and verification_events[cursor][1].event_type == VERIFICATION_GATE_STARTED
             ):
                 if cursor + 1 >= len(verification_events):
                     raise VerificationLifecycleIntegrityError(
@@ -1584,11 +2128,7 @@ class ExecutionLifecycleService:
                     "persisted suite result diverges from gate evidence",
                     execution_id=execution_id,
                 )
-            ordered_subset = tuple(
-                requirement
-                for requirement in requirements
-                if requirement in attempt_requirements
-            )
+            ordered_subset = tuple(requirement for requirement in requirements if requirement in attempt_requirements)
             if tuple(attempt_requirements) != ordered_subset:
                 raise VerificationLifecycleIntegrityError(
                     "verification attempt gates do not preserve policy order",
@@ -1633,11 +2173,7 @@ class ExecutionLifecycleService:
                 continue
             payload = event.payload
             source = next(
-                (
-                    attempt
-                    for attempt in reversed(attempts)
-                    if attempt.event_index < event_index
-                ),
+                (attempt for attempt in reversed(attempts) if attempt.event_index < event_index),
                 None,
             )
             try:
@@ -1653,8 +2189,7 @@ class ExecutionLifecycleService:
                 or payload.get("repair_attempt") != len(schedules) + 1
                 or payload.get("source_verification_attempt") != source.attempt
                 or payload.get("source_result_digest") != source.suite_digest
-                or payload.get("source_verified_commit_sha")
-                != source.suite.verified_commit_sha
+                or payload.get("source_verified_commit_sha") != source.suite.verified_commit_sha
                 or payload.get("retry_policy_digest") != retry_policy_digest
                 or payload.get("origin_node_id") != origin_node_id
                 or payload.get("target_node_id") != target_node_id
@@ -1700,12 +2235,8 @@ class ExecutionLifecycleService:
             return {}, Decimal(0)
         tokens_by_node: dict[str, int] = {}
         cost = Decimal(0)
-        input_rate = Decimal(
-            str(policy.cost_budget.input_cost_per_million_tokens_usd)
-        )
-        output_rate = Decimal(
-            str(policy.cost_budget.output_cost_per_million_tokens_usd)
-        )
+        input_rate = Decimal(str(policy.cost_budget.input_cost_per_million_tokens_usd))
+        output_rate = Decimal(str(policy.cost_budget.output_cost_per_million_tokens_usd))
         million = Decimal(1_000_000)
         for event_index, event in enumerate(events):
             if event_index <= first_schedule_index or event.event_type not in {
@@ -1722,9 +2253,7 @@ class ExecutionLifecycleService:
                     execution_id=execution_id,
                 )
             try:
-                calls = tuple(
-                    ModelCallMetadata.model_validate(call) for call in raw_calls
-                )
+                calls = tuple(ModelCallMetadata.model_validate(call) for call in raw_calls)
             except (TypeError, ValueError, ValidationError) as exc:
                 raise VerificationLifecycleIntegrityError(
                     "verification retry model usage is invalid",
@@ -1736,15 +2265,9 @@ class ExecutionLifecycleService:
                     "verification retry model usage has no node identity",
                     execution_id=execution_id,
                 )
-            tokens_by_node[node_id] = tokens_by_node.get(node_id, 0) + sum(
-                call.total_tokens for call in calls
-            )
+            tokens_by_node[node_id] = tokens_by_node.get(node_id, 0) + sum(call.total_tokens for call in calls)
             cost += sum(
-                (
-                    Decimal(call.prompt_tokens) * input_rate
-                    + Decimal(call.completion_tokens) * output_rate
-                )
-                / million
+                (Decimal(call.prompt_tokens) * input_rate + Decimal(call.completion_tokens) * output_rate) / million
                 for call in calls
             )
         return tokens_by_node, cost
@@ -1759,11 +2282,7 @@ class ExecutionLifecycleService:
         verified_commit_sha: str,
         lock: ExecutionLock,
     ) -> VerificationSuiteResult | None:
-        verification_events = tuple(
-            event
-            for event in events
-            if event.event_type in _VERIFICATION_EVENT_TYPES
-        )
+        verification_events = tuple(event for event in events if event.event_type in _VERIFICATION_EVENT_TYPES)
         if not verification_events:
             return None
         expected_count = len(requirements) * 2 + 1
@@ -1819,10 +2338,8 @@ class ExecutionLifecycleService:
                 and result_payload.get("required") is requirement.required
                 and start_payload.get("policy_digest") == policy_digest
                 and result_payload.get("policy_digest") == policy_digest
-                and start_payload.get("verified_commit_sha")
-                == verified_commit_sha
-                and result_payload.get("verified_commit_sha")
-                == verified_commit_sha
+                and start_payload.get("verified_commit_sha") == verified_commit_sha
+                and result_payload.get("verified_commit_sha") == verified_commit_sha
             )
             argv = start_payload.get("argv")
             cwd = start_payload.get("cwd")
@@ -1889,10 +2406,7 @@ class ExecutionLifecycleService:
                 execution_id=execution_id,
             )
         suite_digest = suite_payload.get("result_digest")
-        if (
-            type(suite_digest) is not str
-            or _DIGEST_PATTERN.fullmatch(suite_digest) is None
-        ):
+        if type(suite_digest) is not str or _DIGEST_PATTERN.fullmatch(suite_digest) is None:
             raise VerificationLifecycleIntegrityError(
                 "persisted verification suite digest is invalid",
                 execution_id=execution_id,
@@ -1909,10 +2423,7 @@ class ExecutionLifecycleService:
         if (
             stored_suite != suite.model_dump(mode="json")
             or suite.all_passed is not suite_payload["all_passed"]
-            or tuple(
-                GateRequirement(gate_id=result.gate_id, required=result.required)
-                for result in suite.gate_results
-            )
+            or tuple(GateRequirement(gate_id=result.gate_id, required=result.required) for result in suite.gate_results)
             != requirements
         ):
             raise VerificationLifecycleIntegrityError(
@@ -1983,9 +2494,7 @@ class ExecutionLifecycleService:
         if not matches:
             return None
         if len(matches) != 1:
-            raise ExecutionConfigurationError(
-                "compiled artifact contains duplicate context sufficiency policies"
-            )
+            raise ExecutionConfigurationError("compiled artifact contains duplicate context sufficiency policies")
         resolved = matches[0]
         try:
             policy = ContextSufficiencyPolicySpec.model_validate(
@@ -1997,17 +2506,13 @@ class ExecutionLifecycleService:
                 }
             )
         except (TypeError, ValueError, ValidationError) as exc:
-            raise ExecutionConfigurationError(
-                "compiled context sufficiency policy is invalid"
-            ) from exc
+            raise ExecutionConfigurationError("compiled context sufficiency policy is invalid") from exc
         if (
             policy.policy_id != resolved.policy_id
             or policy.policy_schema_version != resolved.policy_schema_version
             or policy.definition_version != resolved.definition_version
         ):
-            raise ExecutionConfigurationError(
-                "compiled context policy identity does not match its resolved envelope"
-            )
+            raise ExecutionConfigurationError("compiled context policy identity does not match its resolved envelope")
         return resolved, policy
 
     @staticmethod
@@ -2023,9 +2528,7 @@ class ExecutionLifecycleService:
             ) from exc
         expected_workflow = envelope.context_request.graph_type.replace("_", "-")
         if artifact.graph.graph.name != expected_workflow:
-            raise ExecutionConfigurationError(
-                "context graph_type does not match the compiled workflow"
-            )
+            raise ExecutionConfigurationError("context graph_type does not match the compiled workflow")
         return envelope
 
     def _prepare_context_attempt(
@@ -2037,9 +2540,7 @@ class ExecutionLifecycleService:
         resolved_policy: ResolvedPolicySpec,
         policy: ContextSufficiencyPolicySpec,
     ) -> ContextSufficiencyReport:
-        policy_digest = canonical_json_digest(
-            canonical_json_object(resolved_policy.effective_policy)
-        )
+        policy_digest = canonical_json_digest(canonical_json_object(resolved_policy.effective_policy))
         lock = self._acquire(execution_id)
         try:
             self._recover_approval_locked(execution_id, lock)
@@ -2183,15 +2684,9 @@ class ExecutionLifecycleService:
             )
         except (ContextLifecycleIntegrityError, StateStorageError) as exc:
             self._transition_context_prerequisite(record, machine=machine, lock=lock)
-            raise ContextPrerequisiteError(
-                "context decision could not be persisted durably"
-            ) from exc
+            raise ContextPrerequisiteError("context decision could not be persisted durably") from exc
 
-        target = (
-            ExecutionState.PLANNING
-            if outcome == "sufficient"
-            else ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
-        )
+        target = ExecutionState.PLANNING if outcome == "sufficient" else ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
         machine.transition_to(
             target,
             node_id=record.current_node_id,
@@ -2222,9 +2717,7 @@ class ExecutionLifecycleService:
             report = ContextSufficiencyReport.model_validate(document)
         except (StateStorageError, TypeError, ValueError, ValidationError) as exc:
             self._transition_context_prerequisite(record, machine=machine, lock=lock)
-            raise ContextPrerequisiteError(
-                "persisted context decision is unavailable or invalid"
-            ) from exc
+            raise ContextPrerequisiteError("persisted context decision is unavailable or invalid") from exc
         expected_query_digest = "sha256:" + hashlib.sha256(request.query.encode("utf-8")).hexdigest()
         outcome = payload["outcome"]
         if (
@@ -2237,14 +2730,8 @@ class ExecutionLifecycleService:
             or report.is_sufficient != (outcome == "sufficient")
         ):
             self._transition_context_prerequisite(record, machine=machine, lock=lock)
-            raise ContextPrerequisiteError(
-                "persisted context decision does not match the immutable execution"
-            )
-        target = (
-            ExecutionState.PLANNING
-            if report.is_sufficient
-            else ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
-        )
+            raise ContextPrerequisiteError("persisted context decision does not match the immutable execution")
+        target = ExecutionState.PLANNING if report.is_sufficient else ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT
         machine.transition_to(
             target,
             node_id=record.current_node_id,
@@ -2512,9 +2999,7 @@ class ExecutionLifecycleService:
                 execution_id=execution_id,
             )
         resolved, _ = context_policy
-        policy_digest = canonical_json_digest(
-            canonical_json_object(resolved.effective_policy)
-        )
+        policy_digest = canonical_json_digest(canonical_json_object(resolved.effective_policy))
         decisions = self._validated_context_events(
             events,
             execution_id=execution_id,
@@ -2566,15 +3051,9 @@ class ExecutionLifecycleService:
         artifact: CompiledGraphArtifact,
         reference: str,
     ) -> ResolvedPolicySpec:
-        matches = tuple(
-            policy
-            for policy in artifact.resolved_policies
-            if policy.requested_reference == reference
-        )
+        matches = tuple(policy for policy in artifact.resolved_policies if policy.requested_reference == reference)
         if len(matches) != 1:
-            raise PlanningLifecycleIntegrityError(
-                f"compiled planning policy must appear exactly once: {reference}"
-            )
+            raise PlanningLifecycleIntegrityError(f"compiled planning policy must appear exactly once: {reference}")
         return matches[0]
 
     @staticmethod
@@ -2587,14 +3066,10 @@ class ExecutionLifecycleService:
         schema_digest: str,
     ) -> tuple[ExecutionEvent | None, ExecutionEvent | None]:
         started_events = tuple(
-            (index, event)
-            for index, event in enumerate(events)
-            if event.event_type == PLAN_GENERATION_STARTED
+            (index, event) for index, event in enumerate(events) if event.event_type == PLAN_GENERATION_STARTED
         )
         generated_events = tuple(
-            (index, event)
-            for index, event in enumerate(events)
-            if event.event_type == PLAN_GENERATED
+            (index, event) for index, event in enumerate(events) if event.event_type == PLAN_GENERATED
         )
         if len(started_events) > 1 or len(generated_events) > 1:
             raise PlanningLifecycleIntegrityError(
@@ -2603,9 +3078,7 @@ class ExecutionLifecycleService:
             )
         started = started_events[0][1] if started_events else None
         generated = generated_events[0][1] if generated_events else None
-        if generated is not None and (
-            started is None or generated_events[0][0] <= started_events[0][0]
-        ):
+        if generated is not None and (started is None or generated_events[0][0] <= started_events[0][0]):
             raise PlanningLifecycleIntegrityError(
                 "planning outcome has no preceding attempt",
                 execution_id=execution_id,
@@ -2613,8 +3086,7 @@ class ExecutionLifecycleService:
         if started is not None:
             payload = started.payload
             if (
-                set(payload)
-                != {"attempt", "context_digest", "graph_input_digest", "schema_digest"}
+                set(payload) != {"attempt", "context_digest", "graph_input_digest", "schema_digest"}
                 or payload.get("attempt") != 1
                 or payload.get("context_digest") != context_digest
                 or payload.get("graph_input_digest") != graph_input_digest
@@ -2650,17 +3122,13 @@ class ExecutionLifecycleService:
                 or not ExecutionLifecycleService._is_trimmed_string(payload.get("provider"))
                 or not ExecutionLifecycleService._is_trimmed_string(payload.get("model_name"))
                 or not ExecutionLifecycleService._is_trimmed_string(payload.get("response_id"))
-                or (
-                    request_id is not None
-                    and not ExecutionLifecycleService._is_trimmed_string(request_id)
-                )
+                or (request_id is not None and not ExecutionLifecycleService._is_trimmed_string(request_id))
                 or any(
                     type(payload.get(key)) is not int or int(payload[key]) < 0
                     for key in ("prompt_tokens", "completion_tokens", "total_tokens")
                 )
                 or payload.get("total_tokens")
-                != int(payload.get("prompt_tokens", -1))
-                + int(payload.get("completion_tokens", -1))
+                != int(payload.get("prompt_tokens", -1)) + int(payload.get("completion_tokens", -1))
             ):
                 raise PlanningLifecycleIntegrityError(
                     "planning outcome event is invalid",
@@ -2704,11 +3172,7 @@ class ExecutionLifecycleService:
             ExecutionState.BLOCKED_PREREQUISITE,
             node_id=record.current_node_id,
             attempt=record.attempt_by_node.get(record.current_node_id, 0),
-            reason=(
-                "planning_effect_ambiguous"
-                if ambiguous
-                else "planning_prerequisite_invalid"
-            ),
+            reason=("planning_effect_ambiguous" if ambiguous else "planning_prerequisite_invalid"),
             lock=lock,
         )
 
@@ -2822,8 +3286,7 @@ class ExecutionLifecycleService:
             if record.current_state == ExecutionState.CANCELLED:
                 return record
             if not VALID_STATE_TRANSITIONS[record.current_state] or (
-                ExecutionState.CANCELLED
-                not in VALID_STATE_TRANSITIONS[record.current_state]
+                ExecutionState.CANCELLED not in VALID_STATE_TRANSITIONS[record.current_state]
             ):
                 raise ExecutionCancellationError(
                     "execution state cannot transition to CANCELLED",
@@ -3016,9 +3479,7 @@ class ExecutionLifecycleService:
                     "stored configuration digest does not match the execution",
                     execution_id=execution_id,
                 )
-            if record.current_state == ExecutionState.EXECUTING and (
-                record.approval_status == ApprovalStatus.PENDING
-            ):
+            if record.current_state == ExecutionState.EXECUTING and (record.approval_status == ApprovalStatus.PENDING):
                 node = self._human_node(artifact, record.current_node_id, execution_id)
                 record = machine.transition_to(
                     ExecutionState.PAUSED_AWAITING_APPROVAL,
@@ -3089,9 +3550,7 @@ class ExecutionLifecycleService:
                         execution_id=execution_id,
                     )
                 self._require_digest(payload["input_digest"], execution_id)
-                active_subject = self._require_digest(
-                    payload["subject_digest"], execution_id
-                )
+                active_subject = self._require_digest(payload["subject_digest"], execution_id)
                 active_node = self._require_string(payload["node_id"], execution_id)
                 next_status = ApprovalStatus.PENDING
             elif event.event_type == EXECUTION_APPROVED:
@@ -3145,12 +3604,8 @@ class ExecutionLifecycleService:
                         execution_id=execution_id,
                     )
                 next_status = ApprovalStatus.INVALIDATED
-            revision = self._require_integer(
-                payload["record_revision"], execution_id, minimum=1
-            )
-            fencing_token = self._require_integer(
-                payload["fencing_token"], execution_id, minimum=1
-            )
+            revision = self._require_integer(payload["record_revision"], execution_id, minimum=1)
+            fencing_token = self._require_integer(payload["fencing_token"], execution_id, minimum=1)
             if revision <= last_revision or fencing_token <= last_fencing_token:
                 raise ApprovalLifecycleIntegrityError(
                     "approval revisions and fencing tokens must increase strictly",
@@ -3290,9 +3745,7 @@ class ExecutionLifecycleService:
             or observed.utcoffset() != timedelta(0)
             or observed < minimum
         ):
-            raise ExecutionLifecycleError(
-                "lifecycle clock must be UTC and cannot regress"
-            )
+            raise ExecutionLifecycleError("lifecycle clock must be UTC and cannot regress")
         return observed.astimezone(UTC)
 
     @staticmethod
@@ -3368,17 +3821,12 @@ class ExecutionLifecycleService:
             if type(value) is dict:
                 for raw_key, child in value.items():
                     if type(raw_key) is not str:
-                        raise ExecutionConfigurationError(
-                            "configuration keys must be strings"
-                        )
+                        raise ExecutionConfigurationError("configuration keys must be strings")
                     key = raw_key.casefold().replace("-", "_")
                     if key in _SECRET_KEYS or any(
-                        key.endswith(f"_{suffix}")
-                        for suffix in ("password", "secret", "token")
+                        key.endswith(f"_{suffix}") for suffix in ("password", "secret", "token")
                     ):
-                        raise ExecutionConfigurationError(
-                            "raw secret-bearing configuration is unsupported before F5"
-                        )
+                        raise ExecutionConfigurationError("raw secret-bearing configuration is unsupported before F5")
                     visit(child)
             elif type(value) is list:
                 for child in value:
@@ -3403,9 +3851,7 @@ class ExecutionLifecycleService:
                 text=True,
             ).stdout.strip()
         except (OSError, subprocess.CalledProcessError) as exc:
-            raise ExecutionGitIdentityError(
-                "cannot establish starting Git identity"
-            ) from exc
+            raise ExecutionGitIdentityError("cannot establish starting Git identity") from exc
         return commit, branch
 
     @staticmethod
@@ -3416,9 +3862,7 @@ class ExecutionLifecycleService:
             raise ExecutionGitIdentityError("original branch must be non-empty")
 
     def _default_execution_id(self) -> str:
-        timestamp = self._next_timestamp(datetime.min.replace(tzinfo=UTC)).strftime(
-            "%Y%m%d%H%M%S"
-        )
+        timestamp = self._next_timestamp(datetime.min.replace(tzinfo=UTC)).strftime("%Y%m%d%H%M%S")
         return f"exec-{timestamp}-{uuid.uuid4().hex[:12]}"
 
     @staticmethod
@@ -3453,7 +3897,12 @@ class ExecutionLifecycleService:
 __all__ = [
     "APPROVAL_INVALIDATED",
     "APPROVAL_REQUESTED",
+    "CANDIDATE_COMMIT_RECORDED",
+    "CANDIDATE_COMMIT_STARTED",
     "EXECUTION_APPROVED",
+    "PROMOTION_COMPLETED",
+    "PROMOTION_DRY_RUN_RECORDED",
+    "PROMOTION_STARTED",
     "ApprovalLifecycleIntegrityError",
     "ApprovalSubjectMismatchError",
     "ExecutionApprovalRequiredError",
@@ -3464,5 +3913,9 @@ __all__ = [
     "ExecutionLifecycleError",
     "ExecutionLifecycleService",
     "ExecutionStatusView",
+    "PromotionLifecycleBaseChangedError",
+    "PromotionLifecycleError",
+    "PromotionLifecycleIntegrityError",
+    "PromotionLifecyclePrerequisiteError",
     "VerificationRetryExhaustedError",
 ]

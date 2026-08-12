@@ -79,13 +79,13 @@ no commit local, mas ainda não foi publicada nem promovida.
 | Prioridade | Risco | Causa atual | Fase responsável |
 |---|---|---|---|
 | P0 | Alteração fora de isolamento | Worktree/guard/edição reais ainda não são compostos automaticamente pelo lifecycle | F4/F5 |
-| P0 | Git mutável fora do protocolo | Promoção/rollback legados não usam candidate commit, worktree e terminal tipado | F3.7/F6 |
-| P0 | Sucesso sem efeito | CLI falha fechada, mas promoção e memória isoladas ainda aceitam resultados sintéticos | F3.7/F4/F6 |
+| P0 | Git mutável fora do protocolo | Promoção F3.7 usa candidate/worktree/cherry-pick reais quando injetada; rollback legado ainda não usa o protocolo atual | F6 |
+| P0 | Sucesso sem efeito | Promoção F3.7 removeu SHA sintético e exige outcome Git real; doctor/memória e composição padrão ainda não formam prova operacional integral | F4/F6 |
 | P0 | Diagnóstico enganoso | Doctor retorna saudável incondicionalmente | F6.5 |
 | P1 | Primitivas não compostas | Lifecycle padrão não injeta provider, tools, worktree ou gates | F4/F5 |
 | P0 | Verificação incompleta | F4.5/F4.6 bloqueiam suíte inválida e pré-requisito ausente, mas a CLI reprovada ainda pode retornar zero e não existe resultado persistido/commit-bound | F4.7 |
 | P1 | Resolução ainda não promovida | O R3 local seleciona por `sys.prefix` e preserva o launcher no `TerminalAdapter`, mas o PR #44 ainda está no head R2 e aguarda publicação/CI POSIX | F4.6; promoção bloqueada |
-| P1 | Aprovação sem promoção segura | Resume existe; candidate commit e promoção ainda faltam | F3.7/F5 |
+| P1 | Aprovação não vinculada ao diff | F3.7 exige status aprovado e candidate verificado, mas a aprovação F2.5 não assina o conteúdo/diff | F5 |
 | P1 | Evidência insuficiente | Pode registrar identificadores sintéticos | F6/F7 |
 | P1 | CI ainda não cobre comportamento operacional completo | Pipeline cobre providers/paths/worktree/terminal/edição como primitivas, não sua composição com promoção e recovery | F4–F7 |
 

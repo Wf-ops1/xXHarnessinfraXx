@@ -35,7 +35,8 @@ def test_readme_contains_frozen_capability_matrix() -> None:
     assert "> **Status atual: Protótipo / Em desenvolvimento**" in readme
     assert "| Capacidade | Implementada | Experimental | Planejada |" in readme
     assert "adapters de modelos" in readme
-    assert "SHA sintético" in readme
+    assert "candidate commit real e singular" in readme
+    assert "git cherry-pick" in readme
 
 
 def test_documents_do_not_claim_current_operational_readiness() -> None:
@@ -132,7 +133,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "571a8eb" in readme
     assert "31329231458" in readme
     assert "A F4.8 foi promovida pelo PR #49" in readme
-    assert "A F3.7 iniciou no gate documental `READY`" in readme
+    assert "A F3.7 concluiu localmente" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
@@ -161,7 +162,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F3.7 `READY`" in panel
+    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/active/F3.7.md" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -174,8 +175,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31557794240" in panel
     assert "F4.8" in panel
     assert "F3.7 — promoção Git segura" in panel
-    assert "sha-promoted-*" in panel
-    assert "sha-fallback-*" in panel
+    assert "candidate commit real e singular" in panel
+    assert "git cherry-pick <candidate_sha>" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
@@ -190,7 +191,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "A F4.8 promovida" in user_guide
     assert "targeted → full" in lifecycle
     assert "F4.8 `PROMOTED`" in lifecycle
+    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in lifecycle
+    assert "cherry-pick único" in lifecycle
     assert "F4.8 promovida" in walkthrough
+    assert "promoção F3.7 usa candidate/cherry-pick reais" in walkthrough
     assert "provider simulado" not in walkthrough
     assert "não existe worktree Git" not in walkthrough
     assert "Worktree real ausente" not in walkthrough_audit

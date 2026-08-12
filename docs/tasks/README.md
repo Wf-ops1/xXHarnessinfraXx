@@ -20,13 +20,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F3.7](active/F3.7.md) é o único dossiê ativo. Seu gate está `READY` na branch local
-`task/f3.7-safe-promotion`, criada de `main == origin/main == 9f75e35`. O baseline comprovou SHA
-sintético, `git add .` no checkout configurado e fallback sintético no `PromotionManager`; nenhum
-arquivo de produto mudou antes do checkpoint `checkpoint/f3.7-ready`. A F4.8 está
+A [F3.7](active/F3.7.md) é o único dossiê ativo. Está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
+local `task/f3.7-safe-promotion`, criada de `main == origin/main == 9f75e35`. O checkpoint
+`checkpoint/f3.7-ready` aponta para `f84af68`; candidate/cherry-pick/recovery reais passaram gate
+focado 74, regressão integral 774/5/6, qualidade, build e smoke externo. A F4.8 está
 `PROMOTED / RECONCILED / CLOSED`: o PR #50 encerrou no head `a15b918`, passou 11/11 no run
 `31554671587`, foi incorporado pelo merge `9f75e35` e recebeu 11/11 na CI pós-merge `31557794240`.
-Checkpoints permanecem locais e nenhuma tag foi publicada.
+Checkpoints permanecem locais, a branch F3.7 ainda não foi publicada e nenhuma tag remota existe.
 
 ## Ledger concluído
 
