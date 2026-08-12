@@ -22,10 +22,10 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.2 — política unificada de autorização de tools |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Gate** | `COMPLETED_LOCAL / BRANCH_PUBLISHED / PR_PENDING` |
 | **Executor ativo** | `Codex`, único escritor; autorizado nominalmente em `2026-08-12T17:34:35-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f5.2-unified-policy`, somente local e sem upstream |
+| **Branch** | `task/f5.2-unified-policy` rastreando `origin/task/f5.2-unified-policy` |
 | **Baseline** | `main == origin/main == fe95a91648a79c404565583c87c1cf357e8ab3a2` antes da branch |
 | **Produto F5.2** | `ac665b945a2cfbadaa7672855219e624d7eca45e` |
 | **Checkpoints F5.2** | `checkpoint/f5.2-ready`; `checkpoint/f5.2-complete` no commit documental final, ambos locais |
@@ -63,15 +63,15 @@ permanece compatível. A wheel limpa e seu smoke confirmam que os módulos dupli
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A autorização corrente encerrou na conclusão e nos checkpoints
-locais. Push, PR, merge, tags remotas, remoção de branch/ref, force-push, bypass e início da F5.3 não
-estão autorizados. O trust mode é somente uma dimensão da decisão nesta tarefa; as restrições
-operacionais abrangentes continuam pertencendo à F5.3.
+Não há bloqueio técnico conhecido. A branch foi publicada e o upstream configurado; os checkpoints
+continuam locais. Abertura de PR, merge, tags remotas, remoção de branch/ref, force-push, bypass e
+início da F5.3 não estão autorizados. O trust mode é somente uma dimensão da decisão nesta tarefa;
+as restrições operacionais abrangentes continuam pertencendo à F5.3.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH LOCAL DA F5.2.
+OBSERVAR A CI DO HEAD FINAL PUBLICADO E AGUARDAR AUTORIZAÇÃO NOMINAL PARA ABRIR O PR F5.2.
 NÃO ABRIR PR, MESCLAR, CRIAR TAG REMOTA, REMOVER REFS OU INICIAR F5.3.
 ```
 
@@ -86,4 +86,4 @@ NÃO ABRIR PR, MESCLAR, CRIAR TAG REMOTA, REMOVER REFS OU INICIAR F5.3.
 
 ---
 
-*Atualizado em: 2026-08-12T18:16:33-03:00 | Fonte: F5.2/ac665b9 + PRs #53/#54 + runs 31629604755/31630446370/31633748837 + merge fe95a91*
+*Atualizado em: 2026-08-12T18:25:54-03:00 | Fonte: F5.2/ac665b9/6f5d096 + publicação origin/task/f5.2-unified-policy + baseline fe95a91*

@@ -20,11 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.2](active/F5.2.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
-`task/f5.2-unified-policy`, criada do baseline `fe95a91` e sem upstream. O produto local é `ac665b9`;
+A [F5.2](active/F5.2.md) está `COMPLETED_LOCAL / BRANCH_PUBLISHED / PR_PENDING` na branch
+`task/f5.2-unified-policy`, criada do baseline `fe95a91` e rastreando o upstream homônimo. O produto é `ac665b9`;
 a regressão concluiu `811 passed, 5 skipped, 6 subtests passed`, além de qualidade, build limpo e
-smoke isolado da wheel. Os checkpoints F5.2 permanecem locais. Push, PR, merge, tags remotas, remoção
-de refs e início da F5.3 não estão autorizados.
+smoke isolado da wheel. Os checkpoints F5.2 permanecem locais. PR, merge, tags remotas, remoção de
+refs e início da F5.3 não estão autorizados.
 
 A [F5.1](completed/F5.1.md) permanece `PROMOTED`: o PR #53 encerrou no head `f42af27`, passou 11/11
 checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/11 na CI pós-merge

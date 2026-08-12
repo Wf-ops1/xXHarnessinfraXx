@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "`COMPLETED_LOCAL / BRANCH_PUBLISHED / PR_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -717,6 +717,8 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
     assert "checkpoint/f5.2-ready" in dossier
     assert "checkpoint/f5.2-complete" in dossier
+    assert "BRANCH_PUBLISHED / PR_PENDING" in dossier
+    assert "origin/task/f5.2-unified-policy" in dossier
     assert "task/f5.2-unified-policy" in dossier
     assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in dossier
     assert "policy_default_allows_unknown=True" in dossier

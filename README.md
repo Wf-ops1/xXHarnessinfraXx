@@ -129,7 +129,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   incorporada pelo merge `fe95a91`; a CI de `push` `31633748837` passou 11/11 nesse SHA exato. A
   F5.2 está `COMPLETED_LOCAL / PROMOTION_PENDING` no produto `ac665b9`: a regressão passou
   `811 passed, 5 skipped, 6 subtests passed`, além de qualidade, build limpo e smoke isolado da wheel.
-  Push, PR, merge, tags remotas, remoção de refs e início da F5.3 não estão autorizados.
+  A branch está publicada como `origin/task/f5.2-unified-policy`; os checkpoints permanecem locais.
+  PR, merge, tags remotas, remoção de refs e início da F5.3 não estão autorizados.
 
 ## Dívidas técnicas críticas
 
