@@ -108,8 +108,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A reconciliação administrativa F4.7 foi
   incorporada pelo PR #48 no merge `d4e34c7`, cuja CI pós-merge `31541047111` também concluiu 11/11.
   A F4.8 foi concluída localmente no produto `8e5e11d`: a regressão final passou com `758 passed,
-  5 skipped`, qualidade, build e smoke externo da wheel verdes. A branch permanece sem upstream e
-  nenhum PR, CI remota, merge ou tag remota F4.8 ocorreu; a F3.7 ainda não foi iniciada.
+  5 skipped`, qualidade, build e smoke externo da wheel verdes. O PR #49 foi aberto contra `main` no
+  head inicial `5bf0d75` e aguarda checks; nenhum merge ou tag remota F4.8 ocorreu, e a F3.7 ainda não
+  foi iniciada.
 
 ## Dívidas técnicas críticas
 

@@ -21,14 +21,16 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 ## Tarefa ativa
 
 A [F4.8](active/F4.8.md) é o único dossiê ativo. Seu gate está
-`COMPLETED_LOCAL / PROMOTION_PENDING` na branch `task/f4.8-verification-repair-loop`, com produto no
-commit `8e5e11d` e checkpoint READY `bb6752c`; a branch foi criada de
+`PR_OPEN / CHECKS_PENDING` na branch `task/f4.8-verification-repair-loop`, com produto no commit
+`8e5e11d` e checkpoint READY `bb6752c`; a branch foi criada de
 `main == origin/main == d4e34c7`. A F4.7 está
 `PROMOTED / RECONCILED / CLOSED`: o [PR #48](https://github.com/Wf-ops1/Harnessinfra/pull/48) foi
 incorporado em `d4e34c7` e a CI pós-merge `31541047111` concluiu 11/11 checks. O baseline F4.8
 confirmou a lacuna; a implementação local agora compõe o resultado F4.7 com o nó corretor compilado,
 persiste limites e exige targeted seguido da suíte integral. A regressão final concluiu `758 passed,
-5 skipped`; build e smoke da wheel estão verdes. Nenhum push, PR, tag remota ou merge F4.8 ocorreu.
+5 skipped`; build e smoke da wheel estão verdes. O [PR #49](https://github.com/Wf-ops1/Harnessinfra/pull/49)
+foi aberto contra `main` no head inicial `5bf0d75`; checks estão pendentes. Checkpoints permanecem
+locais e nenhum merge ou tag remota F4.8 ocorreu.
 
 ## Ledger concluído
 

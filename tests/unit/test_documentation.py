@@ -161,7 +161,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F4.8 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "F4.8 `PR_OPEN / CHECKS_PENDING`" in panel
     assert "DEC-015" in panel
     assert "docs/tasks/completed/F4.7.md" in panel
     assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
@@ -171,6 +171,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31534918672" in panel
     assert "d4e34c7404d28a10969ab4b322748d01ae5805bf" in panel
     assert "31541047111" in panel
+    assert "github.com/Wf-ops1/Harnessinfra/pull/49" in panel
     assert "8e5e11d81c685c53ba349bab4d95cdd61ee19ba6" in panel
     assert "bb6752c1f1524b8c747cddc55e74ed7e6491e845" in panel
     assert "758 passed, 5 skipped" in panel
