@@ -361,8 +361,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F5.3 está somente planejada e não autorizada" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.3 — trust boundary integrado" in panel
+    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -697,7 +697,7 @@ def test_f5_1_promotion_records_configuration_and_post_merge_ci() -> None:
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in dossier
     assert "f7e117303bb01cbc1afbc604781efd09ab9c94c8" in dossier
-    assert "F5.3 está somente planejada e não autorizada" in panel
+    assert "F5.3 — trust boundary integrado" in panel
     assert "docs/tasks/completed/F5.1.md" in panel
     assert "31633748837" in panel
     assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in panel
@@ -758,6 +758,43 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "docs/tasks/completed/F5.2.md" in panel
     assert "completed/F5.2.md" in task_index
     assert "F5.2 foi promovida pelo" in readme
+
+
+def test_f5_3_ready_gate_freezes_integrated_trust_boundary() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.3.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+
+    assert (ACTIVE_ROOT / "F5.3.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "checkpoint/f5.3-ready" in dossier
+    assert "task/f5.3-trust-boundary" in dossier
+    assert "0607a0b385da1a864f629bf4811810a574d03768" in dossier
+    assert "31650131258" in dossier
+    assert "marker_only_trusted=(True, 'trusted', True, True)" in dossier
+    assert "101 passed, 2 skipped" in dossier
+    for boundary in (
+        "imports",
+        "comandos",
+        "worktree",
+        "hooks",
+        "promoção",
+        "secrets",
+    ):
+        assert boundary in dossier
+    assert "default-restricted" in panel
+    assert "marcador" in dossier
+    assert "ApprovalStatus.APPROVED" in dossier
+    assert "PathGuard" in dossier
+    assert "shell=False" in dossier
+    assert "F5.4" in dossier
+    assert "F5.7" in dossier
+    assert "docs/tasks/active/F5.3.md" in panel
+    assert "active/F5.3.md" in task_index
+    assert "F5.3 está `READY / ACTIVE / LOCAL_ONLY`" in readme
+    assert "administrativo #56 / merge `0607a0b` / pós-merge `31650131258`" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
