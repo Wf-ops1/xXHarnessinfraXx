@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -15,6 +18,7 @@ from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     ExecutionState,
 )
+from ai_engineering_harness.core import ConfigResolver
 from ai_engineering_harness.persistence import (
     AtomicFileStateStorage,
     ExecutionLock,
@@ -56,6 +60,20 @@ class _Ids:
     def __call__(self) -> str:
         self.value += 1
         return f"lifecycle-test-event-{self.value}"
+
+
+class _CountingConfigResolver(ConfigResolver):
+    def __init__(self, project_root: Path) -> None:
+        super().__init__(project_root)
+        self.resolve_calls = 0
+
+    def resolve(
+        self,
+        profile_name: str = "default",
+        cli_overrides: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        self.resolve_calls += 1
+        return super().resolve(profile_name, cli_overrides)
 
 
 @dataclass
@@ -167,7 +185,7 @@ def test_start_bundle_payload_status_inspect_and_public_views(tmp_path: Path) ->
         artifact,
         execution_id="exec-start-public",
         initial_input={"intent": "deliver"},
-        configuration={"profile": "isolated"},
+        configuration={"project": {"test_label": "isolated"}},
     )
 
     assert isinstance(result, GraphExecutionResult)
@@ -237,6 +255,55 @@ def test_start_unavailable_backend_fails_before_any_bundle_or_record(tmp_path: P
     ).exists()
 
 
+def test_start_persists_only_typed_redacted_effective_configuration(
+    tmp_path: Path,
+) -> None:
+    artifact = _compiled_graph(tmp_path, workflow="redacted-configuration")
+    service, storage, _ = _service(tmp_path)
+    raw_secret = "must-never-reach-the-execution-bundle"
+
+    service.start(
+        artifact,
+        execution_id="exec-redacted-configuration",
+        initial_input={},
+        configuration={"project": {"deployment_token": raw_secret}},
+    )
+
+    bundle = storage.load_execution_bundle("exec-redacted-configuration")
+    effective = json.loads(bundle.configuration_json)
+    assert effective["project"]["deployment_token"] == "[REDACTED_SECRET]"
+    assert effective["models"]["providers"]["openai"]["api_key_env"] == "OPENAI_API_KEY"
+    execution_dir = (
+        tmp_path
+        / ".harness"
+        / "artifacts"
+        / "executions"
+        / "exec-redacted-configuration"
+    )
+    assert all(
+        raw_secret.encode("utf-8") not in path.read_bytes()
+        for path in execution_dir.rglob("*")
+        if path.is_file()
+    )
+
+
+def test_invalid_typed_configuration_fails_before_persistent_mutation(
+    tmp_path: Path,
+) -> None:
+    artifact = _compiled_graph(tmp_path, workflow="invalid-typed-configuration")
+    service, storage, _ = _service(tmp_path)
+
+    with pytest.raises(ExecutionConfigurationError, match="effective configuration"):
+        service.start(
+            artifact,
+            execution_id="exec-invalid-typed-configuration",
+            initial_input={},
+            cli_overrides={"context_sufficiency_threshold": "not-a-number"},
+        )
+
+    assert storage.list_executions() == ()
+
+
 @pytest.mark.parametrize(
     "configuration",
     [
@@ -297,7 +364,7 @@ def test_approval_pause_approve_resume_uses_immutable_snapshot(tmp_path: Path) -
         artifact,
         execution_id="exec-approval-resume",
         initial_input={"change": "bounded"},
-        configuration={"profile": "frozen"},
+        configuration={"project": {"test_label": "frozen"}},
     )
     assert isinstance(paused, GraphExecutionPausedResult)
     status = service.status("exec-approval-resume")
@@ -319,6 +386,54 @@ def test_approval_pause_approve_resume_uses_immutable_snapshot(tmp_path: Path) -
     events = storage.load_events("exec-approval-resume")
     assert [event.event_type for event in events].count("APPROVAL_REQUESTED") == 1
     assert [event.event_type for event in events].count("EXECUTION_APPROVED") == 1
+
+
+def test_resume_validates_bundle_without_reresolving_changed_live_configuration(
+    tmp_path: Path,
+) -> None:
+    artifact = _compiled_graph(
+        tmp_path,
+        workflow="configuration-resume",
+        human_approval=True,
+    )
+    storage = AtomicFileStateStorage(tmp_path)
+    resolver = _CountingConfigResolver(tmp_path)
+    service = ExecutionLifecycleService(
+        tmp_path,
+        storage,
+        NodeExecutorRegistry(
+            deterministic=DeterministicNodeExecutor(_TraceBackend([])),
+        ),
+        config_resolver=resolver,
+        clock=_Clock(),
+        event_id_factory=_Ids(),
+        owner_id_factory=lambda: "configuration-resume-owner",
+        git_identity_provider=lambda: ("a" * 40, "task/f5.1-resolve-config"),
+    )
+    paused = service.start(
+        artifact,
+        execution_id="exec-configuration-resume",
+        initial_input={},
+        cli_overrides={"context_sufficiency_threshold": 0.83},
+    )
+    assert isinstance(paused, GraphExecutionPausedResult)
+    bundle_before = storage.load_execution_bundle("exec-configuration-resume")
+    assert resolver.resolve_calls == 1
+
+    profile_dir = tmp_path / ".harness" / "profiles"
+    profile_dir.mkdir(parents=True, exist_ok=True)
+    (profile_dir / "default.yaml").write_text(
+        "context_sufficiency_threshold: 0.1\n",
+        encoding="utf-8",
+    )
+    service.approve("exec-configuration-resume", approver="reviewer-f51")
+    result = service.resume("exec-configuration-resume")
+
+    assert isinstance(result, GraphExecutionResult)
+    assert result.outcome == "success"
+    assert resolver.resolve_calls == 1
+    assert storage.load_execution_bundle("exec-configuration-resume") == bundle_before
+    assert json.loads(bundle_before.configuration_json)["context_sufficiency_threshold"] == 0.83
 
 
 def test_approval_event_before_cas_is_recovered_idempotently(tmp_path: Path) -> None:

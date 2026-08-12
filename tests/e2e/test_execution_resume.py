@@ -286,7 +286,7 @@ def test_execution_approval_paused_approve_and_resume_ignores_live_artifact(
         compiled,
         execution_id="exec-resume-approval",
         initial_input={"subject": "immutable"},
-        configuration={"profile": "frozen"},
+        configuration={"project": {"test_label": "frozen"}},
     )
     assert isinstance(paused, GraphExecutionPausedResult)
     compiled.unlink()

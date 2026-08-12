@@ -162,18 +162,18 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F3.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
-    assert "31568577459" in panel
-    assert "31568908128" in panel
-    assert "github.com/Wf-ops1/Harnessinfra/pull/51" in panel
+    assert "F5.1 — resolver configuração no início da execução" in panel
+    assert "`PR_OPEN / CHECKS_PENDING`" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
+    assert "31616226652" in panel
+    assert "PR #52" in panel
     assert "DEC-014" in panel
-    assert "docs/tasks/completed/F3.7.md" in panel
-    assert "docs/tasks/completed/F4.8.md" in panel
-    assert "10d75408f10ce83ffa232f117d203aa2f26bedb0" in panel
+    assert "docs/tasks/active/F5.1.md" in panel
+    assert "846c59e78e6db9c9417ff1d8a69c560d2d08356e" in panel
     assert "F4.8" in panel
     assert "F3.7 — promoção Git segura" in panel
-    assert "git cherry-pick <candidate_sha>" in panel
     assert "F5.1" in panel
+    assert "checkpoint/f5.1-ready" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
@@ -181,6 +181,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "terminal usa `shell=True`" not in lifecycle
     assert "registry de executores vazio" in user_guide
     assert "harness resume <id>" in user_guide
+    assert "Configuração efetiva F5.1" in user_guide
+    assert "importlib.resources" in user_guide
+    assert "não relê profile" in user_guide
     assert "context_request + graph_input" in user_guide
     assert "CONTEXT_EVALUATED" in user_guide
     assert "FAILED_RETRY_EXHAUSTED" in user_guide

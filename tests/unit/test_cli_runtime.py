@@ -47,8 +47,24 @@ class _FakeLifecycle:
             total_gates=1,
         )
 
-    def start(self, path: Path, *, initial_input: dict[str, object]):
-        self.calls.append(("start", initial_input))
+    def start(
+        self,
+        path: Path,
+        *,
+        initial_input: dict[str, object],
+        profile_name: str = "default",
+        cli_overrides: dict[str, object] | None = None,
+    ):
+        self.calls.append(
+            (
+                "start",
+                {
+                    "initial_input": initial_input,
+                    "profile_name": profile_name,
+                    "cli_overrides": cli_overrides,
+                },
+            )
+        )
         return self.result
 
     def resume(self, execution_id: str):
@@ -202,9 +218,50 @@ def test_cli_run_accepts_explicit_json_and_uses_lifecycle(
     assert "exec-cli-runtime" in result.output
     assert "bounded" not in result.output
     assert fake.calls == [
-        ("start", {"intent": "bounded"}),
+        (
+            "start",
+            {
+                "initial_input": {"intent": "bounded"},
+                "profile_name": "default",
+                "cli_overrides": None,
+            },
+        ),
         ("status", "exec-cli-runtime"),
     ]
+
+
+def test_cli_run_passes_profile_and_highest_precedence_configuration_overrides(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root: fake)
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        assert runner.invoke(main, ["init"]).exit_code == 0
+        result = runner.invoke(
+            main,
+            [
+                "run",
+                "new-feature",
+                "--input-json",
+                "{}",
+                "--profile",
+                "secure",
+                "--config-json",
+                '{"context_sufficiency_threshold":0.91}',
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert fake.calls[0] == (
+        "start",
+        {
+            "initial_input": {},
+            "profile_name": "secure",
+            "cli_overrides": {"context_sufficiency_threshold": 0.91},
+        },
+    )
 
 
 def test_cli_run_does_not_claim_completion_while_verification_is_pending(
@@ -234,11 +291,17 @@ def test_cli_run_rejects_invalid_input_and_legacy_approval_flag(tmp_path: Path) 
             ["run", "new-feature", "--input-json", "[]"],
         )
         legacy = runner.invoke(main, ["run", "new-feature", "--approval-required"])
+        invalid_config = runner.invoke(
+            main,
+            ["run", "new-feature", "--config-json", "[]"],
+        )
 
     assert invalid.exit_code != 0
     assert "must be a JSON object" in invalid.output
     assert legacy.exit_code != 0
     assert "explicit human node" in legacy.output
+    assert invalid_config.exit_code != 0
+    assert "--config-json must be a JSON object" in invalid_config.output
 
 
 def test_cli_resume_approve_cancel_status_and_inspect_are_canonical_and_redacted(

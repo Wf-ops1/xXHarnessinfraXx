@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há dossiê de implementação ativo. A [F3.7](completed/F3.7.md) está `PROMOTED` e em reconciliação
-administrativa local: o PR #51 encerrou no head `40f81375`, passou 11/11 no run `31568577459`, foi
-incorporado pelo merge `10d75408` e recebeu 11/11 na CI pós-merge `31568908128`. A branch
-`docs/promote-f3.7` foi criada desse merge certificado; publicação e PR administrativo permanecem
-pendentes. Checkpoints F3.7 continuam somente locais e nenhuma tag remota existe.
+O dossiê [F5.1](active/F5.1.md) está `PR_OPEN / CHECKS_PENDING` no
+[PR #53](https://github.com/Wf-ops1/Harnessinfra/pull/53), branch `task/f5.1-resolve-config`, criada do
+merge administrativo `846c59e`. A F3.7 permanece `PROMOTED` em
+[seu dossiê concluído](completed/F3.7.md); a PR administrativa #52 foi incorporada em `846c59e` e o
+workflow `CI` run `31616226652` passou no SHA exato da `main`. Merge da F5.1, tags remotas e início da
+F5.2 permanecem não autorizados.
 
 ## Ledger concluído
 
