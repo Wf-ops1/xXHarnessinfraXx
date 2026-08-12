@@ -287,6 +287,7 @@ def test_compiled_policy_tool_result_returns_to_model_and_final_response_stops()
     }
     assert result.tool_executions[0].arguments_digest.startswith("sha256:")
     assert result.tool_executions[0].redacted_result == '{"matches":["F3.3"]}'
+    assert result.tool_executions[0].policy_decision_digest is not None
 
 
 def test_durable_recorder_wraps_handler_in_write_ahead_order() -> None:
@@ -314,6 +315,21 @@ def test_durable_recorder_wraps_handler_in_write_ahead_order() -> None:
         recorder.intents[0].arguments_digest
         == recorder.outcomes[0].arguments_digest
     )
+    decision = recorder.intents[0].policy_decision
+    assert decision is not None
+    assert decision.allowed is True
+    assert decision.rule_id.endswith(":allow:knowledge_retriever")
+    assert decision.request.model_dump(mode="json") == {
+        "role": "requirement_analyst",
+        "node_id": "agent",
+        "workflow": "tool-loop",
+        "trust_mode": "restricted",
+        "tool": "knowledge_retriever",
+        "operation": "invoke",
+        "path": None,
+        "approval_granted": False,
+    }
+    assert recorder.outcomes[0].policy_decision_digest == decision.digest()
 
 
 def test_missing_durable_recorder_blocks_handler() -> None:
@@ -344,12 +360,8 @@ def test_policy_deny_overlap_and_human_approval_fail_closed() -> None:
 
     provider = _ToolProvider("local", [_response(content="must not run")])
     loop, _ = _loop(provider, tool_router)
-    policy = EffectiveToolPolicy(
-        node_id="agent",
-        role="requirement_analyst",
-        allowed_tools=("knowledge_retriever",),
-        denied_tools=(),
-        human_approval_required=True,
+    policy = EffectiveToolPolicy.from_artifact(_artifact(), "agent").model_copy(
+        update={"human_approval_required": True}
     )
     with pytest.raises(ToolApprovalRequiredError):
         loop.execute(
@@ -471,6 +483,48 @@ def test_unauthorized_schema_or_duplicate_batch_has_zero_effect(calls) -> None:
 
     assert effects == []
     assert len(provider.prompts) == 1
+
+
+def test_default_denied_call_rejects_whole_valid_batch_before_first_effect() -> None:
+    effects: list[str] = []
+    schema = {
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"],
+        "additionalProperties": False,
+    }
+    tool_router = ToolRouter(
+        allowed_tools=("knowledge_retriever", "unplanned_tool"),
+        registrations={
+            name: ToolRegistration(
+                definition=ToolDefinition(
+                    name=name,
+                    description=f"test {name}",
+                    parameters=schema,
+                ),
+                handler=lambda _payload, selected=name: effects.append(selected),
+            )
+            for name in ("knowledge_retriever", "unplanned_tool")
+        },
+    )
+    provider = _ToolProvider(
+        "local",
+        [
+            _response(
+                calls=(
+                    _call(call_id="allowed"),
+                    _call(call_id="denied", name="unplanned_tool"),
+                )
+            )
+        ],
+    )
+    loop, _ = _loop(provider, tool_router)
+
+    with pytest.raises(ToolLoopError, match="preflight") as captured:
+        _execute(loop, tool_router)
+
+    assert effects == []
+    assert isinstance(captured.value.__cause__, PermissionError)
 
 
 def test_unregistered_compiled_capability_fails_before_model_call() -> None:

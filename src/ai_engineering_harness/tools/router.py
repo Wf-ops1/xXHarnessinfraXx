@@ -1,4 +1,4 @@
-"""Fail-closed operational tool registry and policy-scoped dispatch."""
+"""Fail-closed operational tool registry and decision-bound dispatch."""
 
 from __future__ import annotations
 
@@ -11,9 +11,15 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
 from pydantic import BaseModel, ConfigDict, JsonValue, StringConstraints, field_validator
 
+from ai_engineering_harness.governance import (
+    PolicyDecisionIntegrityError,
+    PolicyDeniedError,
+    PolicyEngine,
+    ToolPolicyDecision,
+    ToolPolicyRequest,
+)
 from ai_engineering_harness.models.provider import ToolCall
 from ai_engineering_harness.security.redaction import Redactor
-from ai_engineering_harness.tools.permissions import ToolPermissions
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ToolHandler = Callable[[dict[str, JsonValue]], JsonValue]
@@ -24,7 +30,7 @@ class ToolRouterError(RuntimeError):
 
 
 class ToolUnauthorizedError(PermissionError, ToolRouterError):
-    """The effective compiled policy does not authorize a tool."""
+    """A capability or deterministic policy decision does not authorize a tool."""
 
 
 class ToolUnavailableError(ToolRouterError):
@@ -70,14 +76,37 @@ class ToolDefinition(BaseModel):
 
 @dataclass(frozen=True, slots=True)
 class ToolRegistration:
-    """One explicit operational handler and its immutable public definition."""
+    """One explicit handler and its immutable policy target metadata."""
 
     definition: ToolDefinition
     handler: ToolHandler
+    operation: str = "invoke"
+    path_argument: str | None = None
+    default_path: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.operation.strip() or self.operation != self.operation.strip():
+            raise ValueError("tool registration operation must be canonical and non-empty")
+        if self.path_argument is not None and (
+            not self.path_argument.strip()
+            or self.path_argument != self.path_argument.strip()
+        ):
+            raise ValueError("tool registration path_argument must be canonical and non-empty")
+        if self.path_argument is None and self.default_path is not None:
+            raise ValueError("default_path requires a path_argument")
+
+
+@dataclass(frozen=True, slots=True)
+class ToolDispatchTarget:
+    """Policy-relevant identity derived from a validated registration and payload."""
+
+    tool: str
+    operation: str
+    path: str | None
 
 
 class ToolRouter:
-    """Validate a compiled allowlist and dispatch only operational registrations."""
+    """Validate capability availability and dispatch only with a verified decision."""
 
     def __init__(
         self,
@@ -85,7 +114,13 @@ class ToolRouter:
         *,
         registrations: Mapping[str, ToolRegistration] | None = None,
     ) -> None:
-        self.permissions = ToolPermissions(allowed_tools=allowed_tools)
+        enabled = tuple(allowed_tools)
+        if len(set(enabled)) != len(enabled):
+            raise ValueError("enabled tool capabilities must be unique")
+        if any(not isinstance(name, str) or not name.strip() for name in enabled):
+            raise ValueError("enabled tool capabilities must be non-empty strings")
+        self._enabled_tools = enabled
+
         source = registrations if registrations is not None else {}
         copied: dict[str, ToolRegistration] = {}
         for name, registration in source.items():
@@ -97,6 +132,10 @@ class ToolRouter:
         self._registrations = copied
 
     @property
+    def enabled_tools(self) -> tuple[str, ...]:
+        return self._enabled_tools
+
+    @property
     def registered_tools(self) -> tuple[str, ...]:
         return tuple(sorted(self._registrations))
 
@@ -106,71 +145,44 @@ class ToolRouter:
         *,
         effective_denied_tools: Sequence[str] = (),
     ) -> tuple[dict[str, Any], ...]:
-        """Validate an exact compiled allowlist before prompt composition."""
-        allowed, denied = self._validate_effective_policy(
+        """Validate the compiled capability view before prompt composition."""
+        allowed, denied = self._validate_compiled_capabilities(
             effective_allowed_tools,
             effective_denied_tools,
         )
         schemas: list[dict[str, Any]] = []
         for name in allowed:
-            self._require_authorized(name, allowed, denied)
-            registration = self._registration(name)
-            schemas.append(registration.definition.provider_schema())
+            self._require_enabled(name, allowed, denied)
+            schemas.append(self._registration(name).definition.provider_schema())
         return tuple(schemas)
 
-    def validate_calls(
-        self,
-        calls: Sequence[ToolCall],
-        effective_allowed_tools: Sequence[str],
-        *,
-        effective_denied_tools: Sequence[str] = (),
-    ) -> None:
-        """Validate an entire model batch before its first effect."""
-        allowed, denied = self._validate_effective_policy(
-            effective_allowed_tools,
-            effective_denied_tools,
-        )
+    def validate_calls(self, calls: Sequence[ToolCall]) -> tuple[ToolDispatchTarget, ...]:
+        """Validate an entire model batch and derive its concrete policy targets."""
         seen_call_ids: set[str] = set()
+        targets: list[ToolDispatchTarget] = []
         for call in calls:
             if call.call_id in seen_call_ids:
                 raise ToolPayloadValidationError("tool call IDs must be unique within a batch")
             seen_call_ids.add(call.call_id)
-            self._require_authorized(call.name, allowed, denied)
+            self._require_enabled(call.name, self._enabled_tools, ())
             registration = self._registration(call.name)
-            try:
-                Draft202012Validator(registration.definition.parameters).validate(
-                    call.arguments
-                )
-            except ValidationError as exc:
-                raise ToolPayloadValidationError(
-                    f"tool payload violates schema for {call.name}"
-                ) from exc
+            self._validate_payload(call.name, call.arguments, registration)
+            targets.append(self._target(registration, call.arguments))
+        return tuple(targets)
 
     def dispatch(
         self,
         tool_name: str,
         payload: dict[str, JsonValue],
         *,
-        effective_allowed_tools: Sequence[str] | None = None,
-        effective_denied_tools: Sequence[str] = (),
+        policy_engine: PolicyEngine | None = None,
+        decision: ToolPolicyDecision | None = None,
     ) -> JsonValue:
-        candidate_allowed = (
-            tuple(effective_allowed_tools)
-            if effective_allowed_tools is not None
-            else tuple(self.permissions.allowed_tools)
-        )
-        allowed, denied = self._validate_effective_policy(
-            candidate_allowed,
-            effective_denied_tools,
-        )
-        self._require_authorized(tool_name, allowed, denied)
+        self._require_enabled(tool_name, self._enabled_tools, ())
         registration = self._registration(tool_name)
-        try:
-            Draft202012Validator(registration.definition.parameters).validate(payload)
-        except ValidationError as exc:
-            raise ToolPayloadValidationError(
-                f"tool payload violates schema for {tool_name}"
-            ) from exc
+        self._validate_payload(tool_name, payload, registration)
+        target = self._target(registration, payload)
+        self._require_verified_decision(target, policy_engine, decision)
         try:
             result = registration.handler(payload)
             return _copy_json_value(result)
@@ -181,7 +193,7 @@ class ToolRouter:
             raise ToolExecutionError(f"tool {tool_name} failed: {safe_type}") from exc
 
     @staticmethod
-    def _validate_effective_policy(
+    def _validate_compiled_capabilities(
         effective_allowed: Sequence[str],
         effective_denied: Sequence[str],
     ) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -194,12 +206,11 @@ class ToolRouter:
         overlap = sorted(set(allowed) & set(denied))
         if overlap:
             raise ToolUnauthorizedError(
-                "effective tool policy overlaps allow and deny: "
-                + ", ".join(overlap)
+                "effective tool policy overlaps allow and deny: " + ", ".join(overlap)
             )
         return allowed, denied
 
-    def _require_authorized(
+    def _require_enabled(
         self,
         name: str,
         effective_allowed: Sequence[str],
@@ -208,9 +219,9 @@ class ToolRouter:
         if (
             name in effective_denied
             or name not in effective_allowed
-            or not self.permissions.is_allowed(name)
+            or name not in self._enabled_tools
         ):
-            raise ToolUnauthorizedError(f"tool is not authorized by effective policy: {name}")
+            raise ToolUnauthorizedError(f"tool capability is not enabled: {name}")
 
     def _registration(self, name: str) -> ToolRegistration:
         try:
@@ -219,6 +230,67 @@ class ToolRouter:
             raise ToolUnavailableError(
                 f"tool capability has no operational registration: {name}"
             ) from exc
+
+    @staticmethod
+    def _validate_payload(
+        tool_name: str,
+        payload: dict[str, JsonValue],
+        registration: ToolRegistration,
+    ) -> None:
+        try:
+            Draft202012Validator(registration.definition.parameters).validate(payload)
+        except ValidationError as exc:
+            raise ToolPayloadValidationError(
+                f"tool payload violates schema for {tool_name}"
+            ) from exc
+
+    @staticmethod
+    def _target(
+        registration: ToolRegistration,
+        payload: dict[str, JsonValue],
+    ) -> ToolDispatchTarget:
+        path: str | None = None
+        if registration.path_argument is not None:
+            raw_path = payload.get(registration.path_argument, registration.default_path)
+            if raw_path is not None and not isinstance(raw_path, str):
+                raise ToolPayloadValidationError("tool policy path must be a string")
+            path = raw_path
+        return ToolDispatchTarget(
+            tool=registration.definition.name,
+            operation=registration.operation,
+            path=path,
+        )
+
+    @staticmethod
+    def _require_verified_decision(
+        target: ToolDispatchTarget,
+        engine: PolicyEngine | None,
+        decision: ToolPolicyDecision | None,
+    ) -> None:
+        if engine is None or decision is None:
+            raise ToolUnauthorizedError("tool dispatch requires a verified policy decision")
+        request = decision.request
+        try:
+            actual_request = ToolPolicyRequest(
+                role=request.role,
+                node_id=request.node_id,
+                workflow=request.workflow,
+                trust_mode=request.trust_mode,
+                tool=target.tool,
+                operation=target.operation,
+                path=target.path,
+                approval_granted=request.approval_granted,
+            )
+        except ValueError as exc:
+            raise ToolUnauthorizedError("tool dispatch target is invalid for policy") from exc
+        if actual_request != request:
+            raise ToolUnauthorizedError("policy decision does not match tool dispatch target")
+        try:
+            engine.require_allowed(decision)
+        except (PolicyDeniedError, PolicyDecisionIntegrityError) as exc:
+            raise ToolUnauthorizedError("tool policy decision is not authorized") from exc
+
+
 def _copy_json_value(value: object) -> JsonValue:
     try:
         serialized = json.dumps(
@@ -235,6 +307,7 @@ def _copy_json_value(value: object) -> JsonValue:
 
 __all__ = [
     "ToolDefinition",
+    "ToolDispatchTarget",
     "ToolExecutionError",
     "ToolPayloadValidationError",
     "ToolRegistration",

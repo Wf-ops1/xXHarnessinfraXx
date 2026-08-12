@@ -60,6 +60,8 @@ def build_operational_tool_router(
                 "additionalProperties": False,
             },
             lambda payload: _serena_edit(serena_adapter, payload),
+            operation="write",
+            path_argument="relative_path",
         )
 
     return ToolRouter(allowed_tools, registrations=registrations)
@@ -72,6 +74,8 @@ def _local_registrations(adapter: LocalEditingAdapter) -> dict[str, ToolRegistra
             "Read one confined strict UTF-8 file with its real SHA-256 digest.",
             _object_schema({"path": _path_schema()}, required=("path",)),
             lambda payload: _read_file(adapter, payload),
+            operation="read",
+            path_argument="path",
         ),
         "list_files": _registration(
             "list_files",
@@ -84,6 +88,9 @@ def _local_registrations(adapter: LocalEditingAdapter) -> dict[str, ToolRegistra
                 }
             ),
             lambda payload: _list_files(adapter, payload),
+            operation="list",
+            path_argument="path",
+            default_path=".",
         ),
         "search_text": _registration(
             "search_text",
@@ -99,6 +106,9 @@ def _local_registrations(adapter: LocalEditingAdapter) -> dict[str, ToolRegistra
                 required=("query",),
             ),
             lambda payload: _search_text(adapter, payload),
+            operation="search",
+            path_argument="path",
+            default_path=".",
         ),
         "apply_patch": _registration(
             "apply_patch",
@@ -115,6 +125,8 @@ def _local_registrations(adapter: LocalEditingAdapter) -> dict[str, ToolRegistra
                 required=("path", "patch", "expected_sha256"),
             ),
             lambda payload: _apply_patch(adapter, payload),
+            operation="write",
+            path_argument="path",
         ),
     }
 
@@ -146,18 +158,26 @@ def _terminal_registrations(
                 required=("argv", "cwd"),
             ),
             lambda payload: _run_command(terminal, payload),
+            operation="execute",
+            path_argument="cwd",
         ),
         "git_status": _registration(
             "git_status",
             "Inspect the confined worktree status through a fixed read-only Git argv.",
             _object_schema({}),
             lambda payload: _git_status(terminal, payload),
+            operation="status",
+            path_argument="cwd",
+            default_path=".",
         ),
         "git_diff": _registration(
             "git_diff",
             "Inspect a confined worktree diff through a fixed read-only Git argv.",
             _object_schema({"path": _path_schema()}),
             lambda payload: _git_diff(terminal, local, payload),
+            operation="diff",
+            path_argument="path",
+            default_path=".",
         ),
     }
 
@@ -273,6 +293,10 @@ def _registration(
     description: str,
     parameters: dict[str, Any],
     handler: Callable[[dict[str, JsonValue]], JsonValue],
+    *,
+    operation: str,
+    path_argument: str | None = None,
+    default_path: str | None = None,
 ) -> ToolRegistration:
     return ToolRegistration(
         definition=ToolDefinition(
@@ -281,6 +305,9 @@ def _registration(
             parameters=cast(dict[str, JsonValue], parameters),
         ),
         handler=handler,
+        operation=operation,
+        path_argument=path_argument,
+        default_path=default_path,
     )
 
 

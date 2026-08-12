@@ -1,9 +1,9 @@
-"""Módulo Tools: Roteamento de ferramentas, permissões e adaptadores."""
+"""Módulo Tools: registry operacional e adaptadores."""
 
 from .operational import build_operational_tool_router
-from .permissions import ToolPermissions
 from .router import (
     ToolDefinition,
+    ToolDispatchTarget,
     ToolExecutionError,
     ToolPayloadValidationError,
     ToolRegistration,
@@ -15,9 +15,9 @@ from .router import (
 
 __all__ = [
     "ToolDefinition",
+    "ToolDispatchTarget",
     "ToolExecutionError",
     "ToolPayloadValidationError",
-    "ToolPermissions",
     "ToolRegistration",
     "ToolRouter",
     "ToolRouterError",

@@ -17,7 +17,15 @@ from pydantic import (
 
 from ai_engineering_harness.contracts import AgentNodeSpec, CompiledGraphArtifact
 from ai_engineering_harness.contracts.policies import EffectiveNodeToolPolicySpec
-from ai_engineering_harness.governance import BudgetError
+from ai_engineering_harness.governance import (
+    BudgetError,
+    PolicyDeniedError,
+    PolicyEngine,
+    ToolPolicyDecision,
+    ToolPolicyRequest,
+    ToolPolicyRule,
+    TrustMode,
+)
 from ai_engineering_harness.models.provider import (
     CancellationToken,
     LLMResponse,
@@ -92,6 +100,9 @@ class EffectiveToolPolicy(BaseModel):
 
     node_id: _NonEmptyStr
     role: _NonEmptyStr
+    workflow: _NonEmptyStr
+    policy_id: _NonEmptyStr
+    policy_definition_version: _NonEmptyStr
     allowed_tools: tuple[_NonEmptyStr, ...]
     denied_tools: tuple[_NonEmptyStr, ...]
     human_approval_required: bool = False
@@ -112,6 +123,43 @@ class EffectiveToolPolicy(BaseModel):
             raise ToolApprovalRequiredError(
                 "effective tool policy requires explicit human approval"
             )
+
+    def policy_engine(self) -> PolicyEngine:
+        """Project the exact compiled decision into stable runtime rules."""
+        prefix = (
+            f"{self.policy_id}@{self.policy_definition_version}:"
+            f"{self.workflow}:{self.role}:{self.node_id}"
+        )
+        rules = [
+            ToolPolicyRule(
+                rule_id=f"{prefix}:allow:{tool}",
+                effect="allow",
+                roles=(self.role,),
+                node_ids=(self.node_id,),
+                workflows=(self.workflow,),
+                trust_modes=("trusted", "restricted"),
+                tools=(tool,),
+                operations=("*",),
+                path_patterns=("*",),
+                approval_required=self.human_approval_required,
+            )
+            for tool in self.allowed_tools
+        ]
+        rules.extend(
+            ToolPolicyRule(
+                rule_id=f"{prefix}:deny:{tool}",
+                effect="deny",
+                roles=(self.role,),
+                node_ids=(self.node_id,),
+                workflows=(self.workflow,),
+                trust_modes=("trusted", "restricted"),
+                tools=(tool,),
+                operations=("*",),
+                path_patterns=("*",),
+            )
+            for tool in self.denied_tools
+        )
+        return PolicyEngine(rules=rules)
 
     @classmethod
     def from_artifact(
@@ -162,6 +210,9 @@ class EffectiveToolPolicy(BaseModel):
         return cls(
             node_id=decision.node_id,
             role=decision.role,
+            workflow=artifact.graph.graph.name,
+            policy_id=policies[0].policy_id,
+            policy_definition_version=policies[0].definition_version,
             allowed_tools=decision.allowed_tools,
             denied_tools=decision.denied_tools,
             human_approval_required=decision.human_approval_required,
@@ -225,6 +276,7 @@ class ToolLoopExecutor:
         model_candidates: tuple[str, ...],
         cancellation_token: CancellationToken | None = None,
         tool_effect_recorder: ToolEffectRecorder | None = None,
+        trust_mode: TrustMode = "restricted",
     ) -> ToolLoopResult:
         records: list[ToolExecutionRecord] = []
         model_call_records: list[ModelCallMetadata] = []
@@ -233,6 +285,7 @@ class ToolLoopExecutor:
         model_calls = 0
 
         policy.require_dispatchable()
+        policy_engine = policy.policy_engine()
 
         while True:
             self._raise_if_cancelled(
@@ -314,16 +367,18 @@ class ToolLoopExecutor:
                 records,
                 model_call_records,
             )
-            self._validate_batch(
+            decisions = self._validate_batch(
                 response.tool_calls,
                 policy,
+                policy_engine=policy_engine,
+                trust_mode=trust_mode,
                 seen_call_ids=seen_call_ids,
                 completed_steps=len(records),
                 records=records,
                 model_call_records=model_call_records,
             )
             tool_results: list[ModelToolResult] = []
-            for call in response.tool_calls:
+            for call, decision in zip(response.tool_calls, decisions, strict=True):
                 self._raise_if_cancelled(
                     cancellation_token,
                     records,
@@ -348,14 +403,15 @@ class ToolLoopExecutor:
                     call_id=call.call_id,
                     tool_name=call.name,
                     arguments_digest=_digest(arguments_json),
+                    policy_decision=decision,
                 )
                 tool_effect_recorder.record_call(intent)
                 try:
                     result = self._tool_router.dispatch(
                         call.name,
                         call.arguments,
-                        effective_allowed_tools=policy.allowed_tools,
-                        effective_denied_tools=policy.denied_tools,
+                        policy_engine=policy_engine,
+                        decision=decision,
                     )
                 except ToolRouterError as exc:
                     error_text = Redactor.redact_text(str(exc))[:2_000]
@@ -368,6 +424,7 @@ class ToolLoopExecutor:
                         result_digest=_digest(_canonical_json(error_text)),
                         redacted_result=error_text,
                         error_code=type(exc).__name__,
+                        policy_decision_digest=decision.digest(),
                     )
                     tool_effect_recorder.record_outcome(record)
                     records.append(record)
@@ -386,6 +443,7 @@ class ToolLoopExecutor:
                     succeeded=True,
                     result_digest=_digest(result_json),
                     redacted_result=Redactor.redact_text(result_json)[:2_000],
+                    policy_decision_digest=decision.digest(),
                 )
                 tool_effect_recorder.record_outcome(record)
                 records.append(record)
@@ -410,11 +468,13 @@ class ToolLoopExecutor:
         calls: tuple[ToolCall, ...],
         policy: EffectiveToolPolicy,
         *,
+        policy_engine: PolicyEngine,
+        trust_mode: TrustMode,
         seen_call_ids: set[str],
         completed_steps: int,
         records: list[ToolExecutionRecord],
         model_call_records: list[ModelCallMetadata],
-    ) -> None:
+    ) -> tuple[ToolPolicyDecision, ...]:
         if completed_steps + len(calls) > self._max_tool_steps:
             raise ToolStepLimitExceededError(
                 "tool call batch exceeds max_tool_steps",
@@ -428,17 +488,32 @@ class ToolLoopExecutor:
                 model_call_records=tuple(model_call_records),
             )
         try:
-            self._tool_router.validate_calls(
-                calls,
-                policy.allowed_tools,
-                effective_denied_tools=policy.denied_tools,
+            targets = self._tool_router.validate_calls(calls)
+            decisions = tuple(
+                policy_engine.evaluate(
+                    ToolPolicyRequest(
+                        role=policy.role,
+                        node_id=policy.node_id,
+                        workflow=policy.workflow,
+                        trust_mode=trust_mode,
+                        tool=target.tool,
+                        operation=target.operation,
+                        path=target.path,
+                        approval_granted=False,
+                    )
+                )
+                for target in targets
             )
-        except ToolRouterError as exc:
+            denied = next((decision for decision in decisions if not decision.allowed), None)
+            if denied is not None:
+                raise PolicyDeniedError(denied)
+        except (PolicyDeniedError, ToolRouterError, ValueError) as exc:
             raise ToolLoopError(
                 "tool call batch failed preflight",
                 tool_executions=tuple(records),
                 model_call_records=tuple(model_call_records),
             ) from exc
+        return decisions
 
     @staticmethod
     def _raise_if_cancelled(

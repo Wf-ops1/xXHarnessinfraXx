@@ -28,6 +28,12 @@ from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     ExecutionState,
 )
+from ai_engineering_harness.governance import (
+    PolicyEngine,
+    ToolPolicyDecision,
+    ToolPolicyRequest,
+    ToolPolicyRule,
+)
 from ai_engineering_harness.persistence import (
     AtomicFileStateStorage,
     EventJournalStateStorageProvider,
@@ -197,18 +203,21 @@ class _DurableStaticBackend:
     result: NodeExecutionResult
     trace: list[str] | None = None
     executions: int = 0
+    policy_decision: ToolPolicyDecision | None = None
 
     def execute(self, context: NodeExecutionContext) -> NodeExecutionResult:
         self.executions += 1
         recorder = context.tool_effect_recorder
         assert recorder is not None
         for record in self.result.tool_executions:
+            decision = self.policy_decision or _allowed_tool_decision(context.artifact)
             recorder.record_call(
                 ToolCallIntent(
                     step=record.step,
                     call_id=record.call_id,
                     tool_name=record.tool_name,
                     arguments_digest=record.arguments_digest,
+                    policy_decision=decision,
                 )
             )
             if self.trace is not None:
@@ -298,6 +307,54 @@ class _ModelEventShapeStorage(AtomicFileStateStorage):
             if self.mode == "legacy":
                 payload.pop("model_calls")
             payload.update(legacy)
+            event = ExecutionEvent.model_validate(
+                {
+                    **event.model_dump(),
+                    "payload": payload,
+                    "previous_hash": None,
+                    "current_hash": None,
+                }
+            )
+        return super().append_event(execution_id, event, lock=lock)
+
+
+class _TamperedToolDecisionStorage(_FailOutcomeCasStorage):
+    def append_event(
+        self,
+        execution_id: str,
+        event: ExecutionEvent,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> ExecutionEvent:
+        if event.event_type == "TOOL_COMPLETED" and "policy_decision_digest" in event.payload:
+            event = ExecutionEvent.model_validate(
+                {
+                    **event.model_dump(),
+                    "payload": {
+                        **event.payload,
+                        "policy_decision_digest": f"sha256:{'f' * 64}",
+                    },
+                    "previous_hash": None,
+                    "current_hash": None,
+                }
+            )
+        return super().append_event(execution_id, event, lock=lock)
+
+
+class _LegacyToolEventStorage(_FailOutcomeCasStorage):
+    def append_event(
+        self,
+        execution_id: str,
+        event: ExecutionEvent,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> ExecutionEvent:
+        payload = dict(event.payload)
+        if event.event_type == "TOOL_CALLED":
+            payload.pop("policy_decision")
+        elif event.event_type in {"TOOL_COMPLETED", "TOOL_FAILED"}:
+            payload.pop("policy_decision_digest")
+        if payload != event.payload:
             event = ExecutionEvent.model_validate(
                 {
                     **event.model_dump(),
@@ -577,6 +634,34 @@ def _agent_artifact() -> CompiledGraphArtifact:
             ),
         ),
     )
+
+
+def _allowed_tool_decision(artifact: CompiledGraphArtifact) -> ToolPolicyDecision:
+    request = ToolPolicyRequest(
+        role="code_agent",
+        node_id="agent",
+        workflow=artifact.graph.graph.name,
+        trust_mode="restricted",
+        tool="knowledge_retriever",
+        operation="read",
+        path="docs/context.json",
+    )
+    engine = PolicyEngine(
+        rules=(
+            ToolPolicyRule(
+                rule_id="compiled:test-agent:knowledge_retriever",
+                effect="allow",
+                roles=(request.role,),
+                node_ids=(request.node_id,),
+                workflows=(request.workflow,),
+                trust_modes=(request.trust_mode,),
+                tools=(request.tool,),
+                operations=(request.operation,),
+                path_patterns=("docs/*",),
+            ),
+        )
+    )
+    return engine.evaluate(request)
 
 
 def _record(
@@ -1046,6 +1131,7 @@ def test_tool_events_are_paired_redacted_and_precede_node_outcome(tmp_path: Path
         succeeded=True,
         result_digest=f"sha256:{'2' * 64}",
         redacted_result='{"token":"[REDACTED_SECRET]"}',
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
 
     _executor(
@@ -1096,6 +1182,7 @@ def test_graph_write_ahead_is_persisted_before_effect_and_outcome_after(
         succeeded=True,
         result_digest=f"sha256:{'b' * 64}",
         redacted_result="ok",
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
     backend = _DurableStaticBackend(
         NodeExecutionResult.completed(
@@ -1127,6 +1214,7 @@ def test_tool_call_journal_failure_blocks_effect_before_handler(tmp_path: Path) 
         succeeded=True,
         result_digest=f"sha256:{'d' * 64}",
         redacted_result="must-not-run",
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
     backend = _DurableStaticBackend(
         NodeExecutionResult.completed(
@@ -1162,6 +1250,7 @@ def test_backend_cannot_claim_tool_effect_without_durable_records(tmp_path: Path
         succeeded=True,
         result_digest=f"sha256:{'f' * 64}",
         redacted_result="untrusted",
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
 
     with pytest.raises(ToolEffectIntegrityError, match="diverges"):
@@ -1184,7 +1273,7 @@ def test_tool_record_replay_accepts_complete_pair_without_reexecution(
     tmp_path: Path,
 ) -> None:
     artifact = _agent_artifact()
-    storage = _FailOutcomeCasStorage(tmp_path)
+    storage = _LegacyToolEventStorage(tmp_path)
     execution_id = "exec-tool-record-resume"
     initial_input = {"value": 1}
     _create_resume_execution(storage, artifact, execution_id, initial_input)
@@ -1196,6 +1285,7 @@ def test_tool_record_replay_accepts_complete_pair_without_reexecution(
         succeeded=True,
         result_digest=f"sha256:{'4' * 64}",
         redacted_result="ok",
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
     backend = _DurableStaticBackend(
         NodeExecutionResult.completed(
@@ -1221,6 +1311,91 @@ def test_tool_record_replay_accepts_complete_pair_without_reexecution(
     assert backend.executions == 1
 
 
+def test_policy_decision_is_persisted_before_effect_and_bound_to_outcome(
+    tmp_path: Path,
+) -> None:
+    artifact = _agent_artifact()
+    decision = _allowed_tool_decision(artifact)
+    storage = _FailOutcomeCasStorage(tmp_path)
+    execution_id = "exec-policy-decision-resume"
+    initial_input = {"value": 1}
+    _create_resume_execution(storage, artifact, execution_id, initial_input)
+    tool_record = ToolExecutionRecord(
+        step=1,
+        call_id="call-policy",
+        tool_name="knowledge_retriever",
+        arguments_digest=f"sha256:{'9' * 64}",
+        succeeded=True,
+        result_digest=f"sha256:{'a' * 64}",
+        redacted_result="ok",
+        policy_decision_digest=decision.digest(),
+    )
+    backend = _DurableStaticBackend(
+        NodeExecutionResult.completed(
+            {"result": "ok"},
+            tool_executions=(tool_record,),
+        ),
+        policy_decision=decision,
+    )
+    executor = _resume_executor(
+        storage,
+        NodeExecutorRegistry(agent=AgentNodeExecutor(backend)),
+    )
+
+    with pytest.raises(StateWriteError, match="outcome CAS"):
+        executor.execute(artifact, execution_id, initial_input)
+    events = storage.load_events(execution_id)
+    called = next(event for event in events if event.event_type == "TOOL_CALLED")
+    completed = next(event for event in events if event.event_type == "TOOL_COMPLETED")
+
+    assert called.payload["policy_decision"] == decision.model_dump(mode="json")
+    assert "arguments" not in called.payload
+    assert completed.payload["policy_decision_digest"] == decision.digest()
+    assert executor.resume(artifact, execution_id).outcome == "success"
+    assert backend.executions == 1
+
+
+def test_replay_rejects_tampered_policy_decision_digest(tmp_path: Path) -> None:
+    artifact = _agent_artifact()
+    decision = _allowed_tool_decision(artifact)
+    storage = _TamperedToolDecisionStorage(tmp_path)
+    execution_id = "exec-policy-decision-tampered"
+    initial_input = {"value": 1}
+    _create_resume_execution(storage, artifact, execution_id, initial_input)
+    tool_record = ToolExecutionRecord(
+        step=1,
+        call_id="call-policy-tampered",
+        tool_name="knowledge_retriever",
+        arguments_digest=f"sha256:{'b' * 64}",
+        succeeded=True,
+        result_digest=f"sha256:{'c' * 64}",
+        redacted_result="ok",
+        policy_decision_digest=decision.digest(),
+    )
+    executor = _resume_executor(
+        storage,
+        NodeExecutorRegistry(
+            agent=AgentNodeExecutor(
+                _DurableStaticBackend(
+                    NodeExecutionResult.completed(
+                        {"result": "ok"},
+                        tool_executions=(tool_record,),
+                    ),
+                    policy_decision=decision,
+                )
+            )
+        ),
+    )
+
+    with pytest.raises(StateWriteError, match="outcome CAS"):
+        executor.execute(artifact, execution_id, initial_input)
+    journal_before = storage.load_events(execution_id)
+    with pytest.raises(InterruptedNodeExecutionError, match="policy decision"):
+        executor.resume(artifact, execution_id)
+
+    assert storage.load_events(execution_id) == journal_before
+
+
 def test_tool_event_replay_rejects_partial_pair_without_backend(tmp_path: Path) -> None:
     artifact = _agent_artifact()
     storage = _FailToolOutcomeAppendStorage(tmp_path)
@@ -1235,6 +1410,7 @@ def test_tool_event_replay_rejects_partial_pair_without_backend(tmp_path: Path) 
         succeeded=True,
         result_digest=f"sha256:{'6' * 64}",
         redacted_result="ok",
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
     executor = _resume_executor(
         storage,
@@ -1273,6 +1449,7 @@ def test_tool_event_replay_rejects_adulterated_extra_outcome(tmp_path: Path) -> 
         succeeded=True,
         result_digest=f"sha256:{'8' * 64}",
         redacted_result="ok",
+        policy_decision_digest=_allowed_tool_decision(artifact).digest(),
     )
     executor = _resume_executor(
         storage,

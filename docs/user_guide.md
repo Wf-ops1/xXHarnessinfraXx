@@ -124,6 +124,29 @@ o `on_failure` compilado, executa os gates afetados e depois a suíte integral, 
 nó, execução, tokens, custo e tempo. Isso ainda não torna o protótipo autônomo: o registry padrão de
 executores continua vazio e worktree/provider são injetados.
 
+## Autorização de tools F5.2
+
+A autorização runtime usa um único `PolicyEngine`. Cada solicitação é completa e tipada: `role`,
+`node_id`, workflow, trust mode, tool, operação, path relativo opcional e estado de aprovação.
+Regras `deny` prevalecem, a identidade aplicada é determinística e ausência de regra resulta em
+`default-deny`.
+
+A policy compilada continua sendo a fonte do allow/deny por role e node. No runtime, ela é projetada
+para workflow/role/node exatos. Como o schema atual ainda não restringe operação, path ou trust mode,
+essa projeção declara esses eixos explicitamente como abrangentes; a F5.3 deverá restringir o trust
+boundary. Cada registration operacional fornece a operação e o campo de path reais ao avaliador.
+
+Antes do primeiro efeito, o tool loop valida schema e autoriza o lote inteiro. Uma única negação
+bloqueia todas as chamadas do lote. O `ToolRouter` exige a decisão positiva, reavalia-a no mesmo
+engine e confere tool/operação/path. `TOOL_CALLED` guarda a decisão e a regra sem argumentos brutos;
+o outcome guarda seu digest. O replay aceita journals históricos, mas rejeita evidência nova parcial
+ou divergente.
+
+Isso não liga as tools automaticamente ao lifecycle padrão. O caminho executável atual não aceita um
+booleano do chamador como prova: policy que exige aprovação bloqueia antes do egress. Vincular uma
+aprovação real a conteúdo/diff permanece reservado à F5.6; as restrições operacionais do trust
+boundary permanecem na F5.3.
+
 ## Teste controlado de `init`
 
 Crie um repositório descartável e execute o binário instalado pelo ambiente do clone. Confirme os

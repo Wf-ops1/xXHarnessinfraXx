@@ -76,6 +76,24 @@ def test_current_docs_recognize_f3_8_tools_without_claiming_lifecycle_integratio
     assert "ainda não constrói esse registry" in operating_model.casefold()
 
 
+def test_current_docs_explain_f5_2_without_claiming_later_trust_or_approval() -> None:
+    readme = _read(ROOT / "README.md")
+    lifecycle = _read(ROOT / "docs" / "agentic_lifecycle_audit.md")
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+    walkthrough = _read(ROOT / "docs" / "walkthrough.md")
+
+    for document in (readme, lifecycle, user_guide, walkthrough):
+        assert "default-deny" in document
+        assert "F5.2" in document
+    for dimension in ("role", "node", "workflow", "trust", "tool", "operação", "path"):
+        assert dimension in user_guide
+    assert "lote inteiro" in user_guide
+    assert "TOOL_CALLED" in user_guide
+    assert "F5.3" in user_guide
+    assert "F5.6" in user_guide
+    assert "não é construído automaticamente" in walkthrough
+
+
 def test_current_docs_recognize_real_serena_without_claiming_live_default() -> None:
     readme = _read(ROOT / "README.md")
     operating_model = _read(ROOT / "docs" / "agentic_operating_model.md")
