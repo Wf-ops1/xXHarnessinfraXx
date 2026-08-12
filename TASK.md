@@ -27,7 +27,8 @@
 | **Main atual** | `main == origin/main == 9f75e35db38fc6648497c01bd8f81dcdecec8029` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **Checkpoint READY** | `checkpoint/f3.7-ready` → commit documental deste gate |
-| **Checkpoint de conclusão** | `checkpoint/f3.7-complete` → será criado no commit local certificado |
+| **Produto local** | `cb80f8b2d86b9ff38075e6f0068e32b62ba4dbb5` — implementação certificada |
+| **Checkpoint de conclusão** | `checkpoint/f3.7-complete` → este commit documental final, somente local |
 
 ## 3. Última promoção comprovada
 
@@ -61,17 +62,16 @@ wheel verdes. O smoke carregou `ai-engineering-harness 0.1.0` de origem externa 
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico local conhecido. Faltam somente o commit/checkpoint local de conclusão e uma
-autorização nominal separada para publicar a branch/abrir o PR. Push, PR, merge, tag remota, exclusão
-de ref e promoção sobre o repositório de desenvolvimento não estão autorizados.
+Não há bloqueio técnico local conhecido. Produto `cb80f8b` e checkpoint local de conclusão foram
+criados; falta uma autorização nominal separada para publicar a branch/abrir o PR. Push, PR, merge,
+tag remota, exclusão de ref e promoção sobre o repositório de desenvolvimento não estão autorizados.
 
 Evidência negativa nova sempre prevalece sobre sucesso anterior e exige recongelamento/recertificação.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR A DOCUMENTAÇÃO FINAL, CRIAR O COMMIT LOCAL E checkpoint/f3.7-complete.
-DEPOIS, AGUARDAR AUTORIZAÇÃO SEPARADA PARA PUSH E ABERTURA DO PR F3.7.
+AGUARDAR AUTORIZAÇÃO SEPARADA PARA PUSH E ABERTURA DO PR F3.7.
 NÃO PUBLICAR TAG NEM EXECUTAR PROMOÇÃO NO REPOSITÓRIO DE DESENVOLVIMENTO.
 ```
 
