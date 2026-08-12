@@ -362,7 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "`PR_OPEN / CHECKS_PENDING`" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "31568908128" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier

@@ -19,10 +19,10 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.1 — resolver configuração no início da execução |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING`; aceite integral verde |
+| **Gate** | `PR_OPEN / CHECKS_PENDING`; aceite integral local verde |
 | **Executor ativo** | `Codex`, único escritor; autorização nominal registrada em `2026-08-12T14:35:03-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f5.1-resolve-config`, local e sem upstream |
+| **Branch** | `task/f5.1-resolve-config`, publicada e rastreando `origin/task/f5.1-resolve-config` |
 | **Baseline** | `main == origin/main == 846c59e78e6db9c9417ff1d8a69c560d2d08356e` antes da branch |
 | **Fechamento administrativo anterior** | PR #52 mesclado em `846c59e`; não gera reconciliação recursiva |
 | **CI do baseline** | run [31616226652](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31616226652), `workflow_dispatch`, success no SHA exato `846c59e` |
@@ -30,6 +30,7 @@
 | **Checkpoint READY** | `checkpoint/f5.1-ready` → `930cabd2b22672048357df2b91385c74af1b248f` |
 | **Checkpoint COMPLETE** | `checkpoint/f5.1-complete` → `f246feb2a70bb83f08ff31341525fd29bd6d10f8` |
 | **Produto F5.1** | `f246feb2a70bb83f08ff31341525fd29bd6d10f8` |
+| **PR F5.1** | [#53](https://github.com/Wf-ops1/Harnessinfra/pull/53), aberto e não draft; base `846c59e`, head inicial `436afa1` |
 | **Aceite local** | `792 passed, 5 skipped, 6 subtests passed`; Ruff, mypy, compileall, build e smoke da wheel verdes |
 
 O evento do run `31616226652` é registrado como `workflow_dispatch`; não é apresentado como CI de
@@ -66,17 +67,17 @@ tools, worktree e promoção estão fora da autorização.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A tarefa está concluída localmente, com commit/tag COMPLETE
-materializados, e aguarda autorização externa separada para publicação.
+Não há bloqueio técnico conhecido. A tarefa saiu de `COMPLETED_LOCAL / PROMOTION_PENDING` após a
+autorização nominal `autorizo` registrada em `2026-08-12T15:44:22-03:00`: somente a branch foi
+publicada e o PR #53 foi aberto. Os checkpoints permanecem exclusivamente locais.
 
-Push, abertura ou merge de PR, tag remota, exclusão de refs, force-push, bypass e início de F5.2 não
-estão autorizados.
+Merge do PR, tag remota, exclusão de refs, force-push, bypass e início de F5.2 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH E ABRIR O PR ÚNICO DA F5.1.
-NÃO PUBLICAR BRANCH, ABRIR PR, MESCLAR OU INICIAR F5.2.
+OBSERVAR TODOS OS CHECKS DO HEAD FINAL DO PR #53 E REGISTRAR QUALQUER EVIDÊNCIA NEGATIVA.
+NÃO MESCLAR, PUBLICAR TAGS OU INICIAR F5.2 SEM NOVA AUTORIZAÇÃO NOMINAL.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -85,8 +86,9 @@ NÃO PUBLICAR BRANCH, ABRIR PR, MESCLAR OU INICIAR F5.2.
 2. Confirme branch `task/f5.1-resolve-config`, baseline `846c59e`, checkpoint READY e workspace limpo
    ou contendo somente mudanças F5.1 registradas.
 3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist do dossiê.
-4. Execute somente a próxima ação exata; nenhum efeito remoto está autorizado.
+4. Execute somente a próxima ação exata; leitura dos checks está autorizada, mas merge e demais
+   efeitos remotos exigem nova autorização nominal.
 
 ---
 
-*Atualizado em: 2026-08-12T14:35:03-03:00 | Fonte: F5.1 + PR #52 + run 31616226652 + baseline 846c59e*
+*Atualizado em: 2026-08-12T15:44:22-03:00 | Fonte: F5.1 + PR #53 + PR #52 + run 31616226652 + baseline 846c59e*
