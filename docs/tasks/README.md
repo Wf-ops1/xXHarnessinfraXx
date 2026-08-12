@@ -20,13 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F3.7](active/F3.7.md) é o único dossiê ativo. Está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
-local `task/f3.7-safe-promotion`, criada de `main == origin/main == 9f75e35`. O checkpoint
-`checkpoint/f3.7-ready` aponta para `f84af68`; candidate/cherry-pick/recovery reais passaram gate
-focado 74, regressão integral 774/5/6, qualidade, build e smoke externo. A F4.8 está
-`PROMOTED / RECONCILED / CLOSED`: o PR #50 encerrou no head `a15b918`, passou 11/11 no run
-`31554671587`, foi incorporado pelo merge `9f75e35` e recebeu 11/11 na CI pós-merge `31557794240`.
-Checkpoints permanecem locais, a branch F3.7 ainda não foi publicada e nenhuma tag remota existe.
+Não há dossiê de implementação ativo. A [F3.7](completed/F3.7.md) está `PROMOTED` e em reconciliação
+administrativa local: o PR #51 encerrou no head `40f81375`, passou 11/11 no run `31568577459`, foi
+incorporado pelo merge `10d75408` e recebeu 11/11 na CI pós-merge `31568908128`. A branch
+`docs/promote-f3.7` foi criada desse merge certificado; publicação e PR administrativo permanecem
+pendentes. Checkpoints F3.7 continuam somente locais e nenhuma tag remota existe.
 
 ## Ledger concluído
 
@@ -61,6 +59,7 @@ Checkpoints permanecem locais, a branch F3.7 ainda não foi publicada e nenhuma 
 | F3 | F3.4 | [Path guard](completed/F3.4.md) | PR #25 / merge `8fac2d0` / pós-merge `31272502445` |
 | F3 | F3.6 | [Worktree Git externo](completed/F3.6.md) | PR #26 / merge `6757fbf` / pós-merge `31279967619` |
 | F3 | F3.5 | [Terminal seguro por argv](completed/F3.5.md) | PR #27 / merge `b6a4a24` / pós-merge `31285547886` |
+| F3 | F3.7 | [Promoção Git segura](completed/F3.7.md) | PR #51 / merge `10d75408` / pós-merge `31568908128`; reconciliação administrativa pendente |
 | F3 | F3.8 | [Edição real confinada e Serena MCP explícito](completed/F3.8.md) | PR #29 / merge `e6b5b84` / pós-merge `31295594376`; administrativo #30 / merge `c2aa89b` / pós-merge `31316853244` |
 | F4 | F4.1 | [Armazenamento íntegro do índice estrutural](completed/F4.1.md) | PR #32 / merge `12ce3b7` / pós-merge `31323952381`; administrativo #33 / merge `571a8eb` / pós-merge `31329231458` |
 | F4 | F4.2 | [Indexador Python AST commit-bound](completed/F4.2.md) | PR #34 / merge `212a9bf` / pós-merge `31345231098`; administrativo #35 / merge `3705693` / pós-merge `31346860397` |

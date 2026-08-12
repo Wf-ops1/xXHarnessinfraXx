@@ -133,7 +133,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "571a8eb" in readme
     assert "31329231458" in readme
     assert "A F4.8 foi promovida pelo PR #49" in readme
-    assert "A F3.7 concluiu localmente" in readme
+    assert "A F3.7 foi promovida pelo PR #51" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
     assert "212a9bf" in readme
@@ -162,23 +162,18 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
-    assert "31567250425" in panel
+    assert "F3.7 `PROMOTED / RECONCILIATION_LOCAL_READY`" in panel
+    assert "31568577459" in panel
+    assert "31568908128" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/51" in panel
-    assert "DEC-015" in panel
-    assert "docs/tasks/active/F3.7.md" in panel
+    assert "DEC-014" in panel
+    assert "docs/tasks/completed/F3.7.md" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
-    assert "github.com/Wf-ops1/Harnessinfra/pull/49" in panel
-    assert "31551685950" in panel
-    assert "github.com/Wf-ops1/Harnessinfra/pull/50" in panel
-    assert "a15b918" in panel
-    assert "31554671587" in panel
-    assert "9f75e35db38fc6648497c01bd8f81dcdecec8029" in panel
-    assert "31557794240" in panel
+    assert "10d75408f10ce83ffa232f117d203aa2f26bedb0" in panel
     assert "F4.8" in panel
     assert "F3.7 — promoção Git segura" in panel
-    assert "candidate commit real e singular" in panel
     assert "git cherry-pick <candidate_sha>" in panel
+    assert "F5.1" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
@@ -193,7 +188,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "A F4.8 promovida" in user_guide
     assert "targeted → full" in lifecycle
     assert "F4.8 `PROMOTED`" in lifecycle
-    assert "F3.7 `COMPLETED_LOCAL / PROMOTION_PENDING`" in lifecycle
+    assert "F3.7 `PROMOTED`" in lifecycle
     assert "cherry-pick único" in lifecycle
     assert "F4.8 promovida" in walkthrough
     assert "promoção F3.7 usa candidate/cherry-pick reais" in walkthrough

@@ -5,95 +5,87 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F3.7](docs/tasks/active/F3.7.md): único dossiê ativo e contrato da promoção Git segura.
-3. [F4.8](docs/tasks/completed/F4.8.md): última tarefa promovida e reconciliada.
-4. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e tarefa F3.7.
-5. [DEC-013](docs/decisions/DEC-013-fase3-ordem-operacional.md),
-   [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e
-   [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md).
+2. [F3.7](docs/tasks/completed/F3.7.md): última implementação promovida, em reconciliação administrativa.
+3. [F4.8](docs/tasks/completed/F4.8.md): fechamento anterior da Fase 4.
+4. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 5.
+5. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e
+   [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md): reconciliação e ownership promovido.
 6. [Regras dos agentes](.agents/AGENTS.md) e [índice histórico](docs/tasks/README.md).
 
 ## 2. Estado atual
 
 | Campo | Estado observado |
 |---|---|
-| **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.8 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
-| **Fase ativa** | Fase 3 — fechamento da promoção Git segura após gates F4 promovidos |
-| **Tarefa ativa** | F3.7 — promoção Git segura |
-| **Gate** | F3.7 R2 `COMPLETED_LOCAL / PROMOTION_PENDING`; recertificação integral aguarda publicação |
-| **Executor ativo** | `Codex`, único escritor; autorizado em `2026-08-12T00:48:45-03:00` |
+| **Fases concluídas** | Fases 0–4 no escopo planejado; todas as tarefas F3/F4 e corretivas aplicáveis foram promovidas |
+| **Fase ativa** | Pausa administrativa pós-F3.7; nenhuma implementação ativa |
+| **Tarefa ativa** | nenhuma tarefa ativa; somente reconciliação documental da F3.7 |
+| **Gate** | F3.7 `PROMOTED / RECONCILIATION_LOCAL_READY`; publicação administrativa pendente |
+| **Executor ativo** | `Codex`, único escritor da reconciliação; autorizado em `2026-08-12T12:35:21-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f3.7-safe-promotion`, rastreando `origin/task/f3.7-safe-promotion`, criada de `9f75e35db38fc6648497c01bd8f81dcdecec8029` |
-| **Main atual** | `main == origin/main == 9f75e35db38fc6648497c01bd8f81dcdecec8029` |
+| **Branch** | `docs/promote-f3.7`, local e sem upstream, criada do merge certificado |
+| **Main certificada** | `main == origin/main == 10d75408f10ce83ffa232f117d203aa2f26bedb0` |
+| **PR F3.7** | [#51](https://github.com/Wf-ops1/Harnessinfra/pull/51), head final `40f81375f93706352fd19b5ef280ebe674d5249d` |
+| **CI final do PR** | run [31568577459](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31568577459), 11/11 success |
+| **CI pós-merge** | run [31568908128](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31568908128), 11/11 success no merge exato |
+| **Checkpoints F3.7** | READY/COMPLETE de R0, R1 e R2 somente locais; nenhuma tag publicada |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
-| **Checkpoint READY** | `checkpoint/f3.7-ready` → commit documental deste gate |
-| **Produto local** | `cb80f8b2d86b9ff38075e6f0068e32b62ba4dbb5` — produto intacto; certificação reaberta por falha de teste |
-| **Checkpoint de conclusão inicial** | `checkpoint/f3.7-complete` → `ac1d3e2`, somente local |
-| **Reparo R1** | `d31227694344ea89303bfb6853eb238c4ca6d8f7` — prova direta do cherry-pick, produto inalterado |
-| **Checkpoint R1** | `checkpoint/f3.7-r1-ready` → `6333217`; `checkpoint/f3.7-r1-complete` → recertificação final, somente locais |
-| **Checkpoint R2** | `checkpoint/f3.7-r2-ready` → `ef0cf5d`; `checkpoint/f3.7-r2-complete` → recertificação final, somente locais |
-| **Reparo R2** | `9cf15d43e906fc8c3611ca4c6c0863218e33784c` — duas provas E2E diretas, produto inalterado |
-| **Pull request** | [#51](https://github.com/Wf-ops1/Harnessinfra/pull/51), não-draft contra `main`; head falho `5c80162` |
+| **Próxima tarefa planejada** | F5.1 — resolver configuração no início da execução; ainda não autorizada |
 
 ## 3. Última promoção comprovada
 
 | Evidência | Resultado observado |
 |---|---|
-| Tarefa | F4.8 — repair loop orientado pelos gates |
-| Produto | [PR #49](https://github.com/Wf-ops1/Harnessinfra/pull/49), head `f9c8c2d`; merge `72f89e3`; pós-merge `31551685950`, 11/11 |
-| Reconciliação | [PR #50](https://github.com/Wf-ops1/Harnessinfra/pull/50), head `a15b918`; run `31554671587`, 11/11 |
-| Fechamento administrativo | merge `9f75e35db38fc6648497c01bd8f81dcdecec8029`; run pós-merge `31557794240`, 11/11 |
-| Estado | F4.8 `PROMOTED / RECONCILED / CLOSED`; PR administrativo não gera reconciliação recursiva |
-| Fronteira | branches remotas preservadas; checkpoints F4.8 somente locais; nenhuma tag publicada |
+| Tarefa | F3.7 — promoção Git segura |
+| Produto | `cb80f8b2d86b9ff38075e6f0068e32b62ba4dbb5`; R1/R2 alteraram somente testes |
+| Pull request | PR #51; head final `40f81375`; run `31568577459`, 11/11 success |
+| Promoção | merge `10d75408f10ce83ffa232f117d203aa2f26bedb0`; pós-merge `31568908128`, 11/11 success |
+| Reconciliação | `LOCAL_READY / PUBLICATION_PENDING` em `docs/promote-f3.7`; gate documental `27 passed, 6 subtests passed` |
+| Fronteira | branch de produto remota preservada; checkpoints somente locais; nenhuma tag/ref removida |
 
-Nenhuma evidência negativa posterior foi observada. A F3.7 começou somente após esse fechamento e
-autorização nominal separada.
+As falhas R0/R1 permanecem documentadas e perderam precedência somente após o R2 e as duas CIs finais
+verdes. Nenhuma evidência negativa posterior foi observada. O atraso corrente é exclusivamente
+documental e isolado pela DEC-014.
+
+Evidência negativa nova sempre prevalece e exige correção sem relaxamento seguida de recertificação
+integral antes de restaurar qualquer estado positivo.
 
 ## 5. Tarefa ativa
 
-O baseline F3.7 comprovou SHA sintético, `git add .` no checkout configurado e fallback positivo. O
-produto local substituiu esse caminho por candidate commit real e singular no worktree F3.6,
-referência durável, composição opt-in no lifecycle, suíte full vinculada ao candidate SHA, aprovação
-canônica e promoção exclusivamente por `git cherry-pick <candidate_sha>`.
+Não existe tarefa de implementação ativa. A F3.7 cria um candidate commit real no worktree F3.6,
+exige aprovação `APPROVED` e a suíte integral no mesmo SHA, revalida branch/base/limpeza e promove
+somente por `git cherry-pick <candidate_sha>`. Dry-run não altera o checkout; write-ahead, outcome e
+recovery impedem repetição cega e SHA sintético/fallback.
 
-O checkout original é revalidado imediatamente antes do efeito. Base divergente termina em
-`BLOCKED_BASE_CHANGED`; dry-run preserva o checkout e termina em `DRY_RUN_COMPLETED`; write-ahead,
-outcome e recovery impedem repetição cega após interrupção. Sem injeção F3.7, a semântica promovida
-F4.7/F4.8 permanece compatível.
+O R1 e o R2 corrigiram premissas temporais somente nos testes: um cherry-pick byte-idêntico pode
+legitimamente preservar o SHA. As provas passaram a observar diretamente exatamente uma operação
+mutante, preservando parent, árvore, conteúdo, estado, eventos, aprovação e full suite commit-bound.
 
-Certificação observada: gate focado `74 passed`; regressão integral única `774 passed, 5 skipped,
-6 subtests passed`; mypy em 106 arquivos, Ruff, compileall, build PEP 517 e smoke oficial offline da
-wheel verdes. O smoke carregou `ai-engineering-harness 0.1.0` de origem externa ao checkout.
+O head final recebeu 11/11 checks no PR e o merge exato recebeu 11/11 na CI de `push`. A F3.7 está
+`PROMOTED`; resta validar e publicar a reconciliação administrativa exclusivamente documental.
 
 ## 6. Bloqueios atuais
 
-O R1 corrigiu a assertion unitária. No run
-[31567250425](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31567250425), a suíte unitária
-Ubuntu ficou verde (`749/1/6`), mas duas assertions equivalentes remanesceram no E2E: Python 3.11
-falhou `2/26/1`, Python 3.14 falhou `1/27/1`, e `CI required` agregou failure. Os oito outros jobs
-passaram. O R2 corrigiu somente esses E2E e recertificou pelo menos `10/10` cada, gate focado `74`,
-regressão integral `774/5/6`, mypy/Ruff/compileall, build e smoke offline. Produto e `src/` permanecem
-intactos. Merge continua bloqueado até 11/11 checks verdes no novo head remoto.
+Não há bloqueio técnico conhecido. A reconciliação está `LOCAL_READY / PUBLICATION_PENDING`:
+publicação, abertura e merge do PR administrativo exigem autoridade externa explícita. F5.1 não pode
+começar antes do fechamento desse PR, de sua CI pós-merge verde e de nova autorização nominal.
 
-Tag remota, exclusão de ref e início de outra tarefa não estão autorizados.
+Tag remota, exclusão de refs e início de outra tarefa não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR A RECERTIFICAÇÃO R2 NO PR #51 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
-MESCLAR SOMENTE APÓS 11/11 VERDES NO SHA EXATO.
-NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR OUTRA TAREFA.
+AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUSH E ABERTURA DO PR ADMINISTRATIVO F3.7.
+NÃO MESCLAR, CRIAR TAG, REMOVER REF OU INICIAR F5.1.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia este arquivo e `docs/tasks/active/F3.7.md` integralmente.
-2. Leia as seções 1.1–1.2 e F3.7 do plano, além das DEC-013/014/015.
-3. Confirme branch `task/f3.7-safe-promotion`, baseline/main `9f75e35`, CI pós-merge
-   `31557794240`, workspace limpo e Python 3.12.13.
-4. Confirme `checkpoint/f3.7-ready == f84af68`, gate focado 74, regressão integral 774/5/6 e
-   build/smoke verdes antes de criar ou validar `checkpoint/f3.7-complete`.
+1. Leia este arquivo e `docs/tasks/completed/F3.7.md` integralmente.
+2. Confirme branch `docs/promote-f3.7`, base `10d75408`, PR #51/head `40f81375` e runs
+   `31568577459`/`31568908128`, ambos 11/11.
+3. Confirme que `docs/tasks/active/` contém apenas README e que o diff não toca produto/CI/dependências.
+4. Execute somente a próxima ação exata; F5.1 continua planejada e não autorizada.
 
 ---
 
-*Atualizado em: 2026-08-12T03:01:02-03:00 | Fonte: F3.7 R2 9cf15d4/774/5/6 + PR #51 + CI histórica 31567250425 + R1 + F3.6 + F4.7/F4.8 + DEC-013/014/015*
+*Atualizado em: 2026-08-12T12:35:21-03:00 | Fonte: F3.7 + PR #51 + runs 31568577459/31568908128 + merge 10d75408 + DEC-014/015*

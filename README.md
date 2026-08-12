@@ -10,8 +10,8 @@ execução autônoma segura sobre um repositório externo ainda não está pront
 continuação de model-turn e durabilidade/policy do tool loop passaram pelo realinhamento; os
 primitivos de worktree Git, terminal por `argv` e edição confinada já são reais. O registry das tools
 é opt-in e injetável; sua ligação automática ao lifecycle, rollback e governança operacional
-permanece incompleta. A promoção Git segura F3.7 existe somente por composição opt-in explícita e
-ainda aguarda promoção remota.
+permanece incompleta. A promoção Git segura F3.7 foi promovida, mas continua disponível somente por
+composição opt-in explícita; CLI/defaults ainda não constroem automaticamente essa fronteira.
 
 Não use `harness run`, `harness doctor`, `harness verify` ou `harness rollback` como garantia de segurança em um
 repositório valioso. Embora a Fase 2 esteja implementada, as Fases 3–7 ainda não estão concluídas;
@@ -60,7 +60,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 - **Fase 2 concluída:** record atômico, storage concorrente, execução por grafo, FSM por eventos,
   retomada vinculada ao artefato/configuração originais e retry que consome erro, tool call,
   stdout/stderr redigidos, gates, diff, orçamento e instrução de correção.
-- **Fase 4 iniciada:** F3.1–F3.6, F3.8 e as corretivas F3.C1/F3.C2 aplicáveis foram
+- **Fases 3 e 4 concluídas no escopo planejado:** F3.1–F3.8, F4.1–F4.8 e as corretivas aplicáveis foram
   promovidas. A F3.8 entrou em `main` pelo PR #29 no merge `e6b5b84`, com CI pós-merge `31295594376`
   verde; a reconciliação administrativa foi incorporada pelo PR #30 no merge `c2aa89b`, e a CI
   pós-merge `31316853244` concluiu 11/11 checks verdes. A correção transversal do PR #31 foi
@@ -113,10 +113,11 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   checks no run `31550975708`, foi incorporado pelo merge `72f89e3` e recebeu 11/11 na CI pós-merge
   `31551685950`. A reconciliação administrativa encerrou no head `a15b918`, passou 11/11 no run
   `31554671587`, foi incorporada pelo PR #50 no merge `9f75e35` e recebeu 11/11 na CI pós-merge
-  `31557794240`. Nenhuma tag remota F4.8 existe. A F3.7 concluiu localmente no estado
-  `COMPLETED_LOCAL / PROMOTION_PENDING`: o gate focado passou `74` testes, a regressão integral passou
-  `774 passed, 5 skipped, 6 subtests passed`, e mypy, Ruff, compileall, build e smoke externo da wheel
-  ficaram verdes. A branch ainda não foi publicada e nenhuma tag remota F3.7 existe.
+  `31557794240`. Nenhuma tag remota F4.8 existe. A F3.7 foi promovida pelo PR #51 após duas correções
+  test-only: o head final `40f81375` recebeu 11/11 checks no run `31568577459`, foi incorporado pelo
+  merge `10d75408` e recebeu 11/11 na CI pós-merge `31568908128`. A recertificação integral R2 passou
+  `774 passed, 5 skipped, 6 subtests passed`, além de mypy, Ruff, compileall, build e smoke externo da
+  wheel. A composição permanece opt-in e nenhuma tag remota F3.7 existe.
 
 ## Dívidas técnicas críticas
 
