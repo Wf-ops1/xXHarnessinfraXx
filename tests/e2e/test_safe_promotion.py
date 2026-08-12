@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -47,6 +48,51 @@ def _git(repository: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
         text=True,
         encoding="utf-8",
     )
+
+
+_MUTATING_GIT_COMMANDS = frozenset(
+    {
+        "add",
+        "am",
+        "apply",
+        "checkout",
+        "cherry-pick",
+        "commit",
+        "merge",
+        "rebase",
+        "reset",
+        "restore",
+        "revert",
+        "switch",
+        "update-ref",
+    }
+)
+
+
+def _record_mutating_git_operations(
+    manager: PromotionManager,
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[tuple[str, ...]]:
+    operations: list[tuple[str, ...]] = []
+    run_git = manager._run_git
+
+    def record_git_operation(
+        arguments: Collection[str],
+        *,
+        cwd: Path,
+        allowed_returncodes: Collection[int] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        operation = tuple(arguments)
+        if operation and operation[0] in _MUTATING_GIT_COMMANDS:
+            operations.append(operation)
+        return run_git(
+            arguments,
+            cwd=cwd,
+            allowed_returncodes=allowed_returncodes,
+        )
+
+    monkeypatch.setattr(manager, "_run_git", record_git_operation)
+    return operations
 
 
 class _FailOnceCasStorage(AtomicFileStateStorage):
@@ -278,15 +324,17 @@ def _approved_candidate(
 
 def test_approved_verified_candidate_is_promoted_by_one_real_cherry_pick(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = _fixture(tmp_path)
     storage = AtomicFileStateStorage(fixture.repository)
     execution_id = "exec-f37-live"
-    service, _, candidate_record = _approved_candidate(
+    service, manager, candidate_record = _approved_candidate(
         fixture,
         storage,
         execution_id,
     )
+    mutating_operations = _record_mutating_git_operations(manager, monkeypatch)
 
     suite = service.verify(execution_id)
     verified = storage.load_execution(execution_id)
@@ -299,7 +347,9 @@ def test_approved_verified_candidate_is_promoted_by_one_real_cherry_pick(
     assert verified.approval_status is ApprovalStatus.APPROVED
     assert promoted.current_state is ExecutionState.COMPLETED
     assert promoted.promotion_commit_sha is not None
-    assert promoted.promotion_commit_sha != candidate_record.candidate_commit_sha
+    assert mutating_operations == [
+        ("cherry-pick", candidate_record.candidate_commit_sha)
+    ]
     assert _git(fixture.repository, "rev-parse", "HEAD^").stdout.strip().lower() == (fixture.base_sha)
     assert (fixture.repository / "tracked.txt").read_text(encoding="utf-8") == ("candidate\n")
     event_types = tuple(event.event_type for event in storage.load_events(execution_id))
@@ -476,15 +526,17 @@ def test_promotion_requires_explicit_approval_even_after_full_suite(tmp_path: Pa
 
 def test_real_change_reaches_original_only_after_approval_and_full_suite(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = _fixture(tmp_path)
     storage = AtomicFileStateStorage(fixture.repository)
     execution_id = "exec-f37-e2e"
-    service, _, candidate = _approved_candidate(
+    service, manager, candidate = _approved_candidate(
         fixture,
         storage,
         execution_id,
     )
+    mutating_operations = _record_mutating_git_operations(manager, monkeypatch)
 
     assert candidate.candidate_commit_sha is not None
     assert _git(fixture.repository, "rev-parse", "HEAD").stdout.strip().lower() == (
@@ -500,7 +552,7 @@ def test_real_change_reaches_original_only_after_approval_and_full_suite(
     assert verified.approval_status is ApprovalStatus.APPROVED
     assert promoted.current_state is ExecutionState.COMPLETED
     assert promoted.promotion_commit_sha is not None
-    assert promoted.promotion_commit_sha != candidate.candidate_commit_sha
+    assert mutating_operations == [("cherry-pick", candidate.candidate_commit_sha)]
     assert _git(fixture.repository, "rev-parse", "HEAD").stdout.strip().lower() == (
         promoted.promotion_commit_sha
     )
