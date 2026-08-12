@@ -42,11 +42,11 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
-| Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limite e resume por digest | Efeito interrompido sem outcome exige intervenção; executores dependem de backends injetados ainda indisponíveis no produto | Efeitos reais e repair loop completo integrados nas Fases 3–6 |
+| Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limites duráveis e resume por digest. A F4.8 local adiciona o reparo orientado pela suíte canônica | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | Policy compilada, continuação nativa, write-ahead/outcome durável, replay ambíguo fail-closed, deny-wins, budget e cancelamento possuem testes após F3.C2; a factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; aprovação vinculada ao conteúdo ainda não aciona esses efeitos no produto | Integração automática das tools, promoção F3.7 e gates seguintes |
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
-| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`. A F4.7 promovida persiste write-ahead/outcome e payloads commit-bound, recupera a suíte e impede `COMPLETED` sem ao menos um gate obrigatório executado e todos os obrigatórios aprovados | Reprovação real permanece em `VERIFYING`; repair/reexecução pertencem à F4.8. O R1 corrigiu somente uma expectativa concorrente excessivamente estrita, sem alterar produto | Matriz integral fail-closed com repair/recovery operacional |
+| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`; a F4.7 promovida persiste resultados commit-bound e guarda `COMPLETED`. A F4.8 local consome somente essa reprovação, agenda o corretor compilado e exige targeted → full com limites de nó, execução, tokens, custo e tempo | F4.8 ainda aguarda promoção; seu E2E injeta backend e provider de worktree explicitamente, sem alegar composição automática do produto | Matriz integral fail-closed com repair/recovery integrada ao lifecycle padrão |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` valida repo/branch/cleanliness/SHA, cria `git worktree` externo, persiste referência atômica e fornece `PathGuard` canônico com cleanup explícito | O worktree real ainda não está integrado ao lifecycle/tools; promoção usa dry-run/SHA sintético e rollback é parcial | Candidate commit, cherry-pick e `git revert` reais |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
@@ -105,8 +105,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   promoção como `POST_PROMOTION_BLOCKED`. O R1 test-only em `2841346a` passou a corrida `20/20`, a
   regressão de `751 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke isolado. O PR
   corretivo #47 encerrou no head `b79e14d2` com 11/11 no run `31533353223`, foi incorporado no merge
-  `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A F4.7 está promovida e sua reconciliação
-  administrativa foi publicada no PR #48; F4.8 e F3.7 não foram iniciadas.
+  `4aa701a` e recebeu 11/11 na CI pós-merge `31534918672`. A reconciliação administrativa F4.7 foi
+  incorporada pelo PR #48 no merge `d4e34c7`, cuja CI pós-merge `31541047111` também concluiu 11/11.
+  A F4.8 foi concluída localmente no produto `8e5e11d`: a regressão final passou com `758 passed,
+  5 skipped`, qualidade, build e smoke externo da wheel verdes. O PR #49 foi aberto contra `main` no
+  head inicial `5bf0d75` e aguarda checks; nenhum merge ou tag remota F4.8 ocorreu, e a F3.7 ainda não
+  foi iniciada.
 
 ## Dívidas técnicas críticas
 
@@ -135,7 +139,9 @@ operacionais:
   e bloqueia suítes não executáveis; a F4.6 promovida detecta stack/configuração, resolve a suíte no
   worktree e preserva no terminal o launcher ativo selecionado por `sys.prefix`; a F4.7 promovida
   persiste cada outcome e impede `COMPLETED` sem suíte obrigatória aprovada. O R1 concorrente restaurou
-  a CI no PR #47 e no merge `4aa701a`; repair/reexecução operacional continua pertencendo à F4.8;
+  a CI no PR #47 e no merge `4aa701a`; a F4.8 local liga essa reprovação ao `on_failure` compilado,
+  persiste orçamento/deadline/contexto e exige targeted seguido da suíte completa, mas ainda aguarda
+  promoção e não integra automaticamente worktree/provider/tools ao lifecycle padrão;
 - [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
   executar probes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) produz SHA sintético em

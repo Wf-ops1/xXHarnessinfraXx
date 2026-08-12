@@ -361,9 +361,9 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING" in panel
-    assert "F4.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
-    assert "31534918672" in panel
+    assert "F4.8 `PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
+    assert "31541047111" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -460,10 +460,11 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
     assert not (ACTIVE_ROOT / "F4.7.md").exists()
     assert (COMPLETED_ROOT / "F4.7.md").is_file()
-    assert "F4.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
+    assert "F4.8 `PR_OPEN / CHECKS_PENDING`" in panel
     assert "docs/tasks/completed/F4.7.md" in panel
-    assert "4aa701a9394e5bdcb9c14dc5a9a715638c183258" in panel
-    assert "31534918672" in panel
+    assert "d4e34c7404d28a10969ab4b322748d01ae5805bf" in panel
+    assert "31541047111" in panel
     assert "> **Gate:** `READY`" in f4_7_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_7_dossier
     assert "checkpoint/f4.7-ready" in f4_7_dossier
@@ -508,7 +509,7 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "31459427729" in f4_5_dossier
     assert "completed/F4.7.md" in task_index
     assert "corretivo #47 / merge `4aa701a` / pós-merge `31534918672`" in task_index
-    assert "administrativo #48 aberto" in task_index
+    assert "administrativo #48 / merge `d4e34c7` / pós-merge `31541047111`" in task_index
     assert not (ACTIVE_ROOT / "F4.5.md").exists()
     assert "> **Gate:** `READY`" in f4_5_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_5_dossier

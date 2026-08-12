@@ -35,8 +35,10 @@ from .execution_lifecycle import (
     VerificationLifecycleIntegrityError,
     VerificationLifecyclePrerequisiteError,
     VerificationRequiredError,
+    VerificationRetryExhaustedError,
 )
 from .graph_executor import (
+    VERIFICATION_REPAIR_SCHEDULED,
     ApprovalPauseHandler,
     ArtifactExecutionMismatchError,
     GraphClockError,
@@ -53,6 +55,7 @@ from .graph_executor import (
     RetryContextIntegrityError,
     RetryExhaustedError,
     UnknownCurrentNodeError,
+    VerificationRepairRequest,
 )
 from .node_executors import (
     AgentNodeExecutor,
@@ -124,6 +127,7 @@ __all__ = [
     "VALID_STATE_TRANSITIONS",
     "VERIFICATION_GATE_RECORDED",
     "VERIFICATION_GATE_STARTED",
+    "VERIFICATION_REPAIR_SCHEDULED",
     "VERIFICATION_SUITE_RECORDED",
     "AgentNodeExecutor",
     "ApprovalLifecycleIntegrityError",
@@ -212,7 +216,9 @@ __all__ = [
     "UnsupportedNodeTypeError",
     "VerificationLifecycleIntegrityError",
     "VerificationLifecyclePrerequisiteError",
+    "VerificationRepairRequest",
     "VerificationRequiredError",
+    "VerificationRetryExhaustedError",
     "WorkflowState",
     "WorkflowStateMachine",
 ]

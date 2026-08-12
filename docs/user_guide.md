@@ -87,11 +87,13 @@ administrativa #37 foram promovidas, ambas com CI pós-merge verde. A implementa
 - recupera um plano gerado em resume sem segunda chamada; efeito iniciado sem outcome bloqueia em
   `BLOCKED_PREREQUISITE`.
 
-F4.4, F4.C1 e F4.5 foram promovidas. A implementação local F4.6 exige worktree validado, detecta a
-stack pela configuração real, resolve toda a suíte em `argv` e falha `ERROR_PREREQUISITE` antes do
-primeiro subprocesso se configuração ou ferramenta faltar. Isso não transforma o protótipo em
-execução autônoma porque o registry padrão de executores continua vazio e F4.7–F4.8 ainda precisam
-persistir/guardar e reparar os gates.
+F4.4, F4.C1, F4.5, F4.6 e F4.7 foram promovidas. A F4.6 exige worktree validado, detecta a stack pela
+configuração real, resolve toda a suíte em `argv` e falha `ERROR_PREREQUISITE` antes do primeiro
+subprocesso se configuração ou ferramenta faltar. A F4.7 persiste os resultados commit-bound e guarda
+`COMPLETED`. A F4.8 concluída localmente transforma somente essa reprovação canônica em contexto para
+o `on_failure` compilado, executa os gates afetados e depois a suíte integral, com limites duráveis de
+nó, execução, tokens, custo e tempo. Isso ainda não torna o protótipo autônomo: o registry padrão de
+executores continua vazio, worktree/provider são injetados e a F4.8 aguarda promoção.
 
 ## Teste controlado de `init`
 
@@ -109,8 +111,8 @@ commitado.
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
 - rollback seguro e gates pós-reversão;
 - doctor confiável.
-- publicação e CI POSIX do reparo R3 local do launcher por `sys.prefix` e preservação no
-  `TerminalAdapter` no PR #44, seguidas de persistência/guarda/retry em F4.7–F4.8.
+- publicação/CI remota da F4.8 e composição automática de worktree, provider e tools no lifecycle
+  padrão; o E2E local usa dependências explicitamente injetadas.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F4.7](docs/tasks/completed/F4.7.md): dossiê promovido em reconciliação administrativa.
+2. [F4.8](docs/tasks/active/F4.8.md): único dossiê ativo e escopo congelado do repair loop.
 3. [Plano principal](docs/plano_implementacao_harness_operacional.md): requisitos e dependências.
 4. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md) e
    [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md): reconciliação e ownership.
@@ -17,16 +17,18 @@
 |---|---|
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.7 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 4 — contexto estrutural, planejamento e gates baseados em evidência |
-| **Tarefa ativa** | nenhuma tarefa ativa de implementação; reconciliação administrativa da F4.7 |
-| **Gate** | F4.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T14:40:10-03:00` |
+| **Tarefa ativa** | F4.8 — repair loop orientado pelos gates |
+| **Gate** | F4.8 `PR_OPEN / CHECKS_PENDING`; certificação local verde, CI remota ainda não concluída |
+| **Executor ativo** | `Codex`, único escritor; início nominal autorizado em `2026-08-11T19:59:55-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f4.7`, criada de `main == origin/main == 4aa701a`; upstream publicado |
-| **Main atual** | `main == origin/main == 4aa701a9394e5bdcb9c14dc5a9a715638c183258` |
-| **CI pós-merge** | run `31534918672`, evento `push`: 11/11 success no SHA exato de `main` |
+| **Branch** | `task/f4.8-verification-repair-loop`, publicada e rastreando `origin/task/f4.8-verification-repair-loop`; produto `8e5e11d81c685c53ba349bab4d95cdd61ee19ba6` |
+| **Checkpoint READY** | `checkpoint/f4.8-ready` → `bb6752c1f1524b8c747cddc55e74ed7e6491e845` |
+| **PR F4.8** | [#49](https://github.com/Wf-ops1/Harnessinfra/pull/49), aberto contra `main`; head inicial `5bf0d75e6878f0d1362e0b2053a228a95ec80cef`; checks pendentes |
+| **Main atual** | `main == origin/main == d4e34c7404d28a10969ab4b322748d01ae5805bf` |
+| **CI pós-merge** | run `31541047111`, evento `push`: 11/11 success no SHA exato de `main` |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **PRs F4.7** | [#46](https://github.com/Wf-ops1/Harnessinfra/pull/46) incorporado em `f7aa43a`; corretivo [#47](https://github.com/Wf-ops1/Harnessinfra/pull/47) incorporado em `4aa701a` |
-| **PR administrativo** | [#48](https://github.com/Wf-ops1/Harnessinfra/pull/48), aberto no head inicial `e198e5b7`; checks pendentes |
+| **PR administrativo** | [#48](https://github.com/Wf-ops1/Harnessinfra/pull/48), incorporado em `d4e34c7`; pós-merge verde |
 
 ## 3. Última promoção comprovada
 
@@ -61,33 +63,46 @@ O R1 em `2841346a` alterou somente o teste, passou a corrida `20/20` e toda a re
 e seu merge receberam 11/11 nos runs `31533353223` e `31534918672`, inclusive Windows 3.11 e
 `CI required`. O dossiê foi marcado `PROMOTED` e movido para `completed/` nesta reconciliação.
 
-Repair/retry, orçamento e reexecução pertencem à F4.8; promoção/rollback Git pertencem à F3.7. A
-F3.7 permanece depois da F4.7 e de seu fechamento administrativo. Essas tarefas não podem começar
-antes do PR administrativo e de sua CI pós-merge verde.
+A F4.8 foi autorizada após o fechamento administrativo da F4.7 e implementada no commit local
+`8e5e11d`. O lifecycle agora transforma somente a última reprovação canônica F4.7 em `RetryContext`,
+agenda o `on_failure` compilado pelo `GraphExecutor` e persiste contexto, deadline, policy, orçamento e
+cursor antes do efeito corretivo. Depois do reparo, executa apenas os gates antes reprovados e, se
+passarem, exige a suíte integral no mesmo commit limpo antes de `COMPLETED`. Limites por nó, execução,
+tokens, custo contábil da policy e tempo terminam duravelmente em `FAILED_RETRY_EXHAUSTED`.
+
+O E2E real cobre commit quebrado, reparo com novo commit, targeted → full, recuperação de crash no CAS
+do cursor sem efeito duplicado e exaustão dos quatro orçamentos. A regressão final concluiu
+`758 passed, 5 skipped`; mypy em 106 módulos, Ruff, compileall, diff check, build PEP 517 e smoke externo
+da wheel `0.1.0` estão verdes.
+
+A F4.7 está `PROMOTED / RECONCILED / CLOSED`. A F3.7 permanece depois da conclusão e reconciliação
+da F4.8; promoção/cherry-pick/revert Git continuam fora do escopo atual.
 
 ## 6. Bloqueios atuais
 
-Não há bloqueio técnico da F4.7. O PR administrativo #48 está aberto; seu head documental final ainda
-precisa passar em todos os checks. Merge administrativo, tag remota, exclusão de refs e início de
-F4.8/F3.7 exigem autorização nominal nova.
+Não resta bloqueio técnico local da F4.8. A branch e o PR #49 foram publicados, mas a promoção segue
+bloqueada até `CI required=success`, revisão do head final e autorização explícita de merge. Os
+checkpoints continuam somente locais; nenhum merge, tag remota ou mudança em `main` ocorreu. A F3.7
+continua fora do escopo até promoção e reconciliação da F4.8.
 
 Evidência negativa sempre prevalece sobre sucesso anterior e exige recertificação integral.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR O REGISTRO DO PR #48 E OBSERVAR TODOS OS CHECKS DO HEAD FINAL.
-NÃO MESCLAR SEM AUTORIZAÇÃO NOMINAL NOVA.
+AGUARDAR E AUDITAR TODOS OS CHECKS DO PR #49 NO HEAD FINAL.
+NÃO FAZER MERGE, TAG REMOTA, RECONCILIAÇÃO OU INICIAR F3.7 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia este arquivo e `docs/tasks/completed/F4.7.md` integralmente.
+1. Leia este arquivo, `docs/tasks/active/F4.8.md` e `docs/tasks/completed/F4.7.md` integralmente.
 2. Leia as seções 1.1–1.2/Fase 4 do plano e as DEC-014/DEC-015.
-3. Confirme branch `docs/promote-f4.7`, main `4aa701a`, PRs #46/#47/#48, runs
-   `31528005230`/`31528955883`/`31533353223`/`31534918672` e runtime 3.12.13.
+3. Confirme branch `task/f4.8-verification-repair-loop`, PR #49, produto `8e5e11d`, checkpoint READY
+   `bb6752c`, main `d4e34c7`, run pós-administrativo `31541047111`, regressão `758 passed` e runtime
+   3.12.13.
 4. Execute somente a próxima ação exata; divergência de escopo exige parar e recongelar.
 
 ---
 
-*Atualizado em: 2026-08-11T18:21:21-03:00 | Fonte: PRs #46/#47/#48 + CI pós-merge 31534918672 + DEC-014*
+*Atualizado em: 2026-08-11T21:37:54-03:00 | Fonte: F4.8 + PR #49 + produto 8e5e11d + PR #48 + CI 31541047111 + DEC-015*

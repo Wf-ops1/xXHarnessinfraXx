@@ -98,12 +98,13 @@ class RetryBudget(_StrictFrozenModel):
 
     remaining_tokens: int = Field(ge=0)
     remaining_cost_usd: float = Field(ge=0)
+    remaining_time_seconds: float | None = Field(default=None, ge=0)
 
-    @field_validator("remaining_cost_usd")
+    @field_validator("remaining_cost_usd", "remaining_time_seconds")
     @classmethod
-    def require_finite_cost(cls, value: float) -> float:
-        if not math.isfinite(value):
-            raise ValueError("remaining retry cost must be finite")
+    def require_finite_budget_value(cls, value: float | None) -> float | None:
+        if value is not None and not math.isfinite(value):
+            raise ValueError("remaining retry budget values must be finite")
         return value
 
 
@@ -155,6 +156,7 @@ class RetryContext(_StrictFrozenModel):
 
     origin_node_id: _NonEmptyStr
     current_attempt: int = Field(ge=1)
+    failed_commit_sha: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     model_error: _NonEmptyStr | None = None
     failed_tool_call: FailedToolCall | None = None
     redacted_stdout: str

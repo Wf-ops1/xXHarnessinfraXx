@@ -62,6 +62,10 @@ from .state_machine import (
     StateReplayError,
 )
 
+VERIFICATION_REPAIR_SCHEDULED: Literal["VERIFICATION_REPAIR_SCHEDULED"] = (
+    "VERIFICATION_REPAIR_SCHEDULED"
+)
+
 
 class GraphExecutionError(Exception):
     """Base class for fail-closed graph traversal errors."""
@@ -279,6 +283,33 @@ class GraphExecutionPausedResult(_StrictFrozenModel):
         return tuple(value) if isinstance(value, list) else value
 
 
+class VerificationRepairRequest(_StrictFrozenModel):
+    """Lifecycle-owned retry decision consumed atomically by graph traversal."""
+
+    source_verification_attempt: int = Field(ge=1)
+    source_suite_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    source_verified_commit_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    repair_attempt: int = Field(ge=1)
+    retry_policy_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    origin_node_id: str = Field(min_length=1)
+    target_node_id: str = Field(min_length=1)
+    deadline_at: datetime
+    retry_context: RetryContext
+
+    @model_validator(mode="after")
+    def require_bound_context(self) -> VerificationRepairRequest:
+        budget = self.retry_context.remaining_budget
+        if self.retry_context.origin_node_id != self.origin_node_id:
+            raise ValueError("retry context origin must match the verification node")
+        if self.retry_context.failed_commit_sha != self.source_verified_commit_sha:
+            raise ValueError("retry context commit must match the failed suite")
+        if budget.remaining_time_seconds is None or budget.remaining_time_seconds <= 0:
+            raise ValueError("verification retry requires positive remaining time")
+        if self.deadline_at.tzinfo is None or self.deadline_at.utcoffset() is None:
+            raise ValueError("verification retry deadline must be timezone-aware")
+        return self
+
+
 @runtime_checkable
 class ApprovalPauseHandler(Protocol):
     """Lifecycle boundary used only for explicit human-approval nodes."""
@@ -449,6 +480,227 @@ class GraphExecutor:
             timeout_seconds=self._lock_timeout_seconds,
         )
         try:
+            return self._execute_locked(
+                detached_artifact,
+                execution_id,
+                {},
+                lock,
+                resume_mode=True,
+                defer_completion=defer_completion,
+            )
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def retry_from_verification(
+        self,
+        artifact: CompiledGraphArtifact,
+        execution_id: str,
+        request: VerificationRepairRequest,
+        *,
+        defer_completion: bool = True,
+    ) -> GraphExecutionResult | GraphExecutionPausedResult:
+        """Schedule one canonical external verification repair and traverse it."""
+
+        if not isinstance(request, VerificationRepairRequest):
+            raise TypeError("request must be a VerificationRepairRequest")
+        if type(defer_completion) is not bool:
+            raise TypeError("defer_completion must be a bool")
+        if not self._resume_enabled:
+            raise InterruptedNodeExecutionError(
+                "verification repair requires resume-enabled graph execution",
+                execution_id=execution_id,
+            )
+        if not isinstance(self._storage, ResumeStateStorageProvider):
+            raise InterruptedNodeExecutionError(
+                "verification repair payload storage is unavailable",
+                execution_id=execution_id,
+            )
+        detached_artifact = self._detach_artifact(artifact, execution_id=execution_id)
+        lock = self._storage.acquire_execution_lock(
+            execution_id,
+            self._owner_id_factory(),
+            timeout_seconds=self._lock_timeout_seconds,
+        )
+        try:
+            nodes = {node.id: node for node in detached_artifact.graph.nodes}
+            terminals = {
+                terminal.id: terminal
+                for terminal in detached_artifact.graph.terminal_states
+            }
+            origin = nodes.get(request.origin_node_id)
+            target = nodes.get(request.target_node_id)
+            if (
+                origin is None
+                or target is None
+                or origin.on_failure != target.id
+                or target.retry_policy is None
+            ):
+                raise RetryContextIntegrityError(
+                    "verification repair does not follow a bounded compiled failure edge",
+                    execution_id=execution_id,
+                    node_id=request.target_node_id,
+                )
+
+            record = self._storage.load_execution(execution_id, lock=lock)
+            self._validate_execution_identity(record, detached_artifact)
+            state_machine = EventSourcedStateMachine(
+                self._storage,
+                execution_id,
+                lock_timeout_seconds=self._lock_timeout_seconds,
+                clock=self._clock,
+                event_id_factory=self._event_id_factory,
+                owner_id_factory=self._owner_id_factory,
+                lock=lock,
+            )
+            record = state_machine.recover(lock=lock)
+            if record.current_state != ExecutionState.VERIFYING:
+                raise InterruptedExecutionError(
+                    "verification repair requires the VERIFYING state",
+                    execution_id=execution_id,
+                )
+            terminal = terminals.get(record.current_node_id)
+            if terminal is None or terminal.outcome != "success":
+                raise InterruptedExecutionError(
+                    "verification repair requires a successful graph terminal",
+                    execution_id=execution_id,
+                )
+
+            self._recover_resume_payload(
+                detached_artifact,
+                record,
+                nodes=nodes,
+                terminals=terminals,
+                lock=lock,
+            )
+            next_node_attempt = record.attempt_by_node.get(target.id, 0) + 1
+            if request.retry_context.current_attempt != next_node_attempt:
+                raise RetryContextIntegrityError(
+                    "verification retry context attempt diverges from the node journal",
+                    execution_id=execution_id,
+                    node_id=target.id,
+                )
+            if next_node_attempt > target.retry_policy.max_iterations:
+                state_machine.transition_to(
+                    ExecutionState.FAILED_RETRY_EXHAUSTED,
+                    node_id=target.id,
+                    attempt=record.attempt_by_node.get(target.id, 0),
+                    reason="verification_node_retry_exhausted",
+                    lock=lock,
+                )
+                raise RetryExhaustedError(
+                    "verification correction node retry limit was exhausted",
+                    execution_id=execution_id,
+                    node_id=target.id,
+                )
+
+            events = self._storage.load_events(execution_id, lock=lock)
+            schedules = tuple(
+                event
+                for event in events
+                if event.event_type == VERIFICATION_REPAIR_SCHEDULED
+            )
+            if request.repair_attempt != len(schedules) + 1:
+                raise RetryContextIntegrityError(
+                    "verification repair attempt is duplicated or non-sequential",
+                    execution_id=execution_id,
+                    node_id=target.id,
+                )
+            latest_suite = next(
+                (
+                    event
+                    for event in reversed(events)
+                    if event.event_type == "VERIFICATION_SUITE_RECORDED"
+                ),
+                None,
+            )
+            if (
+                latest_suite is None
+                or latest_suite.payload.get("attempt")
+                != request.source_verification_attempt
+                or latest_suite.payload.get("result_digest")
+                != request.source_suite_digest
+                or latest_suite.payload.get("verified_commit_sha")
+                != request.source_verified_commit_sha
+                or latest_suite.payload.get("all_passed") is not False
+            ):
+                raise RetryContextIntegrityError(
+                    "verification repair source is not the latest failed canonical suite",
+                    execution_id=execution_id,
+                    node_id=origin.id,
+                )
+            self._storage.load_payload(
+                execution_id,
+                request.source_suite_digest,
+                lock=lock,
+            )
+            input_digest = self._latest_node_input_digest(
+                events,
+                target_node_id=target.id,
+                execution_id=execution_id,
+            )
+            self._storage.load_payload(execution_id, input_digest, lock=lock)
+            context_digest = self._store_retry_context(
+                execution_id,
+                request.retry_context,
+                lock=lock,
+            )
+            if context_digest is None:
+                raise RetryContextIntegrityError(
+                    "verification retry context was not persisted",
+                    execution_id=execution_id,
+                    node_id=target.id,
+                )
+            record = state_machine.transition_to(
+                ExecutionState.EXECUTING,
+                node_id=target.id,
+                attempt=next_node_attempt,
+                reason="verification_repair_scheduled",
+                lock=lock,
+            )
+            events = self._storage.load_events(execution_id, lock=lock)
+            minimum = max(record.updated_at, events[-1].timestamp)
+            scheduled_at = self._next_timestamp(
+                minimum,
+                execution_id=execution_id,
+                node_id=target.id,
+            )
+            deadline_at = request.deadline_at.astimezone(UTC)
+            if deadline_at <= scheduled_at:
+                state_machine.transition_to(
+                    ExecutionState.FAILED_RETRY_EXHAUSTED,
+                    node_id=target.id,
+                    attempt=record.attempt_by_node.get(target.id, 0),
+                    reason="verification_time_budget_exhausted",
+                    lock=lock,
+                )
+                raise RetryExhaustedError(
+                    "verification retry deadline was exhausted before scheduling",
+                    execution_id=execution_id,
+                    node_id=target.id,
+                )
+            self._append_verification_repair_event(
+                execution_id,
+                request=request,
+                input_digest=input_digest,
+                retry_context_digest=context_digest,
+                timestamp=scheduled_at,
+                lock=lock,
+                record_revision=record.revision + 1,
+            )
+            document = record.model_dump(mode="python")
+            document.update(
+                {
+                    "revision": record.revision + 1,
+                    "current_node_id": target.id,
+                    "updated_at": scheduled_at,
+                }
+            )
+            self._storage.compare_and_set_execution(
+                execution_id,
+                record.revision,
+                ExecutionRecord.model_validate(document),
+                lock=lock,
+            )
             return self._execute_locked(
                 detached_artifact,
                 execution_id,
@@ -1119,6 +1371,51 @@ class GraphExecutor:
             ) from exc
         self._storage.append_event(execution_id, event, lock=lock)
 
+    def _append_verification_repair_event(
+        self,
+        execution_id: str,
+        *,
+        request: VerificationRepairRequest,
+        input_digest: str,
+        retry_context_digest: str,
+        timestamp: datetime,
+        lock: ExecutionLock,
+        record_revision: int,
+    ) -> None:
+        budget = request.retry_context.remaining_budget
+        payload: dict[str, object] = {
+            "repair_attempt": request.repair_attempt,
+            "source_verification_attempt": request.source_verification_attempt,
+            "source_result_digest": request.source_suite_digest,
+            "source_verified_commit_sha": request.source_verified_commit_sha,
+            "origin_node_id": request.origin_node_id,
+            "target_node_id": request.target_node_id,
+            "input_digest": input_digest,
+            "retry_context_digest": retry_context_digest,
+            "retry_policy_digest": request.retry_policy_digest,
+            "remaining_tokens": budget.remaining_tokens,
+            "remaining_cost_usd": budget.remaining_cost_usd,
+            "remaining_time_seconds": budget.remaining_time_seconds,
+            "deadline_at": request.deadline_at.astimezone(UTC).isoformat(),
+            "fencing_token": lock.fencing_token,
+            "record_revision": record_revision,
+        }
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=VERIFICATION_REPAIR_SCHEDULED,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise GraphEventConstructionError(
+                "cannot construct a canonical verification repair event",
+                execution_id=execution_id,
+                node_id=request.target_node_id,
+            ) from exc
+        self._storage.append_event(execution_id, event, lock=lock)
+
     def _append_tool_event(
         self,
         execution_id: str,
@@ -1231,11 +1528,15 @@ class GraphExecutor:
         open_tool: tuple[str, int, int, str, str, str, int] | None = None
         next_tool_step = 1
         pending: tuple[ExecutionEvent, str, int, str] | None = None
+        pending_repair: tuple[ExecutionEvent, str] | None = None
         last_record_revision = -1
         last_fencing_token = 0
         last_timestamp: datetime | None = None
         last_mutation_revision = 0
         last_global_fencing_token = 0
+        last_verification_suite: tuple[int, str, str, bool] | None = None
+        repair_attempts = 0
+        last_input_digest_by_node: dict[str, str] = {}
 
         for event in self._storage.load_events(record.execution_id, lock=lock):
             payload = event.payload
@@ -1268,6 +1569,215 @@ class GraphExecutor:
                         execution_id=record.execution_id,
                     )
                 last_global_fencing_token = global_fencing_token
+            if event.event_type == "VERIFICATION_SUITE_RECORDED":
+                attempt = self._ledger_integer(
+                    payload.get("attempt"), field="attempt", minimum=1
+                )
+                result_digest = self._ledger_digest(payload.get("result_digest"))
+                verified_commit_sha = self._ledger_string(
+                    payload.get("verified_commit_sha"),
+                    field="verified_commit_sha",
+                )
+                all_passed = payload.get("all_passed")
+                if (
+                    len(verified_commit_sha) != 40
+                    or verified_commit_sha.lower() != verified_commit_sha
+                    or type(all_passed) is not bool
+                ):
+                    raise InterruptedNodeExecutionError(
+                        "verification suite identity is invalid",
+                        execution_id=record.execution_id,
+                    )
+                self._storage.load_payload(
+                    record.execution_id,
+                    result_digest,
+                    lock=lock,
+                )
+                last_verification_suite = (
+                    attempt,
+                    result_digest,
+                    verified_commit_sha,
+                    all_passed,
+                )
+                continue
+
+            if event.event_type == VERIFICATION_REPAIR_SCHEDULED:
+                expected_keys = {
+                    "repair_attempt",
+                    "source_verification_attempt",
+                    "source_result_digest",
+                    "source_verified_commit_sha",
+                    "origin_node_id",
+                    "target_node_id",
+                    "input_digest",
+                    "retry_context_digest",
+                    "retry_policy_digest",
+                    "remaining_tokens",
+                    "remaining_cost_usd",
+                    "remaining_time_seconds",
+                    "deadline_at",
+                    "fencing_token",
+                    "record_revision",
+                }
+                if set(payload) != expected_keys or open_started is not None:
+                    raise InterruptedNodeExecutionError(
+                        "verification repair schedule is malformed or overlaps a node",
+                        execution_id=record.execution_id,
+                    )
+                if last_timestamp is not None and event.timestamp < last_timestamp:
+                    raise InterruptedNodeExecutionError(
+                        "verification repair timestamp regressed",
+                        execution_id=record.execution_id,
+                    )
+                repair_attempt = self._ledger_integer(
+                    payload["repair_attempt"],
+                    field="repair_attempt",
+                    minimum=1,
+                )
+                if repair_attempt != repair_attempts + 1:
+                    raise InterruptedNodeExecutionError(
+                        "verification repair attempts are non-sequential",
+                        execution_id=record.execution_id,
+                    )
+                source_attempt = self._ledger_integer(
+                    payload["source_verification_attempt"],
+                    field="source_verification_attempt",
+                    minimum=1,
+                )
+                source_digest = self._ledger_digest(payload["source_result_digest"])
+                source_commit = self._ledger_string(
+                    payload["source_verified_commit_sha"],
+                    field="source_verified_commit_sha",
+                )
+                if last_verification_suite != (
+                    source_attempt,
+                    source_digest,
+                    source_commit,
+                    False,
+                ):
+                    raise InterruptedNodeExecutionError(
+                        "verification repair does not consume the latest failed suite",
+                        execution_id=record.execution_id,
+                    )
+                terminal = terminals.get(expected_node_id)
+                if terminal is None or terminal.outcome != "success":
+                    raise InterruptedNodeExecutionError(
+                        "verification repair did not start from a successful terminal",
+                        execution_id=record.execution_id,
+                    )
+                origin_node_id = self._ledger_string(
+                    payload["origin_node_id"], field="origin_node_id"
+                )
+                target_node_id = self._ledger_string(
+                    payload["target_node_id"], field="target_node_id"
+                )
+                origin = nodes.get(origin_node_id)
+                target = nodes.get(target_node_id)
+                if (
+                    origin is None
+                    or target is None
+                    or origin.on_failure != target_node_id
+                    or target.retry_policy is None
+                ):
+                    raise InterruptedNodeExecutionError(
+                        "verification repair edge is absent or unbounded",
+                        execution_id=record.execution_id,
+                        node_id=target_node_id,
+                    )
+                input_digest = self._ledger_digest(payload["input_digest"])
+                if last_input_digest_by_node.get(target_node_id) != input_digest:
+                    raise InterruptedNodeExecutionError(
+                        "verification repair input is not the latest durable node input",
+                        execution_id=record.execution_id,
+                        node_id=target_node_id,
+                    )
+                self._storage.load_payload(
+                    record.execution_id,
+                    input_digest,
+                    lock=lock,
+                )
+                context_digest = self._ledger_digest(
+                    payload["retry_context_digest"]
+                )
+                context = self._load_retry_context(
+                    record.execution_id,
+                    context_digest,
+                    nodes=nodes,
+                    lock=lock,
+                )
+                next_attempt = attempts.get(target_node_id, 0) + 1
+                remaining_tokens = self._ledger_integer(
+                    payload["remaining_tokens"],
+                    field="remaining_tokens",
+                    minimum=0,
+                )
+                remaining_cost = payload["remaining_cost_usd"]
+                remaining_time = payload["remaining_time_seconds"]
+                if (
+                    type(remaining_cost) is not float
+                    or not math.isfinite(remaining_cost)
+                    or remaining_cost < 0
+                    or type(remaining_time) is not float
+                    or not math.isfinite(remaining_time)
+                    or remaining_time <= 0
+                    or context.origin_node_id != origin_node_id
+                    or context.current_attempt != next_attempt
+                    or context.failed_commit_sha != source_commit
+                    or context.remaining_budget.remaining_tokens
+                    != remaining_tokens
+                    or context.remaining_budget.remaining_cost_usd
+                    != remaining_cost
+                    or context.remaining_budget.remaining_time_seconds
+                    != remaining_time
+                ):
+                    raise RetryContextIntegrityError(
+                        "verification repair context diverges from its durable budget",
+                        execution_id=record.execution_id,
+                        node_id=target_node_id,
+                    )
+                self._ledger_digest(payload["retry_policy_digest"])
+                deadline_text = self._ledger_string(
+                    payload["deadline_at"], field="deadline_at"
+                )
+                try:
+                    deadline_at = datetime.fromisoformat(deadline_text)
+                except ValueError as exc:
+                    raise InterruptedNodeExecutionError(
+                        "verification repair deadline is invalid",
+                        execution_id=record.execution_id,
+                    ) from exc
+                if (
+                    deadline_at.tzinfo is None
+                    or deadline_at.utcoffset() is None
+                    or deadline_at.astimezone(UTC) <= event.timestamp
+                ):
+                    raise InterruptedNodeExecutionError(
+                        "verification repair deadline is already exhausted",
+                        execution_id=record.execution_id,
+                    )
+                repair_revision = self._ledger_integer(
+                    payload["record_revision"],
+                    field="record_revision",
+                    minimum=1,
+                )
+                if repair_revision > record.revision:
+                    if (
+                        pending_repair is not None
+                        or repair_revision != record.revision + 1
+                    ):
+                        raise InterruptedNodeExecutionError(
+                            "verification repair cursor has an invalid pending revision",
+                            execution_id=record.execution_id,
+                        )
+                    pending_repair = (event, target_node_id)
+                expected_node_id = target_node_id
+                expected_payload_digest = input_digest
+                expected_retry_context = context
+                expected_retry_context_digest = context_digest
+                repair_attempts = repair_attempt
+                last_timestamp = event.timestamp
+                continue
+
             if event.event_type not in {
                 "NODE_STARTED",
                 "NODE_COMPLETED",
@@ -1374,6 +1884,7 @@ class GraphExecutor:
                     observed_retry_context_digest,
                     consumed_retry_context,
                 )
+                last_input_digest_by_node[node_id] = input_digest
                 open_tool = None
                 next_tool_step = 1
                 last_fencing_token = fencing_token
@@ -1736,6 +2247,28 @@ class GraphExecutor:
                     node_id=node_id,
                 )
 
+        if pending_repair is not None:
+            if pending is not None or record.current_state != ExecutionState.EXECUTING:
+                raise InterruptedNodeExecutionError(
+                    "pending verification repair conflicts with graph progress",
+                    execution_id=record.execution_id,
+                )
+            event, target_node_id = pending_repair
+            document = record.model_dump(mode="python")
+            document.update(
+                {
+                    "revision": event.payload["record_revision"],
+                    "current_node_id": target_node_id,
+                    "updated_at": event.timestamp,
+                }
+            )
+            record = self._storage.compare_and_set_execution(
+                record.execution_id,
+                record.revision,
+                ExecutionRecord.model_validate(document),
+                lock=lock,
+            )
+
         if pending is not None:
             event, node_id, attempt, next_id = pending
             if record.current_node_id != node_id:
@@ -1826,6 +2359,32 @@ class GraphExecutor:
                 node_id=context.origin_node_id,
             )
         return context
+
+    @staticmethod
+    def _latest_node_input_digest(
+        events: tuple[ExecutionEvent, ...],
+        *,
+        target_node_id: str,
+        execution_id: str,
+    ) -> str:
+        for event in reversed(events):
+            if (
+                event.event_type == "NODE_STARTED"
+                and event.payload.get("node_id") == target_node_id
+            ):
+                try:
+                    return GraphExecutor._ledger_digest(event.payload.get("input_digest"))
+                except InterruptedNodeExecutionError as exc:
+                    raise RetryContextIntegrityError(
+                        "correction node input digest is invalid",
+                        execution_id=execution_id,
+                        node_id=target_node_id,
+                    ) from exc
+        raise RetryContextIntegrityError(
+            "correction node has no durable prior input",
+            execution_id=execution_id,
+            node_id=target_node_id,
+        )
 
     @staticmethod
     def _ledger_string(value: object, *, field: str) -> str:
@@ -2018,6 +2577,7 @@ class GraphExecutor:
 
 
 __all__ = [
+    "VERIFICATION_REPAIR_SCHEDULED",
     "ApprovalPauseHandler",
     "ArtifactExecutionMismatchError",
     "GraphClockError",
@@ -2034,4 +2594,5 @@ __all__ = [
     "RetryContextIntegrityError",
     "RetryExhaustedError",
     "UnknownCurrentNodeError",
+    "VerificationRepairRequest",
 ]

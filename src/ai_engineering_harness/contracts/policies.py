@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Any, Literal, Self, TypeAlias
 
@@ -365,7 +366,21 @@ class ModelRoutingSpec(_StrictFrozenModel):
 class CostBudgetSpec(_StrictFrozenModel):
     max_tokens_per_node: int = Field(gt=0)
     max_cost_per_execution_usd: float = Field(gt=0)
+    input_cost_per_million_tokens_usd: float = Field(gt=0)
+    output_cost_per_million_tokens_usd: float = Field(gt=0)
+    max_retry_duration_seconds: int = Field(gt=0)
     escalate_on_budget_exceeded: bool
+
+    @field_validator(
+        "max_cost_per_execution_usd",
+        "input_cost_per_million_tokens_usd",
+        "output_cost_per_million_tokens_usd",
+    )
+    @classmethod
+    def require_finite_costs(cls, value: float) -> float:
+        if not math.isfinite(value):
+            raise ValueError("retry cost values must be finite")
+        return value
 
 
 class RetryCostPolicySpec(_StrictFrozenModel):

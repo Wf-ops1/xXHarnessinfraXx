@@ -20,15 +20,17 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há dossiê de implementação ativo. A [F4.7](completed/F4.7.md) está `PROMOTED` e arquivada nesta
-reconciliação administrativa. O [PR #46](https://github.com/Wf-ops1/Harnessinfra/pull/46) passou
-11/11 no run `31528005230`, mas a CI pós-merge `31528955883` falhou no E2E concorrente Windows 3.11.
-O R1 test-only em `2841346a` preservou efeito/journal únicos e `VERIFYING`; o
-[PR corretivo #47](https://github.com/Wf-ops1/Harnessinfra/pull/47) passou 11/11 no head final
-`b79e14d2` pelo run `31533353223`, foi incorporado em `4aa701a` e recebeu 11/11 na CI pós-merge
-`31534918672`. O [PR administrativo #48](https://github.com/Wf-ops1/Harnessinfra/pull/48) foi aberto
-no head inicial `e198e5b7`; seu head documental final aguarda CI. F4.8/F3.7 não foram iniciadas e
-permanecem bloqueadas até o fechamento administrativo.
+A [F4.8](active/F4.8.md) é o único dossiê ativo. Seu gate está
+`PR_OPEN / CHECKS_PENDING` na branch `task/f4.8-verification-repair-loop`, com produto no commit
+`8e5e11d` e checkpoint READY `bb6752c`; a branch foi criada de
+`main == origin/main == d4e34c7`. A F4.7 está
+`PROMOTED / RECONCILED / CLOSED`: o [PR #48](https://github.com/Wf-ops1/Harnessinfra/pull/48) foi
+incorporado em `d4e34c7` e a CI pós-merge `31541047111` concluiu 11/11 checks. O baseline F4.8
+confirmou a lacuna; a implementação local agora compõe o resultado F4.7 com o nó corretor compilado,
+persiste limites e exige targeted seguido da suíte integral. A regressão final concluiu `758 passed,
+5 skipped`; build e smoke da wheel estão verdes. O [PR #49](https://github.com/Wf-ops1/Harnessinfra/pull/49)
+foi aberto contra `main` no head inicial `5bf0d75`; checks estão pendentes. Checkpoints permanecem
+locais e nenhum merge ou tag remota F4.8 ocorreu.
 
 ## Ledger concluído
 
@@ -71,7 +73,7 @@ permanecem bloqueadas até o fechamento administrativo.
 | F4 | F4.C1 | [Imutabilidade concorrente da publicação de snapshots](completed/F4.C1.md) | PR #40 / merge `3905d02` / pós-merge `31453662008`; administrativo #41 / merge `362407f` / pós-merge `31455148050` |
 | F4 | F4.5 | [Normalização fail-closed dos gates de verificação](completed/F4.5.md) | PR #42 / merge `4ae0de7` / pós-merge `31458482033`; administrativo #43 / merge `46b7070` / pós-merge `31459891130` |
 | F4 | F4.6 | [Detecção de stack e resolução efetiva de comandos](completed/F4.6.md) | PR #44 / merge `a4fd1da` / pós-merge `31510277593`; administrativo #45 / merge `b578515` / pós-merge `31513097203` |
-| F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 aberto |
+| F4 | F4.7 | [Persistência e guard canônico dos resultados de verificação](completed/F4.7.md) | PR #46 / merge `f7aa43a` / pós-merge falhou `31528955883`; corretivo #47 / merge `4aa701a` / pós-merge `31534918672`; administrativo #48 / merge `d4e34c7` / pós-merge `31541047111` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

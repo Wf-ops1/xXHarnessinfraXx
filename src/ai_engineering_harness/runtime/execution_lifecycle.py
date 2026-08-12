@@ -9,7 +9,9 @@ import re
 import subprocess
 import uuid
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
@@ -17,7 +19,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from ai_engineering_harness.contracts import (
     CompiledGraphArtifact,
+    DeterministicNodeSpec,
     HumanApprovalNodeSpec,
+    NodeSpec,
     ResolvedPolicySpec,
 )
 from ai_engineering_harness.contracts.events import ExecutionEvent
@@ -34,6 +38,7 @@ from ai_engineering_harness.contracts.nodes import (
 )
 from ai_engineering_harness.contracts.policies import (
     ContextSufficiencyPolicySpec,
+    RetryCostPolicySpec,
     VerificationPolicySpec,
 )
 from ai_engineering_harness.core.config import ConfigResolver
@@ -46,9 +51,11 @@ from ai_engineering_harness.persistence import (
     canonical_json_digest,
     canonical_json_object,
 )
+from ai_engineering_harness.security.redaction import Redactor
 from ai_engineering_harness.verification import (
     GateRequirement,
     GateResult,
+    GateStatus,
     ResolvedGateCommand,
     VerificationConfigurationError,
     VerificationEngine,
@@ -66,12 +73,19 @@ from .context_assembler import (
     InsufficientContextError,
 )
 from .graph_executor import (
+    VERIFICATION_REPAIR_SCHEDULED,
     GraphExecutionPausedResult,
     GraphExecutionResult,
     GraphExecutor,
+    VerificationRepairRequest,
 )
 from .maf_adapter import MAFAdapter
-from .node_executors import NodeExecutorRegistry
+from .node_executors import (
+    ModelCallMetadata,
+    NodeExecutorRegistry,
+    RetryBudget,
+    RetryContext,
+)
 from .planner import Planner, PlanPrerequisiteError
 from .state_machine import VALID_STATE_TRANSITIONS, EventSourcedStateMachine
 
@@ -93,6 +107,7 @@ VERIFICATION_SUITE_RECORDED: Literal["VERIFICATION_SUITE_RECORDED"] = (
 _CONTEXT_POLICY_REFERENCE = "policies/context_sufficiency.yaml"
 _TOOL_POLICY_REFERENCE = "policies/tool_policy.yaml"
 _VERIFICATION_POLICY_REFERENCE = "policies/verification_policy.yaml"
+_RETRY_COST_POLICY_REFERENCE = "policies/retry_cost_policy.yaml"
 
 _DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
@@ -214,6 +229,37 @@ class VerificationLifecyclePrerequisiteError(ExecutionLifecycleError):
 
 class VerificationRequiredError(ExecutionLifecycleError):
     """Graph traversal ended and the execution awaits canonical verification."""
+
+
+class VerificationRetryExhaustedError(ExecutionLifecycleError):
+    """A durable verification repair limit refused the next correction attempt."""
+
+    classification = "retry_exhausted"
+
+
+@dataclass(frozen=True, slots=True)
+class _VerificationAttempt:
+    attempt: int
+    requirements: tuple[GateRequirement, ...]
+    suite: VerificationSuiteResult
+    suite_digest: str
+    gate_result_digests: tuple[str, ...]
+    policy_digest: str
+    event_index: int
+    full_suite: bool
+
+
+@dataclass(frozen=True, slots=True)
+class _RepairSchedule:
+    repair_attempt: int
+    source_verification_attempt: int
+    source_result_digest: str
+    source_verified_commit_sha: str
+    origin_node_id: str
+    target_node_id: str
+    retry_policy_digest: str
+    deadline_at: datetime
+    event_index: int
 
 
 class _StrictFrozenModel(BaseModel):
@@ -436,13 +482,15 @@ class ExecutionLifecycleService:
             raise ExecutionCancellationError(
                 "cancelled execution cannot be resumed",
                 execution_id=execution_id,
-            )
+        )
         context_policy = self._resolved_context_policy(artifact)
-        self._resolved_verification_policy(artifact)
+        verification_policy = self._resolved_verification_policy(artifact)
         if record.current_state == ExecutionState.VERIFYING:
-            raise VerificationRequiredError(
-                "execution requires canonical verification before resume",
+            return self._resume_verification_repair(
+                artifact=artifact,
                 execution_id=execution_id,
+                record=record,
+                verification_policy=verification_policy,
             )
         if context_policy is not None and record.current_state in {
             ExecutionState.INITIATED,
@@ -565,6 +613,265 @@ class ExecutionLifecycleService:
             )
         return resolved, policy
 
+    @staticmethod
+    def _resolved_retry_cost_policy(
+        artifact: CompiledGraphArtifact,
+    ) -> tuple[ResolvedPolicySpec, RetryCostPolicySpec] | None:
+        matches = tuple(
+            resolved
+            for resolved in artifact.resolved_policies
+            if resolved.requested_reference == _RETRY_COST_POLICY_REFERENCE
+        )
+        if not matches:
+            return None
+        if len(matches) != 1:
+            raise ExecutionConfigurationError(
+                "compiled artifact contains duplicate retry cost policies"
+            )
+        resolved = matches[0]
+        try:
+            policy = RetryCostPolicySpec.model_validate(
+                {
+                    "policy_id": resolved.policy_id,
+                    "policy_schema_version": resolved.policy_schema_version,
+                    "definition_version": resolved.definition_version,
+                    **resolved.effective_policy,
+                }
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ExecutionConfigurationError(
+                "compiled retry cost policy is invalid"
+            ) from exc
+        return resolved, policy
+
+    @staticmethod
+    def _verification_repair_nodes(
+        artifact: CompiledGraphArtifact,
+    ) -> tuple[DeterministicNodeSpec, NodeSpec]:
+        origins = tuple(
+            node
+            for node in artifact.graph.nodes
+            if isinstance(node, DeterministicNodeSpec)
+            and node.policy_ref == _VERIFICATION_POLICY_REFERENCE
+        )
+        if len(origins) != 1:
+            raise ExecutionConfigurationError(
+                "verification repair requires one deterministic policy node"
+            )
+        origin = origins[0]
+        nodes = {node.id: node for node in artifact.graph.nodes}
+        target = nodes.get(origin.on_failure)
+        if target is None or target.retry_policy is None:
+            raise ExecutionConfigurationError(
+                "verification correction edge is absent or unbounded"
+            )
+        return origin, target
+
+    def _resume_verification_repair(
+        self,
+        *,
+        artifact: CompiledGraphArtifact,
+        execution_id: str,
+        record: ExecutionRecord,
+        verification_policy: tuple[ResolvedPolicySpec, VerificationPolicySpec] | None,
+    ) -> GraphExecutionResult | GraphExecutionPausedResult:
+        if verification_policy is None:
+            raise VerificationRequiredError(
+                "execution requires canonical verification before resume",
+                execution_id=execution_id,
+            )
+        retry_policy_context = self._resolved_retry_cost_policy(artifact)
+        if retry_policy_context is None:
+            raise ExecutionConfigurationError(
+                "verification repair requires the compiled retry cost policy",
+                execution_id=execution_id,
+            )
+        origin, target = self._verification_repair_nodes(artifact)
+        self._verification_worktree(execution_id, record)
+        resolved_verification, policy = verification_policy
+        verification_digest = canonical_json_digest(
+            canonical_json_object(resolved_verification.model_dump(mode="json"))
+        )
+        requirements = tuple(
+            GateRequirement(gate_id=gate.id, required=gate.blocking)
+            for gate in policy.required_gates
+        )
+        resolved_retry, retry_policy = retry_policy_context
+        retry_policy_digest = canonical_json_digest(
+            canonical_json_object(resolved_retry.model_dump(mode="json"))
+        )
+
+        lock = self._acquire(execution_id)
+        try:
+            machine = self._state_machine(execution_id, lock)
+            current = machine.recover(lock=lock)
+            if current.current_state != ExecutionState.VERIFYING:
+                raise VerificationLifecycleIntegrityError(
+                    "verification repair state changed before scheduling",
+                    execution_id=execution_id,
+                )
+            events = self._storage.load_events(execution_id, lock=lock)
+            attempts = self._recover_verification_attempts(
+                execution_id=execution_id,
+                events=events,
+                requirements=requirements,
+                policy_digest=verification_digest,
+                lock=lock,
+            )
+            if not attempts:
+                raise VerificationRequiredError(
+                    "execution requires canonical verification before resume",
+                    execution_id=execution_id,
+                )
+            schedules = self._recover_repair_schedules(
+                execution_id=execution_id,
+                events=events,
+                attempts=attempts,
+                retry_policy_digest=retry_policy_digest,
+                origin_node_id=origin.id,
+                target_node_id=target.id,
+            )
+            latest = attempts[-1]
+            if latest.suite.all_passed or (
+                schedules
+                and schedules[-1].source_verification_attempt == latest.attempt
+                and schedules[-1].event_index > latest.event_index
+            ):
+                raise VerificationRequiredError(
+                    "execution requires canonical verification after its repair",
+                    execution_id=execution_id,
+                )
+
+            now = self._clock()
+            if (
+                not isinstance(now, datetime)
+                or now.tzinfo is None
+                or now.utcoffset() is None
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "verification retry clock must be timezone-aware",
+                    execution_id=execution_id,
+                )
+            now = now.astimezone(UTC)
+            deadline = (
+                schedules[0].deadline_at
+                if schedules
+                else now + timedelta(
+                    seconds=retry_policy.cost_budget.max_retry_duration_seconds
+                )
+            )
+            tokens_by_node, consumed_cost = self._verification_retry_usage(
+                execution_id=execution_id,
+                events=events,
+                first_schedule_index=(schedules[0].event_index if schedules else None),
+                policy=retry_policy,
+            )
+            consumed_tokens = tokens_by_node.get(target.id, 0)
+            target_retry_policy = target.retry_policy
+            if target_retry_policy is None:
+                raise VerificationLifecycleIntegrityError(
+                    "verification correction node lost its retry policy",
+                    execution_id=execution_id,
+                )
+            reason: str | None = None
+            if len(schedules) >= retry_policy.model_routing.retry_max:
+                reason = "verification_execution_retry_exhausted"
+            elif (
+                current.attempt_by_node.get(target.id, 0) + 1
+                > target_retry_policy.max_iterations
+            ):
+                reason = "verification_node_retry_exhausted"
+            elif any(
+                tokens >= retry_policy.cost_budget.max_tokens_per_node
+                for tokens in tokens_by_node.values()
+            ):
+                reason = "verification_token_budget_exhausted"
+            elif consumed_cost >= Decimal(
+                str(retry_policy.cost_budget.max_cost_per_execution_usd)
+            ):
+                reason = "verification_cost_budget_exhausted"
+            elif now >= deadline:
+                reason = "verification_time_budget_exhausted"
+            if reason is not None:
+                machine.transition_to(
+                    ExecutionState.FAILED_RETRY_EXHAUSTED,
+                    node_id=target.id,
+                    attempt=current.attempt_by_node.get(target.id, 0),
+                    reason=reason,
+                    lock=lock,
+                )
+                raise VerificationRetryExhaustedError(
+                    "verification repair budget was durably exhausted",
+                    execution_id=execution_id,
+                )
+
+            failed_results = tuple(
+                result
+                for result in latest.suite.gate_results
+                if result.required and result.status is not GateStatus.PASSED
+            )
+            if not failed_results:
+                raise VerificationLifecycleIntegrityError(
+                    "failed verification suite has no failed required gate",
+                    execution_id=execution_id,
+                )
+            remaining_tokens = (
+                retry_policy.cost_budget.max_tokens_per_node - consumed_tokens
+            )
+            remaining_cost = max(
+                Decimal(0),
+                Decimal(str(retry_policy.cost_budget.max_cost_per_execution_usd))
+                - consumed_cost,
+            )
+            remaining_time = (deadline - now).total_seconds()
+            stdout = "\n".join(
+                f"[{result.gate_id}]\n{result.stdout}" for result in failed_results
+            )
+            stderr = "\n".join(
+                f"[{result.gate_id}]\n{result.stderr}" for result in failed_results
+            )
+            context = RetryContext(
+                origin_node_id=origin.id,
+                current_attempt=current.attempt_by_node.get(target.id, 0) + 1,
+                failed_commit_sha=latest.suite.verified_commit_sha,
+                model_error=None,
+                failed_tool_call=None,
+                redacted_stdout=Redactor.redact_text(stdout),
+                redacted_stderr=Redactor.redact_text(stderr),
+                failed_gates=tuple(result.gate_id for result in failed_results),
+                current_diff="",
+                remaining_budget=RetryBudget(
+                    remaining_tokens=remaining_tokens,
+                    remaining_cost_usd=float(remaining_cost),
+                    remaining_time_seconds=remaining_time,
+                ),
+                correction_instruction=Redactor.redact_text(
+                    "Correct the failed required gates on commit "
+                    f"{latest.suite.verified_commit_sha}: "
+                    + ", ".join(result.gate_id for result in failed_results)
+                ),
+            )
+            request = VerificationRepairRequest(
+                source_verification_attempt=latest.attempt,
+                source_suite_digest=latest.suite_digest,
+                source_verified_commit_sha=latest.suite.verified_commit_sha,
+                repair_attempt=len(schedules) + 1,
+                retry_policy_digest=retry_policy_digest,
+                origin_node_id=origin.id,
+                target_node_id=target.id,
+                deadline_at=deadline,
+                retry_context=context,
+            )
+        finally:
+            self._storage.release_execution_lock(lock)
+
+        return self._graph_executor.retry_from_verification(
+            artifact,
+            execution_id,
+            request,
+            defer_completion=True,
+        )
+
     def _verification_worktree(
         self,
         execution_id: str,
@@ -610,12 +917,11 @@ class ExecutionLifecycleService:
         engine: VerificationEngine,
         policy_context: tuple[ResolvedPolicySpec, VerificationPolicySpec],
     ) -> VerificationSuiteResult:
-        del artifact
         resolved_policy, policy = policy_context
         policy_digest = canonical_json_digest(
             canonical_json_object(resolved_policy.model_dump(mode="json"))
         )
-        requirements = tuple(
+        full_requirements = tuple(
             GateRequirement(gate_id=gate.id, required=gate.blocking)
             for gate in policy.required_gates
         )
@@ -637,16 +943,54 @@ class ExecutionLifecycleService:
                     execution_id=execution_id,
                 )
             events = self._storage.load_events(execution_id, lock=lock)
-            recovered = self._recover_verification_suite(
+            recovered = self._recover_verification_attempts(
                 execution_id=execution_id,
                 events=events,
-                requirements=requirements,
+                requirements=full_requirements,
                 policy_digest=policy_digest,
-                verified_commit_sha=verified_commit_sha,
                 lock=lock,
             )
-            if recovered is not None:
-                if recovered.all_passed:
+            schedules: tuple[_RepairSchedule, ...] = ()
+            if any(
+                event.event_type == VERIFICATION_REPAIR_SCHEDULED for event in events
+            ):
+                retry_context = self._resolved_retry_cost_policy(artifact)
+                if retry_context is None:
+                    raise VerificationLifecycleIntegrityError(
+                        "repair events exist without the compiled retry cost policy",
+                        execution_id=execution_id,
+                    )
+                resolved_retry, _ = retry_context
+                retry_digest = canonical_json_digest(
+                    canonical_json_object(resolved_retry.model_dump(mode="json"))
+                )
+                origin, target = self._verification_repair_nodes(artifact)
+                schedules = self._recover_repair_schedules(
+                    execution_id=execution_id,
+                    events=events,
+                    attempts=recovered,
+                    retry_policy_digest=retry_digest,
+                    origin_node_id=origin.id,
+                    target_node_id=target.id,
+                )
+                self._validate_repair_verification_sequence(
+                    execution_id=execution_id,
+                    attempts=recovered,
+                    schedules=schedules,
+                    full_requirements=full_requirements,
+                )
+
+            requirements_to_run: tuple[GateRequirement, ...] | None
+            if not recovered:
+                requirements_to_run = full_requirements
+            else:
+                latest = recovered[-1]
+                if latest.full_suite and latest.suite.all_passed:
+                    if latest.suite.verified_commit_sha != verified_commit_sha:
+                        raise VerificationLifecycleIntegrityError(
+                            "verified worktree changed after the passing full suite",
+                            execution_id=execution_id,
+                        )
                     machine.transition_to(
                         ExecutionState.COMPLETED,
                         node_id=record.current_node_id,
@@ -654,185 +998,63 @@ class ExecutionLifecycleService:
                         reason="verification_passed",
                         lock=lock,
                     )
-                return recovered
+                    return latest.suite
+                if schedules and recovered[-1].event_index < schedules[-1].event_index:
+                    source = recovered[-1]
+                    if verified_commit_sha == source.suite.verified_commit_sha:
+                        raise VerificationLifecycleIntegrityError(
+                            "verification repair did not produce a new clean commit",
+                            execution_id=execution_id,
+                        )
+                    requirements_to_run = self._failed_requirements(source)
+                elif latest.suite.all_passed and not latest.full_suite:
+                    if latest.suite.verified_commit_sha != verified_commit_sha:
+                        raise VerificationLifecycleIntegrityError(
+                            "worktree changed between targeted and full verification",
+                            execution_id=execution_id,
+                        )
+                    requirements_to_run = full_requirements
+                else:
+                    return latest.suite
 
             last_timestamp = max(
                 record.updated_at,
                 events[-1].timestamp if events else record.updated_at,
             )
-            pending: tuple[
-                int,
-                GateRequirement,
-                ResolvedGateCommand | None,
-                int,
-            ] | None = None
-            gate_result_digests: list[str] = []
-            next_gate_index = 0
-
-            def append_event(
-                event_type: Literal[
-                    "VERIFICATION_GATE_STARTED",
-                    "VERIFICATION_GATE_RECORDED",
-                    "VERIFICATION_SUITE_RECORDED",
-                ],
-                payload: dict[str, object],
-            ) -> ExecutionEvent:
-                nonlocal last_timestamp
-                last_timestamp = self._next_timestamp(last_timestamp)
-                return self._append_verification_event(
-                    execution_id,
-                    event_type,
-                    payload,
-                    timestamp=last_timestamp,
-                    lock=lock,
-                )
-
-            def before_gate(
-                requirement: GateRequirement,
-                command: ResolvedGateCommand | None,
-            ) -> None:
-                nonlocal pending
-                if pending is not None:
-                    raise VerificationLifecycleIntegrityError(
-                        "a verification gate started before the prior outcome was durable",
-                        execution_id=execution_id,
-                    )
-                self._validate_verification_worktree_commit(
-                    engine.worktree,
-                    expected_commit_sha=verified_commit_sha,
-                )
-                index = next_gate_index
-                append_event(
-                    VERIFICATION_GATE_STARTED,
-                    {
-                        "attempt": 1,
-                        "gate_index": index,
-                        "gate_id": requirement.gate_id,
-                        "required": requirement.required,
-                        "argv": list(command.argv) if command is not None else [],
-                        "cwd": command.cwd if command is not None else ".",
-                        "policy_digest": policy_digest,
-                        "verified_commit_sha": verified_commit_sha,
-                        "fencing_token": lock.fencing_token,
-                    },
-                )
-                pending = (index, requirement, command, lock.fencing_token)
-
-            def after_gate(result: GateResult) -> None:
-                nonlocal pending, next_gate_index
-                if pending is None:
-                    raise VerificationLifecycleIntegrityError(
-                        "verification outcome has no matching write-ahead event",
-                        execution_id=execution_id,
-                    )
-                self._validate_verification_worktree_commit(
-                    engine.worktree,
-                    expected_commit_sha=verified_commit_sha,
-                )
-                index, requirement, command, fencing_token = pending
-                expected_argv = command.argv if command is not None else ()
-                if (
-                    result.gate_id != requirement.gate_id
-                    or result.required != requirement.required
-                    or result.argv != expected_argv
-                    or result.verified_commit_sha != verified_commit_sha
-                ):
-                    raise VerificationLifecycleIntegrityError(
-                        "verification outcome diverges from its write-ahead identity",
-                        execution_id=execution_id,
-                    )
-                result_digest = self._storage.store_payload(
-                    execution_id,
-                    result.model_dump(mode="json"),
-                    lock=lock,
-                )
-                append_event(
-                    VERIFICATION_GATE_RECORDED,
-                    {
-                        "attempt": 1,
-                        "gate_index": index,
-                        "gate_id": result.gate_id,
-                        "required": result.required,
-                        "status": result.status.value,
-                        "result_digest": result_digest,
-                        "policy_digest": policy_digest,
-                        "verified_commit_sha": verified_commit_sha,
-                        "fencing_token": fencing_token,
-                    },
-                )
-                gate_result_digests.append(result_digest)
-                next_gate_index += 1
-                pending = None
-
-            try:
-                suite = engine.verify_requirements(
-                    requirements,
-                    before_gate=before_gate,
-                    after_gate=after_gate,
-                )
-            except (VerificationConfigurationError, VerificationPrerequisiteError) as exc:
-                current = machine.recover(lock=lock)
-                if current.current_state == ExecutionState.VERIFYING:
-                    machine.transition_to(
-                        ExecutionState.BLOCKED_PREREQUISITE,
-                        node_id=current.current_node_id,
-                        attempt=0,
-                        reason="verification_prerequisite_invalid",
-                        lock=lock,
-                    )
-                raise VerificationLifecyclePrerequisiteError(
-                    "verification prerequisites failed before suite completion",
-                    execution_id=execution_id,
-                ) from exc
-            except (TypeError, ValueError, ValidationError) as exc:
+            if requirements_to_run is None:
                 raise VerificationLifecycleIntegrityError(
-                    "verification result contract is invalid",
-                    execution_id=execution_id,
-                ) from exc
-            if pending is not None or len(gate_result_digests) != len(requirements):
-                raise VerificationLifecycleIntegrityError(
-                    "verification suite ended with incomplete gate persistence",
+                    "verification attempt selection is undefined",
                     execution_id=execution_id,
                 )
-            suite_digest = self._storage.store_payload(
-                execution_id,
-                suite.model_dump(mode="json"),
-                lock=lock,
-            )
-            append_event(
-                VERIFICATION_SUITE_RECORDED,
-                {
-                    "attempt": 1,
-                    "policy_digest": policy_digest,
-                    "verified_commit_sha": verified_commit_sha,
-                    "result_digest": suite_digest,
-                    "gate_result_digests": gate_result_digests,
-                    "all_passed": suite.all_passed,
-                    "fencing_token": lock.fencing_token,
-                },
-            )
-            certified = self._recover_verification_suite(
+            attempt_number = len(recovered) + 1
+            certified, last_timestamp = self._run_verification_attempt(
                 execution_id=execution_id,
-                events=self._storage.load_events(execution_id, lock=lock),
-                requirements=requirements,
+                engine=engine,
+                requirements=requirements_to_run,
+                full_requirements=full_requirements,
+                attempt_number=attempt_number,
                 policy_digest=policy_digest,
                 verified_commit_sha=verified_commit_sha,
+                last_timestamp=last_timestamp,
                 lock=lock,
+                machine=machine,
             )
-            if certified is None:
-                raise VerificationLifecycleIntegrityError(
-                    "persisted verification suite could not be recovered",
-                    execution_id=execution_id,
-                )
-            if certified.all_passed:
-                machine.transition_to(
-                    ExecutionState.COMPLETED,
-                    node_id=record.current_node_id,
-                    attempt=0,
-                    reason="verification_passed",
-                    lock=lock,
-                )
-            return certified
+            if not certified.suite.all_passed or certified.full_suite:
+                return certified.suite
+
+            final, _ = self._run_verification_attempt(
+                execution_id=execution_id,
+                engine=engine,
+                requirements=full_requirements,
+                full_requirements=full_requirements,
+                attempt_number=attempt_number + 1,
+                policy_digest=policy_digest,
+                verified_commit_sha=verified_commit_sha,
+                last_timestamp=last_timestamp,
+                lock=lock,
+                machine=machine,
+            )
+            return final.suite
         except StateStorageError as exc:
             raise VerificationLifecycleIntegrityError(
                 "verification evidence could not be persisted or recovered",
@@ -840,6 +1062,275 @@ class ExecutionLifecycleService:
             ) from exc
         finally:
             self._storage.release_execution_lock(lock)
+
+    @staticmethod
+    def _failed_requirements(
+        attempt: _VerificationAttempt,
+    ) -> tuple[GateRequirement, ...]:
+        failed_ids = {
+            result.gate_id
+            for result in attempt.suite.gate_results
+            if result.required and result.status is not GateStatus.PASSED
+        }
+        selected = tuple(
+            requirement
+            for requirement in attempt.requirements
+            if requirement.gate_id in failed_ids
+        )
+        if not selected:
+            raise VerificationLifecycleIntegrityError(
+                "failed verification attempt has no failed required gate"
+            )
+        return selected
+
+    @classmethod
+    def _validate_repair_verification_sequence(
+        cls,
+        *,
+        execution_id: str,
+        attempts: tuple[_VerificationAttempt, ...],
+        schedules: tuple[_RepairSchedule, ...],
+        full_requirements: tuple[GateRequirement, ...],
+    ) -> None:
+        for index, schedule in enumerate(schedules):
+            source = attempts[schedule.source_verification_attempt - 1]
+            next_schedule_index = (
+                schedules[index + 1].event_index
+                if index + 1 < len(schedules)
+                else None
+            )
+            post_attempts = tuple(
+                attempt
+                for attempt in attempts
+                if attempt.event_index > schedule.event_index
+                and (
+                    next_schedule_index is None
+                    or attempt.event_index < next_schedule_index
+                )
+            )
+            if len(post_attempts) > 2:
+                raise VerificationLifecycleIntegrityError(
+                    "one repair produced more than targeted and full verification",
+                    execution_id=execution_id,
+                )
+            if not post_attempts:
+                continue
+            targeted = post_attempts[0]
+            if (
+                targeted.requirements != cls._failed_requirements(source)
+                or targeted.full_suite
+                or targeted.suite.verified_commit_sha
+                == source.suite.verified_commit_sha
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "repair did not produce the exact targeted verification attempt",
+                    execution_id=execution_id,
+                )
+            if len(post_attempts) == 2:
+                final = post_attempts[1]
+                if (
+                    not targeted.suite.all_passed
+                    or not final.full_suite
+                    or final.requirements != full_requirements
+                    or final.suite.verified_commit_sha
+                    != targeted.suite.verified_commit_sha
+                ):
+                    raise VerificationLifecycleIntegrityError(
+                        "full verification does not follow a passing targeted attempt",
+                        execution_id=execution_id,
+                    )
+
+    def _run_verification_attempt(
+        self,
+        *,
+        execution_id: str,
+        engine: VerificationEngine,
+        requirements: tuple[GateRequirement, ...],
+        full_requirements: tuple[GateRequirement, ...],
+        attempt_number: int,
+        policy_digest: str,
+        verified_commit_sha: str,
+        last_timestamp: datetime,
+        lock: ExecutionLock,
+        machine: EventSourcedStateMachine,
+    ) -> tuple[_VerificationAttempt, datetime]:
+        pending: tuple[
+            int,
+            GateRequirement,
+            ResolvedGateCommand | None,
+            int,
+        ] | None = None
+        gate_result_digests: list[str] = []
+        next_gate_index = 0
+
+        def append_event(
+            event_type: Literal[
+                "VERIFICATION_GATE_STARTED",
+                "VERIFICATION_GATE_RECORDED",
+                "VERIFICATION_SUITE_RECORDED",
+            ],
+            payload: dict[str, object],
+        ) -> ExecutionEvent:
+            nonlocal last_timestamp
+            last_timestamp = self._next_timestamp(last_timestamp)
+            return self._append_verification_event(
+                execution_id,
+                event_type,
+                payload,
+                timestamp=last_timestamp,
+                lock=lock,
+            )
+
+        def before_gate(
+            requirement: GateRequirement,
+            command: ResolvedGateCommand | None,
+        ) -> None:
+            nonlocal pending
+            if pending is not None:
+                raise VerificationLifecycleIntegrityError(
+                    "a verification gate started before the prior outcome was durable",
+                    execution_id=execution_id,
+                )
+            self._validate_verification_worktree_commit(
+                engine.worktree,
+                expected_commit_sha=verified_commit_sha,
+            )
+            index = next_gate_index
+            append_event(
+                VERIFICATION_GATE_STARTED,
+                {
+                    "attempt": attempt_number,
+                    "gate_index": index,
+                    "gate_id": requirement.gate_id,
+                    "required": requirement.required,
+                    "argv": list(command.argv) if command is not None else [],
+                    "cwd": command.cwd if command is not None else ".",
+                    "policy_digest": policy_digest,
+                    "verified_commit_sha": verified_commit_sha,
+                    "fencing_token": lock.fencing_token,
+                },
+            )
+            pending = (index, requirement, command, lock.fencing_token)
+
+        def after_gate(result: GateResult) -> None:
+            nonlocal pending, next_gate_index
+            if pending is None:
+                raise VerificationLifecycleIntegrityError(
+                    "verification outcome has no matching write-ahead event",
+                    execution_id=execution_id,
+                )
+            self._validate_verification_worktree_commit(
+                engine.worktree,
+                expected_commit_sha=verified_commit_sha,
+            )
+            index, requirement, command, fencing_token = pending
+            expected_argv = command.argv if command is not None else ()
+            if (
+                result.gate_id != requirement.gate_id
+                or result.required != requirement.required
+                or result.argv != expected_argv
+                or result.verified_commit_sha != verified_commit_sha
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "verification outcome diverges from its write-ahead identity",
+                    execution_id=execution_id,
+                )
+            result_digest = self._storage.store_payload(
+                execution_id,
+                result.model_dump(mode="json"),
+                lock=lock,
+            )
+            append_event(
+                VERIFICATION_GATE_RECORDED,
+                {
+                    "attempt": attempt_number,
+                    "gate_index": index,
+                    "gate_id": result.gate_id,
+                    "required": result.required,
+                    "status": result.status.value,
+                    "result_digest": result_digest,
+                    "policy_digest": policy_digest,
+                    "verified_commit_sha": verified_commit_sha,
+                    "fencing_token": fencing_token,
+                },
+            )
+            gate_result_digests.append(result_digest)
+            next_gate_index += 1
+            pending = None
+
+        try:
+            suite = engine.verify_requirements(
+                requirements,
+                before_gate=before_gate,
+                after_gate=after_gate,
+            )
+        except (VerificationConfigurationError, VerificationPrerequisiteError) as exc:
+            current = machine.recover(lock=lock)
+            if current.current_state == ExecutionState.VERIFYING:
+                machine.transition_to(
+                    ExecutionState.BLOCKED_PREREQUISITE,
+                    node_id=current.current_node_id,
+                    attempt=0,
+                    reason="verification_prerequisite_invalid",
+                    lock=lock,
+                )
+            raise VerificationLifecyclePrerequisiteError(
+                "verification prerequisites failed before suite completion",
+                execution_id=execution_id,
+            ) from exc
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise VerificationLifecycleIntegrityError(
+                "verification result contract is invalid",
+                execution_id=execution_id,
+            ) from exc
+        if pending is not None or len(gate_result_digests) != len(requirements):
+            raise VerificationLifecycleIntegrityError(
+                "verification suite ended with incomplete gate persistence",
+                execution_id=execution_id,
+            )
+        suite_digest = self._storage.store_payload(
+            execution_id,
+            suite.model_dump(mode="json"),
+            lock=lock,
+        )
+        suite_event = append_event(
+            VERIFICATION_SUITE_RECORDED,
+            {
+                "attempt": attempt_number,
+                "policy_digest": policy_digest,
+                "verified_commit_sha": verified_commit_sha,
+                "result_digest": suite_digest,
+                "gate_result_digests": gate_result_digests,
+                "all_passed": suite.all_passed,
+                "fencing_token": lock.fencing_token,
+            },
+        )
+        attempts = self._recover_verification_attempts(
+            execution_id=execution_id,
+            events=self._storage.load_events(execution_id, lock=lock),
+            requirements=full_requirements,
+            policy_digest=policy_digest,
+            lock=lock,
+        )
+        certified = attempts[-1]
+        if (
+            certified.attempt != attempt_number
+            or certified.suite_digest != suite_digest
+        ):
+            raise VerificationLifecycleIntegrityError(
+                "persisted verification attempt could not be recovered",
+                execution_id=execution_id,
+            )
+        if certified.full_suite and certified.suite.all_passed:
+            current = machine.recover(lock=lock)
+            machine.transition_to(
+                ExecutionState.COMPLETED,
+                node_id=current.current_node_id,
+                attempt=0,
+                reason="verification_passed",
+                lock=lock,
+            )
+        return certified, suite_event.timestamp
 
     @staticmethod
     def _validate_verification_worktree_commit(
@@ -901,6 +1392,362 @@ class ExecutionLifecycleService:
             raise VerificationConfigurationError(
                 "verification worktree must be clean for commit-bound evidence"
             )
+
+    def _recover_verification_attempts(
+        self,
+        *,
+        execution_id: str,
+        events: tuple[ExecutionEvent, ...],
+        requirements: tuple[GateRequirement, ...],
+        policy_digest: str,
+        lock: ExecutionLock,
+    ) -> tuple[_VerificationAttempt, ...]:
+        verification_events = tuple(
+            (index, event)
+            for index, event in enumerate(events)
+            if event.event_type in _VERIFICATION_EVENT_TYPES
+        )
+        if not verification_events:
+            return ()
+        requirement_by_id = {
+            requirement.gate_id: requirement for requirement in requirements
+        }
+        recovered: list[_VerificationAttempt] = []
+        cursor = 0
+        expected_attempt = 1
+        while cursor < len(verification_events):
+            gate_results: list[GateResult] = []
+            gate_digests: list[str] = []
+            attempt_requirements: list[GateRequirement] = []
+            verified_commit_sha: str | None = None
+            fencing_token: int | None = None
+            gate_index = 0
+            while (
+                cursor < len(verification_events)
+                and verification_events[cursor][1].event_type
+                == VERIFICATION_GATE_STARTED
+            ):
+                if cursor + 1 >= len(verification_events):
+                    raise VerificationLifecycleIntegrityError(
+                        "verification journal contains an incomplete or duplicate suite",
+                        execution_id=execution_id,
+                    )
+                _, started = verification_events[cursor]
+                _, recorded = verification_events[cursor + 1]
+                if (
+                    recorded.event_type != VERIFICATION_GATE_RECORDED
+                    or set(started.payload) != _VERIFICATION_GATE_STARTED_KEYS
+                    or set(recorded.payload) != _VERIFICATION_GATE_RECORDED_KEYS
+                ):
+                    raise VerificationLifecycleIntegrityError(
+                        "verification gate event sequence or payload schema is invalid",
+                        execution_id=execution_id,
+                    )
+                start_payload = started.payload
+                result_payload = recorded.payload
+                gate_id = start_payload.get("gate_id")
+                requirement = requirement_by_id.get(gate_id)  # type: ignore[arg-type]
+                observed_fencing = start_payload.get("fencing_token")
+                observed_commit = start_payload.get("verified_commit_sha")
+                if (
+                    requirement is None
+                    or requirement in attempt_requirements
+                    or start_payload.get("attempt") != expected_attempt
+                    or result_payload.get("attempt") != expected_attempt
+                    or start_payload.get("gate_index") != gate_index
+                    or result_payload.get("gate_index") != gate_index
+                    or result_payload.get("gate_id") != gate_id
+                    or start_payload.get("required") is not requirement.required
+                    or result_payload.get("required") is not requirement.required
+                    or start_payload.get("policy_digest") != policy_digest
+                    or result_payload.get("policy_digest") != policy_digest
+                    or type(observed_fencing) is not int
+                    or observed_fencing <= 0
+                    or result_payload.get("fencing_token") != observed_fencing
+                    or type(observed_commit) is not str
+                    or _GIT_SHA_PATTERN.fullmatch(observed_commit) is None
+                    or result_payload.get("verified_commit_sha") != observed_commit
+                ):
+                    raise VerificationLifecycleIntegrityError(
+                        "verification gate identity is invalid",
+                        execution_id=execution_id,
+                    )
+                if fencing_token is None:
+                    fencing_token = observed_fencing
+                elif fencing_token != observed_fencing:
+                    raise VerificationLifecycleIntegrityError(
+                        "one verification attempt spans multiple fencing tokens",
+                        execution_id=execution_id,
+                    )
+                if verified_commit_sha is None:
+                    verified_commit_sha = observed_commit
+                elif verified_commit_sha != observed_commit:
+                    raise VerificationLifecycleIntegrityError(
+                        "one verification attempt spans multiple commits",
+                        execution_id=execution_id,
+                    )
+                argv = start_payload.get("argv")
+                cwd = start_payload.get("cwd")
+                result_digest = result_payload.get("result_digest")
+                if (
+                    type(argv) is not list
+                    or any(type(part) is not str or not part for part in argv)
+                    or type(cwd) is not str
+                    or not cwd
+                    or type(result_digest) is not str
+                    or _DIGEST_PATTERN.fullmatch(result_digest) is None
+                ):
+                    raise VerificationLifecycleIntegrityError(
+                        "verification command or result digest is invalid",
+                        execution_id=execution_id,
+                    )
+                try:
+                    gate_result = GateResult.model_validate_json(
+                        json.dumps(
+                            self._storage.load_payload(
+                                execution_id,
+                                result_digest,
+                                lock=lock,
+                            ),
+                            ensure_ascii=False,
+                            allow_nan=False,
+                        )
+                    )
+                except (TypeError, ValueError, ValidationError) as exc:
+                    raise VerificationLifecycleIntegrityError(
+                        "persisted gate result violates the F4.7 contract",
+                        execution_id=execution_id,
+                    ) from exc
+                if (
+                    gate_result.gate_id != requirement.gate_id
+                    or gate_result.required != requirement.required
+                    or list(gate_result.argv) != argv
+                    or gate_result.cwd != cwd
+                    or gate_result.verified_commit_sha != observed_commit
+                    or result_payload.get("status") != gate_result.status.value
+                ):
+                    raise VerificationLifecycleIntegrityError(
+                        "persisted gate result diverges from its journal identity",
+                        execution_id=execution_id,
+                    )
+                gate_results.append(gate_result)
+                gate_digests.append(result_digest)
+                attempt_requirements.append(requirement)
+                gate_index += 1
+                cursor += 2
+
+            if not gate_results or cursor >= len(verification_events):
+                raise VerificationLifecycleIntegrityError(
+                    "verification journal contains an incomplete or duplicate suite",
+                    execution_id=execution_id,
+                )
+            suite_event_index, suite_event = verification_events[cursor]
+            suite_payload = suite_event.payload
+            if (
+                suite_event.event_type != VERIFICATION_SUITE_RECORDED
+                or set(suite_payload) != _VERIFICATION_SUITE_RECORDED_KEYS
+                or suite_payload.get("attempt") != expected_attempt
+                or suite_payload.get("policy_digest") != policy_digest
+                or suite_payload.get("verified_commit_sha") != verified_commit_sha
+                or suite_payload.get("fencing_token") != fencing_token
+                or suite_payload.get("gate_result_digests") != gate_digests
+                or type(suite_payload.get("all_passed")) is not bool
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "persisted verification suite event is invalid",
+                    execution_id=execution_id,
+                )
+            suite_digest = suite_payload.get("result_digest")
+            if (
+                type(suite_digest) is not str
+                or _DIGEST_PATTERN.fullmatch(suite_digest) is None
+                or verified_commit_sha is None
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "persisted verification suite digest is invalid",
+                    execution_id=execution_id,
+                )
+            suite = VerificationSuiteResult(
+                verified_commit_sha=verified_commit_sha,
+                gate_results=tuple(gate_results),
+            )
+            if (
+                self._storage.load_payload(
+                    execution_id,
+                    suite_digest,
+                    lock=lock,
+                )
+                != suite.model_dump(mode="json")
+                or suite.all_passed is not suite_payload["all_passed"]
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "persisted suite result diverges from gate evidence",
+                    execution_id=execution_id,
+                )
+            ordered_subset = tuple(
+                requirement
+                for requirement in requirements
+                if requirement in attempt_requirements
+            )
+            if tuple(attempt_requirements) != ordered_subset:
+                raise VerificationLifecycleIntegrityError(
+                    "verification attempt gates do not preserve policy order",
+                    execution_id=execution_id,
+                )
+            full_suite = tuple(attempt_requirements) == requirements
+            if expected_attempt == 1 and not full_suite:
+                raise VerificationLifecycleIntegrityError(
+                    "the first verification attempt must be the full policy suite",
+                    execution_id=execution_id,
+                )
+            recovered.append(
+                _VerificationAttempt(
+                    attempt=expected_attempt,
+                    requirements=tuple(attempt_requirements),
+                    suite=suite,
+                    suite_digest=suite_digest,
+                    gate_result_digests=tuple(gate_digests),
+                    policy_digest=policy_digest,
+                    event_index=suite_event_index,
+                    full_suite=full_suite,
+                )
+            )
+            expected_attempt += 1
+            cursor += 1
+        return tuple(recovered)
+
+    @staticmethod
+    def _recover_repair_schedules(
+        *,
+        execution_id: str,
+        events: tuple[ExecutionEvent, ...],
+        attempts: tuple[_VerificationAttempt, ...],
+        retry_policy_digest: str,
+        origin_node_id: str,
+        target_node_id: str,
+    ) -> tuple[_RepairSchedule, ...]:
+        schedules: list[_RepairSchedule] = []
+        deadline: datetime | None = None
+        for event_index, event in enumerate(events):
+            if event.event_type != VERIFICATION_REPAIR_SCHEDULED:
+                continue
+            payload = event.payload
+            source = next(
+                (
+                    attempt
+                    for attempt in reversed(attempts)
+                    if attempt.event_index < event_index
+                ),
+                None,
+            )
+            try:
+                deadline_at = datetime.fromisoformat(str(payload.get("deadline_at")))
+            except ValueError as exc:
+                raise VerificationLifecycleIntegrityError(
+                    "verification repair deadline is invalid",
+                    execution_id=execution_id,
+                ) from exc
+            if (
+                source is None
+                or source.suite.all_passed
+                or payload.get("repair_attempt") != len(schedules) + 1
+                or payload.get("source_verification_attempt") != source.attempt
+                or payload.get("source_result_digest") != source.suite_digest
+                or payload.get("source_verified_commit_sha")
+                != source.suite.verified_commit_sha
+                or payload.get("retry_policy_digest") != retry_policy_digest
+                or payload.get("origin_node_id") != origin_node_id
+                or payload.get("target_node_id") != target_node_id
+                or deadline_at.tzinfo is None
+                or deadline_at.utcoffset() is None
+            ):
+                raise VerificationLifecycleIntegrityError(
+                    "verification repair schedule diverges from canonical evidence",
+                    execution_id=execution_id,
+                )
+            deadline_at = deadline_at.astimezone(UTC)
+            if deadline is None:
+                deadline = deadline_at
+            elif deadline != deadline_at:
+                raise VerificationLifecycleIntegrityError(
+                    "verification repair deadline changed across attempts",
+                    execution_id=execution_id,
+                )
+            schedules.append(
+                _RepairSchedule(
+                    repair_attempt=len(schedules) + 1,
+                    source_verification_attempt=source.attempt,
+                    source_result_digest=source.suite_digest,
+                    source_verified_commit_sha=source.suite.verified_commit_sha,
+                    origin_node_id=origin_node_id,
+                    target_node_id=target_node_id,
+                    retry_policy_digest=retry_policy_digest,
+                    deadline_at=deadline_at,
+                    event_index=event_index,
+                )
+            )
+        return tuple(schedules)
+
+    @staticmethod
+    def _verification_retry_usage(
+        *,
+        execution_id: str,
+        events: tuple[ExecutionEvent, ...],
+        first_schedule_index: int | None,
+        policy: RetryCostPolicySpec,
+    ) -> tuple[dict[str, int], Decimal]:
+        if first_schedule_index is None:
+            return {}, Decimal(0)
+        tokens_by_node: dict[str, int] = {}
+        cost = Decimal(0)
+        input_rate = Decimal(
+            str(policy.cost_budget.input_cost_per_million_tokens_usd)
+        )
+        output_rate = Decimal(
+            str(policy.cost_budget.output_cost_per_million_tokens_usd)
+        )
+        million = Decimal(1_000_000)
+        for event_index, event in enumerate(events):
+            if event_index <= first_schedule_index or event.event_type not in {
+                "NODE_COMPLETED",
+                "NODE_FAILED",
+            }:
+                continue
+            raw_calls = event.payload.get("model_calls")
+            if raw_calls is None:
+                continue
+            if type(raw_calls) is not list or not raw_calls:
+                raise VerificationLifecycleIntegrityError(
+                    "verification retry model usage is malformed",
+                    execution_id=execution_id,
+                )
+            try:
+                calls = tuple(
+                    ModelCallMetadata.model_validate(call) for call in raw_calls
+                )
+            except (TypeError, ValueError, ValidationError) as exc:
+                raise VerificationLifecycleIntegrityError(
+                    "verification retry model usage is invalid",
+                    execution_id=execution_id,
+                ) from exc
+            node_id = event.payload.get("node_id")
+            if type(node_id) is not str or not node_id:
+                raise VerificationLifecycleIntegrityError(
+                    "verification retry model usage has no node identity",
+                    execution_id=execution_id,
+                )
+            tokens_by_node[node_id] = tokens_by_node.get(node_id, 0) + sum(
+                call.total_tokens for call in calls
+            )
+            cost += sum(
+                (
+                    Decimal(call.prompt_tokens) * input_rate
+                    + Decimal(call.completion_tokens) * output_rate
+                )
+                / million
+                for call in calls
+            )
+        return tokens_by_node, cost
 
     def _recover_verification_suite(
         self,
@@ -2617,4 +3464,5 @@ __all__ = [
     "ExecutionLifecycleError",
     "ExecutionLifecycleService",
     "ExecutionStatusView",
+    "VerificationRetryExhaustedError",
 ]
