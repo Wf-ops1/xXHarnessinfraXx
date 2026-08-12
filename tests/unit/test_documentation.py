@@ -162,7 +162,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F3.7 `PROMOTED / RECONCILIATION_LOCAL_READY`" in panel
+    assert "F3.7 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
     assert "31568577459" in panel
     assert "31568908128" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/51" in panel
