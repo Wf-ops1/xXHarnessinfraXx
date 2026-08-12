@@ -719,6 +719,8 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "checkpoint/f5.2-complete" in dossier
     assert "BRANCH_PUBLISHED / PR_PENDING" in dossier
     assert "origin/task/f5.2-unified-policy" in dossier
+    assert "push` somente em `main` e `phase/**" in dossier
+    assert "evento `pull_request` contra `main`" in dossier
     assert "task/f5.2-unified-policy" in dossier
     assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in dossier
     assert "policy_default_allows_unknown=True" in dossier
