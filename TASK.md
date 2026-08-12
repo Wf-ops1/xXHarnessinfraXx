@@ -20,7 +20,7 @@
 | **Fase concluída** | Fase 2; F3.1–F3.6, F3.8, F4.1–F4.8 e corretivas F3.C1/F3.C2/F4.C1 promovidas |
 | **Fase ativa** | Fase 3 — fechamento da promoção Git segura após gates F4 promovidos |
 | **Tarefa ativa** | F3.7 — promoção Git segura |
-| **Gate** | F3.7 R1 `REPAIR_ACTIVE / PROMOTION_BLOCKED`; PR #51 falhou em Ubuntu no head `2eab6e8` |
+| **Gate** | F3.7 R1 `COMPLETED_LOCAL / PROMOTION_PENDING`; PR #51 aguarda publicação do head recertificado |
 | **Executor ativo** | `Codex`, único escritor; autorizado em `2026-08-12T00:48:45-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f3.7-safe-promotion`, rastreando `origin/task/f3.7-safe-promotion`, criada de `9f75e35db38fc6648497c01bd8f81dcdecec8029` |
@@ -28,8 +28,10 @@
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 | **Checkpoint READY** | `checkpoint/f3.7-ready` → commit documental deste gate |
 | **Produto local** | `cb80f8b2d86b9ff38075e6f0068e32b62ba4dbb5` — produto intacto; certificação reaberta por falha de teste |
-| **Checkpoint de conclusão** | `checkpoint/f3.7-complete` → este commit documental final, somente local |
-| **Pull request** | [#51](https://github.com/Wf-ops1/Harnessinfra/pull/51), não-draft contra `main`; head falho `2eab6e8` |
+| **Checkpoint de conclusão inicial** | `checkpoint/f3.7-complete` → `ac1d3e2`, somente local |
+| **Reparo R1** | `d31227694344ea89303bfb6853eb238c4ca6d8f7` — prova direta do cherry-pick, produto inalterado |
+| **Checkpoint R1** | `checkpoint/f3.7-r1-ready` → `6333217`; `checkpoint/f3.7-r1-complete` → recertificação final, somente locais |
+| **Pull request** | [#51](https://github.com/Wf-ops1/Harnessinfra/pull/51), não-draft contra `main`; remoto ainda no head falho `2eab6e8` |
 
 ## 3. Última promoção comprovada
 
@@ -63,20 +65,21 @@ wheel verdes. O smoke carregou `ai-engineering-harness 0.1.0` de origem externa 
 
 ## 6. Bloqueios atuais
 
-O run [31565797052](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31565797052), no head exato
+O run histórico [31565797052](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31565797052), no head exato
 `2eab6e86b59ab820298c03e83584864d5a1ae44e`, falhou em `Tests / ubuntu-latest` Python 3.11 e 3.14.
 Ambos registraram `1 failed, 748 passed, 1 skipped, 6 subtests passed`: o teste exigia que o SHA do
 cherry-pick diferisse do candidate SHA, embora objetos commit byte-idênticos possam legitimamente ter
-o mesmo SHA. O produto não falhou e permanece fora do R1; o teste deve provar a chamada cherry-pick
-diretamente. Merge segue bloqueado até recertificação local integral e todos os checks do novo head.
+o mesmo SHA. O R1 passou localmente `10/10` na reprodução, gate focado `74`, regressão integral
+`774 passed, 5 skipped, 6 subtests passed`, mypy/Ruff/compileall, build e smoke offline. Produto e
+`src/` permaneceram intactos. Merge segue bloqueado até todos os checks do novo head remoto passarem.
 
 Tag remota, exclusão de ref e início de outra tarefa não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR CHECKPOINT F3.7-R1-READY, REPARAR SOMENTE O TESTE E REPETIR TODO O ACEITE.
-PUBLICAR O R1 NO PR #51 E MESCLAR SOMENTE APÓS TODOS OS CHECKS DO NOVO HEAD VERDES.
+PUBLICAR A RECERTIFICAÇÃO R1 NO PR #51 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
+MESCLAR SOMENTE APÓS TODOS OS JOBS E CI REQUIRED FICAREM VERDES NO SHA EXATO.
 NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR OUTRA TAREFA.
 ```
 
@@ -91,4 +94,4 @@ NÃO PUBLICAR TAG, EXCLUIR REF OU INICIAR OUTRA TAREFA.
 
 ---
 
-*Atualizado em: 2026-08-12T02:17:54-03:00 | Fonte: F3.7 R1 + PR #51 + CI 31565797052 + regressão local 774/5/6 + F3.6 + F4.7/F4.8 + DEC-013/014/015*
+*Atualizado em: 2026-08-12T02:36:41-03:00 | Fonte: F3.7 R1 d312276 + PR #51 + CI histórica 31565797052 + recertificação local 774/5/6 + F3.6 + F4.7/F4.8 + DEC-013/014/015*
