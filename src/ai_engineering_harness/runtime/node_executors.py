@@ -24,6 +24,7 @@ from ai_engineering_harness.contracts import (
     TerminalStateSpec,
 )
 from ai_engineering_harness.contracts.execution import ExecutionId
+from ai_engineering_harness.governance import ToolPolicyDecision
 from ai_engineering_harness.models.provider import LLMResponse
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -253,6 +254,7 @@ class ToolCallIntent(_StrictFrozenModel):
     call_id: _NonEmptyStr
     tool_name: _NonEmptyStr
     arguments_digest: _DigestStr
+    policy_decision: ToolPolicyDecision
 
 
 class ToolExecutionRecord(_StrictFrozenModel):
@@ -266,6 +268,7 @@ class ToolExecutionRecord(_StrictFrozenModel):
     result_digest: _DigestStr
     redacted_result: str = Field(max_length=2_000)
     error_code: _NonEmptyStr | None = None
+    policy_decision_digest: _DigestStr
 
     @model_validator(mode="after")
     def require_matching_error(self) -> ToolExecutionRecord:

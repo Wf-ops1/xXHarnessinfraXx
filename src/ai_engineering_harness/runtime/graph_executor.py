@@ -29,6 +29,7 @@ from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     ExecutionState,
 )
+from ai_engineering_harness.governance import ToolPolicyDecision
 from ai_engineering_harness.persistence import (
     EventJournalStateStorageProvider,
     ExecutionLock,
@@ -229,6 +230,7 @@ def _record_matches_intent(
         and record.call_id == intent.call_id
         and record.tool_name == intent.tool_name
         and record.arguments_digest == intent.arguments_digest
+        and record.policy_decision_digest == intent.policy_decision.digest()
     )
 
 
@@ -1435,7 +1437,15 @@ class GraphExecutor:
             "tool_name": record.tool_name,
             "arguments_digest": record.arguments_digest,
         }
-        if event_type != "TOOL_CALLED":
+        if event_type == "TOOL_CALLED":
+            if not isinstance(record, ToolCallIntent):
+                raise GraphEventConstructionError(
+                    "tool write-ahead requires a call intent",
+                    execution_id=execution_id,
+                    node_id=node.id,
+                )
+            payload["policy_decision"] = record.policy_decision.model_dump(mode="json")
+        else:
             if not isinstance(record, ToolExecutionRecord):
                 raise GraphEventConstructionError(
                     "tool outcome requires a completed execution record",
@@ -1444,6 +1454,7 @@ class GraphExecutor:
                 )
             payload["result_digest"] = record.result_digest
             payload["redacted_result"] = record.redacted_result
+            payload["policy_decision_digest"] = record.policy_decision_digest
             if record.error_code is not None:
                 payload["error_code"] = record.error_code
         try:
@@ -1525,7 +1536,7 @@ class GraphExecutor:
             str | None,
             RetryContext | None,
         ] | None = None
-        open_tool: tuple[str, int, int, str, str, str, int] | None = None
+        open_tool: tuple[str, int, int, str, str, str, int, str | None] | None = None
         next_tool_step = 1
         pending: tuple[ExecutionEvent, str, int, str] | None = None
         pending_repair: tuple[ExecutionEvent, str] | None = None
@@ -1901,8 +1912,11 @@ class GraphExecutor:
                     "arguments_digest",
                 }
                 if event.event_type == "TOOL_CALLED":
+                    observed_keys = set(payload)
+                    legacy_keys = tool_base_keys
+                    policy_keys = tool_base_keys | {"policy_decision"}
                     if (
-                        set(payload) != tool_base_keys
+                        observed_keys not in (legacy_keys, policy_keys)
                         or open_started is None
                         or open_tool is not None
                     ):
@@ -1934,6 +1948,33 @@ class GraphExecutor:
                             execution_id=record.execution_id,
                             node_id=tool_node_id,
                         )
+                    policy_decision_digest: str | None = None
+                    if "policy_decision" in payload:
+                        try:
+                            policy_decision = ToolPolicyDecision.model_validate(
+                                payload["policy_decision"]
+                            )
+                        except (TypeError, ValueError, ValidationError) as exc:
+                            raise InterruptedNodeExecutionError(
+                                "tool policy decision is malformed",
+                                execution_id=record.execution_id,
+                                node_id=tool_node_id,
+                            ) from exc
+                        graph_node = nodes.get(tool_node_id)
+                        if (
+                            not policy_decision.allowed
+                            or not isinstance(graph_node, AgentNodeSpec)
+                            or policy_decision.request.node_id != tool_node_id
+                            or policy_decision.request.role != graph_node.role
+                            or policy_decision.request.workflow != artifact.graph.graph.name
+                            or policy_decision.request.tool != tool_name
+                        ):
+                            raise InterruptedNodeExecutionError(
+                                "tool policy decision diverges from the compiled node",
+                                execution_id=record.execution_id,
+                                node_id=tool_node_id,
+                            )
+                        policy_decision_digest = policy_decision.digest()
                     open_tool = (
                         tool_node_id,
                         tool_attempt,
@@ -1942,6 +1983,7 @@ class GraphExecutor:
                         tool_name,
                         arguments_digest,
                         tool_fencing,
+                        policy_decision_digest,
                     )
                     continue
 
@@ -1951,6 +1993,8 @@ class GraphExecutor:
                 }
                 if event.event_type == "TOOL_FAILED":
                     expected_tool_outcome.add("error_code")
+                if open_tool is not None and open_tool[7] is not None:
+                    expected_tool_outcome.add("policy_decision_digest")
                 if set(payload) != expected_tool_outcome or open_tool is None:
                     raise InterruptedNodeExecutionError(
                         "tool outcome ledger is malformed or has no matching call",
@@ -1967,13 +2011,23 @@ class GraphExecutor:
                         payload["fencing_token"], field="fencing_token", minimum=1
                     ),
                 )
-                if observed_tool != open_tool:
+                if observed_tool != open_tool[:7]:
                     raise InterruptedNodeExecutionError(
                         "tool outcome does not match its call",
                         execution_id=record.execution_id,
                         node_id=observed_tool[0],
                     )
                 self._ledger_digest(payload["result_digest"])
+                if open_tool[7] is not None:
+                    observed_decision_digest = self._ledger_digest(
+                        payload["policy_decision_digest"]
+                    )
+                    if observed_decision_digest != open_tool[7]:
+                        raise InterruptedNodeExecutionError(
+                            "tool outcome policy decision does not match its call",
+                            execution_id=record.execution_id,
+                            node_id=observed_tool[0],
+                        )
                 redacted_result = payload["redacted_result"]
                 if type(redacted_result) is not str or len(redacted_result) > 2_000:
                     raise InterruptedNodeExecutionError(

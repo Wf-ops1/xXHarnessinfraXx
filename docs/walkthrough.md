@@ -96,7 +96,10 @@ Limitações importantes:
 - a F4.5 promovida normaliza os IDs e bloqueia suítes vazias/desconhecidas/duplicadas; a F4.6
   promovida resolve configuração/argv e pré-requisitos no worktree antes de efeitos;
 - providers e tools reais existem como dependências injetáveis, mas o caminho padrão não os compõe;
-- o `ToolRouter` operacional não é construído automaticamente pelo lifecycle;
+- a F5.2 pré-autoriza cada lote por role/node/workflow/trust/tool/operação/path/aprovação, aplica
+  default-deny e persiste a regra antes do efeito; o outcome fica ligado pelo digest da decisão;
+- o `ToolRouter` operacional revalida a decisão, mas não é construído automaticamente pelo lifecycle;
+- trust boundary operacional e aprovação vinculada ao conteúdo permanecem nas F5.3/F5.6;
 - promoção F3.7 usa candidate/cherry-pick reais quando explicitamente injetada; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
   mas o lifecycle ainda não executa `harness index` automaticamente;
 - o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.

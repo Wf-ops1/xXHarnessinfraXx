@@ -10,7 +10,10 @@ import sys
 from pathlib import Path
 
 import pytest
+from pydantic import JsonValue
 
+from ai_engineering_harness.governance import PolicyEngine, ToolPolicyRequest, ToolPolicyRule
+from ai_engineering_harness.models import ToolCall
 from ai_engineering_harness.security import PathGuard
 from ai_engineering_harness.tools import (
     ToolPayloadValidationError,
@@ -38,6 +41,45 @@ ALL_TOOLS = (
     "git_diff",
     "serena_edit",
 )
+
+
+def _dispatch(
+    router,
+    tool_name: str,
+    payload: dict[str, JsonValue],
+) -> JsonValue:
+    target = router.validate_calls(
+        (ToolCall(call_id="test-call", name=tool_name, arguments=payload),)
+    )[0]
+    rule = ToolPolicyRule(
+        rule_id=f"test:{tool_name}:{target.operation}",
+        effect="allow",
+        roles=("test_agent",),
+        node_ids=("test",),
+        workflows=("operational-tools",),
+        trust_modes=("restricted",),
+        tools=(target.tool,),
+        operations=(target.operation,),
+        path_patterns=("*",),
+    )
+    engine = PolicyEngine(rules=(rule,))
+    decision = engine.evaluate(
+        ToolPolicyRequest(
+            role="test_agent",
+            node_id="test",
+            workflow="operational-tools",
+            trust_mode="restricted",
+            tool=target.tool,
+            operation=target.operation,
+            path=target.path,
+        )
+    )
+    return router.dispatch(
+        tool_name,
+        payload,
+        policy_engine=engine,
+        decision=decision,
+    )
 
 
 def _controlled_environment() -> dict[str, str]:
@@ -107,18 +149,19 @@ def test_local_handlers_read_search_list_and_apply_a_real_patch(tmp_path: Path) 
         local_adapter=local,
     )
 
-    before = router.dispatch("read_file", {"path": "module.py"})
+    before = _dispatch(router, "read_file", {"path": "module.py"})
     assert isinstance(before, dict)
     assert before["content"] == "old value\n"
-    listed = router.dispatch("list_files", {"max_depth": 1, "max_entries": 10})
+    listed = _dispatch(router, "list_files", {"max_depth": 1, "max_entries": 10})
     assert listed == [{"depth": 1, "kind": "file", "path": "module.py"}]
-    searched = router.dispatch("search_text", {"query": "value", "path": "."})
+    searched = _dispatch(router, "search_text", {"query": "value", "path": "."})
     assert isinstance(searched, dict)
     assert searched["matches"] == [
         {"column": 5, "line": 1, "path": "module.py", "text": "old value"}
     ]
 
-    patched = router.dispatch(
+    patched = _dispatch(
+        router,
         "apply_patch",
         {
             "path": "module.py",
@@ -143,14 +186,15 @@ def test_missing_backends_and_compiled_deny_policy_fail_closed(tmp_path: Path) -
     with pytest.raises(ToolUnavailableError, match="run_command"):
         router.prepare(("run_command",))
     with pytest.raises(ToolUnavailableError, match="serena_edit"):
-        router.dispatch(
+        _dispatch(
+            router,
             "serena_edit",
             {"tool_name": "replace_content", "relative_path": "x.py", "arguments": {}},
         )
     with pytest.raises(ToolUnauthorizedError, match="read_file"):
         router.prepare(("read_file",), effective_denied_tools=("read_file",))
     with pytest.raises(ToolPayloadValidationError, match="read_file"):
-        router.dispatch("read_file", {"path": "x.py", "unexpected": True})
+        _dispatch(router, "read_file", {"path": "x.py", "unexpected": True})
 
 
 def test_run_command_keeps_metacharacters_literal_and_returns_json(tmp_path: Path) -> None:
@@ -164,7 +208,8 @@ def test_run_command_keeps_metacharacters_literal_and_returns_json(tmp_path: Pat
     literal = f"literal > {marker.name} && echo unsafe"
     environment_names = list(_controlled_environment())
 
-    result = router.dispatch(
+    result = _dispatch(
+        router,
         "run_command",
         {
             "argv": ["python", "-c", "import sys; print(sys.argv[1])", literal],
@@ -198,8 +243,8 @@ def test_git_handlers_are_fixed_read_only_argv_over_the_confined_repo(tmp_path: 
         terminal_adapter=terminal,
     )
 
-    status = router.dispatch("git_status", {})
-    diff = router.dispatch("git_diff", {"path": "tracked.txt"})
+    status = _dispatch(router, "git_status", {})
+    diff = _dispatch(router, "git_diff", {"path": "tracked.txt"})
 
     assert isinstance(status, dict) and status["exit_code"] == 0
     assert "tracked.txt" in str(status["stdout"])
@@ -227,7 +272,8 @@ def test_serena_registration_calls_real_mcp_and_verifies_the_effect(tmp_path: Pa
         serena_adapter=serena,
     )
 
-    result = router.dispatch(
+    result = _dispatch(
+        router,
         "serena_edit",
         {
             "tool_name": "replace_content",

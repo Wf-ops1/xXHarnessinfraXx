@@ -12,10 +12,9 @@ from ai_engineering_harness.workspace.sandbox import SandboxProvider
 
 def test_tool_router_permission():
     router = ToolRouter(allowed_tools=["serena_edit"])
-    assert router.permissions.is_allowed("serena_edit") is True
-    assert router.permissions.is_allowed("terminal_run") is False
+    assert router.enabled_tools == ("serena_edit",)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(PermissionError, match="not enabled"):
         router.dispatch("terminal_run", {"command": "dir", "cwd": "."})
 
 def test_sandbox_provider_by_platform():

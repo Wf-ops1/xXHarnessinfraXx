@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from ai_engineering_harness.contracts import CompiledGraphArtifact
+from ai_engineering_harness.governance import TrustMode
 from ai_engineering_harness.models.provider import CancellationToken, LLMResponse
 from ai_engineering_harness.models.router import ModelRouter
 from ai_engineering_harness.tools.router import ToolRouter
@@ -75,6 +76,7 @@ class AgentExecutor:
         fallback_providers: list[str] | tuple[str, ...] | None = None,
         cancellation_token: CancellationToken | None = None,
         tool_effect_recorder: ToolEffectRecorder | None = None,
+        trust_mode: TrustMode = "restricted",
     ) -> ToolLoopResult:
         if self.tool_router is None:
             raise PermissionError(
@@ -100,6 +102,7 @@ class AgentExecutor:
             model_candidates=candidates,
             cancellation_token=cancellation_token,
             tool_effect_recorder=tool_effect_recorder,
+            trust_mode=trust_mode,
         )
 
     def execute_tool(self, tool_name: str, payload: dict[str, Any]) -> Any:
