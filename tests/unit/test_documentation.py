@@ -131,7 +131,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "PR #33" in readme
     assert "571a8eb" in readme
     assert "31329231458" in readme
-    assert "A F4.8 foi concluída localmente no produto `8e5e11d`" in readme
+    assert "A F4.8 foi promovida pelo PR #49" in readme
     assert "a F3.7 ainda não foi iniciada" in readme
     assert "permanece obrigatória antes" not in readme
     assert "A F4.2 foi promovida pelo PR #34" in readme
@@ -161,30 +161,24 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F4.8 `PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
     assert "DEC-015" in panel
-    assert "docs/tasks/completed/F4.7.md" in panel
-    assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
-    assert "b79e14d2ba2c76514b7e6a6b22017b02348e6453" in panel
-    assert "4aa701a9394e5bdcb9c14dc5a9a715638c183258" in panel
-    assert "31533353223" in panel
-    assert "31534918672" in panel
-    assert "d4e34c7404d28a10969ab4b322748d01ae5805bf" in panel
+    assert "docs/tasks/completed/F4.8.md" in panel
     assert "31541047111" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/49" in panel
     assert "8e5e11d81c685c53ba349bab4d95cdd61ee19ba6" in panel
     assert "bb6752c1f1524b8c747cddc55e74ed7e6491e845" in panel
+    assert "f9c8c2d5d2e1f53ef857119886c16b8b2b2c1d8d" in panel
+    assert "31550975708" in panel
+    assert "72f89e3ede8c4d7457857c13115f690d87df4aad" in panel
+    assert "31551685950" in panel
+    assert "github.com/Wf-ops1/Harnessinfra/pull/50" in panel
+    assert "3d571cadaffa798c7be1387431e54eaf0463346a" in panel
     assert "758 passed, 5 skipped" in panel
     assert "github.com/Wf-ops1/Harnessinfra/pull/48" in panel
-    assert "751 passed, 5 skipped, 6 subtests" in panel
-    assert "2841346a" in panel
-    assert "20/20" in panel
-    assert "github.com/Wf-ops1/Harnessinfra/pull/47" in panel
-    assert "github.com/Wf-ops1/Harnessinfra/pull/46" in panel
-    assert "31528955883" in panel
-    assert "f7aa43a154e36d29f9882f060cf23294d8194b3e" in panel
-    assert "write-ahead/outcome" in panel
     assert "F4.8" in panel
+    assert "nenhuma tarefa ativa" in panel
+    assert "A F3.7 não foi iniciada" in panel
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
@@ -196,7 +190,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "CONTEXT_EVALUATED" in user_guide
     assert "FAILED_RETRY_EXHAUSTED" in user_guide
     assert "on_failure` compilado" in user_guide
+    assert "A F4.8 promovida" in user_guide
     assert "targeted → full" in lifecycle
+    assert "F4.8 `PROMOTED`" in lifecycle
+    assert "F4.8 promovida" in walkthrough
     assert "provider simulado" not in walkthrough
     assert "não existe worktree Git" not in walkthrough
     assert "Worktree real ausente" not in walkthrough_audit

@@ -361,9 +361,9 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F4.8 `PR_OPEN / CHECKS_PENDING`" in panel
-    assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
-    assert "31541047111" in panel
+    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "docs/tasks/completed/F4.8.md" in panel
+    assert "31551685950" in panel
     assert "673 passed, 2 skipped, 6 subtests passed" in dossier
     assert "materializa `ContextPackage.relevant_symbols` como `list[str]`" in dossier
     assert "674 passed, 2 skipped, 6 subtests passed" in dossier
@@ -460,11 +460,10 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert not (ACTIVE_ROOT / "F4.6.md").exists()
     assert not (ACTIVE_ROOT / "F4.7.md").exists()
     assert (COMPLETED_ROOT / "F4.7.md").is_file()
-    assert "F4.7 está `PROMOTED / RECONCILED / CLOSED`" in panel
-    assert "F4.8 `PR_OPEN / CHECKS_PENDING`" in panel
-    assert "docs/tasks/completed/F4.7.md" in panel
-    assert "d4e34c7404d28a10969ab4b322748d01ae5805bf" in panel
-    assert "31541047111" in panel
+    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "docs/tasks/completed/F4.8.md" in panel
+    assert "72f89e3ede8c4d7457857c13115f690d87df4aad" in panel
+    assert "31551685950" in panel
     assert "> **Gate:** `READY`" in f4_7_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f4_7_dossier
     assert "checkpoint/f4.7-ready" in f4_7_dossier
@@ -569,6 +568,49 @@ def test_f4_6_promotion_records_repair_history_and_post_merge_ci() -> None:
     assert "administrativo #45 / merge `b578515` / pós-merge `31513097203`" in task_index
 
 
+def test_f4_8_promotion_records_repair_loop_and_post_merge_ci() -> None:
+    panel = _read(TASK_PANEL)
+    readme = _read(ROOT / "README.md")
+    dossier = _read(COMPLETED_ROOT / "F4.8.md")
+    task_index = _read(TASKS_INDEX)
+
+    assert not (ACTIVE_ROOT / "F4.8.md").exists()
+    assert (COMPLETED_ROOT / "F4.8.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "incorporada em main pelo PR #49 e certificada pela CI pós-merge" in dossier
+    assert "checkpoint/f4.8-ready" in dossier
+    assert "checkpoint/f4.8-complete" in dossier
+    assert "bb6752c1f1524b8c747cddc55e74ed7e6491e845" in dossier
+    assert "8e5e11d81c685c53ba349bab4d95cdd61ee19ba6" in dossier
+    assert "5bf0d75e6878f0d1362e0b2053a228a95ec80cef" in dossier
+    assert "f9c8c2d5d2e1f53ef857119886c16b8b2b2c1d8d" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/49" in dossier
+    assert "31550975708" in dossier
+    assert "72f89e3ede8c4d7457857c13115f690d87df4aad" in dossier
+    assert "31551685950" in dossier
+    assert "758 passed, 5 skipped" in dossier
+    assert "targeted seguido de full" in dossier
+    assert "FAILED_RETRY_EXHAUSTED" in dossier
+    assert "crash-resume" in dossier
+    assert "docs/promote-f4.8" in dossier
+    assert dossier.find("## Certificação final da promoção") > dossier.find(
+        "## Publicação do PR — snapshot histórico"
+    )
+    assert dossier.rfind("## Publicação administrativa") > dossier.rfind(
+        "## Certificação final da promoção"
+    )
+    assert "F4.8 `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/50" in dossier
+    assert "3d571cadaffa798c7be1387431e54eaf0463346a" in dossier
+    assert "nenhuma tarefa ativa" in panel
+    assert "A F3.7 não foi iniciada" in panel
+    assert "A F4.8 foi promovida pelo PR #49" in readme
+    assert "completed/F4.8.md" in task_index
+    assert "PR #49 / merge `72f89e3` / pós-merge `31551685950`" in task_index
+
+
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
     panel = _read(TASK_PANEL)
     rules = _read(AGENT_RULES)
@@ -628,5 +670,5 @@ def test_phase3_realignment_requires_two_isolated_gates_and_human_pauses() -> No
     assert "autorização explícita nova" in realignment
     assert "completed/F4.4.md" in task_index
     assert "F4.1" in panel
-    assert "F3.7 permanece depois" in panel
+    assert "A F3.7 não foi iniciada" in panel
     assert "Não restou achado blocker/high" in realignment
