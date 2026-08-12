@@ -20,17 +20,17 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | nenhuma tarefa ativa; F5.2 está somente planejada e não autorizada |
-| **Gate** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL` |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor; reconciliação autorizada nominalmente em `2026-08-12T16:17:23-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch administrativa** | `docs/promote-f5.1`, local e sem upstream |
+| **Branch administrativa** | `docs/promote-f5.1`, publicada e rastreando `origin/docs/promote-f5.1` |
 | **Baseline** | `main == origin/main == c46910e50ede1196c9beb1242cb7bd708905d666` antes da branch |
 | **Produto F5.1** | `f246feb2a70bb83f08ff31341525fd29bd6d10f8` |
 | **Head final do PR** | `f42af272c54b2610554eb34acd75dc895a011974` |
 | **CI do PR** | run [31629604755](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31629604755), `pull_request`, 11/11 success no head final |
 | **Promoção F5.1** | PR [#53](https://github.com/Wf-ops1/Harnessinfra/pull/53), merge `c46910e50ede1196c9beb1242cb7bd708905d666` |
 | **CI pós-merge** | run [31630446370](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31630446370), `push`, 11/11 success no merge exato |
-| **Reconciliação** | `LOCAL_READY / PUBLICATION_PENDING`; ainda não incorporada em `main` |
+| **Reconciliação** | PR administrativo [#54](https://github.com/Wf-ops1/Harnessinfra/pull/54), aberto e não draft; head inicial `f7e1173` |
 | **Checkpoints** | `checkpoint/f5.1-ready` e `checkpoint/f5.1-complete` somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
@@ -62,24 +62,24 @@ planejada no plano principal; nenhum gate F5.2 foi congelado ou autorizado.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A autorização corrente inclui publicar `docs/promote-f5.1` e abrir
-um PR administrativo, mas não inclui o merge desse PR. Tag remota, exclusão de branch/ref,
-force-push, bypass e início da F5.2 continuam proibidos.
+Não há bloqueio técnico conhecido. A branch foi publicada e o PR administrativo #54 foi aberto. A
+autorização corrente não inclui o merge desse PR. Tag remota, exclusão de branch/ref, force-push,
+bypass e início da F5.2 continuam proibidos.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR E PUBLICAR docs/promote-f5.1; ABRIR O PR ADMINISTRATIVO ÚNICO DA F5.1.
-OBSERVAR TODOS OS CHECKS DO HEAD FINAL; NÃO MESCLAR NEM INICIAR F5.2 SEM NOVA AUTORIZAÇÃO.
+OBSERVAR TODOS OS CHECKS DO HEAD FINAL DO PR ADMINISTRATIVO #54.
+NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.2 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.1.md` e a DEC-014.
-2. Confirme branch `docs/promote-f5.1`, baseline `c46910e` e diff estritamente documental.
+2. Confirme branch `docs/promote-f5.1`, PR #54, baseline `c46910e` e diff estritamente documental.
 3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist administrativa.
 4. Execute somente a próxima ação exata; o merge administrativo e a F5.2 exigem nova autorização.
 
 ---
 
-*Atualizado em: 2026-08-12T16:18:12-03:00 | Fonte: F5.1 + PR #53 + runs 31629604755/31630446370 + merge c46910e*
+*Atualizado em: 2026-08-12T16:25:41-03:00 | Fonte: F5.1 + PRs #53/#54 + runs 31629604755/31630446370 + merge c46910e*

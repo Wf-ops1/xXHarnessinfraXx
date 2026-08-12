@@ -362,8 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.1 — resolver configuração no início da execução" in panel
-    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
-    assert "`LOCAL_READY / PUBLICATION_PENDING`" in panel
+    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
     assert "31568908128" in panel
@@ -694,6 +694,9 @@ def test_f5_1_promotion_records_configuration_and_post_merge_ci() -> None:
     assert "792 passed, 5 skipped, 6 subtests passed" in dossier
     assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
     assert "docs/promote-f5.1" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in dossier
+    assert "f7e117303bb01cbc1afbc604781efd09ab9c94c8" in dossier
     assert "nenhuma tarefa ativa" in panel
     assert "docs/tasks/completed/F5.1.md" in panel
     assert "F5.2 está somente planejada e não autorizada" in panel

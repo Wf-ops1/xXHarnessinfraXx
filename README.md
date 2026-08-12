@@ -125,8 +125,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   O head final `f42af27` recebeu 11/11 checks no run `31629604755`, foi incorporado pelo merge
   `c46910e` e recebeu 11/11 na CI de `push` pós-merge `31630446370`. A certificação local passou
   `792 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke externo da wheel. A
-  reconciliação administrativa está preparada em `docs/promote-f5.1`; F5.2, merge administrativo,
-  tags remotas e remoção de refs permanecem não autorizados.
+  reconciliação administrativa está aberta no [PR #54](https://github.com/Wf-ops1/Harnessinfra/pull/54)
+  e aguarda checks no head final; F5.2, merge administrativo, tags remotas e remoção de refs
+  permanecem não autorizados.
 
 ## Dívidas técnicas críticas
 
