@@ -15,7 +15,7 @@ from ai_engineering_harness.contracts.execution import validate_execution_id
 from ai_engineering_harness.contracts.nodes import ContextSufficiencyReport, RetrievalRequest
 from ai_engineering_harness.contracts.planning import PlanContent, PlanDocument
 from ai_engineering_harness.contracts.policies import ResolvedPolicySpec, VerificationPolicySpec
-from ai_engineering_harness.governance.budget import BudgetExceededError
+from ai_engineering_harness.governance.budget import BudgetError
 from ai_engineering_harness.indexer.snapshot_manager import (
     SnapshotIntegrityError,
     SnapshotManager,
@@ -24,7 +24,6 @@ from ai_engineering_harness.indexer.snapshot_manager import (
 from ai_engineering_harness.models.provider import LLMResponse, ProviderError
 from ai_engineering_harness.models.router import (
     ModelEgressDeniedError,
-    ModelResponseBudgetExceededError,
     ModelRouter,
     ModelRoutingConfigurationError,
     ModelRoutingIntegrityError,
@@ -183,14 +182,12 @@ class Planner:
                 plan_digest=plan_digest,
                 response=response,
             )
-        except InvalidPlanError:
+        except (BudgetError, InvalidPlanError):
             raise
         except ValidationError as exc:
             raise InvalidPlanError("provider plan violates the strict planning contract") from exc
         except (
-            BudgetExceededError,
             ModelEgressDeniedError,
-            ModelResponseBudgetExceededError,
             ModelRoutingConfigurationError,
             ModelRoutingIntegrityError,
             OSError,

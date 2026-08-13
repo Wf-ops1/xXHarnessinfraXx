@@ -7,7 +7,15 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 
-from ai_engineering_harness.governance.budget import BudgetExceededError, BudgetTracker
+from ai_engineering_harness.governance.budget import (
+    BudgetBoundary,
+    BudgetCommit,
+    BudgetError,
+    BudgetExceededError,
+    BudgetReservationHandle,
+    BudgetTracker,
+    DurableBudgetExceededError,
+)
 from ai_engineering_harness.models.provider import (
     BaseLLMProvider,
     CancellationToken,
@@ -49,15 +57,16 @@ class ModelResponseCancelledError(ProviderCancelledError):
         self.response = response
 
 
-class ModelResponseBudgetExceededError(BudgetExceededError):
+class ModelResponseBudgetExceededError(BudgetError):
     """Budget exceeded by a completed response whose metadata must survive."""
 
-    def __init__(self, response: LLMResponse, cause: BudgetExceededError) -> None:
-        super().__init__(
-            max_tokens=cause.max_tokens,
-            consumed_tokens=cause.consumed_tokens,
-        )
+    def __init__(self, response: LLMResponse, cause: BudgetError) -> None:
+        super().__init__(str(cause))
         self.response = response
+        self.cause = cause
+        if isinstance(cause, BudgetExceededError):
+            self.max_tokens = cause.max_tokens
+            self.consumed_tokens = cause.consumed_tokens
 
 
 class ModelRouteConfiguration(BaseModel):
@@ -88,6 +97,7 @@ class ModelRouter:
         *,
         provider_registry: ProviderRegistry | None = None,
         budget_tracker: BudgetTracker | None = None,
+        budget_boundary: BudgetBoundary | None = None,
         default_primary_provider: str | None = None,
         default_fallback_providers: tuple[str, ...] = (),
     ) -> None:
@@ -98,6 +108,9 @@ class ModelRouter:
         self.allowed_providers = tuple(allowed_providers)
         self.provider_registry = provider_registry
         self.budget_tracker = budget_tracker or BudgetTracker()
+        if budget_boundary is not None and not isinstance(budget_boundary, BudgetBoundary):
+            raise TypeError("budget_boundary must implement BudgetBoundary")
+        self.budget_boundary = budget_boundary
         self.default_primary_provider = default_primary_provider or self.allowed_providers[0]
         self.default_fallback_providers = tuple(default_fallback_providers)
         self.validate_route()
@@ -108,6 +121,7 @@ class ModelRouter:
         config: Mapping[str, object],
         *,
         trust_boundary: TrustEvaluationResult | None = None,
+        budget_boundary: BudgetBoundary | None = None,
     ) -> ModelRouter:
         """Constrói o router exclusivamente da configuração já resolvida."""
         models_raw = config.get("models")
@@ -141,6 +155,7 @@ class ModelRouter:
             allowed_providers=allowed_raw,
             provider_registry=registry,
             budget_tracker=BudgetTracker(max_tokens=max_tokens),
+            budget_boundary=budget_boundary,
             default_primary_provider=models.routing.primary_provider,
             default_fallback_providers=models.routing.fallback_providers,
         )
@@ -148,6 +163,12 @@ class ModelRouter:
     @classmethod
     def validate_effective_config(cls, config: Mapping[str, object]) -> None:
         cls.from_effective_config(config)
+
+    def bind_budget_boundary(self, boundary: BudgetBoundary) -> None:
+        """Bind one canonical execution/node boundary before operational use."""
+        if not isinstance(boundary, BudgetBoundary):
+            raise TypeError("budget boundary must implement BudgetBoundary")
+        self.budget_boundary = boundary
 
     def validate_route(
         self,
@@ -185,20 +206,23 @@ class ModelRouter:
         last_transient_error: ProviderError | None = None
         for provider_id in candidates:
             self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
-            self.budget_tracker.ensure_available()
             provider = self._create_provider(provider_id)
+            self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
+            handle = self._reserve_model(provider_id, provider, prompt)
             try:
                 response = provider.complete(
                     prompt,
                     cancellation_token=cancellation_token,
                 )
             except ProviderError as exc:
+                self._commit_failed_model(handle)
                 self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
                 if not exc.retryable:
                     raise
                 last_transient_error = exc
                 continue
 
+            self._commit_model_response(handle, response)
             self._raise_if_cancelled(
                 cancellation_token,
                 provider_id=provider_id,
@@ -209,7 +233,8 @@ class ModelRouter:
                     "provider retornado não corresponde ao candidato selecionado",
                     response=response,
                 )
-            self._charge_response(response)
+            if handle is None:
+                self._charge_response(response)
             return response
 
         assert last_transient_error is not None
@@ -229,8 +254,9 @@ class ModelRouter:
         last_transient_error: ProviderError | None = None
         for provider_id in candidates:
             self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
-            self.budget_tracker.ensure_available()
             provider = self._create_provider(provider_id)
+            self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
+            handle = self._reserve_model(provider_id, provider, prompt)
             try:
                 response = provider.structured_output(
                     prompt,
@@ -238,12 +264,14 @@ class ModelRouter:
                     cancellation_token=cancellation_token,
                 )
             except ProviderError as exc:
+                self._commit_failed_model(handle)
                 self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
                 if not exc.retryable:
                     raise
                 last_transient_error = exc
                 continue
 
+            self._commit_model_response(handle, response)
             self._raise_if_cancelled(
                 cancellation_token,
                 provider_id=provider_id,
@@ -254,7 +282,8 @@ class ModelRouter:
                     "provider retornado não corresponde ao candidato selecionado",
                     response=response,
                 )
-            self._charge_response(response)
+            if handle is None:
+                self._charge_response(response)
             return response
 
         assert last_transient_error is not None
@@ -274,8 +303,9 @@ class ModelRouter:
         last_transient_error: ProviderError | None = None
         for provider_id in candidates:
             self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
-            self.budget_tracker.ensure_available()
             provider = self._create_provider(provider_id)
+            self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
+            handle = self._reserve_model(provider_id, provider, prompt)
             try:
                 response = provider.call_tools(
                     prompt,
@@ -283,12 +313,14 @@ class ModelRouter:
                     cancellation_token=cancellation_token,
                 )
             except ProviderError as exc:
+                self._commit_failed_model(handle)
                 self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
                 if not exc.retryable:
                     raise
                 last_transient_error = exc
                 continue
 
+            self._commit_model_response(handle, response)
             self._raise_if_cancelled(
                 cancellation_token,
                 provider_id=provider_id,
@@ -299,7 +331,8 @@ class ModelRouter:
                     "provider retornado não corresponde ao candidato selecionado",
                     response=response,
                 )
-            self._charge_response(response)
+            if handle is None:
+                self._charge_response(response)
             return response
 
         assert last_transient_error is not None
@@ -319,8 +352,13 @@ class ModelRouter:
         last_transient_error: ProviderError | None = None
         for provider_id in candidates:
             self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
-            self.budget_tracker.ensure_available()
             provider = self._create_provider(provider_id)
+            self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
+            handle = self._reserve_model(
+                provider_id,
+                provider,
+                conversation.model_dump_json(),
+            )
             try:
                 response = provider.continue_tools(
                     conversation,
@@ -328,12 +366,14 @@ class ModelRouter:
                     cancellation_token=cancellation_token,
                 )
             except ProviderError as exc:
+                self._commit_failed_model(handle)
                 self._raise_if_cancelled(cancellation_token, provider_id=provider_id)
                 if not exc.retryable:
                     raise
                 last_transient_error = exc
                 continue
 
+            self._commit_model_response(handle, response)
             self._raise_if_cancelled(
                 cancellation_token,
                 provider_id=provider_id,
@@ -344,11 +384,73 @@ class ModelRouter:
                     "provider retornado não corresponde ao candidato selecionado",
                     response=response,
                 )
-            self._charge_response(response)
+            if handle is None:
+                self._charge_response(response)
             return response
 
         assert last_transient_error is not None
         raise last_transient_error
+
+    def _reserve_model(
+        self,
+        provider_id: str,
+        provider: BaseLLMProvider,
+        prompt: str,
+    ) -> BudgetReservationHandle | None:
+        if self.budget_boundary is None:
+            self.budget_tracker.ensure_available()
+            return None
+        configured_model: str | None = None
+        if self.provider_registry is not None and hasattr(
+            self.provider_registry,
+            "configured_model",
+        ):
+            configured_model = self.provider_registry.configured_model(provider_id)
+        if configured_model is None:
+            observed_model = getattr(provider, "model_name", None)
+            if isinstance(observed_model, str) and observed_model.strip():
+                configured_model = observed_model
+        if configured_model is None:
+            configured_model = f"{provider_id}-unconfigured"
+        return self.budget_boundary.reserve_model(
+            provider_id,
+            configured_model,
+            prompt,
+        )
+
+    def _commit_failed_model(self, handle: BudgetReservationHandle | None) -> None:
+        if handle is None:
+            return
+        assert self.budget_boundary is not None
+        commit = self.budget_boundary.fail_model(handle)
+        if commit.exceeded:
+            raise self._durable_overage(commit, handle)
+
+    def _commit_model_response(
+        self,
+        handle: BudgetReservationHandle | None,
+        response: LLMResponse,
+    ) -> None:
+        if handle is None:
+            return
+        assert self.budget_boundary is not None
+        commit = self.budget_boundary.commit_model(handle, response)
+        if commit.exceeded:
+            cause = self._durable_overage(commit, handle)
+            raise ModelResponseBudgetExceededError(response, cause) from cause
+
+    @staticmethod
+    def _durable_overage(
+        commit: BudgetCommit,
+        handle: BudgetReservationHandle,
+    ) -> DurableBudgetExceededError:
+        return DurableBudgetExceededError(
+            "committed model usage exceeded the durable budget",
+            dimensions=commit.snapshot.exceeded_dimensions or ("unknown",),
+            scope="execution",
+            node_id=handle.reservation.node_id,
+            operation_id=handle.reservation.operation_id,
+        )
 
     def _charge_response(self, response: LLMResponse) -> None:
         try:

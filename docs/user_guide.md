@@ -35,8 +35,8 @@ uv run python -m build
 | `harness compile <yaml>` | Compila pelo `GraphCompiler` canônico do pacote | Implementado como contrato interno; estabilidade/migração externa ainda não fechadas |
 | `harness index` | Usa `PythonAstIndexer` para reconstruir módulos, classes, funções/métodos e imports dos blobs `.py` do commit Git atual e publica `.harness/state/structural-index/snapshots/<sha>.json` | Implementado para Python por full rebuild; working tree/untracked não entram, erro Git/encoding/sintaxe falha sem snapshot parcial |
 | `harness run <workflow> [--profile <nome>] [--config-json <objeto>]` | Compila/carrega artefato, resolve a configuração tipada e inicia o lifecycle canônico | Fail-closed: configuração inválida não cria execução; o wiring padrão possui registry de executores vazio e não executa modelos/tools automaticamente |
-| `harness status <id>` | Lê a visão canônica do estado persistido | Implementado como leitura local |
-| `harness inspect <id>` | Exibe digests, eventos e aprovação sem secrets | Implementado como inspeção local |
+| `harness status <id>` | Lê a visão canônica do estado persistido e o snapshot agregado de budget | Implementado como leitura local; o saldo F5.4 vem do mesmo journal que governa a execução |
+| `harness inspect <id>` | Exibe digests, eventos, aprovação e saldo por execução/nó sem secrets | Implementado como inspeção local; não usa contador paralelo de apresentação |
 | `harness approve <id>` | Persiste decisão ligada à revisão corrente | Exige retomada explícita e ainda não promove por Git |
 | `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Não aceita perfil/override novo nem relê configuração viva; depende dos mesmos backends explicitamente injetados |
 | `harness verify <execution_id> [--project-id <id>]` | Carrega o `ProvisionedWorktree`, detecta configuração e executa a suíte canônica compilada | F4.5–F4.8 bloqueiam pré-requisito inválido, persistem resultados commit-bound e exigem targeted → full após reparo; worktree/provider ainda precisam existir |
@@ -71,6 +71,29 @@ harness run new-feature --profile default --config-json $configJson --input-json
 `resume` valida novamente a projeção persistida e seu digest, mas não relê profile, manifesto ou
 overrides vivos. Portanto, alterar configuração no disco nunca muda silenciosamente uma execução em
 andamento; é necessário iniciar uma nova execução.
+
+## Orçamento durável F5.4
+
+A implementação local F5.4 substitui, no lifecycle persistido, o contador process-local por um
+ledger derivado do journal canônico. A configuração efetiva aceita limites positivos de prompt,
+completion/total, tool calls, duração, tentativas e custo, além de overrides por nó, preços decimais
+por `provider:model`/tool e o teto conservador de completion por chamada. Essa projeção é persistida no
+bundle; `resume` não relê tetos ou preços vivos.
+
+Depois de egress, policy F5.2, trust boundary F5.3 e cancelamento, cada provider/tool reserva uma
+estimativa determinística antes do transporte/handler. Uma negação pré-efeito não é cobrada. Resposta
+de modelo confirma prompt/completion/total reais exatamente uma vez; tool despachada confirma
+sucesso/falha, duração monotônica e custo conhecido. Sem preço aplicável o custo fica indisponível,
+nunca zero; se houver teto monetário, a ausência de preço bloqueia antes do efeito.
+
+Reinício e `resume` reconstruem execução e nós dos eventos `BUDGET_RESERVED`, `BUDGET_COMMITTED`,
+`BUDGET_RELEASED` e `BUDGET_EXCEEDED`, reaproveitando evidência histórica anterior. Identidade,
+digest de limites, fencing, ordem ou payload divergente falham fechado. Excesso leva a
+`FAILED_BUDGET_EXCEEDED`; retomar esse estado não chama provider, tool, nó ou fallback. Os guards
+específicos de repair/verificação F4.8 continuam existindo, e o limite mais restritivo prevalece.
+
+Essa capacidade está local e ainda aguarda checkpoint/promoção próprios. Ela não adiciona a
+composição automática de providers, tools ou worktree ao CLI.
 
 ## Envelope e gate de contexto F4.3
 
@@ -133,7 +156,7 @@ Regras `deny` prevalecem, a identidade aplicada é determinística e ausência d
 
 A policy compilada continua sendo a fonte do allow/deny por role e node. No runtime, ela é projetada
 para workflow/role/node exatos. Como o schema atual ainda não restringe operação, path ou trust mode,
-a projeção F5.2 declara esses eixos explicitamente como abrangentes. Na implementação local F5.3,
+    a projeção F5.2 declara esses eixos explicitamente como abrangentes. Na F5.3 promovida,
 uma fronteira externa tipada restringe modo, raiz exata e allowlists de contratos Python, aliases,
 nomes de secrets e hooks. Cada registration fornece operação e path reais ao avaliador.
 
@@ -145,8 +168,8 @@ ou divergente.
 
 Isso não liga as tools automaticamente ao lifecycle padrão. O caminho executável atual não aceita um
 booleano do chamador como prova: policy que exige aprovação bloqueia antes do egress. Vincular uma
-aprovação real a conteúdo/diff permanece reservado à F5.6. A F5.3 está certificada localmente e
-continua pendente de promoção própria.
+aprovação real a conteúdo/diff permanece reservado à F5.6. A F5.3 está promovida e reconciliada; a
+F5.4 local preserva essa fronteira antes de qualquer reserva de budget.
 
 ## Teste controlado de `init`
 

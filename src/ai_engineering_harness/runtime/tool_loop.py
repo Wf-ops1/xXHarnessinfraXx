@@ -18,7 +18,10 @@ from pydantic import (
 from ai_engineering_harness.contracts import AgentNodeSpec, CompiledGraphArtifact
 from ai_engineering_harness.contracts.policies import EffectiveNodeToolPolicySpec
 from ai_engineering_harness.governance import (
+    BudgetBoundary,
+    BudgetCommit,
     BudgetError,
+    DurableBudgetExceededError,
     PolicyDeniedError,
     PolicyEngine,
     ToolPolicyDecision,
@@ -276,6 +279,7 @@ class ToolLoopExecutor:
         model_candidates: tuple[str, ...],
         cancellation_token: CancellationToken | None = None,
         tool_effect_recorder: ToolEffectRecorder | None = None,
+        budget_boundary: BudgetBoundary | None = None,
         trust_mode: TrustMode = "restricted",
     ) -> ToolLoopResult:
         records: list[ToolExecutionRecord] = []
@@ -355,14 +359,6 @@ class ToolLoopExecutor:
                     model_calls=model_calls,
                 )
 
-            try:
-                self._model_router.budget_tracker.ensure_available()
-            except BudgetError as exc:
-                raise ToolLoopError(
-                    str(exc),
-                    tool_executions=tuple(records),
-                    model_call_records=tuple(model_call_records),
-                ) from exc
             self._raise_if_cancelled(
                 cancellation_token,
                 records,
@@ -385,18 +381,22 @@ class ToolLoopExecutor:
                     records,
                     model_call_records,
                 )
+                if tool_effect_recorder is None:
+                    raise ToolEffectDurabilityError(
+                        "tool dispatch requires a durable write-ahead recorder"
+                    )
                 try:
-                    self._model_router.budget_tracker.ensure_available()
+                    if budget_boundary is None:
+                        self._model_router.budget_tracker.ensure_available()
+                        budget_handle = None
+                    else:
+                        budget_handle = budget_boundary.reserve_tool(call.name)
                 except BudgetError as exc:
                     raise ToolLoopError(
                         str(exc),
                         tool_executions=tuple(records),
                         model_call_records=tuple(model_call_records),
                     ) from exc
-                if tool_effect_recorder is None:
-                    raise ToolEffectDurabilityError(
-                        "tool dispatch requires a durable write-ahead recorder"
-                    )
                 step = len(records) + 1
                 arguments_json = _canonical_json(call.arguments)
                 intent = ToolCallIntent(
@@ -406,7 +406,16 @@ class ToolLoopExecutor:
                     arguments_digest=_digest(arguments_json),
                     policy_decision=decision,
                 )
-                tool_effect_recorder.record_call(intent)
+                try:
+                    tool_effect_recorder.record_call(intent)
+                except Exception:
+                    if budget_handle is not None:
+                        assert budget_boundary is not None
+                        budget_boundary.release(
+                            budget_handle,
+                            reason_code="tool_write_ahead_failed",
+                        )
+                    raise
                 try:
                     result = self._tool_router.dispatch(
                         call.name,
@@ -415,6 +424,14 @@ class ToolLoopExecutor:
                         decision=decision,
                     )
                 except ToolRouterError as exc:
+                    if budget_handle is None:
+                        budget_commit = None
+                    else:
+                        assert budget_boundary is not None
+                        budget_commit = budget_boundary.commit_tool(
+                            budget_handle,
+                            succeeded=False,
+                        )
                     error_text = Redactor.redact_text(str(exc))[:2_000]
                     record = ToolExecutionRecord(
                         step=step,
@@ -426,9 +443,16 @@ class ToolLoopExecutor:
                         redacted_result=error_text,
                         error_code=type(exc).__name__,
                         policy_decision_digest=decision.digest(),
+                        duration_ms=_budget_duration(budget_commit),
+                        estimated_cost_usd=_budget_cost(budget_commit),
                     )
                     tool_effect_recorder.record_outcome(record)
                     records.append(record)
+                    self._raise_if_budget_exceeded(
+                        budget_commit,
+                        records,
+                        model_call_records,
+                    )
                     raise ToolLoopExecutionError(
                         "tool execution failed",
                         tool_executions=tuple(records),
@@ -436,6 +460,14 @@ class ToolLoopExecutor:
                     ) from exc
 
                 result_json = _canonical_json(result)
+                if budget_handle is None:
+                    budget_commit = None
+                else:
+                    assert budget_boundary is not None
+                    budget_commit = budget_boundary.commit_tool(
+                        budget_handle,
+                        succeeded=True,
+                    )
                 record = ToolExecutionRecord(
                     step=step,
                     call_id=call.call_id,
@@ -445,9 +477,16 @@ class ToolLoopExecutor:
                     result_digest=_digest(result_json),
                     redacted_result=Redactor.redact_text(result_json)[:2_000],
                     policy_decision_digest=decision.digest(),
+                    duration_ms=_budget_duration(budget_commit),
+                    estimated_cost_usd=_budget_cost(budget_commit),
                 )
                 tool_effect_recorder.record_outcome(record)
                 records.append(record)
+                self._raise_if_budget_exceeded(
+                    budget_commit,
+                    records,
+                    model_call_records,
+                )
                 tool_results.append(
                     ModelToolResult(
                         call_id=call.call_id,
@@ -463,6 +502,27 @@ class ToolLoopExecutor:
                     tool_results=tuple(tool_results),
                 )
             )
+
+    @staticmethod
+    def _raise_if_budget_exceeded(
+        commit: BudgetCommit | None,
+        records: list[ToolExecutionRecord],
+        model_call_records: list[ModelCallMetadata],
+    ) -> None:
+        if commit is None or not commit.exceeded:
+            return
+        cause = DurableBudgetExceededError(
+            "committed tool usage exceeded the durable budget",
+            dimensions=commit.snapshot.exceeded_dimensions,
+            scope="execution",
+            node_id="tool-loop",
+            operation_id="tool-result",
+        )
+        raise ToolLoopError(
+            str(cause),
+            tool_executions=tuple(records),
+            model_call_records=tuple(model_call_records),
+        ) from cause
 
     def _validate_batch(
         self,
@@ -528,6 +588,17 @@ class ToolLoopExecutor:
                 tool_executions=tuple(records),
                 model_call_records=tuple(model_call_records),
             )
+
+
+def _budget_duration(commit: BudgetCommit | None) -> int:
+    return 0 if commit is None else commit.actual.duration_ms
+
+
+def _budget_cost(commit: BudgetCommit | None) -> str | None:
+    if commit is None or commit.actual.estimated_cost_usd is None:
+        return None
+    value = commit.actual.estimated_cost_usd
+    return "0" if value == 0 else format(value.normalize(), "f")
 
 
 def _canonical_json(value: object) -> str:

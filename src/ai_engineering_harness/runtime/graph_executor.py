@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
+import re
+import time
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -29,7 +32,13 @@ from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     ExecutionState,
 )
-from ai_engineering_harness.governance import ToolPolicyDecision
+from ai_engineering_harness.governance import (
+    BudgetConfigurationError,
+    BudgetLimits,
+    DurableBudgetExceededError,
+    JournalBudgetBoundary,
+    ToolPolicyDecision,
+)
 from ai_engineering_harness.persistence import (
     EventJournalStateStorageProvider,
     ExecutionLock,
@@ -66,6 +75,7 @@ from .state_machine import (
 VERIFICATION_REPAIR_SCHEDULED: Literal["VERIFICATION_REPAIR_SCHEDULED"] = (
     "VERIFICATION_REPAIR_SCHEDULED"
 )
+_CANONICAL_DECIMAL_PATTERN = re.compile(r"^(0|[1-9][0-9]*)(\.[0-9]+)?$")
 
 
 class GraphExecutionError(Exception):
@@ -115,6 +125,12 @@ class RetryExhaustedError(GraphExecutionError):
     """A node reached its declared maximum number of invocations."""
 
     classification = "retry_exhausted"
+
+
+class GraphBudgetExceededError(GraphExecutionError):
+    """The canonical durable budget reached its specific terminal state."""
+
+    classification = "budget_exceeded"
 
 
 class GraphClockError(GraphExecutionError):
@@ -351,6 +367,7 @@ class GraphExecutor:
         approval_handler: ApprovalPauseHandler | None = None,
         lock_timeout_seconds: float = 30.0,
         clock: Callable[[], datetime] | None = None,
+        monotonic: Callable[[], float] | None = None,
         event_id_factory: Callable[[], str] | None = None,
         owner_id_factory: Callable[[], str] | None = None,
     ) -> None:
@@ -384,6 +401,7 @@ class GraphExecutor:
         self._approval_handler = approval_handler
         self._lock_timeout_seconds = float(lock_timeout_seconds)
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._monotonic = monotonic or time.monotonic
         self._event_id_factory = event_id_factory or (
             lambda: f"event-{uuid.uuid4().hex}"
         )
@@ -738,6 +756,12 @@ class GraphExecutor:
             lock=lock,
         )
         record = state_machine.recover(lock=lock)
+        if record.current_state == ExecutionState.FAILED_BUDGET_EXCEEDED:
+            raise GraphBudgetExceededError(
+                "execution durable budget is already exhausted",
+                execution_id=execution_id,
+                node_id=record.current_node_id,
+            )
         if record.current_state == ExecutionState.FAILED_RETRY_EXHAUSTED:
             raise RetryExhaustedError(
                 "execution retry budget is already exhausted",
@@ -951,6 +975,27 @@ class GraphExecutor:
             )
             if not skip_human_backend:
                 executor.ensure_available()
+            budget_boundary = self._budget_boundary(
+                execution_id,
+                node_id=current_id,
+                attempt=attempt,
+                lock=lock,
+            )
+            if isinstance(budget_boundary, JournalBudgetBoundary):
+                try:
+                    budget_boundary.ensure_attempt_available()
+                except DurableBudgetExceededError as exc:
+                    self._transition_budget_exceeded(
+                        state_machine,
+                        node_id=current_id,
+                        attempt=attempt,
+                        lock=lock,
+                    )
+                    raise GraphBudgetExceededError(
+                        "node attempt exceeds the canonical durable budget",
+                        execution_id=execution_id,
+                        node_id=current_id,
+                    ) from exc
             started_at = self._next_timestamp(
                 record.updated_at,
                 execution_id=execution_id,
@@ -983,13 +1028,29 @@ class GraphExecutor:
                 fencing_token=lock.fencing_token,
                 retry_context=retry_context,
                 tool_effect_recorder=tool_effect_recorder,
+                budget_boundary=budget_boundary,
             )
 
-            result = (
-                NodeExecutionResult.completed(current_payload)
-                if skip_human_backend
-                else self._execute_node(executor, context)
-            )
+            try:
+                result = (
+                    NodeExecutionResult.completed(current_payload)
+                    if skip_human_backend
+                    else self._execute_node(executor, context)
+                )
+            except Exception as exc:
+                if budget_boundary is not None and budget_boundary.snapshot().is_exceeded:
+                    self._transition_budget_exceeded(
+                        state_machine,
+                        node_id=current_id,
+                        attempt=attempt,
+                        lock=lock,
+                    )
+                    raise GraphBudgetExceededError(
+                        "node effect exhausted the canonical durable budget",
+                        execution_id=execution_id,
+                        node_id=current_id,
+                    ) from exc
+                raise
             if result.succeeded:
                 try:
                     self._validate_node_output(
@@ -1011,6 +1072,18 @@ class GraphExecutor:
             last_tool_event_at = tool_effect_recorder.finish(
                 result.tool_executions
             )
+            if budget_boundary is not None and budget_boundary.snapshot().is_exceeded:
+                self._transition_budget_exceeded(
+                    state_machine,
+                    node_id=current_id,
+                    attempt=attempt,
+                    lock=lock,
+                )
+                raise GraphBudgetExceededError(
+                    "node effect exhausted the canonical durable budget",
+                    execution_id=execution_id,
+                    node_id=current_id,
+                )
 
             next_id = node.on_success if result.succeeded else node.on_failure
             next_retry_context = self._next_retry_context(
@@ -1455,6 +1528,8 @@ class GraphExecutor:
             payload["result_digest"] = record.result_digest
             payload["redacted_result"] = record.redacted_result
             payload["policy_decision_digest"] = record.policy_decision_digest
+            payload["duration_ms"] = record.duration_ms
+            payload["estimated_cost_usd"] = record.estimated_cost_usd
             if record.error_code is not None:
                 payload["error_code"] = record.error_code
         try:
@@ -1472,6 +1547,62 @@ class GraphExecutor:
                 node_id=node.id,
             ) from exc
         self._storage.append_event(execution_id, event, lock=lock)
+
+    def _budget_boundary(
+        self,
+        execution_id: str,
+        *,
+        node_id: str,
+        attempt: int,
+        lock: ExecutionLock,
+    ) -> JournalBudgetBoundary | None:
+        if not self._resume_enabled or not isinstance(
+            self._storage,
+            ResumeStateStorageProvider,
+        ):
+            return None
+        try:
+            bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
+            configuration = json.loads(bundle.configuration_json)
+            if type(configuration) is not dict or "budget" not in configuration:
+                return None
+            limits = BudgetLimits.from_effective_config(configuration)
+        except (BudgetConfigurationError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise GraphExecutionError(
+                "persisted execution budget configuration is invalid",
+                execution_id=execution_id,
+                node_id=node_id,
+            ) from exc
+        return JournalBudgetBoundary(
+            storage=self._storage,
+            lock=lock,
+            execution_id=execution_id,
+            node_id=node_id,
+            attempt=attempt,
+            limits=limits,
+            event_id_factory=self._event_id_factory,
+            clock=self._clock,
+            monotonic=self._monotonic,
+        )
+
+    @staticmethod
+    def _transition_budget_exceeded(
+        state_machine: EventSourcedStateMachine,
+        *,
+        node_id: str,
+        attempt: int,
+        lock: ExecutionLock,
+    ) -> None:
+        current = state_machine.recover(lock=lock)
+        if current.current_state == ExecutionState.FAILED_BUDGET_EXCEEDED:
+            return
+        state_machine.transition_to(
+            ExecutionState.FAILED_BUDGET_EXCEEDED,
+            node_id=node_id,
+            attempt=attempt,
+            reason="durable_budget_exceeded",
+            lock=lock,
+        )
 
     def _store_payload(
         self,
@@ -1995,7 +2126,14 @@ class GraphExecutor:
                     expected_tool_outcome.add("error_code")
                 if open_tool is not None and open_tool[7] is not None:
                     expected_tool_outcome.add("policy_decision_digest")
-                if set(payload) != expected_tool_outcome or open_tool is None:
+                extended_tool_outcome = expected_tool_outcome | {
+                    "duration_ms",
+                    "estimated_cost_usd",
+                }
+                if (
+                    set(payload) not in (expected_tool_outcome, extended_tool_outcome)
+                    or open_tool is None
+                ):
                     raise InterruptedNodeExecutionError(
                         "tool outcome ledger is malformed or has no matching call",
                         execution_id=record.execution_id,
@@ -2036,6 +2174,22 @@ class GraphExecutor:
                     )
                 if event.event_type == "TOOL_FAILED":
                     self._ledger_string(payload["error_code"], field="error_code")
+                if set(payload) == extended_tool_outcome:
+                    self._ledger_integer(
+                        payload["duration_ms"],
+                        field="duration_ms",
+                        minimum=0,
+                    )
+                    estimated_cost = payload["estimated_cost_usd"]
+                    if estimated_cost is not None and (
+                        type(estimated_cost) is not str
+                        or _CANONICAL_DECIMAL_PATTERN.fullmatch(estimated_cost) is None
+                    ):
+                        raise InterruptedNodeExecutionError(
+                            "tool estimated cost is not canonical",
+                            execution_id=record.execution_id,
+                            node_id=observed_tool[0],
+                        )
                 open_tool = None
                 next_tool_step += 1
                 continue
@@ -2634,6 +2788,7 @@ __all__ = [
     "VERIFICATION_REPAIR_SCHEDULED",
     "ApprovalPauseHandler",
     "ArtifactExecutionMismatchError",
+    "GraphBudgetExceededError",
     "GraphClockError",
     "GraphCycleExecutionError",
     "GraphEventConstructionError",

@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
+    assert "`READY / CERTIFICATION_ACTIVE / LOCAL_ONLY`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -817,7 +817,7 @@ def test_f5_4_ready_gate_freezes_durable_execution_and_node_budget() -> None:
 
     assert (ACTIVE_ROOT / "F5.4.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "> **Lifecycle:** `CERTIFICATION_ACTIVE / LOCAL_ONLY`" in dossier
     assert "checkpoint/f5.4-ready" in dossier
     assert "task/f5.4-durable-budget" in dossier
     assert "4c0527baacc74821112adf7fe61b82af72589f69" in dossier
@@ -842,7 +842,10 @@ def test_f5_4_ready_gate_freezes_durable_execution_and_node_budget() -> None:
     assert "F5.7" in dossier
     assert "docs/tasks/active/F5.4.md" in panel
     assert "active/F5.4.md" in task_index
-    assert "F5.4 está `READY / ACTIVE / LOCAL_ONLY`" in readme
+    assert "F5.4 está `CERTIFICATION_ACTIVE / LOCAL_ONLY`" in readme
+    assert "202 passed" in dossier
+    assert "856 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "checkpoint/f5.4-complete" in dossier
     assert "administrativo #58 / merge `4c0527b` / pós-merge `31728438719`" in task_index
 
 

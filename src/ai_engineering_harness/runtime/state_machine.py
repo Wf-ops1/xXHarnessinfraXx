@@ -126,6 +126,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
             ExecutionState.BLOCKED_PREREQUISITE,
             ExecutionState.CANCELLED,
             ExecutionState.FAILED,
+            ExecutionState.FAILED_BUDGET_EXCEEDED,
         }
     ),
     ExecutionState.GENERATING_PLAN: frozenset(
@@ -134,6 +135,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
             ExecutionState.BLOCKED_PREREQUISITE,
             ExecutionState.CANCELLED,
             ExecutionState.FAILED,
+            ExecutionState.FAILED_BUDGET_EXCEEDED,
         }
     ),
     ExecutionState.EXECUTING: frozenset(
@@ -144,6 +146,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
             ExecutionState.COMPLETED,
             ExecutionState.CANCELLED,
             ExecutionState.FAILED,
+            ExecutionState.FAILED_BUDGET_EXCEEDED,
             ExecutionState.FAILED_RETRY_EXHAUSTED,
         }
     ),
@@ -157,6 +160,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
             ExecutionState.BLOCKED_PREREQUISITE,
             ExecutionState.CANCELLED,
             ExecutionState.FAILED,
+            ExecutionState.FAILED_BUDGET_EXCEEDED,
             ExecutionState.FAILED_RETRY_EXHAUSTED,
         }
     ),
@@ -210,6 +214,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
     ExecutionState.COMPLETED: frozenset(),
     ExecutionState.CANCELLED: frozenset(),
     ExecutionState.FAILED: frozenset(),
+    ExecutionState.FAILED_BUDGET_EXCEEDED: frozenset(),
     ExecutionState.FAILED_RETRY_EXHAUSTED: frozenset(),
     ExecutionState.COMPENSATED: frozenset(),
 }

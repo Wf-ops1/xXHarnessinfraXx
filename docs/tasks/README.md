@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.4](active/F5.4.md) é a tarefa ativa em `READY / ACTIVE / LOCAL_ONLY`. A branch
-`task/f5.4-durable-budget` foi criada do baseline certificado `4c0527b`; o gate congela orçamento
+A [F5.4](active/F5.4.md) é a tarefa ativa em `READY / CERTIFICATION_ACTIVE / LOCAL_ONLY`. Na branch
+`task/f5.4-durable-budget`, planejamento, nós/modelos, tools e verificação compartilham orçamento
 durável por execução/nó, reserva antes do efeito, consumo real, replay/resume e o estado
-`FAILED_BUDGET_EXCEEDED`. Implementação, publicação/PR/merge, tags, refs e F5.5 permanecem não
-autorizados.
+`FAILED_BUDGET_EXCEEDED`. O focado passou com 202 testes e o full válido com 856 passed, 5 skipped e
+6 subtests passed; falta materializar o checkpoint COMPLETE local. Publicação/PR/merge, tags remotas,
+remoção de refs e F5.5 permanecem não autorizados.
 
 A [F5.3](completed/F5.3.md) está `PROMOTED`: o PR #57 encerrou no head `4934aee`, passou 11/11 checks
 no run `31659293351`, foi incorporado pelo merge `211edcf` e recebeu 11/11 na CI pós-merge

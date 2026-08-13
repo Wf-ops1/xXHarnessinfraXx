@@ -240,6 +240,9 @@ def test_start_bundle_payload_status_inspect_and_public_views(tmp_path: Path) ->
     inspection = service.inspect("exec-start-public")
     assert status.current_state == ExecutionState.VERIFYING
     assert status.approval_status == ApprovalStatus.NOT_REQUIRED
+    assert status.budget is not None
+    assert status.budget.usage.attempts == 1
+    assert status.budget.nodes["execute"].usage.attempts == 1
     assert inspection.status == status
     assert inspection.event_count == len(storage.load_events("exec-start-public"))
     rendered = inspection.model_dump_json()

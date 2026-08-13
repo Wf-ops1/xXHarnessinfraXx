@@ -181,7 +181,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
+    assert "`READY / CERTIFICATION_ACTIVE / LOCAL_ONLY`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
@@ -202,6 +202,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f5.2-ready" in panel
     assert "checkpoint/f5.3-ready" in panel
     assert "checkpoint/f5.4-ready" in panel
+    assert "856 passed, 5 skipped, 6 subtests passed" in panel
+    assert "FAILED_BUDGET_EXCEEDED" in user_guide
+    assert "BUDGET_RESERVED" in user_guide
+    assert "status`/`inspect" in walkthrough
     assert "certificar/arquivar a F3.8 no primeiro commit do gate seguinte" not in panel
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle

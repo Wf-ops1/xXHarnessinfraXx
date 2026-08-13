@@ -228,6 +228,7 @@ def test_states_table_is_closed_and_illegal_self_terminal_transitions_preserve_b
         ExecutionState.COMPLETED,
         ExecutionState.CANCELLED,
         ExecutionState.FAILED,
+        ExecutionState.FAILED_BUDGET_EXCEEDED,
         ExecutionState.FAILED_RETRY_EXHAUSTED,
         ExecutionState.COMPENSATED,
     }

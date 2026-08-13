@@ -24,7 +24,7 @@ from ai_engineering_harness.contracts import (
     TerminalStateSpec,
 )
 from ai_engineering_harness.contracts.execution import ExecutionId
-from ai_engineering_harness.governance import ToolPolicyDecision
+from ai_engineering_harness.governance import BudgetBoundary, ToolPolicyDecision
 from ai_engineering_harness.models.provider import LLMResponse
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -269,6 +269,11 @@ class ToolExecutionRecord(_StrictFrozenModel):
     redacted_result: str = Field(max_length=2_000)
     error_code: _NonEmptyStr | None = None
     policy_decision_digest: _DigestStr
+    duration_ms: int = Field(default=0, ge=0)
+    estimated_cost_usd: str | None = Field(
+        default=None,
+        pattern=r"^(0|[1-9][0-9]*)(\.[0-9]+)?$",
+    )
 
     @model_validator(mode="after")
     def require_matching_error(self) -> ToolExecutionRecord:
@@ -312,6 +317,11 @@ class NodeExecutionContext(_StrictFrozenModel):
         exclude=True,
         repr=False,
     )
+    budget_boundary: BudgetBoundary | None = Field(
+        default=None,
+        exclude=True,
+        repr=False,
+    )
 
     @field_validator("artifact", mode="before")
     @classmethod
@@ -333,6 +343,16 @@ class NodeExecutionContext(_StrictFrozenModel):
     ) -> ToolEffectRecorder | None:
         if value is not None and not isinstance(value, ToolEffectRecorder):
             raise TypeError("tool_effect_recorder must implement ToolEffectRecorder")
+        return value
+
+    @field_validator("budget_boundary")
+    @classmethod
+    def require_budget_boundary(
+        cls,
+        value: BudgetBoundary | None,
+    ) -> BudgetBoundary | None:
+        if value is not None and not isinstance(value, BudgetBoundary):
+            raise TypeError("budget_boundary must implement BudgetBoundary")
         return value
 
 

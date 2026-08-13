@@ -32,6 +32,7 @@ from ai_engineering_harness.runtime import (
     PLAN_GENERATED,
     PLAN_GENERATION_STARTED,
     DeterministicNodeExecutor,
+    ExecutionBudgetExceededError,
     ExecutionLifecycleService,
     NodeExecutionContext,
     NodeExecutionResult,
@@ -608,3 +609,40 @@ def test_missing_compiled_planning_policy_blocks_before_provider_and_node(
     )
     assert provider.calls == 0
     assert calls == []
+
+
+def test_planning_budget_denial_is_terminal_and_resume_has_no_provider_effect(
+    tmp_path: Path,
+) -> None:
+    artifact = _compiled_graph(tmp_path)
+    _prepare_evidence(tmp_path)
+    provider = _PlanningProvider()
+    service, storage, calls = _service(tmp_path, provider)
+    execution_id = "exec-plan-budget-denied"
+
+    with pytest.raises(ExecutionBudgetExceededError):
+        service.start(
+            artifact,
+            execution_id=execution_id,
+            initial_input=_envelope(),
+            configuration={
+                "budget": {
+                    "max_tokens": 5,
+                    "max_prompt_tokens": 5,
+                    "max_completion_tokens": 5,
+                }
+            },
+        )
+
+    assert provider.calls == 0
+    assert calls == []
+    assert storage.load_execution(execution_id).current_state == (
+        ExecutionState.FAILED_BUDGET_EXCEEDED
+    )
+    status = service.status(execution_id)
+    inspection = service.inspect(execution_id)
+    assert status.budget is not None and status.budget.is_exceeded
+    assert inspection.status.budget == status.budget
+    with pytest.raises(ExecutionBudgetExceededError):
+        service.resume(execution_id)
+    assert provider.calls == 0

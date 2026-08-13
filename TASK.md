@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.4](docs/tasks/active/F5.4.md): gate corrente de orçamento durável, congelado antes da implementação.
+2. [F5.4](docs/tasks/active/F5.4.md): implementação local em certificação final, ainda sem publicação.
 3. [F5.3](docs/tasks/completed/F5.3.md): promoção e reconciliação administrativa comprovadas.
 4. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
    checkpoint `checkpoint/f5.2-ready` somente local.
@@ -26,7 +26,7 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.4 — integrar orçamento durável por execução e nó |
-| **Gate** | `READY / ACTIVE / LOCAL_ONLY` |
+| **Gate** | `READY / CERTIFICATION_ACTIVE / LOCAL_ONLY` |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T15:18:42-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch da tarefa** | `task/f5.4-durable-budget`, local e sem upstream |
@@ -37,7 +37,7 @@
 | **Promoção F5.3** | PR [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), merge `211edcf921912a32429934bf600473d8cc98941c` |
 | **CI pós-merge** | run [31660030240](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31660030240), `push`, 11/11 success no merge exato |
 | **Reconciliação F5.3** | PR [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58), head `9d53e4156382e24c25b206aa50fdaed3e03ee2dd`, merge `4c0527baacc74821112adf7fe61b82af72589f69`; CI `31728438719`, 11/11 success |
-| **Checkpoint corrente** | `checkpoint/f5.4-ready` somente local → commit documental deste gate |
+| **Checkpoint corrente** | `checkpoint/f5.4-ready` somente local; `checkpoint/f5.4-complete` ainda pendente |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -58,28 +58,28 @@ recertificação integral e reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Existe um único executor/escritor: `Codex`. A autorização corrente permite somente criar a branch,
-o dossiê F5.4, atualizar documentação/ledger e materializar o checkpoint READY. Produto,
-dependências, schemas, defaults, lockfile e CI ainda não podem ser alterados.
+Existe um único executor/escritor: `Codex`. A autorização corrente permitiu implementar e certificar
+localmente a F5.4 dentro do escopo congelado. Dependências, schemas de grafo/policy/evento, lockfile e
+CI não foram alterados. Publicação e início da F5.5 continuam fora da autorização.
 
 ## 5. Tarefa ativa
 
-A F5.4 está `READY / ACTIVE / LOCAL_ONLY`, ainda sem implementação. O gate congela um ledger canônico
-por execução/nó para prompt/completion tokens, tool calls, duração, tentativas e custo conhecido;
-reserva antes do efeito, consumo real depois, replay/resume sem reset ou dupla cobrança e estado
-`FAILED_BUDGET_EXCEEDED`. O contador atual do `ModelRouter` permanece apenas process-local até a
-implementação ser autorizada.
+A F5.4 está `READY / CERTIFICATION_ACTIVE / LOCAL_ONLY`. O journal agora governa um ledger canônico
+por execução/nó para prompt/completion tokens, tool calls, duração, tentativas e custo conhecido.
+Planejamento, nós/modelos, tool loop e verificação compartilham reserva pré-efeito, consumo real,
+replay/resume e o estado `FAILED_BUDGET_EXCEEDED`; `status`/`inspect` expõem o mesmo snapshot. A matriz
+focada passou com `202 passed`; o full válido passou com `856 passed, 5 skipped, 6 subtests passed`;
+mypy, Ruff, compileall, build e smoke isolado passaram. Falta fechar documentos e o checkpoint local.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Implementar produto, ampliar o escopo congelado, publicar a branch,
-abrir/mesclar PR, publicar tags, remover refs, fazer force-push/bypass ou iniciar a F5.5 não estão
-autorizados.
+Não há bloqueio técnico conhecido. Ampliar o escopo congelado, publicar a branch, abrir/mesclar PR,
+publicar tags, remover refs, fazer force-push/bypass ou iniciar a F5.5 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO PARA IMPLEMENTAR A F5.4 NO ESCOPO CONGELADO.
+FINALIZAR DOCUMENTOS/LEDGER E MATERIALIZAR O COMMIT/TAG LOCAL CHECKPOINT/F5.4-COMPLETE.
 NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5.
 ```
 
@@ -87,9 +87,9 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5.
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.4.md` e a Fase 5 do plano.
 2. Confirme branch `task/f5.4-durable-budget`, baseline `4c0527b` e checkpoint `checkpoint/f5.4-ready`.
-3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist administrativa.
-4. Execute somente a próxima ação exata; implementação, publicação e F5.5 exigem autorização própria.
+3. Confirme a evidência local `202 passed` focados e `856 passed, 5 skipped, 6 subtests passed` no full.
+4. Use exclusivamente `.\.venv\Scripts\python.exe`; finalize só o checkpoint local, sem publicação/F5.5.
 
 ---
 
-*Atualizado em: 2026-08-13T15:18:42-03:00 | Fonte: F5.4 + F5.3 + PRs #57/#58 + runs 31660030240/31728438719 + merge 4c0527b*
+*Atualizado em: 2026-08-13T16:58:28-03:00 | Fonte: F5.4 local + full 856/5/6 + F5.3/PRs #57/#58 + CI 31728438719*

@@ -2,18 +2,26 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 
 from ai_engineering_harness.contracts import (
+    ApprovalStatus,
     CompiledGraphArtifact,
     ContractRegistry,
     GraphSpec,
     PolicyRegistry,
     SourceManifestEntry,
 )
-from ai_engineering_harness.governance import BudgetTracker
+from ai_engineering_harness.contracts.execution import ExecutionRecord, ExecutionState
+from ai_engineering_harness.governance import (
+    BudgetLedger,
+    BudgetLimits,
+    BudgetTracker,
+    JournalBudgetBoundary,
+)
 from ai_engineering_harness.models import (
     CancellationToken,
     LLMResponse,
@@ -22,6 +30,7 @@ from ai_engineering_harness.models import (
     ProviderTimeoutError,
     ToolCall,
 )
+from ai_engineering_harness.persistence import AtomicFileStateStorage
 from ai_engineering_harness.runtime import (
     EffectiveToolPolicy,
     ToolApprovalRequiredError,
@@ -50,6 +59,7 @@ _CONTRACT = "ai_engineering_harness.contracts.nodes.context_sufficiency.Retrieva
 class _ToolProvider:
     def __init__(self, provider_id: str, outcomes: list[LLMResponse | Exception]) -> None:
         self.provider_id = provider_id
+        self.model_name = f"{provider_id}-model"
         self.outcomes = outcomes
         self.prompts: list[str] = []
         self.conversations: list[ModelToolConversation] = []
@@ -93,6 +103,9 @@ class _Registry:
     def create_provider(self, provider_id: str) -> _ToolProvider:
         self.created.append(provider_id)
         return self.providers[provider_id]
+
+    def configured_model(self, provider_id: str) -> str:
+        return self.providers[provider_id].model_name
 
 
 class _MemoryRecorder:
@@ -244,6 +257,158 @@ def _execute(loop: ToolLoopExecutor, tool_router: ToolRouter, **kwargs):
         model_candidates=("local",),
         **kwargs,
     )
+
+
+class _BudgetTicks:
+    def __init__(self) -> None:
+        self.value = 10.0
+
+    def __call__(self) -> float:
+        self.value += 0.001
+        return self.value
+
+
+class _BudgetEventIds:
+    def __init__(self) -> None:
+        self.value = 0
+
+    def __call__(self) -> str:
+        self.value += 1
+        return f"tool-budget-event-{self.value}"
+
+
+def _durable_boundary(tmp_path):
+    execution_id = "exec-tool-budget"
+    timestamp = datetime(2026, 8, 13, 21, 0, tzinfo=UTC)
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(
+        ExecutionRecord(
+            record_schema_version="1.0",
+            revision=0,
+            execution_id=execution_id,
+            workflow_name="tool-loop",
+            artifact_digest=f"sha256:{'0' * 64}",
+            base_commit_sha="a" * 40,
+            original_branch="test",
+            worktree_path=None,
+            current_node_id="agent",
+            current_state=ExecutionState.EXECUTING,
+            attempt_by_node={},
+            created_at=timestamp,
+            updated_at=timestamp,
+            configuration_digest=f"sha256:{'1' * 64}",
+            approval_status=ApprovalStatus.NOT_REQUIRED,
+            candidate_commit_sha=None,
+            promotion_commit_sha=None,
+            failure=None,
+        )
+    )
+    lock = storage.acquire_execution_lock(
+        execution_id,
+        "tool-budget-test",
+        timeout_seconds=1,
+    )
+    limits = BudgetLimits.from_effective_config(
+        {
+            "budget": {
+                "max_tokens": 1_000,
+                "max_prompt_tokens": 1_000,
+                "max_completion_tokens": 1_000,
+                "max_tool_calls": 3,
+                "max_duration_ms": 1_000,
+                "max_attempts": 3,
+                "max_completion_tokens_per_call": 5,
+                "default_node_limits": {},
+                "node_limits": {},
+                "model_prices": {
+                    "local:local-model": {
+                        "prompt_per_million_usd": "1",
+                        "completion_per_million_usd": "2",
+                    }
+                },
+                "tool_prices_usd": {"knowledge_retriever": "0.01"},
+            }
+        }
+    )
+    clock_value = timestamp
+
+    def clock() -> datetime:
+        nonlocal clock_value
+        clock_value += timedelta(microseconds=1)
+        return clock_value
+
+    boundary = JournalBudgetBoundary(
+        storage=storage,
+        lock=lock,
+        execution_id=execution_id,
+        node_id="agent",
+        attempt=1,
+        limits=limits,
+        event_id_factory=_BudgetEventIds(),
+        clock=clock,
+        monotonic=_BudgetTicks(),
+    )
+    return storage, lock, limits, boundary
+
+
+def test_durable_boundary_covers_model_tool_and_continuation_in_one_ledger(
+    tmp_path,
+) -> None:
+    effects: list[dict[str, object]] = []
+
+    def handler(payload):
+        effects.append(payload)
+        return {"matches": ["F5.4"]}
+
+    tool_router = _tool_router(handler)
+    provider = _ToolProvider(
+        "local",
+        [
+            _response(calls=(_call(),), index=1),
+            _response(content="final", index=2),
+        ],
+    )
+    storage, lock, limits, boundary = _durable_boundary(tmp_path)
+    try:
+        router = ModelRouter(
+            allowed_providers=("local",),
+            provider_registry=_Registry({"local": provider}),  # type: ignore[arg-type]
+            budget_boundary=boundary,
+            default_primary_provider="local",
+        )
+        loop = ToolLoopExecutor(router, tool_router, max_tool_steps=3)
+        result = _execute(
+            loop,
+            tool_router,
+            budget_boundary=boundary,
+            tool_effect_recorder=_MemoryRecorder(),
+        )
+
+        assert effects == [{"query": "routing"}]
+        assert result.model_calls == 2
+        assert result.tool_executions[0].duration_ms == 1
+        assert result.tool_executions[0].estimated_cost_usd == "0.01"
+        snapshot = BudgetLedger.replay(
+            "exec-tool-budget",
+            limits,
+            storage.load_events("exec-tool-budget", lock=lock),
+        ).snapshot()
+        assert snapshot.usage.total_tokens == 6
+        assert snapshot.usage.tool_calls == 1
+        assert snapshot.nodes["agent"].usage == snapshot.usage
+        assert tuple(
+            event.event_type
+            for event in storage.load_events("exec-tool-budget", lock=lock)
+        ) == (
+            "BUDGET_RESERVED",
+            "BUDGET_COMMITTED",
+            "BUDGET_RESERVED",
+            "BUDGET_COMMITTED",
+            "BUDGET_RESERVED",
+            "BUDGET_COMMITTED",
+        )
+    finally:
+        storage.release_execution_lock(lock)
 
 
 def test_compiled_policy_tool_result_returns_to_model_and_final_response_stops() -> None:
