@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.4](docs/tasks/active/F5.4.md): concluída localmente e aguardando autorização de publicação.
+2. [F5.4](docs/tasks/active/F5.4.md): publicada no PR #59 e aguardando checks do head final.
 3. [F5.3](docs/tasks/completed/F5.3.md): promoção e reconciliação administrativa comprovadas.
 4. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
    checkpoint `checkpoint/f5.2-ready` somente local.
@@ -26,10 +26,10 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.4 — integrar orçamento durável por execução e nó |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Gate** | `PUBLISHED / PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T15:18:42-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch da tarefa** | `task/f5.4-durable-budget`, local e sem upstream |
+| **Branch da tarefa** | `task/f5.4-durable-budget`, publicada em `origin` e configurada como upstream |
 | **Baseline** | `main == origin/main == 4c0527baacc74821112adf7fe61b82af72589f69` antes da branch |
 | **Produto F5.3** | `f34409aeb197612d866be0576d5bc21d00e0a8f1` |
 | **Head final do PR** | `4934aee925830e4aac2672b0bbf6ffadbf1c9ca9` |
@@ -38,6 +38,8 @@
 | **CI pós-merge** | run [31660030240](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31660030240), `push`, 11/11 success no merge exato |
 | **Reconciliação F5.3** | PR [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58), head `9d53e4156382e24c25b206aa50fdaed3e03ee2dd`, merge `4c0527baacc74821112adf7fe61b82af72589f69`; CI `31728438719`, 11/11 success |
 | **Produto F5.4** | `722916b0d5c9eddb0a06151894701e3f16e113aa` |
+| **PR F5.4** | [#59](https://github.com/Wf-ops1/Harnessinfra/pull/59), aberto, não draft, base `main` |
+| **Head publicado inicial** | `0cb69b1d94bd650c69528777514c6f1b12478392` |
 | **Checkpoint corrente** | `checkpoint/f5.4-ready` e `checkpoint/f5.4-complete`, somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
@@ -65,23 +67,24 @@ CI não foram alterados. Publicação e início da F5.5 continuam fora da autori
 
 ## 5. Tarefa ativa
 
-A F5.4 está `COMPLETED_LOCAL / PROMOTION_PENDING`. O journal agora governa um ledger canônico
+A F5.4 está `PUBLISHED / PR_OPEN / CHECKS_PENDING`. O journal agora governa um ledger canônico
 por execução/nó para prompt/completion tokens, tool calls, duração, tentativas e custo conhecido.
 Planejamento, nós/modelos, tool loop e verificação compartilham reserva pré-efeito, consumo real,
 replay/resume e o estado `FAILED_BUDGET_EXCEEDED`; `status`/`inspect` expõem o mesmo snapshot. A matriz
 focada passou com `202 passed`; o full válido passou com `856 passed, 5 skipped, 6 subtests passed`;
-mypy, Ruff, compileall, build e smoke isolado passaram. O produto está no commit local `722916b`.
+mypy, Ruff, compileall, build e smoke isolado passaram. O PR #59 está aberto contra `main`; checks do
+head documental final ainda precisam ser observados.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Ampliar o escopo congelado, publicar a branch, abrir/mesclar PR,
-publicar tags, remover refs, fazer force-push/bypass ou iniciar a F5.5 não estão autorizados.
+Não há bloqueio técnico conhecido. Ampliar o escopo congelado, mesclar o PR, publicar tags, remover
+refs, fazer force-push/bypass ou iniciar a F5.5 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUBLICAR A BRANCH E ABRIR O PR DA F5.4.
-NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5.
+PUBLICAR ESTE REGISTRO NO PR #59 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
+NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -89,8 +92,8 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5.
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.4.md` e a Fase 5 do plano.
 2. Confirme branch `task/f5.4-durable-budget`, baseline `4c0527b` e checkpoint `checkpoint/f5.4-ready`.
 3. Confirme a evidência local `202 passed` focados e `856 passed, 5 skipped, 6 subtests passed` no full.
-4. Não altere produto; publicação/PR, merge e F5.5 exigem autorizações próprias.
+4. Não altere produto; audite checks, mas merge e F5.5 exigem autorizações próprias.
 
 ---
 
-*Atualizado em: 2026-08-13T17:03:19-03:00 | Fonte: F5.4 `722916b` + full 856/5/6 + F5.3/PRs #57/#58 + CI 31728438719*
+*Atualizado em: 2026-08-13T17:11:16-03:00 | Fonte: F5.4/PR #59 + produto `722916b` + full 856/5/6 + F5.3/CI 31728438719*

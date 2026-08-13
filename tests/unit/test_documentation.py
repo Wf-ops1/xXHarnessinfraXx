@@ -181,7 +181,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "`PUBLISHED / PR_OPEN / CHECKS_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
@@ -203,6 +203,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f5.3-ready" in panel
     assert "checkpoint/f5.4-ready" in panel
     assert "checkpoint/f5.4-complete" in panel
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/59" in panel
     assert "856 passed, 5 skipped, 6 subtests passed" in panel
     assert "FAILED_BUDGET_EXCEEDED" in user_guide
     assert "BUDGET_RESERVED" in user_guide
