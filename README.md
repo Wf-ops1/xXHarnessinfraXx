@@ -133,13 +133,14 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `811 passed, 5 skipped, 6 subtests passed`, qualidade, build limpo e smoke isolado da wheel. A
   reconciliação administrativa [PR #56](https://github.com/Wf-ops1/Harnessinfra/pull/56) foi
   incorporada pelo merge `0607a0b`; a CI de `push` `31650131258` passou 11/11 nesse SHA exato. A
-  A F5.3 foi promovida pelo [PR #57](https://github.com/Wf-ops1/Harnessinfra/pull/57): o head final
+  F5.3 foi promovida pelo [PR #57](https://github.com/Wf-ops1/Harnessinfra/pull/57): o head final
   `4934aee` recebeu 11/11 checks no run `31659293351`, foi incorporado pelo merge `211edcf` e recebeu
   11/11 na CI de `push` pós-merge `31660030240`. O produto `f34409a` passou no focado com
   `283 passed, 2 skipped` e na regressão integral com `827 passed, 5 skipped, 6 subtests passed`,
   além de qualidade, build e smoke isolado da wheel. A
-  reconciliação administrativa está local em `docs/promote-f5.3` e ainda não foi publicada. Os
-  checkpoints permanecem locais; F5.4, tags remotas e remoção de refs não estão autorizados.
+  reconciliação administrativa foi publicada no [PR #58](https://github.com/Wf-ops1/Harnessinfra/pull/58),
+  aberto e não draft, e aguarda os checks do head final. Os checkpoints permanecem locais; merge
+  administrativo, F5.4, tags remotas e remoção de refs não estão autorizados.
 
 ## Dívidas técnicas críticas
 

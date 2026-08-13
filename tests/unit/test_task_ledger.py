@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.4 — integrar orçamento — está somente planejada e não autorizada" in panel
-    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
+    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -803,7 +803,9 @@ def test_f5_3_promotion_preserves_the_frozen_trust_boundary() -> None:
     assert "31659293351" in dossier
     assert "211edcf921912a32429934bf600473d8cc98941c" in dossier
     assert "31660030240" in dossier
-    assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in dossier
+    assert "7b7af9ea2512e1ea9a606053e39ae43678c83b39" in dossier
     assert "docs/promote-f5.3" in dossier
 
 

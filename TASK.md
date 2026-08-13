@@ -25,17 +25,17 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | nenhuma tarefa ativa; F5.4 — integrar orçamento — está somente planejada e não autorizada |
-| **Gate** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL` |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor da reconciliação iniciada em `2026-08-12T23:19:24-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch administrativa** | `docs/promote-f5.3`, local e sem upstream |
+| **Branch administrativa** | `docs/promote-f5.3`, publicada e acompanhando `origin/docs/promote-f5.3` |
 | **Baseline** | `main == origin/main == 211edcf921912a32429934bf600473d8cc98941c` antes da branch |
 | **Produto F5.3** | `f34409aeb197612d866be0576d5bc21d00e0a8f1` |
 | **Head final do PR** | `4934aee925830e4aac2672b0bbf6ffadbf1c9ca9` |
 | **CI do PR** | run [31659293351](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31659293351), `pull_request`, 11/11 success no head final |
 | **Promoção F5.3** | PR [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), merge `211edcf921912a32429934bf600473d8cc98941c` |
 | **CI pós-merge** | run [31660030240](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31660030240), `push`, 11/11 success no merge exato |
-| **Reconciliação** | commit local `fed4c7050f8891e8b24e874bb9aa2130b9269983`; `LOCAL_READY / PUBLICATION_PENDING` |
+| **Reconciliação** | commits iniciais `fed4c7050f8891e8b24e874bb9aa2130b9269983` e `7b7af9ea2512e1ea9a606053e39ae43678c83b39`; PR [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58) aberto, não draft; `ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Checkpoints** | `checkpoint/f5.3-ready` e `checkpoint/f5.3-complete` somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
@@ -64,30 +64,30 @@ ledger afetados. Produto, dependências, schemas, defaults, lockfile e CI estão
 
 Não há implementação ativa. A F5.3 — trust boundary integrado — está promovida no Git/GitHub: sua
 fronteira tipada e `default-restricted` governa imports, comandos, worktree, hooks, promoção e nomes
-de secrets, mas a reconciliação documental ainda precisa ser validada, publicada, revisada e
-incorporada. A F5.4 — integrar orçamento — permanece apenas planejada no plano principal; nenhum
+de secrets. A reconciliação documental foi publicada no PR #58 e ainda precisa ter seu head final
+certificado e ser incorporada. A F5.4 — integrar orçamento — permanece apenas planejada no plano principal; nenhum
 gate F5.4 foi congelado ou autorizado.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Publicar `docs/promote-f5.3`, abrir ou mesclar seu PR
-administrativo, publicar tags, remover branch/ref, fazer force-push/bypass ou iniciar a F5.4 não
-estão autorizados.
+Não há bloqueio técnico conhecido. A publicação de `docs/promote-f5.3` e a abertura do PR #58 foram
+autorizadas e concluídas. Mesclar o PR administrativo, publicar tags, remover branch/ref, fazer
+force-push/bypass ou iniciar a F5.4 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO PARA PUBLICAR A BRANCH E ABRIR O PR ADMINISTRATIVO ÚNICO DA F5.3.
+PUBLICAR ESTE REGISTRO PARA FORMAR O HEAD FINAL E AUDITAR TODOS OS CHECKS DO PR #58.
 NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.4 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.3.md` e a DEC-014.
-2. Confirme branch `docs/promote-f5.3`, baseline `211edcf` e diff estritamente documental.
+2. Confirme branch `docs/promote-f5.3`, PR #58, baseline `211edcf` e diff estritamente documental.
 3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist administrativa.
-4. Execute somente a próxima ação exata; publicação, PR administrativo, merge e F5.4 exigem nova autorização.
+4. Execute somente a próxima ação exata; merge, tags/refs e F5.4 exigem nova autorização.
 
 ---
 
-*Atualizado em: 2026-08-12T23:19:24-03:00 | Fonte: F5.3 + PR #57 + runs 31659293351/31660030240 + merge 211edcf*
+*Atualizado em: 2026-08-13T14:39:07-03:00 | Fonte: F5.3 + PRs #57/#58 + runs 31659293351/31660030240 + merge 211edcf*
