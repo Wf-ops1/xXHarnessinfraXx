@@ -35,7 +35,7 @@
 | **CI do PR** | run [31659293351](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31659293351), `pull_request`, 11/11 success no head final |
 | **Promoção F5.3** | PR [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), merge `211edcf921912a32429934bf600473d8cc98941c` |
 | **CI pós-merge** | run [31660030240](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31660030240), `push`, 11/11 success no merge exato |
-| **Reconciliação** | `LOCAL_READY / PUBLICATION_PENDING`; ainda não incorporada em `main` |
+| **Reconciliação** | commit local `fed4c7050f8891e8b24e874bb9aa2130b9269983`; `LOCAL_READY / PUBLICATION_PENDING` |
 | **Checkpoints** | `checkpoint/f5.3-ready` e `checkpoint/f5.3-complete` somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
@@ -77,7 +77,6 @@ estão autorizados.
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR E COMMITAR LOCALMENTE A RECONCILIAÇÃO docs/promote-f5.3.
 AGUARDAR AUTORIZAÇÃO PARA PUBLICAR A BRANCH E ABRIR O PR ADMINISTRATIVO ÚNICO DA F5.3.
 NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.4 SEM NOVA AUTORIZAÇÃO.
 ```
