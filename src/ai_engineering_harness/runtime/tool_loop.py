@@ -285,6 +285,7 @@ class ToolLoopExecutor:
         model_calls = 0
 
         policy.require_dispatchable()
+        self._tool_router.require_trust_mode(trust_mode)
         policy_engine = policy.policy_engine()
 
         while True:

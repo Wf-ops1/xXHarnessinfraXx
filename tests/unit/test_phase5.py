@@ -11,7 +11,12 @@ from ai_engineering_harness.contracts import (
     CompiledGraphArtifact,
 )
 from ai_engineering_harness.core.detector import StackDetector
-from ai_engineering_harness.security import PathGuard
+from ai_engineering_harness.security import (
+    PathGuard,
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+)
 from ai_engineering_harness.verification import VerificationConfigurationError
 from ai_engineering_harness.verification.engine import VerificationEngine
 from ai_engineering_harness.verification.evaluator import VerificationEvaluator
@@ -60,7 +65,22 @@ line-length = 100
         created_at="2026-08-11T05:00:00+00:00",
         updated_at="2026-08-11T05:00:00+00:00",
     )
-    return ProvisionedWorktree(reference=reference, path_guard=PathGuard(resolved))
+    boundary = TrustBoundaryEvaluator(
+        resolved,
+        authorization=TrustAuthorization(
+            repository_root=str(resolved),
+            executable_aliases=("python",),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+        ),
+    ).evaluate()
+    return ProvisionedWorktree(
+        reference=reference,
+        path_guard=PathGuard(resolved),
+        trust_boundary=boundary,
+    )
 
 
 def test_compiler_governed_loops_success(tmp_path: Path):

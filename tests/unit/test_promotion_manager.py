@@ -11,7 +11,9 @@ import pytest
 from ai_engineering_harness.runtime.promotion_manager import (
     PromotionBaseChangedError,
     PromotionManager,
+    PromotionPrerequisiteError,
 )
+from ai_engineering_harness.security import TrustAuthorization, TrustBoundaryEvaluator
 from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 
@@ -27,7 +29,11 @@ def _git(repository: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _fixture(tmp_path: Path) -> tuple[Path, ExternalWorktreeManager, PromotionManager, str, str]:
+def _fixture(
+    tmp_path: Path,
+    *,
+    promotion_allowed: bool = True,
+) -> tuple[Path, ExternalWorktreeManager, PromotionManager, str, str]:
     repository = tmp_path / "repository"
     repository.mkdir()
     (repository / ".gitignore").write_text(
@@ -42,10 +48,19 @@ def _fixture(tmp_path: Path) -> tuple[Path, ExternalWorktreeManager, PromotionMa
     _git(repository, "commit", "--quiet", "-m", "base")
     base_sha = _git(repository, "rev-parse", "HEAD").stdout.strip().lower()
     branch = _git(repository, "branch", "--show-current").stdout.strip()
+    boundary = TrustBoundaryEvaluator(
+        repository,
+        authorization=TrustAuthorization(
+            repository_root=str(repository.resolve()),
+            executable_aliases=("git",),
+            promotion_allowed=promotion_allowed,
+        ),
+    ).evaluate()
     worktrees = ExternalWorktreeManager(
         repository,
         "promotion-tests",
         external_base_dir=tmp_path / "external-worktrees",
+        trust_boundary=boundary,
     )
     promotion = PromotionManager(repository, worktrees)
     return repository, worktrees, promotion, base_sha, branch
@@ -55,8 +70,12 @@ def _candidate(
     tmp_path: Path,
     *,
     execution_id: str = "exec-promote",
+    promotion_allowed: bool = True,
 ) -> tuple[Path, ExternalWorktreeManager, PromotionManager, str, str]:
-    repository, worktrees, promotion, base_sha, branch = _fixture(tmp_path)
+    repository, worktrees, promotion, base_sha, branch = _fixture(
+        tmp_path,
+        promotion_allowed=promotion_allowed,
+    )
     provisioned = worktrees.create_worktree(
         execution_id,
         expected_base_commit_sha=base_sha,
@@ -151,8 +170,16 @@ def test_live_promotion_cherry_picks_and_recovers_the_exact_real_sha(
 
     monkeypatch.setattr(promotion, "_run_git", record_git_operation)
 
-    promoted = promotion.promote(candidate, dry_run=False)
-    recovered = promotion.promote(candidate, dry_run=False)
+    promoted = promotion.promote(
+        candidate,
+        dry_run=False,
+        approval_granted=True,
+    )
+    recovered = promotion.promote(
+        candidate,
+        dry_run=False,
+        approval_granted=True,
+    )
 
     assert promoted.promotion_commit_sha is not None
     mutating_operations = [
@@ -197,7 +224,7 @@ def test_base_advance_blocks_without_cherry_pick_or_fallback(tmp_path: Path) -> 
     advanced_sha = _git(repository, "rev-parse", "HEAD").stdout.strip().lower()
 
     with pytest.raises(PromotionBaseChangedError, match="advanced"):
-        promotion.promote(candidate, dry_run=False)
+        promotion.promote(candidate, dry_run=False, approval_granted=True)
 
     assert _git(repository, "rev-parse", "HEAD").stdout.strip().lower() == advanced_sha
     assert (repository / "base-advance.txt").read_text(encoding="utf-8") == "advance\n"
@@ -215,6 +242,62 @@ def test_independent_same_tree_commit_is_not_misclassified_as_recovery(
     independent_sha = _git(repository, "rev-parse", "HEAD").stdout.strip().lower()
 
     with pytest.raises(PromotionBaseChangedError, match="advanced"):
-        promotion.promote(candidate, dry_run=False)
+        promotion.promote(candidate, dry_run=False, approval_granted=True)
 
     assert _git(repository, "rev-parse", "HEAD").stdout.strip().lower() == independent_sha
+
+
+def test_live_promotion_requires_explicit_approval_before_cherry_pick(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, _, promotion, _, _ = _candidate(tmp_path)
+    candidate = promotion.load_candidate("exec-promote")
+    operations: list[tuple[str, ...]] = []
+    run_git = promotion._run_git
+
+    def record_git_operation(
+        arguments: Collection[str],
+        *,
+        cwd: Path,
+        allowed_returncodes: Collection[int] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        operations.append(tuple(arguments))
+        return run_git(arguments, cwd=cwd, allowed_returncodes=allowed_returncodes)
+
+    monkeypatch.setattr(promotion, "_run_git", record_git_operation)
+
+    with pytest.raises(PromotionPrerequisiteError, match="explicit approval"):
+        promotion.promote(candidate, dry_run=False)
+
+    assert not any(operation[0] == "cherry-pick" for operation in operations)
+
+
+def test_live_promotion_requires_boundary_capability_before_cherry_pick(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, _, promotion, _, _ = _candidate(tmp_path, promotion_allowed=False)
+    candidate = promotion.load_candidate("exec-promote")
+    operations: list[tuple[str, ...]] = []
+    run_git = promotion._run_git
+
+    def record_git_operation(
+        arguments: Collection[str],
+        *,
+        cwd: Path,
+        allowed_returncodes: Collection[int] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        operations.append(tuple(arguments))
+        return run_git(arguments, cwd=cwd, allowed_returncodes=allowed_returncodes)
+
+    monkeypatch.setattr(promotion, "_run_git", record_git_operation)
+
+    with pytest.raises(PromotionPrerequisiteError, match="not allowed"):
+        promotion.promote(
+            candidate,
+            dry_run=False,
+            approval_granted=True,
+        )
+
+    assert not any(operation[0] == "cherry-pick" for operation in operations)

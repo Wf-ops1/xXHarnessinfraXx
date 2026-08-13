@@ -3,10 +3,14 @@
 import json
 from pathlib import Path
 
+import pytest
+
+import ai_engineering_harness.cli.commands.rollback as rollback_module
 from ai_engineering_harness.artifacts.generator import ArtifactGenerator
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.knowledge.transaction import KnowledgeTransactionManager, TransactionState
 from ai_engineering_harness.observability.audit import AuditTrailManager
+from ai_engineering_harness.security import TrustAuthorization, TrustBoundaryEvaluator
 
 
 def test_knowledge_transaction_5_steps(tmp_path: Path):
@@ -45,7 +49,17 @@ def test_audit_trail_tamper_detection(tmp_path: Path):
     assert "Adulteração detectada" in msg or "Quebra de corrente" in msg
 
 def test_destructive_rollback_requires_approval(tmp_path: Path):
-    mgr = RollbackManager(project_root=tmp_path)
+    harness_dir = tmp_path / ".harness"
+    harness_dir.mkdir()
+    (harness_dir / "trusted_repository").touch()
+    boundary = TrustBoundaryEvaluator(
+        tmp_path,
+        authorization=TrustAuthorization(
+            repository_root=str(tmp_path.resolve()),
+            hook_ids=("rollback-compensation",),
+        ),
+    ).evaluate()
+    mgr = RollbackManager(project_root=tmp_path, trust_boundary=boundary)
     res = mgr.execute_rollback(
         execution_id="exec-roll-1",
         is_promoted=True,
@@ -55,6 +69,29 @@ def test_destructive_rollback_requires_approval(tmp_path: Path):
     )
     assert res["product_rollback"] is False
     assert "[AWAITING_APPROVAL]" in res["product_message"]
+
+
+def test_restricted_rollback_denies_hook_before_adapter_effect(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fail_if_called(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+        raise AssertionError("restricted hook reached its adapter")
+
+    monkeypatch.setattr(rollback_module, "CodebaseMemoryAdapter", fail_if_called)
+
+    result = RollbackManager(project_root=tmp_path).execute_rollback(
+        execution_id="exec-restricted-hook",
+        is_promoted=False,
+    )
+
+    assert result["product_rollback"] is False
+    assert "[DENIED]" in result["product_message"]
+    assert called is False
 
 def test_artifact_generator_latest(tmp_path: Path):
     gen = ArtifactGenerator(project_root=tmp_path)

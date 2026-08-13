@@ -24,13 +24,13 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.3 — trust boundary integrado |
-| **Gate** | `READY / ACTIVE / LOCAL_ONLY` |
-| **Executor ativo** | `Codex`, único escritor; autorizado nominalmente em `2026-08-12T20:27:46-03:00` |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY` |
+| **Executor ativo** | `Codex`, único escritor; implementação autorizada nominalmente em `2026-08-12T21:37:31-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.3-trust-boundary`, somente local e sem upstream |
 | **Baseline** | `main == origin/main == 0607a0b385da1a864f629bf4811810a574d03768` antes da branch |
-| **Gate F5.3** | [dossiê ativo](docs/tasks/active/F5.3.md); `checkpoint/f5.3-ready` no commit documental |
-| **Baseline focado** | 101 testes passaram, 2 pulados; nenhuma alteração de produto |
+| **Gate F5.3** | [dossiê ativo](docs/tasks/active/F5.3.md); `checkpoint/f5.3-ready` documental e `checkpoint/f5.3-complete` local certificado |
+| **Certificação local** | focado `283 passed, 2 skipped`; integral `827 passed, 5 skipped, 6 subtests passed`; wheel/smoke verdes |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -58,24 +58,24 @@ do lifecycle permanecem fora do escopo.
 
 ## 5. Tarefa ativa
 
-A [F5.3](docs/tasks/active/F5.3.md) está `READY / ACTIVE / LOCAL_ONLY`. O baseline comprovou que o
-marcador sozinho eleva o modo, enquanto compilador, tools, hooks e secrets usam decisões de confiança
-desconectadas. O contrato congela uma fronteira única, default-restricted, imutável em resume e
-intersectada com policy/allowlists, sem antecipar as F5.4–F5.7.
+A [F5.3](docs/tasks/active/F5.3.md) está `COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY`. Uma fronteira
+tipada, estrita, congelada, determinística e default-restricted agora governa imports Python, aliases de subprocesso,
+worktree exato, hooks, promoção e nomes de secrets. O snapshot não secreto integra o bundle e resume
+falha quando marcador, raiz, capacidades ou digest divergem, sem antecipar as F5.4–F5.7.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A autorização corrente encerrou-se com o gate documental, commit
-e checkpoint locais; a implementação ainda não começou e exige nova autorização nominal. Push, PR,
-merge, tags remotas, remoção de branch/ref, force-push e bypass também não estão autorizados.
+Não há bloqueio técnico conhecido. Implementação, regressão integral, qualidade, wheel e smoke
+isolado estão concluídos localmente. Push, PR, merge, tags remotas, remoção de branch/ref,
+force-push e bypass não estão autorizados.
 Marcador, modo `trusted` ou configuração do projeto nunca podem substituir policy, allowlist,
 worktree exato ou aprovação.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA IMPLEMENTAR LOCALMENTE O CONTRATO CONGELADO DA F5.3.
-NÃO EDITAR PRODUTO, PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS.
+AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA PUBLICAR A BRANCH F5.3.
+NÃO PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS SEM ESSA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -88,4 +88,4 @@ NÃO EDITAR PRODUTO, PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER RE
 
 ---
 
-*Atualizado em: 2026-08-12T20:27:46-03:00 | Fonte: F5.3 + PRs #55/#56 + runs 31644174160/31646282269/31650131258 + merge 0607a0b*
+*Atualizado em: 2026-08-12T22:15:11-03:00 | Fonte: certificação local F5.3 + PRs #55/#56 + runs 31644174160/31646282269/31650131258 + merge 0607a0b*

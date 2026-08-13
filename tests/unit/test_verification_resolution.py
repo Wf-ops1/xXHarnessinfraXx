@@ -11,7 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from ai_engineering_harness.security import PathGuard
+from ai_engineering_harness.security import (
+    PathGuard,
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+)
 from ai_engineering_harness.verification import (
     VerificationConfigurationError,
     VerificationEngine,
@@ -21,6 +26,7 @@ from ai_engineering_harness.verification.resolver import VerificationCommandReso
 from ai_engineering_harness.workspace import (
     ExternalWorktreeManager,
     ProvisionedWorktree,
+    WorktreeConfigurationError,
     WorktreeReference,
     WorktreeStatus,
 )
@@ -52,7 +58,22 @@ def _provisioned(root: Path) -> ProvisionedWorktree:
         created_at=_TIMESTAMP,
         updated_at=_TIMESTAMP,
     )
-    return ProvisionedWorktree(reference=reference, path_guard=PathGuard(canonical))
+    boundary = TrustBoundaryEvaluator(
+        canonical,
+        authorization=TrustAuthorization(
+            repository_root=str(canonical),
+            executable_aliases=("git", "python"),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+        ),
+    ).evaluate()
+    return ProvisionedWorktree(
+        reference=reference,
+        path_guard=PathGuard(canonical),
+        trust_boundary=boundary,
+    )
 
 
 def _write_python_project(root: Path, *, security: bool = False) -> None:
@@ -279,13 +300,11 @@ def test_engine_rejects_path_guard_not_bound_to_worktree(tmp_path: Path) -> None
     root.mkdir()
     other.mkdir()
     provisioned = _provisioned(root)
-    mismatched = ProvisionedWorktree(
-        reference=provisioned.reference,
-        path_guard=PathGuard(other),
-    )
-
-    with pytest.raises(VerificationConfigurationError, match="must match"):
-        VerificationEngine(mismatched)
+    with pytest.raises(WorktreeConfigurationError, match="must match"):
+        ProvisionedWorktree(
+            reference=provisioned.reference,
+            path_guard=PathGuard(other),
+        )
 
 
 def test_engine_rejects_non_active_worktree(tmp_path: Path) -> None:
@@ -308,10 +327,22 @@ def test_gate_executes_inside_real_external_git_worktree(tmp_path: Path) -> None
     project = tmp_path / "project"
     external = tmp_path / "external"
     _initialize_repository(project)
+    boundary = TrustBoundaryEvaluator(
+        project,
+        authorization=TrustAuthorization(
+            repository_root=str(project.resolve()),
+            executable_aliases=("git", "python"),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+        ),
+    ).evaluate()
     manager = ExternalWorktreeManager(
         project,
         project_id="f46-project",
         external_base_dir=external,
+        trust_boundary=boundary,
     )
     worktree = manager.create_worktree("f46-execution")
 
@@ -327,6 +358,31 @@ def test_gate_executes_inside_real_external_git_worktree(tmp_path: Path) -> None
         for cache in tuple(worktree.worktree_path.rglob("__pycache__")):
             shutil.rmtree(cache)
         manager.cleanup_worktree("f46-execution")
+
+
+def test_gate_missing_trust_boundary_is_denied_before_process_spawn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_python_project(tmp_path)
+    provisioned = _provisioned(tmp_path)
+    missing_boundary = ProvisionedWorktree(
+        reference=provisioned.reference,
+        path_guard=provisioned.path_guard,
+    )
+    spawned = False
+
+    def fail_if_spawned(*_args: object, **_kwargs: object) -> None:
+        nonlocal spawned
+        spawned = True
+        raise AssertionError("process spawned without a trust boundary")
+
+    monkeypatch.setattr(subprocess, "Popen", fail_if_spawned)
+
+    with pytest.raises(VerificationPrerequisiteError, match="executable policy"):
+        VerificationEngine(missing_boundary).verify(["unit_test"])
+
+    assert spawned is False
 
 
 def test_engine_constructor_no_longer_accepts_caller_selected_language_or_cwd(

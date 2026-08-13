@@ -7,6 +7,7 @@ from ai_engineering_harness.contracts import CompiledGraphArtifact
 from ai_engineering_harness.governance import TrustMode
 from ai_engineering_harness.models.provider import CancellationToken, LLMResponse
 from ai_engineering_harness.models.router import ModelRouter
+from ai_engineering_harness.security import TrustEvaluationResult
 from ai_engineering_harness.tools.router import ToolRouter
 
 from .node_executors import ToolEffectDurabilityError, ToolEffectRecorder
@@ -76,12 +77,19 @@ class AgentExecutor:
         fallback_providers: list[str] | tuple[str, ...] | None = None,
         cancellation_token: CancellationToken | None = None,
         tool_effect_recorder: ToolEffectRecorder | None = None,
-        trust_mode: TrustMode = "restricted",
+        trust_mode: TrustMode | None = None,
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> ToolLoopResult:
         if self.tool_router is None:
             raise PermissionError(
                 f"[POLICY ERROR] Nenhum ToolRouter associado ao executor do agente '{self.agent_name}'."
             )
+        boundary = trust_boundary or self.tool_router.trust_boundary
+        if boundary is not None and not isinstance(boundary, TrustEvaluationResult):
+            raise TypeError("trust_boundary must be a TrustEvaluationResult or None")
+        selected_trust_mode: TrustMode = boundary.mode if boundary is not None else "restricted"
+        if trust_mode is not None and trust_mode != selected_trust_mode:
+            raise PermissionError("trust_mode does not match the effective trust boundary")
         loop = ToolLoopExecutor(
             self.router,
             self.tool_router,
@@ -102,7 +110,7 @@ class AgentExecutor:
             model_candidates=candidates,
             cancellation_token=cancellation_token,
             tool_effect_recorder=tool_effect_recorder,
-            trust_mode=trust_mode,
+            trust_mode=selected_trust_mode,
         )
 
     def execute_tool(self, tool_name: str, payload: dict[str, Any]) -> Any:

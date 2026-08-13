@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import Callable, Mapping
 from types import MappingProxyType
 from typing import Annotated, ClassVar, Literal
@@ -13,6 +12,7 @@ from ai_engineering_harness.models.adapters.anthropic import AnthropicAdapter
 from ai_engineering_harness.models.adapters.local import LocalAdapter
 from ai_engineering_harness.models.adapters.openai import OpenAIAdapter
 from ai_engineering_harness.models.provider import BaseLLMProvider
+from ai_engineering_harness.security import SecretManager, TrustEvaluationResult
 
 AdapterId = Literal["openai", "anthropic", "local"]
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -51,7 +51,12 @@ class ProviderRegistry:
         "local": LocalAdapter,
     }
 
-    def __init__(self, providers: Mapping[str, ProviderConfiguration]) -> None:
+    def __init__(
+        self,
+        providers: Mapping[str, ProviderConfiguration],
+        *,
+        trust_boundary: TrustEvaluationResult | None = None,
+    ) -> None:
         if not providers:
             raise ValueError("ao menos um provider deve ser configurado")
         copied: dict[str, ProviderConfiguration] = {}
@@ -64,15 +69,23 @@ class ProviderRegistry:
                 raise ValueError(f"provider duplicado: {provider_id}")
             copied[provider_id] = spec
         self._providers = MappingProxyType(copied)
+        if trust_boundary is not None and not isinstance(trust_boundary, TrustEvaluationResult):
+            raise TypeError("trust_boundary must be a TrustEvaluationResult or None")
+        self._trust_boundary = trust_boundary
 
     @classmethod
-    def from_mapping(cls, providers: Mapping[str, object]) -> ProviderRegistry:
+    def from_mapping(
+        cls,
+        providers: Mapping[str, object],
+        *,
+        trust_boundary: TrustEvaluationResult | None = None,
+    ) -> ProviderRegistry:
         parsed: dict[str, ProviderConfiguration] = {}
         for provider_id, raw_spec in providers.items():
             if not isinstance(provider_id, str) or not provider_id.strip():
                 raise ValueError("provider id deve ser string não vazia")
             parsed[provider_id] = ProviderConfiguration.model_validate(raw_spec)
-        return cls(parsed)
+        return cls(parsed, trust_boundary=trust_boundary)
 
     @property
     def provider_ids(self) -> tuple[str, ...]:
@@ -87,11 +100,21 @@ class ProviderRegistry:
         except KeyError as exc:
             raise ValueError(f"Provedor não configurado: {provider_id}") from exc
 
-        api_key = os.environ.get(spec.api_key_env) if spec.api_key_env else None
+        api_key = None
+        if spec.api_key_env is not None:
+            if self._trust_boundary is None:
+                raise PermissionError(
+                    "provider credential requires an explicit trust boundary"
+                )
+            api_key = SecretManager.get_secret(
+                spec.api_key_env,
+                boundary=self._trust_boundary,
+                consumer=f"provider:{provider_id}",
+            )
         if spec.adapter == "openai":
             return OpenAIAdapter(
                 model_name=spec.model,
-                api_key=api_key,
+                api_key=api_key if api_key is not None else "",
                 base_url=spec.base_url,
                 timeout_seconds=spec.timeout_seconds,
                 max_retries=spec.max_retries,
@@ -100,7 +123,7 @@ class ProviderRegistry:
         if spec.adapter == "local":
             return LocalAdapter(
                 model_name=spec.model,
-                api_key=api_key,
+                api_key=api_key if api_key is not None else "",
                 base_url=spec.base_url,
                 timeout_seconds=spec.timeout_seconds,
                 max_retries=spec.max_retries,

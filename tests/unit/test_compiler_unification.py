@@ -23,6 +23,7 @@ from ai_engineering_harness.compiler import (
 )
 from ai_engineering_harness.contracts import CompiledGraphArtifact
 from ai_engineering_harness.runtime.maf_adapter import ArtifactIntegrityError, MAFAdapter
+from ai_engineering_harness.security import TrustAuthorization, TrustBoundaryEvaluator
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_GRAPHS = REPOSITORY_ROOT / "src" / "ai_engineering_harness" / "defaults" / "graphs"
@@ -87,6 +88,71 @@ def test_canonical_compiler_emits_only_typed_artifact_after_validation(tmp_path:
         "resolved_contracts",
         "resolved_policies",
     }
+
+
+def _python_contract_graph(reference: str) -> dict[str, Any]:
+    document = _valid_graph("python-boundary")
+    document["contracts"] = [reference]
+    return document
+
+
+def _write_import_sentinel_contract(project_root: Path, sentinel: Path) -> str:
+    module_name = "f53_boundary_contract"
+    (project_root / f"{module_name}.py").write_text(
+        "from pathlib import Path\n"
+        f"Path({str(sentinel)!r}).write_text('imported', encoding='utf-8')\n"
+        "from pydantic import BaseModel\n"
+        "class Payload(BaseModel):\n"
+        "    value: str\n",
+        encoding="utf-8",
+    )
+    return f"python:{module_name}:Payload"
+
+
+def test_trusted_marker_never_imports_unapproved_project_python(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    harness_dir = tmp_path / ".harness"
+    harness_dir.mkdir()
+    (harness_dir / "trusted_repository").touch()
+    sentinel = tmp_path / "imported.txt"
+    reference = _write_import_sentinel_contract(tmp_path, sentinel)
+    source = _write_graph(tmp_path, _python_contract_graph(reference))
+    monkeypatch.syspath_prepend(str(tmp_path))
+    sys.modules.pop("f53_boundary_contract", None)
+
+    with pytest.raises(GraphValidationError):
+        GraphCompiler(tmp_path).compile_graph(source)
+
+    assert not sentinel.exists()
+
+
+def test_exact_external_authorization_allows_one_project_python_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    harness_dir = tmp_path / ".harness"
+    harness_dir.mkdir()
+    (harness_dir / "trusted_repository").touch()
+    sentinel = tmp_path / "imported.txt"
+    reference = _write_import_sentinel_contract(tmp_path, sentinel)
+    source = _write_graph(tmp_path, _python_contract_graph(reference))
+    monkeypatch.syspath_prepend(str(tmp_path))
+    sys.modules.pop("f53_boundary_contract", None)
+    boundary = TrustBoundaryEvaluator(
+        tmp_path,
+        authorization=TrustAuthorization(
+            repository_root=str(tmp_path.resolve()),
+            python_contracts=(reference,),
+        ),
+    ).evaluate()
+
+    output = GraphCompiler(tmp_path, trust_boundary=boundary).compile_graph(source)
+
+    artifact = CompiledGraphArtifact.model_validate_json(output.read_text(encoding="utf-8"))
+    assert sentinel.read_text(encoding="utf-8") == "imported"
+    assert artifact.resolved_contracts[0].requested_reference == reference
 
 
 def _remove_entrypoint(document: dict[str, Any]) -> None:

@@ -133,8 +133,9 @@ Regras `deny` prevalecem, a identidade aplicada é determinística e ausência d
 
 A policy compilada continua sendo a fonte do allow/deny por role e node. No runtime, ela é projetada
 para workflow/role/node exatos. Como o schema atual ainda não restringe operação, path ou trust mode,
-essa projeção declara esses eixos explicitamente como abrangentes; a F5.3 deverá restringir o trust
-boundary. Cada registration operacional fornece a operação e o campo de path reais ao avaliador.
+a projeção F5.2 declara esses eixos explicitamente como abrangentes. Na implementação local F5.3,
+uma fronteira externa tipada restringe modo, raiz exata e allowlists de contratos Python, aliases,
+nomes de secrets e hooks. Cada registration fornece operação e path reais ao avaliador.
 
 Antes do primeiro efeito, o tool loop valida schema e autoriza o lote inteiro. Uma única negação
 bloqueia todas as chamadas do lote. O `ToolRouter` exige a decisão positiva, reavalia-a no mesmo
@@ -144,8 +145,8 @@ ou divergente.
 
 Isso não liga as tools automaticamente ao lifecycle padrão. O caminho executável atual não aceita um
 booleano do chamador como prova: policy que exige aprovação bloqueia antes do egress. Vincular uma
-aprovação real a conteúdo/diff permanece reservado à F5.6; as restrições operacionais do trust
-boundary permanecem na F5.3.
+aprovação real a conteúdo/diff permanece reservado à F5.6. A F5.3 está certificada localmente e
+continua pendente de promoção própria.
 
 ## Teste controlado de `init`
 

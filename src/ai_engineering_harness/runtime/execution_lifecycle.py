@@ -56,6 +56,12 @@ from ai_engineering_harness.persistence import (
     canonical_json_object,
 )
 from ai_engineering_harness.security.redaction import Redactor
+from ai_engineering_harness.security.trust import (
+    TrustBoundaryConfigurationError,
+    TrustBoundaryEvaluator,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.verification import (
     GateRequirement,
     GateResult,
@@ -336,6 +342,7 @@ class ExecutionLifecycleService:
         model_router_factory: Callable[[Mapping[str, object]], ModelRouter] | None = None,
         verification_worktree_provider: Callable[[str], ProvisionedWorktree] | None = None,
         promotion_manager: PromotionManager | None = None,
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> None:
         if not isinstance(storage, ResumeStateStorageProvider):
             raise TypeError("storage must implement ResumeStateStorageProvider")
@@ -350,6 +357,25 @@ class ExecutionLifecycleService:
             raise TypeError("promotion_manager must be a PromotionManager")
         if promotion_manager is not None and promotion_manager.project_root != resolved_project_root:
             raise ValueError("promotion_manager project root must match project_root")
+        boundary = trust_boundary
+        if boundary is None and promotion_manager is not None:
+            boundary = promotion_manager.trust_boundary
+        if boundary is None:
+            boundary = TrustBoundaryEvaluator(resolved_project_root).evaluate()
+        if not isinstance(boundary, TrustEvaluationResult):
+            raise TypeError("trust_boundary must be a TrustEvaluationResult")
+        try:
+            boundary.require_root(resolved_project_root)
+        except (TrustBoundaryConfigurationError, TrustCapabilityDeniedError) as exc:
+            raise ValueError(
+                "trust_boundary must authorize the exact project_root"
+            ) from exc
+        if Path(boundary.repository_root) != resolved_project_root:
+            raise ValueError("trust_boundary repository root must match project_root")
+        if promotion_manager is not None and promotion_manager.trust_boundary != boundary:
+            raise ValueError(
+                "promotion_manager and execution lifecycle must share one trust boundary"
+            )
         if (
             isinstance(lock_timeout_seconds, bool)
             or not isinstance(lock_timeout_seconds, (int, float))
@@ -368,7 +394,13 @@ class ExecutionLifecycleService:
         self._owner_id_factory = owner_id_factory or (lambda: f"execution-lifecycle-{uuid.uuid4().hex}")
         self._git_identity_provider = git_identity_provider or self._read_git_identity
         self._context_assembler = context_assembler or ContextAssembler(self.project_root)
-        self._model_router_factory = model_router_factory or ModelRouter.from_effective_config
+        self._trust_boundary = boundary
+        self._model_router_factory = model_router_factory or (
+            lambda config: ModelRouter.from_effective_config(
+                config,
+                trust_boundary=self._trust_boundary,
+            )
+        )
         self._verification_worktree_provider = verification_worktree_provider
         self._promotion_manager = promotion_manager
         self._graph_executor = GraphExecutor(
@@ -410,6 +442,9 @@ class ExecutionLifecycleService:
                     if configuration is not None
                     else cli_overrides
                 ),
+            )
+            effective_configuration = self._configuration_with_trust_boundary(
+                effective_configuration
             )
         except (
             ConfigResolutionError,
@@ -801,7 +836,11 @@ class ExecutionLifecycleService:
                 )
 
             try:
-                result = manager.promote(candidate, dry_run=False)
+                result = manager.promote(
+                    candidate,
+                    dry_run=False,
+                    approval_granted=True,
+                )
             except PromotionBaseChangedError as exc:
                 current = machine.recover(lock=lock)
                 if current.current_state == ExecutionState.PROMOTING:
@@ -1483,6 +1522,13 @@ class ExecutionLifecycleService:
                 or reference.original_branch != record.original_branch
             ):
                 raise VerificationConfigurationError("verification worktree identity does not match the execution")
+            expected_boundary = self._trust_boundary.bind_authorized_root(
+                worktree.worktree_path
+            )
+            if worktree.trust_boundary != expected_boundary:
+                raise VerificationConfigurationError(
+                    "verification worktree trust boundary does not match the execution"
+                )
             self._validate_verification_worktree_commit(
                 worktree,
                 expected_commit_sha=reference.worktree_head_sha,
@@ -3209,7 +3255,67 @@ class ExecutionLifecycleService:
                 "stored effective configuration changed during typed validation",
                 execution_id=execution_id,
             )
+        self._validate_persisted_trust_boundary(validated, execution_id)
         return validated
+
+    def _configuration_with_trust_boundary(
+        self,
+        configuration: Mapping[str, object],
+    ) -> dict[str, object]:
+        projected = dict(configuration)
+        project_value = projected.get("project", {})
+        if type(project_value) is not dict:
+            raise ExecutionConfigurationError(
+                "effective configuration project section must be an object"
+            )
+        project = dict(project_value)
+        project["_trust_boundary"] = self._trust_boundary.snapshot()
+        projected["project"] = project
+        return projected
+
+    def _validate_persisted_trust_boundary(
+        self,
+        configuration: Mapping[str, object],
+        execution_id: str,
+    ) -> None:
+        try:
+            self._trust_boundary.require_root(self.project_root)
+        except (TrustBoundaryConfigurationError, TrustCapabilityDeniedError) as exc:
+            raise ExecutionConfigurationError(
+                "active trust boundary diverges from repository state",
+                execution_id=execution_id,
+            ) from exc
+        project = configuration.get("project")
+        raw_boundary = project.get("_trust_boundary") if type(project) is dict else None
+        if raw_boundary is None:
+            boundary = self._trust_boundary
+            if (
+                boundary.mode != "restricted"
+                or boundary.marker_present
+                or boundary.python_contracts
+                or boundary.executable_aliases
+                or boundary.secret_grants
+                or boundary.hook_ids
+                or boundary.promotion_allowed
+                or boundary.repository_root != boundary.authorized_root
+            ):
+                raise ExecutionConfigurationError(
+                    "legacy execution has no trust snapshot for the active boundary",
+                    execution_id=execution_id,
+                )
+            return
+        try:
+            persisted = TrustEvaluationResult.from_snapshot(raw_boundary)
+        except TrustBoundaryConfigurationError as exc:
+            raise ExecutionConfigurationError(
+                "stored trust boundary is invalid",
+                execution_id=execution_id,
+            ) from exc
+        if persisted != self._trust_boundary:
+            raise ExecutionConfigurationError(
+                "stored trust boundary diverges from the active boundary",
+                execution_id=execution_id,
+            )
 
     @staticmethod
     def _is_trimmed_string(value: object) -> bool:
@@ -3496,6 +3602,7 @@ class ExecutionLifecycleService:
                     "stored configuration digest does not match the execution",
                     execution_id=execution_id,
                 )
+            self._configuration_from_bundle(bundle, execution_id)
             if record.current_state == ExecutionState.EXECUTING and (record.approval_status == ApprovalStatus.PENDING):
                 node = self._human_node(artifact, record.current_node_id, execution_id)
                 record = machine.transition_to(

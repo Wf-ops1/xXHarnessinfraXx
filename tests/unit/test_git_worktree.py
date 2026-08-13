@@ -77,6 +77,9 @@ def test_create_real_worktree_persists_identity_and_instantiates_guard(tmp_path:
     assert provisioned.worktree_path.is_dir()
     assert provisioned.worktree_path.resolve() != repo.resolve()
     assert provisioned.path_guard.authorized_root == provisioned.worktree_path.resolve()
+    assert provisioned.trust_boundary is not None
+    assert Path(provisioned.trust_boundary.repository_root) == repo.resolve()
+    assert Path(provisioned.trust_boundary.authorized_root) == provisioned.worktree_path.resolve()
     assert provisioned.reference.status is WorktreeStatus.ACTIVE
     assert provisioned.reference.base_commit_sha == base_sha
     assert provisioned.reference.worktree_head_sha == base_sha
@@ -96,6 +99,7 @@ def test_create_real_worktree_persists_identity_and_instantiates_guard(tmp_path:
     reopened = manager.load_worktree("exec-777")
     assert reopened.reference == provisioned.reference
     assert reopened.path_guard.authorized_root == provisioned.worktree_path.resolve()
+    assert reopened.trust_boundary == provisioned.trust_boundary
 
 
 def test_cleanup_is_explicit_non_forced_and_preserves_branch(tmp_path: Path) -> None:

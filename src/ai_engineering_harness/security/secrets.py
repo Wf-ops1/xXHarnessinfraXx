@@ -3,6 +3,8 @@
 import os
 from typing import ClassVar
 
+from .trust import TrustEvaluationResult
+
 
 class SecretManager:
     """Carrega chaves e tokens de variáveis de ambiente sem persistir no disco."""
@@ -16,15 +18,42 @@ class SecretManager:
     ]
 
     @classmethod
-    def get_secret(cls, key: str, default: str | None = None) -> str | None:
-        """Recupera o segredo do ambiente de forma segura."""
+    def get_secret(
+        cls,
+        key: str,
+        *,
+        boundary: TrustEvaluationResult,
+        consumer: str,
+        default: str | None = None,
+    ) -> str | None:
+        """Read one environment value only after an exact boundary decision."""
+
+        if not isinstance(boundary, TrustEvaluationResult):
+            raise TypeError("boundary must be a TrustEvaluationResult")
+        boundary.require_secret(key, consumer=consumer)
         return os.environ.get(key, default)
 
     @classmethod
-    def load_all_known_secrets(cls) -> dict[str, str]:
-        """Retorna os segredos conhecidos atualmente em memória para sanitização."""
-        found = {}
+    def load_all_known_secrets(
+        cls,
+        *,
+        boundary: TrustEvaluationResult,
+        consumer: str,
+    ) -> dict[str, str]:
+        """Return only known secrets explicitly granted to one consumer."""
+
+        if not isinstance(boundary, TrustEvaluationResult):
+            raise TypeError("boundary must be a TrustEvaluationResult")
+        allowed = {
+            grant.name
+            for grant in boundary.secret_grants
+            if consumer in grant.consumers
+        }
+        found: dict[str, str] = {}
         for key in cls._sensitive_keys:
+            if key not in allowed:
+                continue
+            boundary.require_secret(key, consumer=consumer)
             val = os.environ.get(key)
             if val:
                 found[key] = val

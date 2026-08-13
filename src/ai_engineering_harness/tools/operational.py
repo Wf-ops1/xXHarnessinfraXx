@@ -7,6 +7,11 @@ from typing import Any, cast
 
 from pydantic import JsonValue
 
+from ai_engineering_harness.security import (
+    TrustBoundaryEvaluator,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.tools.adapters.local_editing import LocalEditingAdapter
 from ai_engineering_harness.tools.adapters.serena import SerenaAdapter
 from ai_engineering_harness.tools.adapters.terminal import CommandRequest, CommandResult, TerminalAdapter
@@ -26,11 +31,25 @@ def build_operational_tool_router(
     local_adapter: LocalEditingAdapter,
     terminal_adapter: TerminalAdapter | None = None,
     serena_adapter: SerenaAdapter | None = None,
+    trust_boundary: TrustEvaluationResult | None = None,
 ) -> ToolRouter:
     """Build an explicit registry; missing optional backends remain unavailable."""
 
     if not isinstance(local_adapter, LocalEditingAdapter):
         raise TypeError("local_adapter must be an explicit LocalEditingAdapter")
+    boundary = trust_boundary
+    if boundary is None and terminal_adapter is not None:
+        boundary = terminal_adapter.trust_boundary
+    if boundary is None:
+        boundary = TrustBoundaryEvaluator(local_adapter.path_guard.authorized_root).evaluate(
+            force_untrusted=True
+        )
+    if not isinstance(boundary, TrustEvaluationResult):
+        raise TypeError("trust_boundary must be a TrustEvaluationResult or None")
+    try:
+        boundary.require_root(local_adapter.path_guard.authorized_root)
+    except TrustCapabilityDeniedError as exc:
+        raise ValueError("local adapter root must match trust boundary") from exc
     registrations = _local_registrations(local_adapter)
 
     if terminal_adapter is not None:
@@ -39,6 +58,8 @@ def build_operational_tool_router(
         terminal_guard = getattr(terminal_adapter, "_path_guard", None)
         if terminal_guard is not local_adapter.path_guard:
             raise ValueError("terminal and local adapters must share the same PathGuard instance")
+        if terminal_adapter.trust_boundary != boundary:
+            raise ValueError("terminal and tool router must share the same trust boundary")
         registrations.update(_terminal_registrations(terminal_adapter, local_adapter))
 
     if serena_adapter is not None:
@@ -64,7 +85,11 @@ def build_operational_tool_router(
             path_argument="relative_path",
         )
 
-    return ToolRouter(allowed_tools, registrations=registrations)
+    return ToolRouter(
+        allowed_tools,
+        registrations=registrations,
+        trust_boundary=boundary,
+    )
 
 
 def _local_registrations(adapter: LocalEditingAdapter) -> dict[str, ToolRegistration]:

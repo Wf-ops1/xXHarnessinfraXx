@@ -21,6 +21,11 @@ from ai_engineering_harness.runtime import (
     NodeExecutorRegistry,
     RuntimeEngine,
 )
+from ai_engineering_harness.security import (
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+)
 from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 
@@ -164,10 +169,22 @@ on_failure: route_to_failure_classifier
     # 6. Run through the canonical F2.5 lifecycle and immutable resume bundle
     execution_id = "exec-e2e-100"
     storage = AtomicFileStateStorage(tmp_path)
+    boundary = TrustBoundaryEvaluator(
+        tmp_path,
+        authorization=TrustAuthorization(
+            repository_root=str(tmp_path.resolve()),
+            executable_aliases=("git", "python"),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+        ),
+    ).evaluate()
     manager = ExternalWorktreeManager(
         tmp_path,
         "e2e-project",
         external_base_dir=tmp_path.parent / f"{tmp_path.name}-worktrees",
+        trust_boundary=boundary,
     )
     worktree = manager.create_worktree(
         execution_id,
@@ -181,6 +198,7 @@ on_failure: route_to_failure_classifier
         ),
         git_identity_provider=lambda: (commit_sha, original_branch),
         verification_worktree_provider=manager.load_worktree,
+        trust_boundary=boundary,
     )
     engine = RuntimeEngine(
         project_root=tmp_path,

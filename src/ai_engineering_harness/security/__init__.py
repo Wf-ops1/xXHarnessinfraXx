@@ -13,7 +13,16 @@ from .path_guard import (
 )
 from .redaction import Redactor
 from .secrets import SecretManager
-from .trust import TrustBoundaryEvaluator
+from .trust import (
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryConfigurationError,
+    TrustBoundaryError,
+    TrustBoundaryEvaluator,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+    TrustMode,
+)
 
 __all__ = [
     "GitMetadataPathError",
@@ -26,6 +35,13 @@ __all__ = [
     "PathSizeLimitError",
     "PathTraversalError",
     "Redactor",
+    "SecretGrant",
     "SecretManager",
+    "TrustAuthorization",
+    "TrustBoundaryConfigurationError",
+    "TrustBoundaryError",
     "TrustBoundaryEvaluator",
+    "TrustCapabilityDeniedError",
+    "TrustEvaluationResult",
+    "TrustMode",
 ]

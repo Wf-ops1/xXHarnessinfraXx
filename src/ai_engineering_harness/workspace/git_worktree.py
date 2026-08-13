@@ -14,7 +14,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, ClassVar
 
-from ai_engineering_harness.security import PathGuard
+from ai_engineering_harness.security import (
+    PathGuard,
+    TrustAuthorization,
+    TrustBoundaryConfigurationError,
+    TrustBoundaryEvaluator,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.workspace.sandbox import SandboxProvider
 
 
@@ -194,6 +200,24 @@ class ProvisionedWorktree:
 
     reference: WorktreeReference
     path_guard: PathGuard
+    trust_boundary: TrustEvaluationResult | None = None
+
+    def __post_init__(self) -> None:
+        if self.reference.worktree_path.resolve(strict=True) != self.path_guard.authorized_root:
+            raise WorktreeConfigurationError(
+                "worktree reference and path guard roots must match"
+            )
+        boundary = self.trust_boundary
+        if boundary is None:
+            return
+        if Path(boundary.repository_root) != self.reference.project_root.resolve(strict=True):
+            raise WorktreeConfigurationError(
+                "worktree trust boundary belongs to another repository root"
+            )
+        if Path(boundary.authorized_root) != self.path_guard.authorized_root:
+            raise WorktreeConfigurationError(
+                "worktree trust boundary and path guard roots must match"
+            )
 
     @property
     def worktree_path(self) -> Path:
@@ -223,6 +247,7 @@ class ExternalWorktreeManager:
         external_base_dir: str | os.PathLike[str] | None = None,
         git_executable: str = "git",
         command_timeout_seconds: float = 30.0,
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> None:
         self.project_root = self._existing_directory(project_root, label="project_root")
         self.project_id = self._validate_identifier("project_id", project_id)
@@ -235,6 +260,31 @@ class ExternalWorktreeManager:
             raise WorktreeConfigurationError("command_timeout_seconds must be a positive number")
         self.git_executable = git_executable
         self.command_timeout_seconds = float(command_timeout_seconds)
+        if trust_boundary is None:
+            trust_boundary = TrustBoundaryEvaluator(
+                self.project_root,
+                authorization=TrustAuthorization(
+                    repository_root=os.fspath(self.project_root),
+                    executable_aliases=(self.git_executable,),
+                ),
+            ).evaluate()
+        if not isinstance(trust_boundary, TrustEvaluationResult):
+            raise WorktreeConfigurationError(
+                "trust_boundary must be a TrustEvaluationResult"
+            )
+        try:
+            trust_boundary.require_root(self.project_root)
+        except TrustBoundaryConfigurationError as exc:
+            raise WorktreeConfigurationError("trust boundary root is invalid") from exc
+        except PermissionError as exc:
+            raise WorktreeConfigurationError(
+                "trust boundary must authorize the exact project root"
+            ) from exc
+        if Path(trust_boundary.repository_root) != self.project_root:
+            raise WorktreeConfigurationError(
+                "trust boundary belongs to another repository root"
+            )
+        self.trust_boundary = trust_boundary
 
     def create_worktree(
         self,
@@ -306,7 +356,7 @@ class ExternalWorktreeManager:
             updated_at=self._now(),
         )
         self._write_reference(active)
-        return ProvisionedWorktree(reference=active, path_guard=guard)
+        return self._provisioned_worktree(active, guard)
 
     def load_worktree(self, execution_id: str) -> ProvisionedWorktree:
         """Reopen an ACTIVE reference only after revalidating its Git identity."""
@@ -325,7 +375,7 @@ class ExternalWorktreeManager:
             expected_head=reference.worktree_head_sha,
         )
         guard = PathGuard(reference.worktree_path)
-        return ProvisionedWorktree(reference=reference, path_guard=guard)
+        return self._provisioned_worktree(reference, guard)
 
     def create_candidate_commit(
         self,
@@ -446,9 +496,17 @@ class ExternalWorktreeManager:
             updated_at=self._now(),
         )
         self._write_reference(updated)
+        return self._provisioned_worktree(updated, PathGuard(updated.worktree_path))
+
+    def _provisioned_worktree(
+        self,
+        reference: WorktreeReference,
+        path_guard: PathGuard,
+    ) -> ProvisionedWorktree:
         return ProvisionedWorktree(
-            reference=updated,
-            path_guard=PathGuard(updated.worktree_path),
+            reference=reference,
+            path_guard=path_guard,
+            trust_boundary=self.trust_boundary.bind_authorized_root(reference.worktree_path),
         )
 
     def cleanup_worktree(self, execution_id: str) -> WorktreeReference:
@@ -717,6 +775,12 @@ class ExternalWorktreeManager:
         cwd: Path,
         allowed_returncodes: Collection[int] = (0,),
     ) -> subprocess.CompletedProcess[str]:
+        try:
+            self.trust_boundary.require_executable(self.git_executable)
+        except PermissionError as exc:
+            raise GitCommandError(
+                "Git executable is not allowed by the trust boundary"
+            ) from exc
         argv = [self.git_executable, *arguments]
         try:
             result = subprocess.run(

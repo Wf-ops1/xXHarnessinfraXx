@@ -26,6 +26,11 @@ from ai_engineering_harness.contracts import (
     PolicyRegistryError,
     SourceManifestEntry,
 )
+from ai_engineering_harness.security import (
+    TrustBoundaryEvaluator,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 
 _WORKFLOW_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _PACKAGE_SOURCE_PREFIX = "package://ai_engineering_harness.defaults/"
@@ -64,7 +69,12 @@ class GraphWriteError(GraphCompilerError):
 class GraphCompiler:
     """Compile one YAML graph into the canonical typed artifact."""
 
-    def __init__(self, project_root: Path):
+    def __init__(
+        self,
+        project_root: Path,
+        *,
+        trust_boundary: TrustEvaluationResult | None = None,
+    ):
         try:
             resolved_root = Path(project_root).resolve(strict=True)
         except (OSError, RuntimeError) as exc:
@@ -74,9 +84,25 @@ class GraphCompiler:
 
         self.project_root = resolved_root
         self.output_dir = self.project_root / ".harness" / "state" / "compiled"
+        boundary = trust_boundary or TrustBoundaryEvaluator(self.project_root).evaluate()
+        if not isinstance(boundary, TrustEvaluationResult):
+            raise GraphSourceError("trust_boundary must be a TrustEvaluationResult")
+        try:
+            boundary.require_root(self.project_root)
+        except TrustCapabilityDeniedError as exc:
+            raise GraphSourceError("compiler trust boundary must match project root") from exc
+        if Path(boundary.repository_root) != self.project_root:
+            raise GraphSourceError("compiler trust boundary belongs to another repository")
+        self.trust_boundary = boundary
 
     def compile_graph(self, yaml_path: Path, workflow_name: str | None = None) -> Path:
         """Validate and compile a graph without producing output on validation failure."""
+        try:
+            self.trust_boundary.require_root(self.project_root)
+        except TrustCapabilityDeniedError as exc:
+            raise GraphValidationError(
+                "compiler trust boundary diverged before compilation"
+            ) from exc
         source_path = self._resolve_source(yaml_path)
         graph_bytes = self._read_path_bytes(source_path, source=True, label="graph source")
         raw_graph = self._parse_yaml_mapping(graph_bytes, source_path, source=True)
@@ -97,8 +123,8 @@ class GraphCompiler:
             contract_sources = self._load_external_contract_sources(contract_references)
             contract_registry = ContractRegistry(
                 schema_root=self._contract_schema_root(),
-                repository_trusted=False,
-                approved_python_contracts=(),
+                repository_trusted=self.trust_boundary.is_trusted,
+                approved_python_contracts=self.trust_boundary.python_contracts,
             )
             resolved_contracts = contract_registry.resolve_many(contract_references)
             self._verify_external_contract_sources_unchanged(contract_sources)

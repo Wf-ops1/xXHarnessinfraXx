@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.3 — trust boundary integrado" in panel
-    assert "`READY / ACTIVE / LOCAL_ONLY`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -760,14 +760,14 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "F5.2 foi promovida pelo" in readme
 
 
-def test_f5_3_ready_gate_freezes_integrated_trust_boundary() -> None:
+def test_f5_3_local_implementation_preserves_the_frozen_trust_boundary() -> None:
     panel = _read(TASK_PANEL)
     dossier = _read(ACTIVE_ROOT / "F5.3.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
 
     assert (ACTIVE_ROOT / "F5.3.md").is_file()
-    assert "> **Gate:** `READY`" in dossier
+    assert "> **Gate:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
     assert "> **Lifecycle:** `ACTIVE`" in dossier
     assert "checkpoint/f5.3-ready" in dossier
     assert "task/f5.3-trust-boundary" in dossier
@@ -793,9 +793,10 @@ def test_f5_3_ready_gate_freezes_integrated_trust_boundary() -> None:
     assert "F5.7" in dossier
     assert "docs/tasks/active/F5.3.md" in panel
     assert "active/F5.3.md" in task_index
-    assert "F5.3 está `READY / ACTIVE / LOCAL_ONLY`" in readme
-    assert "implementação ainda não começou" in readme
-    assert "exige nova autorização nominal" in dossier
+    assert "F5.3 está `COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY`" in readme
+    assert "283 passed, 2 skipped" in readme
+    assert "implementação local autorizada" in dossier
+    assert "827 passed, 5 skipped, 6 subtests passed" in dossier
     assert "administrativo #56 / merge `0607a0b` / pós-merge `31650131258`" in task_index
 
 
