@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
+    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -854,7 +854,9 @@ def test_f5_4_promotion_preserves_durable_execution_and_node_budget() -> None:
     assert "31739876952" in dossier
     assert "d6246295045a156646af14de0011400feb6cb4f3" in dossier
     assert "31742231398" in dossier
-    assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/60" in dossier
+    assert "5521bf3cb6fc8cd84316183f9471a3d96d6dd368" in dossier
     assert "docs/promote-f5.4" in dossier
     assert "administrativo #58 / merge `4c0527b` / pós-merge `31728438719`" in task_index
 

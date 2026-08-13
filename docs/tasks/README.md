@@ -23,8 +23,9 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 Não há implementação ativa. A [F5.4](completed/F5.4.md) está `PROMOTED`: o PR #59 encerrou no head
 `21aa4a6`, passou 11/11 checks no run `31739876952`, foi incorporado pelo merge `d624629` e recebeu
 11/11 na CI pós-merge `31742231398`. A reconciliação administrativa está
-`LOCAL_READY / PUBLICATION_PENDING` em `docs/promote-f5.4`. F5.5, publicação/PR/merge administrativo,
-tags remotas e remoção de refs permanecem não autorizados.
+`ADMIN_PR_OPEN / CHECKS_PENDING` no PR [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60),
+aberto e não draft a partir de `docs/promote-f5.4`. F5.5, merge administrativo, tags remotas e
+remoção de refs permanecem não autorizados.
 
 A [F5.3](completed/F5.3.md) está `PROMOTED`: o PR #57 encerrou no head `4934aee`, passou 11/11 checks
 no run `31659293351`, foi incorporado pelo merge `211edcf` e recebeu 11/11 na CI pós-merge
@@ -88,7 +89,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.1 | [Configuração efetiva no início da execução](completed/F5.1.md) | PR #53 / merge `c46910e` / pós-merge `31630446370`; administrativo #54 / merge `fe95a91` / pós-merge `31633748837` |
 | F5 | F5.2 | [Política unificada de autorização de tools](completed/F5.2.md) | PR #55 / merge `df5fee5` / pós-merge `31646282269`; administrativo #56 / merge `0607a0b` / pós-merge `31650131258` |
 | F5 | F5.3 | [Trust boundary integrado](completed/F5.3.md) | PR #57 / merge `211edcf` / pós-merge `31660030240`; administrativo #58 / merge `4c0527b` / pós-merge `31728438719` |
-| F5 | F5.4 | [Orçamento durável por execução e nó](completed/F5.4.md) | PR #59 / merge `d624629` / pós-merge `31742231398`; reconciliação local pendente de publicação |
+| F5 | F5.4 | [Orçamento durável por execução e nó](completed/F5.4.md) | PR #59 / merge `d624629` / pós-merge `31742231398`; administrativo #60 aberto, checks pendentes |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

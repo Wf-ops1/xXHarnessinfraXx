@@ -147,8 +147,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   planejamento, nós/modelos, tools e verificação a um journal único por execução/nó, com reserva
   pré-efeito, uso real, replay/resume e `FAILED_BUDGET_EXCEEDED`. A matriz focada passou com
   `202 passed` e o full válido com `856 passed, 5 skipped, 6 subtests passed`. O produto está no
-  commit `722916b`; a reconciliação administrativa está local em `docs/promote-f5.4`. Checkpoints
-  permanecem somente locais; F5.5, tags remotas e remoção de refs não estão autorizados.
+  commit `722916b`; a reconciliação administrativa foi publicada no
+  [PR #60](https://github.com/Wf-ops1/Harnessinfra/pull/60), aberto e não draft, e aguarda os checks
+  do head final. Checkpoints permanecem somente locais; merge administrativo, F5.5, tags remotas e
+  remoção de refs não estão autorizados.
 
 ## Dívidas técnicas críticas
 

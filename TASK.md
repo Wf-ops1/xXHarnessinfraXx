@@ -26,17 +26,17 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | nenhuma tarefa ativa; F5.5 — integrar secrets e redaction — está somente planejada e não autorizada |
-| **Gate** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL` |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor da reconciliação iniciada em `2026-08-13T17:50:35-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch administrativa** | `docs/promote-f5.4`, local e sem upstream |
+| **Branch administrativa** | `docs/promote-f5.4`, publicada e acompanhando `origin/docs/promote-f5.4` |
 | **Baseline** | `main == origin/main == d6246295045a156646af14de0011400feb6cb4f3` antes da branch |
 | **Produto F5.4** | `722916b0d5c9eddb0a06151894701e3f16e113aa` |
 | **Head final do PR** | `21aa4a6134db38615eed8c11cc15285924a62365` |
 | **CI do PR** | run [31739876952](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31739876952), `pull_request`, 11/11 success no head final |
 | **Promoção F5.4** | PR [#59](https://github.com/Wf-ops1/Harnessinfra/pull/59), merge `d6246295045a156646af14de0011400feb6cb4f3` |
 | **CI pós-merge** | run [31742231398](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31742231398), `push`, 11/11 success em 5m15s no merge exato |
-| **Reconciliação** | `LOCAL_READY / PUBLICATION_PENDING`; ainda não incorporada em `main` |
+| **Reconciliação** | commits iniciais `1d8f89f0dffaf0afc8a66159ffac8d1dee24c121` e `5521bf3cb6fc8cd84316183f9471a3d96d6dd368`; PR [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60) aberto, não draft; `ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Checkpoints** | `checkpoint/f5.4-ready` e `checkpoint/f5.4-complete` somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
@@ -67,30 +67,29 @@ ledger afetados. Produto, dependências, schemas, defaults, lockfile e CI estão
 Não há implementação ativa. A F5.4 — integrar orçamento durável por execução e nó — está promovida
 no Git/GitHub: o journal governa o saldo canônico por execução/nó, reserva antes do efeito e conduz
 excesso a `FAILED_BUDGET_EXCEEDED`, com projeção única em `status`/`inspect`. A reconciliação
-documental ainda precisa ser validada, publicada, revisada e incorporada. A F5.5 — integrar secrets
+documental foi publicada no PR #60 e ainda precisa ter seu head final certificado e ser incorporada. A F5.5 — integrar secrets
 e redaction — permanece apenas planejada; nenhum gate F5.5 foi congelado ou autorizado.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Publicar `docs/promote-f5.4`, abrir ou mesclar seu PR
-administrativo, publicar tags, remover branch/ref, fazer force-push/bypass ou iniciar a F5.5 não
-estão autorizados.
+Não há bloqueio técnico conhecido. A publicação de `docs/promote-f5.4` e a abertura do PR #60 foram
+autorizadas e concluídas. Mesclar o PR administrativo, publicar tags, remover branch/ref, fazer
+force-push/bypass ou iniciar a F5.5 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR E COMMITAR LOCALMENTE A RECONCILIAÇÃO docs/promote-f5.4.
-AGUARDAR AUTORIZAÇÃO PARA PUBLICAR A BRANCH E ABRIR O PR ADMINISTRATIVO ÚNICO DA F5.4.
+PUBLICAR ESTE REGISTRO PARA FORMAR O HEAD FINAL E AUDITAR TODOS OS CHECKS DO PR #60.
 NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.4.md` e a DEC-014.
-2. Confirme branch `docs/promote-f5.4`, baseline `d624629` e diff estritamente documental.
+2. Confirme branch `docs/promote-f5.4`, PR #60, baseline `d624629` e diff estritamente documental.
 3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist administrativa.
-4. Execute somente a próxima ação exata; publicação, PR administrativo, merge e F5.5 exigem nova autorização.
+4. Execute somente a próxima ação exata; merge, tags/refs e F5.5 exigem nova autorização.
 
 ---
 
-*Atualizado em: 2026-08-13T17:50:35-03:00 | Fonte: F5.4 + PR #59 + runs 31739876952/31742231398 + merge d624629*
+*Atualizado em: 2026-08-13T20:11:25-03:00 | Fonte: F5.4 + PRs #59/#60 + runs 31739876952/31742231398 + merge d624629*
