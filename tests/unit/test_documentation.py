@@ -181,7 +181,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`PUBLISHED / PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
@@ -191,7 +191,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31650131258" in panel
     assert "DEC-014" in panel
     assert "docs/tasks/completed/F5.3.md" in panel
-    assert "docs/tasks/active/F5.4.md" in panel
+    assert "docs/tasks/completed/F5.4.md" in panel
     assert "docs/tasks/completed/F5.2.md" in panel
     assert "docs/tasks/completed/F5.1.md" in panel
     assert "fe95a91648a79c404565583c87c1cf357e8ab3a2" in panel
