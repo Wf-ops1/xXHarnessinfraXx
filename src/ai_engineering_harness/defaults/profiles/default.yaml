@@ -26,5 +26,16 @@ models:
     fallback_providers: []
 budget:
   max_tokens: 100000
+  max_prompt_tokens: 100000
+  max_completion_tokens: 100000
+  max_tool_calls: 10000
+  max_duration_ms: 86400000
+  max_attempts: 10000
+  max_cost_usd: null
+  max_completion_tokens_per_call: 4096
+  default_node_limits: {}
+  node_limits: {}
+  model_prices: {}
+  tool_prices_usd: {}
 verification:
   enforce_applicable_only: true

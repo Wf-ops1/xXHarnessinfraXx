@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from ai_engineering_harness.contracts import CompiledGraphArtifact
-from ai_engineering_harness.governance import TrustMode
+from ai_engineering_harness.governance import BudgetBoundary, TrustMode
 from ai_engineering_harness.models.provider import CancellationToken, LLMResponse
 from ai_engineering_harness.models.router import ModelRouter
 from ai_engineering_harness.security import TrustEvaluationResult
@@ -53,7 +53,10 @@ class AgentExecutor:
         fallback_providers: list[str] | tuple[str, ...] | None = None,
         *,
         cancellation_token: CancellationToken | None = None,
+        budget_boundary: BudgetBoundary | None = None,
     ) -> LLMResponse:
+        if budget_boundary is not None:
+            self.router.bind_budget_boundary(budget_boundary)
         candidates = self.router.validate_route(primary_provider, fallback_providers)
         full_prompt = self._compose_prompt(prompt)
         return self.router.complete_with_fallback(
@@ -77,6 +80,7 @@ class AgentExecutor:
         fallback_providers: list[str] | tuple[str, ...] | None = None,
         cancellation_token: CancellationToken | None = None,
         tool_effect_recorder: ToolEffectRecorder | None = None,
+        budget_boundary: BudgetBoundary | None = None,
         trust_mode: TrustMode | None = None,
         trust_boundary: TrustEvaluationResult | None = None,
     ) -> ToolLoopResult:
@@ -84,6 +88,8 @@ class AgentExecutor:
             raise PermissionError(
                 f"[POLICY ERROR] Nenhum ToolRouter associado ao executor do agente '{self.agent_name}'."
             )
+        if budget_boundary is not None:
+            self.router.bind_budget_boundary(budget_boundary)
         boundary = trust_boundary or self.tool_router.trust_boundary
         if boundary is not None and not isinstance(boundary, TrustEvaluationResult):
             raise TypeError("trust_boundary must be a TrustEvaluationResult or None")
@@ -110,6 +116,7 @@ class AgentExecutor:
             model_candidates=candidates,
             cancellation_token=cancellation_token,
             tool_effect_recorder=tool_effect_recorder,
+            budget_boundary=budget_boundary,
             trust_mode=selected_trust_mode,
         )
 

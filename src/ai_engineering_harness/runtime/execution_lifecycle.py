@@ -7,11 +7,12 @@ import json
 import math
 import re
 import subprocess
+import time
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
 from typing import Literal
 
@@ -42,6 +43,13 @@ from ai_engineering_harness.contracts.policies import (
     VerificationPolicySpec,
 )
 from ai_engineering_harness.core.config import ConfigResolutionError, ConfigResolver
+from ai_engineering_harness.governance import (
+    BudgetError,
+    BudgetLedger,
+    BudgetLimits,
+    BudgetSnapshot,
+    JournalBudgetBoundary,
+)
 from ai_engineering_harness.models.router import (
     ModelEgressDeniedError,
     ModelRouter,
@@ -160,6 +168,9 @@ _VERIFICATION_GATE_RECORDED_KEYS = frozenset(
         "fencing_token",
     }
 )
+_VERIFICATION_GATE_RECORDED_KEYS_V2 = _VERIFICATION_GATE_RECORDED_KEYS | {
+    "duration_ms"
+}
 _VERIFICATION_SUITE_RECORDED_KEYS = frozenset(
     {
         "attempt",
@@ -197,6 +208,12 @@ class ApprovalLifecycleIntegrityError(ExecutionLifecycleError):
 
 class ExecutionCancellationError(ExecutionLifecycleError):
     """The requested execution cannot be cancelled or resumed."""
+
+
+class ExecutionBudgetExceededError(ExecutionLifecycleError):
+    """The execution reached its durable budget terminal state."""
+
+    classification = "budget_exceeded"
 
 
 class ExecutionGitIdentityError(ExecutionLifecycleError):
@@ -292,6 +309,7 @@ class ExecutionStatusView(_StrictFrozenModel):
     approval_status: ApprovalStatus
     revision: int = Field(ge=0)
     updated_at: datetime
+    budget: BudgetSnapshot | None = None
 
 
 class ExecutionInspection(_StrictFrozenModel):
@@ -334,6 +352,7 @@ class ExecutionLifecycleService:
         config_resolver: ConfigResolver | None = None,
         lock_timeout_seconds: float = 30.0,
         clock: Callable[[], datetime] | None = None,
+        monotonic: Callable[[], float] | None = None,
         execution_id_factory: Callable[[], str] | None = None,
         event_id_factory: Callable[[], str] | None = None,
         owner_id_factory: Callable[[], str] | None = None,
@@ -389,6 +408,7 @@ class ExecutionLifecycleService:
         self._config_resolver = config_resolver or ConfigResolver(self.project_root)
         self._lock_timeout_seconds = float(lock_timeout_seconds)
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._monotonic = monotonic or time.monotonic
         self._execution_id_factory = execution_id_factory or self._default_execution_id
         self._event_id_factory = event_id_factory or (lambda: f"lifecycle-event-{uuid.uuid4().hex}")
         self._owner_id_factory = owner_id_factory or (lambda: f"execution-lifecycle-{uuid.uuid4().hex}")
@@ -410,6 +430,7 @@ class ExecutionLifecycleService:
             approval_handler=self,
             lock_timeout_seconds=self._lock_timeout_seconds,
             clock=self._clock,
+            monotonic=self._monotonic,
             event_id_factory=self._event_id_factory,
             owner_id_factory=self._owner_id_factory,
         )
@@ -532,6 +553,11 @@ class ExecutionLifecycleService:
         if record.current_state == ExecutionState.CANCELLED:
             raise ExecutionCancellationError(
                 "cancelled execution cannot be resumed",
+                execution_id=execution_id,
+            )
+        if record.current_state == ExecutionState.FAILED_BUDGET_EXCEEDED:
+            raise ExecutionBudgetExceededError(
+                "budget-exhausted execution cannot be resumed",
                 execution_id=execution_id,
             )
         context_policy = self._resolved_context_policy(artifact)
@@ -1765,12 +1791,18 @@ class ExecutionLifecycleService:
         lock: ExecutionLock,
         machine: EventSourcedStateMachine,
     ) -> tuple[_VerificationAttempt, datetime]:
+        bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
+        verification_limits = BudgetLimits.from_effective_config(
+            self._configuration_from_bundle(bundle, execution_id)
+        )
         pending: (
             tuple[
                 int,
                 GateRequirement,
                 ResolvedGateCommand | None,
                 int,
+                JournalBudgetBoundary,
+                float,
             ]
             | None
         ) = None
@@ -1810,6 +1842,18 @@ class ExecutionLifecycleService:
                 expected_commit_sha=verified_commit_sha,
             )
             index = next_gate_index
+            budget_boundary = JournalBudgetBoundary(
+                storage=self._storage,
+                lock=lock,
+                execution_id=execution_id,
+                node_id=f"__verification__:{requirement.gate_id}",
+                attempt=attempt_number,
+                limits=verification_limits,
+                event_id_factory=self._event_id_factory,
+                clock=self._clock,
+                monotonic=self._monotonic,
+            )
+            budget_boundary.ensure_attempt_available()
             append_event(
                 VERIFICATION_GATE_STARTED,
                 {
@@ -1824,7 +1868,14 @@ class ExecutionLifecycleService:
                     "fencing_token": lock.fencing_token,
                 },
             )
-            pending = (index, requirement, command, lock.fencing_token)
+            pending = (
+                index,
+                requirement,
+                command,
+                lock.fencing_token,
+                budget_boundary,
+                self._budget_tick(),
+            )
 
         def after_gate(result: GateResult) -> None:
             nonlocal pending, next_gate_index
@@ -1837,7 +1888,14 @@ class ExecutionLifecycleService:
                 engine.worktree,
                 expected_commit_sha=verified_commit_sha,
             )
-            index, requirement, command, fencing_token = pending
+            (
+                index,
+                requirement,
+                command,
+                fencing_token,
+                budget_boundary,
+                started_tick,
+            ) = pending
             expected_argv = command.argv if command is not None else ()
             if (
                 result.gate_id != requirement.gate_id
@@ -1866,8 +1924,26 @@ class ExecutionLifecycleService:
                     "policy_digest": policy_digest,
                     "verified_commit_sha": verified_commit_sha,
                     "fencing_token": fencing_token,
+                    "duration_ms": self._budget_duration_ms(started_tick),
                 },
             )
+            budget_snapshot = budget_boundary.materialize_exceeded(
+                operation_id=f"verification-{index}",
+            )
+            if budget_snapshot.is_exceeded:
+                current = machine.recover(lock=lock)
+                if current.current_state == ExecutionState.VERIFYING:
+                    machine.transition_to(
+                        ExecutionState.FAILED_BUDGET_EXCEEDED,
+                        node_id=budget_boundary.node_id,
+                        attempt=attempt_number,
+                        reason="durable_budget_exceeded",
+                        lock=lock,
+                    )
+                raise ExecutionBudgetExceededError(
+                    "verification exhausted the canonical durable budget",
+                    execution_id=execution_id,
+                )
             gate_result_digests.append(result_digest)
             next_gate_index += 1
             pending = None
@@ -1878,6 +1954,20 @@ class ExecutionLifecycleService:
                 before_gate=before_gate,
                 after_gate=after_gate,
             )
+        except BudgetError as exc:
+            current = machine.recover(lock=lock)
+            if current.current_state == ExecutionState.VERIFYING:
+                machine.transition_to(
+                    ExecutionState.FAILED_BUDGET_EXCEEDED,
+                    node_id=current.current_node_id,
+                    attempt=attempt_number,
+                    reason="durable_budget_exceeded",
+                    lock=lock,
+                )
+            raise ExecutionBudgetExceededError(
+                "verification exhausted the canonical durable budget",
+                execution_id=execution_id,
+            ) from exc
         except (VerificationConfigurationError, VerificationPrerequisiteError) as exc:
             current = machine.recover(lock=lock)
             if current.current_state == ExecutionState.VERIFYING:
@@ -2030,7 +2120,11 @@ class ExecutionLifecycleService:
                 if (
                     recorded.event_type != VERIFICATION_GATE_RECORDED
                     or set(started.payload) != _VERIFICATION_GATE_STARTED_KEYS
-                    or set(recorded.payload) != _VERIFICATION_GATE_RECORDED_KEYS
+                    or set(recorded.payload)
+                    not in (
+                        _VERIFICATION_GATE_RECORDED_KEYS,
+                        _VERIFICATION_GATE_RECORDED_KEYS_V2,
+                    )
                 ):
                     raise VerificationLifecycleIntegrityError(
                         "verification gate event sequence or payload schema is invalid",
@@ -2057,6 +2151,13 @@ class ExecutionLifecycleService:
                     or type(observed_fencing) is not int
                     or observed_fencing <= 0
                     or result_payload.get("fencing_token") != observed_fencing
+                    or (
+                        "duration_ms" in result_payload
+                        and (
+                            type(result_payload.get("duration_ms")) is not int
+                            or int(result_payload["duration_ms"]) < 0
+                        )
+                    )
                     or type(observed_commit) is not str
                     or _GIT_SHA_PATTERN.fullmatch(observed_commit) is None
                     or result_payload.get("verified_commit_sha") != observed_commit
@@ -2351,7 +2452,11 @@ class ExecutionLifecycleService:
                 started.event_type != VERIFICATION_GATE_STARTED
                 or recorded.event_type != VERIFICATION_GATE_RECORDED
                 or set(started.payload) != _VERIFICATION_GATE_STARTED_KEYS
-                or set(recorded.payload) != _VERIFICATION_GATE_RECORDED_KEYS
+                or set(recorded.payload)
+                not in (
+                    _VERIFICATION_GATE_RECORDED_KEYS,
+                    _VERIFICATION_GATE_RECORDED_KEYS_V2,
+                )
             ):
                 raise VerificationLifecycleIntegrityError(
                     "verification gate event sequence or payload schema is invalid",
@@ -2364,6 +2469,13 @@ class ExecutionLifecycleService:
                 type(fencing_token) is not int
                 or fencing_token <= 0
                 or result_payload.get("fencing_token") != fencing_token
+                or (
+                    "duration_ms" in result_payload
+                    and (
+                        type(result_payload.get("duration_ms")) is not int
+                        or int(result_payload["duration_ms"]) < 0
+                    )
+                )
             ):
                 raise VerificationLifecycleIntegrityError(
                     "verification gate fencing identity is invalid",
@@ -2936,6 +3048,18 @@ class ExecutionLifecycleService:
                 router = self._model_router_factory(effective_configuration)
                 if not isinstance(router, ModelRouter):
                     raise TypeError("model_router_factory must return ModelRouter")
+                budget_boundary = JournalBudgetBoundary(
+                    storage=self._storage,
+                    lock=lock,
+                    execution_id=execution_id,
+                    node_id="__planning__",
+                    attempt=1,
+                    limits=BudgetLimits.from_effective_config(effective_configuration),
+                    event_id_factory=self._event_id_factory,
+                    clock=self._clock,
+                    monotonic=self._monotonic,
+                )
+                router.bind_budget_boundary(budget_boundary)
                 planner = Planner(self.project_root, self._storage, router)
 
                 if generated is not None:
@@ -2959,6 +3083,7 @@ class ExecutionLifecycleService:
                     )
 
                 planner.validate_route()
+                budget_boundary.ensure_attempt_available()
                 minimum = max(
                     record.updated_at,
                     events[-1].timestamp if events else record.updated_at,
@@ -3008,6 +3133,20 @@ class ExecutionLifecycleService:
                     timestamp=self._next_timestamp(started.timestamp),
                     lock=lock,
                 )
+            except BudgetError as exc:
+                current = machine.recover(lock=lock)
+                if current.current_state == ExecutionState.PLANNING:
+                    machine.transition_to(
+                        ExecutionState.FAILED_BUDGET_EXCEEDED,
+                        node_id=current.current_node_id,
+                        attempt=1,
+                        reason="durable_budget_exceeded",
+                        lock=lock,
+                    )
+                raise ExecutionBudgetExceededError(
+                    "execution planning exhausted the canonical durable budget",
+                    execution_id=execution_id,
+                ) from exc
             except (
                 PlanPrerequisiteError,
                 PlanningLifecycleIntegrityError,
@@ -3458,8 +3597,16 @@ class ExecutionLifecycleService:
 
     def status(self, execution_id: str) -> ExecutionStatusView:
         """Return a redaction-safe canonical execution status."""
-        record = self._load_recovered_record(execution_id)
-        return self._status_view(record)
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._state_machine(execution_id, lock).recover(lock=lock)
+            bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
+            events = self._storage.load_events(execution_id, lock=lock)
+            budget = self._budget_snapshot(execution_id, bundle, events)
+            return self._status_view(record, budget=budget)
+        finally:
+            self._storage.release_execution_lock(lock)
 
     def inspect(self, execution_id: str) -> ExecutionInspection:
         """Return canonical identity and event metadata without payload content."""
@@ -3469,8 +3616,9 @@ class ExecutionLifecycleService:
             record = self._state_machine(execution_id, lock).recover(lock=lock)
             bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
             events = self._storage.load_events(execution_id, lock=lock)
+            budget = self._budget_snapshot(execution_id, bundle, events)
             return ExecutionInspection(
-                status=self._status_view(record),
+                status=self._status_view(record, budget=budget),
                 artifact_digest=bundle.artifact_digest,
                 configuration_digest=bundle.configuration_digest,
                 initial_input_digest=bundle.initial_input_digest,
@@ -3872,6 +4020,25 @@ class ExecutionLifecycleService:
             raise ExecutionLifecycleError("lifecycle clock must be UTC and cannot regress")
         return observed.astimezone(UTC)
 
+    def _budget_tick(self) -> float:
+        observed = self._monotonic()
+        if (
+            isinstance(observed, bool)
+            or not isinstance(observed, (int, float))
+            or not math.isfinite(observed)
+        ):
+            raise ExecutionLifecycleError("budget monotonic clock returned an invalid value")
+        return float(observed)
+
+    def _budget_duration_ms(self, started_tick: float) -> int:
+        finished_tick = self._budget_tick()
+        elapsed = Decimal(str(finished_tick)) - Decimal(str(started_tick))
+        if elapsed < 0:
+            raise ExecutionLifecycleError("budget monotonic clock cannot regress")
+        return int(
+            (elapsed * Decimal(1000)).to_integral_value(rounding=ROUND_CEILING)
+        )
+
     @staticmethod
     def _approval_replacement(
         record: ExecutionRecord,
@@ -3890,8 +4057,22 @@ class ExecutionLifecycleService:
         )
         return ExecutionRecord.model_validate(document)
 
+    def _budget_snapshot(
+        self,
+        execution_id: str,
+        bundle: ExecutionBundle,
+        events: tuple[ExecutionEvent, ...],
+    ) -> BudgetSnapshot:
+        configuration = self._configuration_from_bundle(bundle, execution_id)
+        limits = BudgetLimits.from_effective_config(configuration)
+        return BudgetLedger.replay(execution_id, limits, events).snapshot()
+
     @staticmethod
-    def _status_view(record: ExecutionRecord) -> ExecutionStatusView:
+    def _status_view(
+        record: ExecutionRecord,
+        *,
+        budget: BudgetSnapshot | None = None,
+    ) -> ExecutionStatusView:
         return ExecutionStatusView(
             execution_id=record.execution_id,
             workflow_name=record.workflow_name,
@@ -3900,6 +4081,7 @@ class ExecutionLifecycleService:
             approval_status=record.approval_status,
             revision=record.revision,
             updated_at=record.updated_at,
+            budget=budget,
         )
 
     @staticmethod
@@ -4011,6 +4193,7 @@ __all__ = [
     "ApprovalLifecycleIntegrityError",
     "ApprovalSubjectMismatchError",
     "ExecutionApprovalRequiredError",
+    "ExecutionBudgetExceededError",
     "ExecutionCancellationError",
     "ExecutionConfigurationError",
     "ExecutionGitIdentityError",

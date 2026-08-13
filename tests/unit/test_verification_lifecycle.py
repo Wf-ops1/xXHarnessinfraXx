@@ -18,6 +18,7 @@ from ai_engineering_harness.runtime import (
     VERIFICATION_GATE_STARTED,
     VERIFICATION_SUITE_RECORDED,
     DeterministicNodeExecutor,
+    ExecutionBudgetExceededError,
     ExecutionLifecycleService,
     NodeExecutionContext,
     NodeExecutionResult,
@@ -296,6 +297,31 @@ def test_failed_suite_stays_verifying_and_is_recovered_without_rerun(
     assert first.gate_results[0].exit_code != 0
     assert storage.load_execution(execution_id).current_state == ExecutionState.VERIFYING
     assert len(storage.load_events(execution_id)) == event_count
+
+
+def test_execution_attempt_budget_blocks_before_verification_gate_effect(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_fixture(tmp_path, passing=True)
+    storage = AtomicFileStateStorage(tmp_path)
+    execution_id = "exec-f54-verification-budget"
+    service = _service(tmp_path, storage, execution_id, fixture)
+    service.start(
+        fixture.artifact,
+        execution_id=execution_id,
+        initial_input={},
+        configuration={"budget": {"max_attempts": 1}},
+    )
+
+    with pytest.raises(ExecutionBudgetExceededError):
+        service.verify(execution_id)
+
+    assert storage.load_execution(execution_id).current_state == (
+        ExecutionState.FAILED_BUDGET_EXCEEDED
+    )
+    event_types = tuple(event.event_type for event in storage.load_events(execution_id))
+    assert "BUDGET_EXCEEDED" in event_types
+    assert VERIFICATION_GATE_STARTED not in event_types
 
 
 def test_open_gate_write_ahead_blocks_automatic_reexecution(tmp_path: Path) -> None:

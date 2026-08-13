@@ -361,8 +361,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F5.4 — integrar orçamento — está somente planejada e não autorizada" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.4 — integrar orçamento durável por execução e nó" in panel
+    assert "`PUBLISHED / PR_OPEN / CHECKS_PENDING`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -807,6 +807,49 @@ def test_f5_3_promotion_preserves_the_frozen_trust_boundary() -> None:
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in dossier
     assert "7b7af9ea2512e1ea9a606053e39ae43678c83b39" in dossier
     assert "docs/promote-f5.3" in dossier
+
+
+def test_f5_4_ready_gate_freezes_durable_execution_and_node_budget() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.4.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+
+    assert (ACTIVE_ROOT / "F5.4.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PUBLISHED / PR_OPEN / CHECKS_PENDING`" in dossier
+    assert "checkpoint/f5.4-ready" in dossier
+    assert "task/f5.4-durable-budget" in dossier
+    assert "4c0527baacc74821112adf7fe61b82af72589f69" in dossier
+    assert "31728438719" in dossier
+    assert "161 passed" in dossier
+    for dimension in (
+        "prompt tokens",
+        "completion tokens",
+        "tool calls",
+        "duração",
+        "tentativas",
+        "custo estimado",
+    ):
+        assert dimension in dossier
+    assert "fresh_tracker_consumed= 0" in dossier
+    assert "FAILED_BUDGET_EXCEEDED" in dossier
+    assert "write-ahead" in dossier
+    assert "fencing token" in dossier
+    assert "resume_neither_resets_nor_double_charges" in dossier
+    assert "f4_8_specific_budget_remains_and_stricter_limit_wins" in dossier
+    assert "F5.5" in dossier
+    assert "F5.7" in dossier
+    assert "docs/tasks/active/F5.4.md" in panel
+    assert "active/F5.4.md" in task_index
+    assert "F5.4 está `PR_OPEN / CHECKS_PENDING`" in readme
+    assert "202 passed" in dossier
+    assert "856 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "checkpoint/f5.4-complete" in dossier
+    assert "722916b0d5c9eddb0a06151894701e3f16e113aa" in dossier
+    assert "https://github.com/Wf-ops1/Harnessinfra/pull/59" in dossier
+    assert "0cb69b1d94bd650c69528777514c6f1b12478392" in dossier
+    assert "administrativo #58 / merge `4c0527b` / pós-merge `31728438719`" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

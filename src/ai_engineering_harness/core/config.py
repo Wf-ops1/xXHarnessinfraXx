@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from decimal import Decimal, InvalidOperation
 from importlib.resources import files
 from importlib.resources.abc import Traversable
 from pathlib import Path
@@ -91,10 +92,101 @@ class DataEgressConfiguration(_StrictFrozenModel):
         return value
 
 
+def _canonical_non_negative_decimal(value: object, *, field_name: str) -> str:
+    if type(value) is not str or not value.strip() or value != value.strip():
+        raise ValueError(f"{field_name} must be a canonical decimal string")
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation as exc:
+        raise ValueError(f"{field_name} must be a canonical decimal string") from exc
+    if not parsed.is_finite() or parsed < 0:
+        raise ValueError(f"{field_name} must be a finite non-negative decimal")
+    canonical = "0" if parsed == 0 else format(parsed.normalize(), "f")
+    if value != canonical:
+        raise ValueError(f"{field_name} must use canonical decimal formatting")
+    return value
+
+
+def _canonical_positive_decimal(value: object, *, field_name: str) -> str | None:
+    if value is None:
+        return None
+    canonical = _canonical_non_negative_decimal(value, field_name=field_name)
+    if Decimal(canonical) <= 0:
+        raise ValueError(f"{field_name} must be greater than zero")
+    return canonical
+
+
+class BudgetLimitConfiguration(_StrictFrozenModel):
+    """Optional per-node overrides over the execution budget."""
+
+    max_prompt_tokens: int | None = Field(default=None, gt=0)
+    max_completion_tokens: int | None = Field(default=None, gt=0)
+    max_total_tokens: int | None = Field(default=None, gt=0)
+    max_tool_calls: int | None = Field(default=None, gt=0)
+    max_duration_ms: int | None = Field(default=None, gt=0)
+    max_attempts: int | None = Field(default=None, gt=0)
+    max_cost_usd: str | None = None
+
+    @field_validator("max_cost_usd")
+    @classmethod
+    def validate_max_cost(cls, value: str | None) -> str | None:
+        return _canonical_positive_decimal(value, field_name="node max_cost_usd")
+
+
+class ModelPriceConfiguration(_StrictFrozenModel):
+    """Canonical decimal USD prices per million model tokens."""
+
+    prompt_per_million_usd: str
+    completion_per_million_usd: str
+
+    @field_validator("prompt_per_million_usd", "completion_per_million_usd")
+    @classmethod
+    def validate_price(cls, value: str) -> str:
+        return _canonical_non_negative_decimal(value, field_name="model price")
+
+
 class BudgetConfiguration(_StrictFrozenModel):
-    """Configuration consumed by the current model router budget boundary."""
+    """Durable execution/node limits and optional decimal operation prices."""
 
     max_tokens: int = Field(gt=0)
+    max_prompt_tokens: int | None = Field(default=None, gt=0)
+    max_completion_tokens: int | None = Field(default=None, gt=0)
+    max_tool_calls: int | None = Field(default=10_000, gt=0)
+    max_duration_ms: int | None = Field(default=86_400_000, gt=0)
+    max_attempts: int | None = Field(default=10_000, gt=0)
+    max_cost_usd: str | None = None
+    max_completion_tokens_per_call: int = Field(default=4_096, gt=0)
+    default_node_limits: BudgetLimitConfiguration = Field(
+        default_factory=lambda: BudgetLimitConfiguration()
+    )
+    node_limits: dict[str, BudgetLimitConfiguration] = Field(default_factory=dict)
+    model_prices: dict[str, ModelPriceConfiguration] = Field(default_factory=dict)
+    tool_prices_usd: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("node_limits", "model_prices", "tool_prices_usd", mode="before")
+    @classmethod
+    def copy_budget_mappings(cls, value: object) -> object:
+        return dict(value) if isinstance(value, dict) else value
+
+    @field_validator("node_limits", "model_prices", "tool_prices_usd")
+    @classmethod
+    def sort_budget_mappings(cls, value: dict[str, Any]) -> dict[str, Any]:
+        if any(not isinstance(key, str) or not key.strip() for key in value):
+            raise ValueError("budget mapping keys must be non-empty strings")
+        return dict(sorted(value.items()))
+
+    @field_validator("max_cost_usd")
+    @classmethod
+    def validate_max_cost(cls, value: str | None) -> str | None:
+        return _canonical_positive_decimal(value, field_name="max_cost_usd")
+
+    @field_validator("tool_prices_usd")
+    @classmethod
+    def validate_tool_prices(cls, value: dict[str, str]) -> dict[str, str]:
+        return {
+            key: _canonical_non_negative_decimal(price, field_name=f"tool price {key!r}")
+            for key, price in value.items()
+        }
 
 
 class VerificationConfiguration(_StrictFrozenModel):

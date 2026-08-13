@@ -84,6 +84,9 @@ def test_config_resolver_reads_installed_package_defaults_with_importlib_resourc
     }
     assert config["models"]["providers"]["local"]["model"] == "llama3"
     assert config["budget"]["max_tokens"] == 100_000
+    assert config["budget"]["max_completion_tokens_per_call"] == 4_096
+    assert config["budget"]["model_prices"] == {}
+    assert config["budget"]["tool_prices_usd"] == {}
     assert config["verification"] == {"enforce_applicable_only": True}
 
 
@@ -121,6 +124,8 @@ def test_missing_selected_profile_is_rejected(tmp_path: Path) -> None:
     [
         {"context_sufficiency_threshold": "not-a-number"},
         {"budget": {"max_tokens": True}},
+        {"budget": {"max_cost_usd": 1.5}},
+        {"budget": {"max_cost_usd": "01.50"}},
         {"verification": {"enforce_applicable_only": "yes"}},
         {"unknown_root_key": "unsupported"},
     ],

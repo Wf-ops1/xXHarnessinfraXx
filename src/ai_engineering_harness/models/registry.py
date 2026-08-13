@@ -94,6 +94,13 @@ class ProviderRegistry:
     def is_configured(self, provider_id: str) -> bool:
         return provider_id in self._providers
 
+    def configured_model(self, provider_id: str) -> str:
+        """Return the immutable configured model identity without provider creation."""
+        try:
+            return self._providers[provider_id].model
+        except KeyError as exc:
+            raise ValueError(f"Provedor não configurado: {provider_id}") from exc
+
     def create_provider(self, provider_id: str) -> BaseLLMProvider:
         try:
             spec = self._providers[provider_id]
