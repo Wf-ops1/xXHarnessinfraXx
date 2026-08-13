@@ -361,8 +361,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F5.3 — trust boundary integrado" in panel
-    assert "`PUBLISHED / PR_PENDING / PROMOTION_PENDING`" in panel
+    assert "F5.4 — integrar orçamento — está somente planejada e não autorizada" in panel
+    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL`" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -760,15 +760,16 @@ def test_f5_2_ready_gate_freezes_unified_policy_contract() -> None:
     assert "F5.2 foi promovida pelo" in readme
 
 
-def test_f5_3_local_implementation_preserves_the_frozen_trust_boundary() -> None:
+def test_f5_3_promotion_preserves_the_frozen_trust_boundary() -> None:
     panel = _read(TASK_PANEL)
-    dossier = _read(ACTIVE_ROOT / "F5.3.md")
+    dossier = _read(COMPLETED_ROOT / "F5.3.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
 
-    assert (ACTIVE_ROOT / "F5.3.md").is_file()
-    assert "> **Gate:** `PUBLISHED / PR_PENDING / PROMOTION_PENDING`" in dossier
-    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert not (ACTIVE_ROOT / "F5.3.md").exists()
+    assert (COMPLETED_ROOT / "F5.3.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "checkpoint/f5.3-ready" in dossier
     assert "task/f5.3-trust-boundary" in dossier
     assert "0607a0b385da1a864f629bf4811810a574d03768" in dossier
@@ -791,13 +792,19 @@ def test_f5_3_local_implementation_preserves_the_frozen_trust_boundary() -> None
     assert "shell=False" in dossier
     assert "F5.4" in dossier
     assert "F5.7" in dossier
-    assert "docs/tasks/active/F5.3.md" in panel
-    assert "active/F5.3.md" in task_index
-    assert "F5.3 está `PUBLISHED / PR_PENDING / PROMOTION_PENDING`" in readme
+    assert "docs/tasks/completed/F5.3.md" in panel
+    assert "completed/F5.3.md" in task_index
+    assert "F5.3 foi promovida pelo" in readme
     assert "283 passed, 2 skipped" in readme
     assert "implementação local autorizada" in dossier
     assert "827 passed, 5 skipped, 6 subtests passed" in dossier
     assert "administrativo #56 / merge `0607a0b` / pós-merge `31650131258`" in task_index
+    assert "4934aee925830e4aac2672b0bbf6ffadbf1c9ca9" in dossier
+    assert "31659293351" in dossier
+    assert "211edcf921912a32429934bf600473d8cc98941c" in dossier
+    assert "31660030240" in dossier
+    assert "LOCAL_READY / PUBLICATION_PENDING" in dossier
+    assert "docs/promote-f5.3" in dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
