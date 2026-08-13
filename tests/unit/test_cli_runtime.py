@@ -206,7 +206,7 @@ def test_cli_run_accepts_explicit_json_and_uses_lifecycle(
 ) -> None:
     runner = CliRunner()
     fake = _FakeLifecycle()
-    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root: fake)
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
     with runner.isolated_filesystem(temp_dir=tmp_path):
         assert runner.invoke(main, ["init"]).exit_code == 0
         result = runner.invoke(
@@ -236,7 +236,7 @@ def test_cli_run_passes_profile_and_highest_precedence_configuration_overrides(
 ) -> None:
     runner = CliRunner()
     fake = _FakeLifecycle()
-    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root: fake)
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
     with runner.isolated_filesystem(temp_dir=tmp_path):
         assert runner.invoke(main, ["init"]).exit_code == 0
         result = runner.invoke(
@@ -273,7 +273,7 @@ def test_cli_run_does_not_claim_completion_while_verification_is_pending(
     fake.status_view = fake.status_view.model_copy(
         update={"current_state": ExecutionState.VERIFYING}
     )
-    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root: fake)
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
     with runner.isolated_filesystem(temp_dir=tmp_path):
         assert runner.invoke(main, ["init"]).exit_code == 0
         result = runner.invoke(main, ["run", "new-feature", "--input-json", "{}"])
@@ -310,7 +310,7 @@ def test_cli_resume_approve_cancel_status_and_inspect_are_canonical_and_redacted
 ) -> None:
     runner = CliRunner()
     fake = _FakeLifecycle()
-    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root: fake)
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
     with runner.isolated_filesystem(temp_dir=tmp_path):
         legacy_root = Path(".harness/state/executions/exec-cli-runtime")
         legacy_root.mkdir(parents=True)
@@ -382,7 +382,7 @@ def test_cli_verify_uses_lifecycle_and_returns_nonzero_when_blocked(
     monkeypatch.setattr(
         CLI_MODULE,
         "_lifecycle_service",
-        lambda root, *, project_id="default-proj": fake,
+        lambda root, *, project_id="default-proj", trust_boundary=None: fake,
     )
     with runner.isolated_filesystem(temp_dir=tmp_path):
         passed = runner.invoke(

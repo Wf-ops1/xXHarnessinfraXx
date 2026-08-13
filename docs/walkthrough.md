@@ -99,7 +99,8 @@ Limitações importantes:
 - a F5.2 pré-autoriza cada lote por role/node/workflow/trust/tool/operação/path/aprovação, aplica
   default-deny e persiste a regra antes do efeito; o outcome fica ligado pelo digest da decisão;
 - o `ToolRouter` operacional revalida a decisão, mas não é construído automaticamente pelo lifecycle;
-- trust boundary operacional e aprovação vinculada ao conteúdo permanecem nas F5.3/F5.6;
+- a trust boundary F5.3 está certificada somente na branch local e aguarda promoção; aprovação
+  vinculada ao conteúdo permanece F5.6;
 - promoção F3.7 usa candidate/cherry-pick reais quando explicitamente injetada; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
   mas o lifecycle ainda não executa `harness index` automaticamente;
 - o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.
@@ -107,7 +108,8 @@ Limitações importantes:
 ## Fluxo de verificação
 
 O `VerificationEngine` possui runners que executam processos reais pelo terminal tipado, com `argv`,
-cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. F4.5 remove o falso
+cwd confinado, ambiente seletivo, timeout da árvore e saída limitada/redigida. Na F5.3 local, o
+runner exige o mesmo snapshot vinculado ao `ProvisionedWorktree` antes do spawn. F4.5 remove o falso
 sucesso `0/0`; F4.6 exige `ProvisionedWorktree`, resolve a suíte inteira antes de efeitos e transforma
 pré-requisito ausente em `ERROR_PREREQUISITE`; F4.7 persiste cada resultado e impede conclusão sem
 suíte obrigatória aprovada. A F4.8 promovida recupera a última reprovação canônica, agenda somente o

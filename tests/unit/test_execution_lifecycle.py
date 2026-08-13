@@ -40,6 +40,10 @@ from ai_engineering_harness.runtime import (
     NodeExecutorUnavailableError,
     VerificationLifecyclePrerequisiteError,
 )
+from ai_engineering_harness.security import (
+    TrustBoundaryEvaluator,
+    TrustEvaluationResult,
+)
 
 _BASE_TIME = datetime(2026, 8, 7, 12, 0, tzinfo=UTC)
 
@@ -159,6 +163,7 @@ def _service(
     storage: AtomicFileStateStorage | None = None,
     *,
     trace: list[str] | None = None,
+    trust_boundary: TrustEvaluationResult | None = None,
 ) -> tuple[ExecutionLifecycleService, AtomicFileStateStorage, list[str]]:
     selected_storage = storage or AtomicFileStateStorage(project_root)
     selected_trace = trace if trace is not None else []
@@ -173,8 +178,40 @@ def _service(
         execution_id_factory=lambda: "exec-generated-lifecycle",
         owner_id_factory=lambda: "lifecycle-test-owner",
         git_identity_provider=lambda: ("a" * 40, "task/f2.5-execution-resume"),
+        trust_boundary=trust_boundary,
     )
     return service, selected_storage, selected_trace
+
+
+def test_resume_fails_when_the_active_trust_boundary_diverges(
+    tmp_path: Path,
+) -> None:
+    artifact = _compiled_graph(
+        tmp_path,
+        workflow="trust-boundary-resume",
+        human_approval=True,
+    )
+    original_boundary = TrustBoundaryEvaluator(tmp_path).evaluate()
+    service, storage, _ = _service(
+        tmp_path,
+        trust_boundary=original_boundary,
+    )
+    paused = service.start(
+        artifact,
+        execution_id="exec-trust-boundary-resume",
+        initial_input={},
+        configuration={},
+    )
+    assert isinstance(paused, GraphExecutionPausedResult)
+    bundle = storage.load_execution_bundle("exec-trust-boundary-resume")
+    persisted = json.loads(bundle.configuration_json)["project"]["_trust_boundary"]
+    assert persisted == original_boundary.snapshot()
+
+    marker = tmp_path / ".harness" / "trusted_repository"
+    marker.touch()
+
+    with pytest.raises(ExecutionConfigurationError, match="boundary diverges"):
+        service.resume("exec-trust-boundary-resume")
 
 
 def test_start_bundle_payload_status_inspect_and_public_views(tmp_path: Path) -> None:

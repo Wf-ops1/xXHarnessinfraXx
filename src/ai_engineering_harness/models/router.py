@@ -17,6 +17,7 @@ from ai_engineering_harness.models.provider import (
     ProviderError,
 )
 from ai_engineering_harness.models.registry import ProviderConfiguration, ProviderRegistry
+from ai_engineering_harness.security import TrustEvaluationResult
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -102,7 +103,12 @@ class ModelRouter:
         self.validate_route()
 
     @classmethod
-    def from_effective_config(cls, config: Mapping[str, object]) -> ModelRouter:
+    def from_effective_config(
+        cls,
+        config: Mapping[str, object],
+        *,
+        trust_boundary: TrustEvaluationResult | None = None,
+    ) -> ModelRouter:
         """Constrói o router exclusivamente da configuração já resolvida."""
         models_raw = config.get("models")
         if not isinstance(models_raw, dict):
@@ -130,7 +136,7 @@ class ModelRouter:
         if type(max_tokens) is not int or max_tokens <= 0:
             raise ModelRoutingConfigurationError("budget.max_tokens deve ser inteiro positivo")
 
-        registry = ProviderRegistry(models.providers)
+        registry = ProviderRegistry(models.providers, trust_boundary=trust_boundary)
         return cls(
             allowed_providers=allowed_raw,
             provider_registry=registry,

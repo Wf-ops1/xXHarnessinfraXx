@@ -14,7 +14,15 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, BinaryIO, Protocol, cast
 
-from ai_engineering_harness.security import PathGuard, Redactor
+from ai_engineering_harness.security import (
+    PathGuard,
+    Redactor,
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 
 
 class TerminalAdapterError(RuntimeError):
@@ -354,12 +362,23 @@ class _PosixProcessGroupController:
 class TerminalAdapter:
     """Execute only explicitly authorized executables under one path guard."""
 
-    __slots__ = ("_environment", "_environment_keys", "_executables", "_path_guard")
+    __slots__ = (
+        "_environment",
+        "_environment_keys",
+        "_executables",
+        "_path_guard",
+        "_trust_boundary",
+    )
 
     _environment: Mapping[str, str]
     _environment_keys: Mapping[str, str]
     _executables: Mapping[str, _ExecutablePolicy]
     _path_guard: PathGuard
+    _trust_boundary: TrustEvaluationResult
+
+    @property
+    def trust_boundary(self) -> TrustEvaluationResult:
+        return self._trust_boundary
 
     def __init__(
         self,
@@ -367,6 +386,7 @@ class TerminalAdapter:
         path_guard: PathGuard,
         executables: Mapping[str, str | os.PathLike[str]],
         environment: Mapping[str, str],
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> None:
         if not isinstance(path_guard, PathGuard):
             raise TerminalConfigurationError("path_guard must be an explicit PathGuard")
@@ -378,6 +398,22 @@ class TerminalAdapter:
         normalized_environment, environment_keys = self._normalize_environment(environment)
         object.__setattr__(self, "_environment", MappingProxyType(normalized_environment))
         object.__setattr__(self, "_environment_keys", MappingProxyType(environment_keys))
+        boundary = trust_boundary or self._adapter_boundary(
+            path_guard=path_guard,
+            executable_aliases=tuple(normalized_executables),
+            environment_names=tuple(normalized_environment),
+        )
+        if not isinstance(boundary, TrustEvaluationResult):
+            raise TerminalConfigurationError(
+                "trust_boundary must be a TrustEvaluationResult or None"
+            )
+        try:
+            boundary.require_root(path_guard.authorized_root)
+        except TrustCapabilityDeniedError as exc:
+            raise TerminalConfigurationError(
+                "terminal trust boundary must match the path guard root"
+            ) from exc
+        object.__setattr__(self, "_trust_boundary", boundary)
 
     def execute(self, request: CommandRequest) -> CommandResult:
         """Validate policy immediately before spawning one argv-based subprocess."""
@@ -385,6 +421,7 @@ class TerminalAdapter:
         if not isinstance(request, CommandRequest):
             raise CommandValidationError("request must be a CommandRequest")
 
+        self._authorize_request(request)
         executable = self._authorized_executable(request.argv[0])
         selected_environment = self._selected_environment(request.env_allowlist)
         guarded_cwd = self._path_guard.guard_read(request.cwd)
@@ -403,6 +440,7 @@ class TerminalAdapter:
         stderr_bytes = _BoundedBytes.create(capture_limit)
         argv_for_process = [os.fspath(executable), *request.argv[1:]]
 
+        self._authorize_request(request)
         spawned = self._spawn(
             argv=argv_for_process,
             cwd=guarded_cwd.absolute_path,
@@ -461,6 +499,45 @@ class TerminalAdapter:
             stdout_truncated=stdout_truncated,
             stderr_truncated=stderr_truncated,
         )
+
+    def _authorize_request(self, request: CommandRequest) -> None:
+        try:
+            self._trust_boundary.require_root(self._path_guard.authorized_root)
+        except TrustCapabilityDeniedError as exc:
+            raise CommandValidationError(str(exc)) from exc
+        try:
+            self._trust_boundary.require_executable(request.argv[0])
+        except TrustCapabilityDeniedError as exc:
+            raise ExecutableNotAllowedError(str(exc)) from exc
+        for name in request.env_allowlist:
+            try:
+                self._trust_boundary.require_secret(
+                    name,
+                    consumer=f"terminal:{request.argv[0]}",
+                )
+            except TrustCapabilityDeniedError as exc:
+                raise EnvironmentNotAllowedError(str(exc)) from exc
+
+    @staticmethod
+    def _adapter_boundary(
+        *,
+        path_guard: PathGuard,
+        executable_aliases: tuple[str, ...],
+        environment_names: tuple[str, ...],
+    ) -> TrustEvaluationResult:
+        consumers = tuple(f"terminal:{alias}" for alias in executable_aliases)
+        authorization = TrustAuthorization(
+            repository_root=os.fspath(path_guard.authorized_root),
+            executable_aliases=executable_aliases,
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=consumers)
+                for name in environment_names
+            ),
+        )
+        return TrustBoundaryEvaluator(
+            path_guard.authorized_root,
+            authorization=authorization,
+        ).evaluate(force_untrusted=True)
 
     @staticmethod
     def run_command(command: str, cwd: str, timeout: int = 30) -> dict[str, Any]:

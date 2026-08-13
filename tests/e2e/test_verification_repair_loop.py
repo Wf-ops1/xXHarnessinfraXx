@@ -30,7 +30,13 @@ from ai_engineering_harness.runtime import (
     VerificationRequiredError,
     VerificationRetryExhaustedError,
 )
-from ai_engineering_harness.security import PathGuard
+from ai_engineering_harness.security import (
+    PathGuard,
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.workspace import (
     ProvisionedWorktree,
     WorktreeReference,
@@ -208,6 +214,7 @@ def _worktree_provider(
     execution_id: str,
     base_commit: str,
     branch: str,
+    boundary: TrustEvaluationResult,
 ):
     def provide(selected: str) -> ProvisionedWorktree:
         if selected != execution_id:
@@ -230,6 +237,7 @@ def _worktree_provider(
                 updated_at=timestamp,
             ),
             path_guard=PathGuard(project),
+            trust_boundary=boundary,
         )
 
     return provide
@@ -290,6 +298,17 @@ def _service(
     branch: str,
     clock: _Clock | None = None,
 ) -> ExecutionLifecycleService:
+    boundary = TrustBoundaryEvaluator(
+        project,
+        authorization=TrustAuthorization(
+            repository_root=str(project.resolve()),
+            executable_aliases=("python",),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+        ),
+    ).evaluate()
     return ExecutionLifecycleService(
         project,
         storage,
@@ -303,7 +322,9 @@ def _service(
             execution_id=execution_id,
             base_commit=base_commit,
             branch=branch,
+            boundary=boundary,
         ),
+        trust_boundary=boundary,
     )
 
 

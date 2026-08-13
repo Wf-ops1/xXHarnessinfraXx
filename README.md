@@ -41,12 +41,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny e evidência durável nos oito eixos | A reconciliação F5.2 ainda não foi incorporada; secrets injetáveis, budgets duráveis e trust boundary integrado pertencem às tarefas seguintes | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
+| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny e evidência durável nos oito eixos | A F5.3 está `COMPLETED_LOCAL / PROMOTION_PENDING`: uma fronteira estrita e congelada governa imports, tools, worktree, hooks, promoção e nomes de secrets nesta branch, ainda sem promoção para `main` | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry com evidência redigida, limites duráveis e resume por digest. A F4.8 promovida adiciona o reparo orientado pela suíte canônica | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
-| Tool loop | A F5.2 promovida unifica a autorização em um engine tipado default-deny por role, node, workflow, trust mode, tool, operação, path e aprovação; o lote é pré-autorizado e a regra aplicada precede o efeito no journal. A factory F3.8 registra oito tools reais quando seus adapters são injetados | O registry opt-in não é construído pelo lifecycle/defaults; trust boundary operacional F5.3 e aprovação vinculada ao conteúdo F5.6 ainda não acionam esses efeitos no produto | Integração automática das tools e gates seguintes |
+| Tool loop | A F5.2 promovida unifica a autorização em um engine tipado default-deny por role, node, workflow, trust mode, tool, operação, path e aprovação; o lote é pré-autorizado e a regra aplicada precede o efeito no journal. A F5.3 publicada exige o mesmo snapshot no router e nos adapters antes do efeito | A implementação F5.3 ainda não foi promovida; composição automática das tools não foi adicionada e aprovação vinculada ao conteúdo permanece F5.6 | Integração automática das tools e gates seguintes |
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`; a F4.7 promovida persiste resultados commit-bound e guarda `COMPLETED`. A F4.8 promovida consome somente essa reprovação, agenda o corretor compilado e exige targeted → full com limites de nó, execução, tokens, custo e tempo | O E2E F4.8 injeta backend e provider de worktree explicitamente, sem alegar composição automática do produto | Matriz integral fail-closed com repair/recovery integrada ao lifecycle padrão |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
@@ -127,13 +127,17 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `792 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke externo da wheel. A
   reconciliação administrativa [PR #54](https://github.com/Wf-ops1/Harnessinfra/pull/54) foi
   incorporada pelo merge `fe95a91`; a CI de `push` `31633748837` passou 11/11 nesse SHA exato. A
-  A F5.2 foi promovida pelo [PR #55](https://github.com/Wf-ops1/Harnessinfra/pull/55): o head final
+  F5.2 foi promovida pelo [PR #55](https://github.com/Wf-ops1/Harnessinfra/pull/55): o head final
   `4dccce3` recebeu 11/11 checks no run `31644174160`, foi incorporado pelo merge `df5fee5` e recebeu
   11/11 na CI de `push` pós-merge `31646282269`. O produto `ac665b9` passou localmente
   `811 passed, 5 skipped, 6 subtests passed`, qualidade, build limpo e smoke isolado da wheel. A
-  reconciliação administrativa está aberta no [PR #56](https://github.com/Wf-ops1/Harnessinfra/pull/56)
-  em `docs/promote-f5.2`, aguardando checks do head final. Os checkpoints permanecem locais; merge
-  administrativo, F5.3, tags remotas e remoção de refs não estão autorizados.
+  reconciliação administrativa [PR #56](https://github.com/Wf-ops1/Harnessinfra/pull/56) foi
+  incorporada pelo merge `0607a0b`; a CI de `push` `31650131258` passou 11/11 nesse SHA exato. A
+  F5.3 está `PUBLISHED / PR_PENDING / PROMOTION_PENDING` em `task/f5.3-trust-boundary`, publicada com
+  o produto certificado `f34409a`. O focado
+  passou `283 passed, 2 skipped` e a regressão integral `827 passed, 5 skipped, 6 subtests passed`,
+  com qualidade, wheel e smoke isolado verdes.
+  O workflow não roda em `push` para `task/**`; PR, merge, tags remotas e remoção de refs não estão autorizados.
 
 ## Dívidas técnicas críticas
 

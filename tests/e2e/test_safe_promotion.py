@@ -35,6 +35,11 @@ from ai_engineering_harness.runtime import (
     PromotionLifecyclePrerequisiteError,
     PromotionManager,
 )
+from ai_engineering_harness.security import (
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+)
 from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 
@@ -152,8 +157,18 @@ class _InterruptAfterGitPromotion(PromotionManager):
         super().__init__(project_root, worktree_manager)
         self.interrupt_once = True
 
-    def promote(self, candidate, *, dry_run: bool):  # type: ignore[no-untyped-def]
-        result = super().promote(candidate, dry_run=dry_run)
+    def promote(  # type: ignore[no-untyped-def]
+        self,
+        candidate,
+        *,
+        dry_run: bool,
+        approval_granted: bool = False,
+    ):
+        result = super().promote(
+            candidate,
+            dry_run=dry_run,
+            approval_granted=approval_granted,
+        )
         if not dry_run and self.interrupt_once and not result.recovered:
             self.interrupt_once = False
             raise PromotionEffectAmbiguousError("controlled post-Git interruption")
@@ -251,11 +266,24 @@ contracts: []
     _git(repository, "commit", "--quiet", "-m", "base")
     base_sha = _git(repository, "rev-parse", "HEAD").stdout.strip().lower()
     branch = _git(repository, "branch", "--show-current").stdout.strip()
+    boundary = TrustBoundaryEvaluator(
+        repository,
+        authorization=TrustAuthorization(
+            repository_root=str(repository.resolve()),
+            executable_aliases=("git", "python"),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+            promotion_allowed=True,
+        ),
+    ).evaluate()
     artifact = GraphCompiler(repository).compile_graph(graph, "f3-7-promotion")
     worktrees = ExternalWorktreeManager(
         repository,
         "promotion-lifecycle-tests",
         external_base_dir=tmp_path / "external-worktrees",
+        trust_boundary=boundary,
     )
     return _Fixture(repository, artifact, base_sha, branch, worktrees)
 

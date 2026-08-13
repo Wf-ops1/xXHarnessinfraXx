@@ -30,6 +30,12 @@ from ai_engineering_harness.runtime import (
     StateMachineError,
 )
 from ai_engineering_harness.runtime.maf_adapter import ArtifactValidationError
+from ai_engineering_harness.security import (
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 console = Console()
@@ -39,18 +45,52 @@ def _lifecycle_service(
     project_root: Path,
     *,
     project_id: str = "default-proj",
+    trust_boundary: TrustEvaluationResult | None = None,
 ) -> ExecutionLifecycleService:
     """Build the canonical lifecycle with deliberately unavailable real backends."""
+    boundary = trust_boundary or _cli_trust_boundary(project_root)
+    worktrees = ExternalWorktreeManager(
+        project_root,
+        project_id,
+        trust_boundary=boundary,
+    )
     return ExecutionLifecycleService(
         project_root,
         AtomicFileStateStorage(project_root),
         NodeExecutorRegistry(),
         config_resolver=ConfigResolver(project_root),
-        verification_worktree_provider=ExternalWorktreeManager(
-            project_root,
-            project_id,
-        ).load_worktree,
+        verification_worktree_provider=worktrees.load_worktree,
+        trust_boundary=boundary,
     )
+
+
+def _cli_trust_boundary(project_root: Path) -> TrustEvaluationResult:
+    """Build the fixed host-owned capability projection used by CLI verification."""
+
+    executable_aliases = (
+        "bun",
+        "cargo",
+        "dotnet",
+        "git",
+        "go",
+        "npm",
+        "pnpm",
+        "python",
+        "yarn",
+    )
+    consumers = tuple(f"terminal:{alias}" for alias in executable_aliases)
+    authorization = TrustAuthorization(
+        repository_root=str(project_root.resolve(strict=True)),
+        executable_aliases=executable_aliases,
+        secret_grants=tuple(
+            SecretGrant(name=name, consumers=consumers)
+            for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+        ),
+    )
+    return TrustBoundaryEvaluator(
+        project_root,
+        authorization=authorization,
+    ).evaluate()
 
 
 def _parse_json_object(raw: str, *, option_name: str = "--input-json") -> dict[str, object]:
@@ -126,7 +166,11 @@ def doctor():
 @click.option("--render", is_flag=True, help="Exibe o diagrama Mermaid visual do grafo.")
 def compile(graph_spec_path, workflow, render):
     try:
-        compiler = GraphCompiler(project_root=Path.cwd())
+        project_root = Path.cwd()
+        compiler = GraphCompiler(
+            project_root=project_root,
+            trust_boundary=_cli_trust_boundary(project_root),
+        )
         out_file = compiler.compile_graph(graph_spec_path, workflow)
     except GraphCompilerError as exc:
         raise click.ClickException(str(exc)) from exc
@@ -172,6 +216,7 @@ def index():
 )
 def run(workflow_name, approval_required, input_json, profile_name, config_json):
     project_root = Path.cwd()
+    trust_boundary = _cli_trust_boundary(project_root)
     if approval_required:
         raise click.ClickException(
             "--approval-required is unsupported; approval is declared by an explicit human node"
@@ -183,7 +228,10 @@ def run(workflow_name, approval_required, input_json, profile_name, config_json)
         else _parse_json_object(config_json, option_name="--config-json")
     )
     try:
-        compiler = GraphCompiler(project_root=project_root)
+        compiler = GraphCompiler(
+            project_root=project_root,
+            trust_boundary=trust_boundary,
+        )
         compiled_file = compiler.compiled_path(workflow_name)
         if not compiled_file.is_file():
             spec_path = project_root / ".harness" / "graphs" / "specs" / f"{workflow_name}.yaml"
@@ -197,7 +245,10 @@ def run(workflow_name, approval_required, input_json, profile_name, config_json)
         raise click.ClickException(str(exc)) from exc
 
     try:
-        service = _lifecycle_service(project_root)
+        service = _lifecycle_service(
+            project_root,
+            trust_boundary=trust_boundary,
+        )
         result = service.start(
             compiled_file,
             initial_input=initial_input,

@@ -25,7 +25,13 @@ from ai_engineering_harness.runtime import (
     VerificationLifecycleIntegrityError,
     VerificationLifecyclePrerequisiteError,
 )
-from ai_engineering_harness.security import PathGuard
+from ai_engineering_harness.security import (
+    PathGuard,
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.verification import GateStatus
 from ai_engineering_harness.workspace import (
     ProvisionedWorktree,
@@ -158,6 +164,7 @@ def _worktree(
     project_root: Path,
     execution_id: str,
     fixture: _Fixture,
+    boundary: TrustEvaluationResult,
 ) -> ProvisionedWorktree:
     timestamp = datetime(2026, 8, 11, 17, 0, tzinfo=UTC).isoformat()
     return ProvisionedWorktree(
@@ -176,7 +183,22 @@ def _worktree(
             updated_at=timestamp,
         ),
         path_guard=PathGuard(project_root),
+        trust_boundary=boundary,
     )
+
+
+def _verification_boundary(project_root: Path) -> TrustEvaluationResult:
+    return TrustBoundaryEvaluator(
+        project_root,
+        authorization=TrustAuthorization(
+            repository_root=str(project_root.resolve()),
+            executable_aliases=("python",),
+            secret_grants=tuple(
+                SecretGrant(name=name, consumers=("terminal:python",))
+                for name in ("PATH", "Path", "SYSTEMROOT", "SystemRoot")
+            ),
+        ),
+    ).evaluate()
 
 
 def _service(
@@ -185,7 +207,8 @@ def _service(
     execution_id: str,
     fixture: _Fixture,
 ) -> ExecutionLifecycleService:
-    worktree = _worktree(project_root, execution_id, fixture)
+    boundary = _verification_boundary(project_root)
+    worktree = _worktree(project_root, execution_id, fixture, boundary)
     return ExecutionLifecycleService(
         project_root,
         storage,
@@ -198,6 +221,7 @@ def _service(
             if selected == execution_id
             else pytest.fail("unexpected execution id")
         ),
+        trust_boundary=boundary,
     )
 
 

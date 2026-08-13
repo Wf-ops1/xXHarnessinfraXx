@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping
+from pathlib import Path
 
 import pytest
 
@@ -25,6 +27,12 @@ from ai_engineering_harness.models import (
     ProviderRegistry,
     ProviderResponseError,
     ProviderTimeoutError,
+)
+from ai_engineering_harness.security import (
+    SecretGrant,
+    TrustAuthorization,
+    TrustBoundaryEvaluator,
+    TrustCapabilityDeniedError,
 )
 
 
@@ -125,6 +133,86 @@ def test_registry_detaches_provider_mapping() -> None:
 
     assert registry.provider_ids == ("local",)
     assert registry.create_provider("local").model_name == "configured-model"
+
+
+def test_provider_reads_only_an_explicitly_granted_credential_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "boundary-secret")
+    boundary = TrustBoundaryEvaluator(
+        tmp_path,
+        authorization=TrustAuthorization(
+            repository_root=str(tmp_path.resolve()),
+            secret_grants=(
+                SecretGrant(
+                    name="OPENAI_API_KEY",
+                    consumers=("provider:openai",),
+                ),
+            ),
+        ),
+    ).evaluate()
+    registry = ProviderRegistry(
+        {
+            "openai": ProviderConfiguration(
+                adapter="openai",
+                model="configured-model",
+                api_key_env="OPENAI_API_KEY",
+            )
+        },
+        trust_boundary=boundary,
+    )
+
+    provider = registry.create_provider("openai")
+
+    assert provider._api_key == "boundary-secret"
+
+
+def test_provider_denies_credential_before_read_without_exact_consumer_grant(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    boundary = TrustBoundaryEvaluator(tmp_path).evaluate()
+    registry = ProviderRegistry(
+        {
+            "openai": ProviderConfiguration(
+                adapter="openai",
+                model="configured-model",
+                api_key_env="OPENAI_API_KEY",
+            )
+        },
+        trust_boundary=boundary,
+    )
+
+    def fail_if_read(_key: str, _default: str | None = None) -> str | None:
+        raise AssertionError("environment was read before boundary authorization")
+
+    monkeypatch.setattr(os.environ, "get", fail_if_read)
+    with pytest.raises(TrustCapabilityDeniedError, match="secret name"):
+        registry.create_provider("openai")
+
+
+def test_provider_without_credential_name_never_falls_back_to_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = ProviderRegistry(
+        {
+            "openai": ProviderConfiguration(
+                adapter="openai",
+                model="configured-model",
+                base_url="https://example.invalid/v1",
+            )
+        }
+    )
+
+    def fail_if_read(_key: str, _default: str | None = None) -> str | None:
+        raise AssertionError("provider adapter read an undeclared environment name")
+
+    monkeypatch.setattr(os.environ, "get", fail_if_read)
+
+    provider = registry.create_provider("openai")
+
+    assert provider._api_key == ""
 
 
 def test_transient_failure_falls_back_once_and_preserves_real_identity() -> None:

@@ -9,6 +9,11 @@ from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 
+from ai_engineering_harness.security import (
+    TrustBoundaryConfigurationError,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.workspace import (
     ExternalWorktreeManager,
     ProvisionedWorktree,
@@ -74,6 +79,7 @@ class PromotionManager:
         *,
         git_executable: str = "git",
         command_timeout_seconds: float = 30.0,
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> None:
         try:
             root = Path(project_root).resolve(strict=True)
@@ -105,6 +111,26 @@ class PromotionManager:
         self.worktree_manager = worktree_manager
         self.git_executable = git_executable
         self.command_timeout_seconds = float(command_timeout_seconds)
+        boundary = trust_boundary or worktree_manager.trust_boundary
+        if not isinstance(boundary, TrustEvaluationResult):
+            raise PromotionConfigurationError(
+                "trust_boundary must be a TrustEvaluationResult"
+            )
+        try:
+            boundary.require_root(root)
+        except (TrustBoundaryConfigurationError, TrustCapabilityDeniedError) as exc:
+            raise PromotionConfigurationError(
+                "trust boundary must authorize the exact promotion root"
+            ) from exc
+        if Path(boundary.repository_root) != root:
+            raise PromotionConfigurationError(
+                "trust boundary belongs to another repository root"
+            )
+        if boundary != worktree_manager.trust_boundary:
+            raise PromotionConfigurationError(
+                "promotion and worktree managers must share one trust boundary"
+            )
+        self.trust_boundary = boundary
 
     def create_candidate(
         self,
@@ -131,6 +157,7 @@ class PromotionManager:
         candidate: CandidateCommit,
         *,
         dry_run: bool,
+        approval_granted: bool = False,
     ) -> PromotionResult:
         """Promote exactly ``candidate`` or prove a no-effect dry-run.
 
@@ -148,6 +175,13 @@ class PromotionManager:
                 dry_run=True,
                 recovered=False,
             )
+
+        try:
+            self.trust_boundary.require_promotion(
+                approval_granted=approval_granted,
+            )
+        except TrustCapabilityDeniedError as exc:
+            raise PromotionPrerequisiteError(str(exc)) from exc
 
         recovered = self.recover_promotion(candidate)
         if recovered is not None:
@@ -227,6 +261,17 @@ class PromotionManager:
         worktree: ProvisionedWorktree,
     ) -> CandidateCommit:
         reference = worktree.reference
+        if worktree.trust_boundary is None:
+            raise PromotionPrerequisiteError(
+                "candidate worktree is missing its trust boundary"
+            )
+        expected_boundary = self.trust_boundary.bind_authorized_root(
+            reference.worktree_path
+        )
+        if worktree.trust_boundary != expected_boundary:
+            raise PromotionPrerequisiteError(
+                "candidate worktree trust boundary does not match promotion root"
+            )
         candidate_sha = reference.worktree_head_sha
         if reference.execution_id != execution_id or candidate_sha is None:
             raise PromotionPrerequisiteError(
@@ -344,6 +389,12 @@ class PromotionManager:
         cwd: Path,
         allowed_returncodes: Collection[int] = (0,),
     ) -> subprocess.CompletedProcess[str]:
+        try:
+            self.trust_boundary.require_executable(self.git_executable)
+        except TrustCapabilityDeniedError as exc:
+            raise PromotionPrerequisiteError(
+                "Git executable is not allowed by the trust boundary"
+            ) from exc
         try:
             result = subprocess.run(
                 (self.git_executable, *arguments),

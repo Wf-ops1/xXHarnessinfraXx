@@ -187,6 +187,10 @@ class GateRunner:
         )
 
     def _adapter_for_suite(self, suite: ResolvedVerificationSuite) -> TerminalAdapter:
+        if self.worktree.trust_boundary is None:
+            raise TerminalConfigurationError(
+                "verification worktree is missing its trust boundary"
+            )
         executables = {
             command.executable_alias: command.executable_path
             for command in suite.commands
@@ -195,6 +199,7 @@ class GateRunner:
             path_guard=self.worktree.path_guard,
             executables=executables,
             environment=self.resolver.environment,
+            trust_boundary=self.worktree.trust_boundary,
         )
 
 

@@ -19,6 +19,10 @@ from ai_engineering_harness.governance import (
     ToolPolicyRequest,
 )
 from ai_engineering_harness.models.provider import ToolCall
+from ai_engineering_harness.security import (
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 from ai_engineering_harness.security.redaction import Redactor
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -113,6 +117,7 @@ class ToolRouter:
         allowed_tools: list[str] | tuple[str, ...],
         *,
         registrations: Mapping[str, ToolRegistration] | None = None,
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> None:
         enabled = tuple(allowed_tools)
         if len(set(enabled)) != len(enabled):
@@ -130,6 +135,9 @@ class ToolRouter:
                 raise ValueError(f"duplicate tool registration: {name}")
             copied[name] = registration
         self._registrations = copied
+        if trust_boundary is not None and not isinstance(trust_boundary, TrustEvaluationResult):
+            raise TypeError("trust_boundary must be a TrustEvaluationResult or None")
+        self._trust_boundary = trust_boundary
 
     @property
     def enabled_tools(self) -> tuple[str, ...]:
@@ -138,6 +146,23 @@ class ToolRouter:
     @property
     def registered_tools(self) -> tuple[str, ...]:
         return tuple(sorted(self._registrations))
+
+    @property
+    def trust_boundary(self) -> TrustEvaluationResult | None:
+        return self._trust_boundary
+
+    def require_trust_mode(self, trust_mode: str) -> None:
+        boundary = self._trust_boundary
+        if boundary is None:
+            return
+        try:
+            boundary.require_root(boundary.authorized_root)
+        except TrustCapabilityDeniedError as exc:
+            raise ToolUnauthorizedError(str(exc)) from exc
+        if trust_mode != boundary.mode:
+            raise ToolUnauthorizedError(
+                "tool trust mode does not match the effective trust boundary"
+            )
 
     def prepare(
         self,
@@ -261,8 +286,8 @@ class ToolRouter:
             path=path,
         )
 
-    @staticmethod
     def _require_verified_decision(
+        self,
         target: ToolDispatchTarget,
         engine: PolicyEngine | None,
         decision: ToolPolicyDecision | None,
@@ -270,6 +295,7 @@ class ToolRouter:
         if engine is None or decision is None:
             raise ToolUnauthorizedError("tool dispatch requires a verified policy decision")
         request = decision.request
+        self.require_trust_mode(request.trust_mode)
         try:
             actual_request = ToolPolicyRequest(
                 role=request.role,
