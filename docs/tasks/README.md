@@ -20,12 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.3](active/F5.3.md) está `COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY` na branch
-`task/f5.3-trust-boundary`, criada do baseline `0607a0b` e sem upstream. A implementação local foi
+A [F5.3](active/F5.3.md) está `PUBLISHED / PR_PENDING / PROMOTION_PENDING` na branch
+`task/f5.3-trust-boundary`, criada do baseline `0607a0b` e publicada com o produto certificado `f34409a`. A implementação foi
 autorizada; o focado passou `283 passed, 2 skipped` e a regressão integral `827 passed, 5 skipped,
 6 subtests passed`, com qualidade, wheel e smoke isolado verdes. O checkpoint local certificado é
-`checkpoint/f5.3-complete`. Push, PR, merge, tags remotas e
-remoção de refs permanecem não autorizados.
+`checkpoint/f5.3-complete`, que não foi publicado. O workflow não roda em `push` para `task/**`;
+PR, merge, tags remotas e remoção de refs permanecem não autorizados.
 
 A [F5.2](completed/F5.2.md) permanece `PROMOTED`: o PR #55 encerrou no head `4dccce3`, passou 11/11
 checks no run `31644174160`, foi incorporado pelo merge `df5fee5` e recebeu 11/11 na CI pós-merge

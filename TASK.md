@@ -24,10 +24,10 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.3 — trust boundary integrado |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY` |
-| **Executor ativo** | `Codex`, único escritor; implementação autorizada nominalmente em `2026-08-12T21:37:31-03:00` |
+| **Gate** | `PUBLISHED / PR_PENDING / PROMOTION_PENDING` |
+| **Executor ativo** | `Codex`, único escritor; implementação autorizada em `2026-08-12T21:37:31-03:00` e publicação autorizada em `2026-08-12T22:43:08-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f5.3-trust-boundary`, somente local e sem upstream |
+| **Branch** | `task/f5.3-trust-boundary`, publicada e acompanhando `origin/task/f5.3-trust-boundary`; produto certificado em `f34409a` |
 | **Baseline** | `main == origin/main == 0607a0b385da1a864f629bf4811810a574d03768` antes da branch |
 | **Gate F5.3** | [dossiê ativo](docs/tasks/active/F5.3.md); `checkpoint/f5.3-ready` documental e `checkpoint/f5.3-complete` local certificado |
 | **Certificação local** | focado `283 passed, 2 skipped`; integral `827 passed, 5 skipped, 6 subtests passed`; wheel/smoke verdes |
@@ -58,7 +58,7 @@ do lifecycle permanecem fora do escopo.
 
 ## 5. Tarefa ativa
 
-A [F5.3](docs/tasks/active/F5.3.md) está `COMPLETED_LOCAL / PROMOTION_PENDING / LOCAL_ONLY`. Uma fronteira
+A [F5.3](docs/tasks/active/F5.3.md) está `PUBLISHED / PR_PENDING / PROMOTION_PENDING`. Uma fronteira
 tipada, estrita, congelada, determinística e default-restricted agora governa imports Python, aliases de subprocesso,
 worktree exato, hooks, promoção e nomes de secrets. O snapshot não secreto integra o bundle e resume
 falha quando marcador, raiz, capacidades ou digest divergem, sem antecipar as F5.4–F5.7.
@@ -66,16 +66,17 @@ falha quando marcador, raiz, capacidades ou digest divergem, sem antecipar as F5
 ## 6. Bloqueios e fronteiras externas
 
 Não há bloqueio técnico conhecido. Implementação, regressão integral, qualidade, wheel e smoke
-isolado estão concluídos localmente. Push, PR, merge, tags remotas, remoção de branch/ref,
-force-push e bypass não estão autorizados.
+isolado estão concluídos, e o commit certificado `f34409a` foi publicado na branch. O workflow não
+executa em `push` para `task/**`; a CI será disparada pelo futuro PR contra `main`. PR, merge, tags
+remotas, remoção de branch/ref, force-push e bypass não estão autorizados.
 Marcador, modo `trusted` ou configuração do projeto nunca podem substituir policy, allowlist,
 worktree exato ou aprovação.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA PUBLICAR A BRANCH F5.3.
-NÃO PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS SEM ESSA AUTORIZAÇÃO.
+AGUARDAR AUTORIZAÇÃO NOMINAL NOVA PARA ABRIR O PR F5.3 CONTRA MAIN.
+NÃO ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS SEM ESSA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -88,4 +89,4 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, CRIAR TAG REMOTA OU REMOVER REFS SEM ESSA AUTO
 
 ---
 
-*Atualizado em: 2026-08-12T22:15:11-03:00 | Fonte: certificação local F5.3 + PRs #55/#56 + runs 31644174160/31646282269/31650131258 + merge 0607a0b*
+*Atualizado em: 2026-08-12T22:43:08-03:00 | Fonte: publicação F5.3 no SHA f34409a + certificação local + PRs #55/#56 + runs 31644174160/31646282269/31650131258 + merge 0607a0b*
