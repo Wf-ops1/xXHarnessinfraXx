@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny; a F5.3 promovida integra trust boundary; a F5.4 local adiciona limites tipados, reserva pré-efeito e saldo durável por execução/nó | A F5.4 está `CERTIFICATION_ACTIVE / LOCAL_ONLY`: journal/replay, custo decimal conhecido e `FAILED_BUDGET_EXCEEDED` passaram na matriz técnica, mas ainda aguardam o checkpoint local e promoção própria | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
+| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny; a F5.3 promovida integra trust boundary; a F5.4 local adiciona limites tipados, reserva pré-efeito e saldo durável por execução/nó | A F5.4 está `COMPLETED_LOCAL / PROMOTION_PENDING`: journal/replay, custo decimal conhecido e `FAILED_BUDGET_EXCEEDED` passaram na matriz técnica, mas ainda aguardam publicação e promoção próprias | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry. A F5.4 local reconstrói do mesmo journal tokens, tools, duração, tentativas e custo conhecido, e `status`/`inspect` projetam esse saldo | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados; F5.4 ainda não foi promovida | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
@@ -141,11 +141,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   reconciliação administrativa [PR #58](https://github.com/Wf-ops1/Harnessinfra/pull/58) encerrou no
   head `9d53e41`, passou 11/11 checks no run `31727166976`, foi incorporada pelo merge `4c0527b` e a CI
   de `push` `31728438719` também passou 11/11 nesse SHA exato. A F5.4 está
-  `CERTIFICATION_ACTIVE / LOCAL_ONLY` em `task/f5.4-durable-budget`: a implementação autorizada liga
+  `COMPLETED_LOCAL / PROMOTION_PENDING` em `task/f5.4-durable-budget`: a implementação autorizada liga
   planejamento, nós/modelos, tools e verificação a um journal único por execução/nó, com reserva
   pré-efeito, uso real, replay/resume e `FAILED_BUDGET_EXCEEDED`. A matriz focada passou com
-  `202 passed` e o full válido com `856 passed, 5 skipped, 6 subtests passed`; falta concluir o
-  checkpoint local. Push, PR, tags remotas, remoção de refs e F5.5 não estão autorizados.
+  `202 passed` e o full válido com `856 passed, 5 skipped, 6 subtests passed`. O produto local está no
+  commit `722916b`; checkpoints permanecem somente locais. Push, PR, tags remotas, remoção de refs e
+  F5.5 não estão autorizados.
 
 ## Dívidas técnicas críticas
 
