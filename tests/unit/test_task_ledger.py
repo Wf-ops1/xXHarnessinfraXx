@@ -361,8 +361,12 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "graph_input" in decision
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
-    assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
+    assert "`READY / ACTIVE`" in panel
+    assert "docs/tasks/active/F5.5.md" in panel
+    assert "task/f5.5-secrets-redaction" in panel
+    assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
+    assert "31759971204" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/53" in panel
     assert "docs/tasks/completed/F4.8.md" in panel
@@ -859,6 +863,41 @@ def test_f5_4_promotion_preserves_durable_execution_and_node_budget() -> None:
     assert "5521bf3cb6fc8cd84316183f9471a3d96d6dd368" in dossier
     assert "docs/promote-f5.4" in dossier
     assert "administrativo #58 / merge `4c0527b` / pós-merge `31728438719`" in task_index
+    assert "administrativo #60 / merge `2f4e391` / pós-merge `31759971204`" in task_index
+
+
+def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.5.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+
+    assert (ACTIVE_ROOT / "F5.5.md").is_file()
+    assert not (COMPLETED_ROOT / "F5.5.md").exists()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "checkpoint/f5.5-ready" in dossier
+    assert "task/f5.5-secrets-redaction" in dossier
+    assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
+    assert "31759971204" in dossier
+    assert "230 passed, 3 skipped" in dossier
+    assert "'split_dynamic_secret_leaks': True" in dossier
+    assert "'unscoped_runtime_redaction_leaks': True" in dossier
+    assert "'legacy_adapter_reads_env_without_boundary': True" in dossier
+    assert "'serena_repr_leaks_header': True" in dossier
+    assert "only_the_authorized_adapter_receives_the_secret" in dossier
+    assert "exact_multiline_line_wrapped_and_dynamic_values_are_redacted" in dossier
+    assert "journal_logs_exceptions_stdout_stderr_retry_and_evidence_are_secret_free" in dossier
+    assert "OPENAI_API_KEY" in dossier
+    assert "HARNESS_LOCAL_MODEL_API_KEY" in dossier
+    assert "SERENA_MCP_TOKEN" in dossier
+    assert "provider:openai" in dossier
+    assert "provider:local" in dossier
+    assert "tool:serena" in dossier
+    assert "rollback" in dossier.casefold()
+    assert "docs/tasks/active/F5.5.md" in panel
+    assert "active/F5.5.md" in task_index
+    assert "F5.5" in readme
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
