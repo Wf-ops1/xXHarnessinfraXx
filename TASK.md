@@ -5,8 +5,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.4](docs/tasks/active/F5.4.md): publicada no PR #59 e aguardando checks do head final.
-3. [F5.3](docs/tasks/completed/F5.3.md): promoção e reconciliação administrativa comprovadas.
+2. [F5.4](docs/tasks/completed/F5.4.md): promoção comprovada e reconciliação administrativa corrente.
+3. [F5.3](docs/tasks/completed/F5.3.md): trust boundary promovido e reconciliação incorporada.
 4. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
    checkpoint `checkpoint/f5.2-ready` somente local.
 5. [F5.1 — resolver configuração no início da execução](docs/tasks/completed/F5.1.md): promoção
@@ -25,35 +25,32 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
-| **Tarefa ativa** | F5.4 — integrar orçamento durável por execução e nó |
-| **Gate** | `PUBLISHED / PR_OPEN / CHECKS_PENDING` |
-| **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T15:18:42-03:00` |
+| **Tarefa ativa** | nenhuma tarefa ativa; F5.5 — integrar secrets e redaction — está somente planejada e não autorizada |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
+| **Executor ativo** | `Codex`, único escritor da reconciliação iniciada em `2026-08-13T17:50:35-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch da tarefa** | `task/f5.4-durable-budget`, publicada em `origin` e configurada como upstream |
-| **Baseline** | `main == origin/main == 4c0527baacc74821112adf7fe61b82af72589f69` antes da branch |
-| **Produto F5.3** | `f34409aeb197612d866be0576d5bc21d00e0a8f1` |
-| **Head final do PR** | `4934aee925830e4aac2672b0bbf6ffadbf1c9ca9` |
-| **CI do PR** | run [31659293351](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31659293351), `pull_request`, 11/11 success no head final |
-| **Promoção F5.3** | PR [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), merge `211edcf921912a32429934bf600473d8cc98941c` |
-| **CI pós-merge** | run [31660030240](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31660030240), `push`, 11/11 success no merge exato |
-| **Reconciliação F5.3** | PR [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58), head `9d53e4156382e24c25b206aa50fdaed3e03ee2dd`, merge `4c0527baacc74821112adf7fe61b82af72589f69`; CI `31728438719`, 11/11 success |
+| **Branch administrativa** | `docs/promote-f5.4`, publicada e acompanhando `origin/docs/promote-f5.4` |
+| **Baseline** | `main == origin/main == d6246295045a156646af14de0011400feb6cb4f3` antes da branch |
 | **Produto F5.4** | `722916b0d5c9eddb0a06151894701e3f16e113aa` |
-| **PR F5.4** | [#59](https://github.com/Wf-ops1/Harnessinfra/pull/59), aberto, não draft, base `main` |
-| **Head publicado inicial** | `0cb69b1d94bd650c69528777514c6f1b12478392` |
-| **Checkpoint corrente** | `checkpoint/f5.4-ready` e `checkpoint/f5.4-complete`, somente locais |
+| **Head final do PR** | `21aa4a6134db38615eed8c11cc15285924a62365` |
+| **CI do PR** | run [31739876952](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31739876952), `pull_request`, 11/11 success no head final |
+| **Promoção F5.4** | PR [#59](https://github.com/Wf-ops1/Harnessinfra/pull/59), merge `d6246295045a156646af14de0011400feb6cb4f3` |
+| **CI pós-merge** | run [31742231398](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31742231398), `push`, 11/11 success em 5m15s no merge exato |
+| **Reconciliação** | commits iniciais `1d8f89f0dffaf0afc8a66159ffac8d1dee24c121` e `5521bf3cb6fc8cd84316183f9471a3d96d6dd368`; PR [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60) aberto, não draft; `ADMIN_PR_OPEN / CHECKS_PENDING` |
+| **Checkpoints** | `checkpoint/f5.4-ready` e `checkpoint/f5.4-complete` somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
 
 | Evidência | Resultado observado |
 |---|---|
-| Tarefa | F5.3 — trust boundary integrado |
-| Produto | commit `f34409a`; certificação local `827 passed, 5 skipped, 6 subtests passed` |
-| PR de produto | [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), head final `4934aee`, CI `31659293351`, 11/11 success |
-| Merge de produto | `211edcf921912a32429934bf600473d8cc98941c`; CI de `push` `31660030240`, 11/11 success |
-| Reconciliação administrativa | PR [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58), head `9d53e41`, CI de PR `31727166976`; merge `4c0527b`, CI de `push` `31728438719`, 11/11 success |
-| Fronteira | trust boundary `default-restricted`; `checkpoint/f5.3-ready` e `checkpoint/f5.3-complete` somente locais; branch remota preservada; nenhuma tag/ref removida |
-| Promoção anterior | F5.2: PR [#55](https://github.com/Wf-ops1/Harnessinfra/pull/55), head `4dccce3`, CI `31644174160`; merge `df5fee5b97e4c0613327043a71bc665eacf46aa1`, pós-merge `31646282269`; reconciliação [#56](https://github.com/Wf-ops1/Harnessinfra/pull/56), merge/CI final `0607a0b385da1a864f629bf4811810a574d03768` / `31650131258` |
+| Tarefa | F5.4 — integrar orçamento durável por execução e nó |
+| Produto | commit `722916b`; certificação local `856 passed, 5 skipped, 6 subtests passed` |
+| PR de produto | [#59](https://github.com/Wf-ops1/Harnessinfra/pull/59), head final `21aa4a6`, CI `31739876952`, 11/11 success |
+| Merge de produto | `d6246295045a156646af14de0011400feb6cb4f3`; CI de `push` `31742231398`, 11/11 success |
+| Fronteira | `checkpoint/f5.4-ready` e `checkpoint/f5.4-complete` somente locais; branch remota preservada; nenhuma tag/ref removida |
+| Promoção anterior | F5.3 — trust boundary integrado: PR [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), head `4934aee`, CI `31659293351`; merge `211edcf921912a32429934bf600473d8cc98941c`, pós-merge `31660030240`; reconciliação [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58), merge/CI final `4c0527baacc74821112adf7fe61b82af72589f69` / `31728438719`; fronteira `default-restricted` e checkpoints `checkpoint/f5.3-ready`/`checkpoint/f5.3-complete` somente locais |
+| Promoção F5.2 preservada | PR [#55](https://github.com/Wf-ops1/Harnessinfra/pull/55), merge `df5fee5b97e4c0613327043a71bc665eacf46aa1`, pós-merge `31646282269`; reconciliação [#56](https://github.com/Wf-ops1/Harnessinfra/pull/56), merge/CI final `0607a0b385da1a864f629bf4811810a574d03768` / `31650131258` |
 | Promoção F5.1 preservada | PR [#53](https://github.com/Wf-ops1/Harnessinfra/pull/53), head `f42af27`, CI `31629604755`; merge `c46910e50ede1196c9beb1242cb7bd708905d666`, pós-merge `31630446370`; reconciliação [#54](https://github.com/Wf-ops1/Harnessinfra/pull/54), merge/CI final `fe95a91648a79c404565583c87c1cf357e8ab3a2` / `31633748837` |
 
 Nova evidência negativa prevalece sobre sucesso anterior e exige correção sem relaxamento,
@@ -61,39 +58,38 @@ recertificação integral e reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Existe um único executor/escritor: `Codex`. A autorização corrente permitiu implementar e certificar
-localmente a F5.4 dentro do escopo congelado. Dependências, schemas de grafo/policy/evento, lockfile e
-CI não foram alterados. Publicação e início da F5.5 continuam fora da autorização.
+Existe um único executor/escritor: `Codex`. A reconciliação pode alterar apenas `README.md`,
+`TASK.md`, `docs/tasks/README.md`, o dossiê F5.4 movido para `completed/` e testes documentais/de
+ledger afetados. Produto, dependências, schemas, defaults, lockfile e CI estão proibidos.
 
 ## 5. Tarefa ativa
 
-A F5.4 está `PUBLISHED / PR_OPEN / CHECKS_PENDING`. O journal agora governa um ledger canônico
-por execução/nó para prompt/completion tokens, tool calls, duração, tentativas e custo conhecido.
-Planejamento, nós/modelos, tool loop e verificação compartilham reserva pré-efeito, consumo real,
-replay/resume e o estado `FAILED_BUDGET_EXCEEDED`; `status`/`inspect` expõem o mesmo snapshot. A matriz
-focada passou com `202 passed`; o full válido passou com `856 passed, 5 skipped, 6 subtests passed`;
-mypy, Ruff, compileall, build e smoke isolado passaram. O PR #59 está aberto contra `main`; checks do
-head documental final ainda precisam ser observados.
+Não há implementação ativa. A F5.4 — integrar orçamento durável por execução e nó — está promovida
+no Git/GitHub: o journal governa o saldo canônico por execução/nó, reserva antes do efeito e conduz
+excesso a `FAILED_BUDGET_EXCEEDED`, com projeção única em `status`/`inspect`. A reconciliação
+documental foi publicada no PR #60 e ainda precisa ter seu head final certificado e ser incorporada. A F5.5 — integrar secrets
+e redaction — permanece apenas planejada; nenhum gate F5.5 foi congelado ou autorizado.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Ampliar o escopo congelado, mesclar o PR, publicar tags, remover
-refs, fazer force-push/bypass ou iniciar a F5.5 não estão autorizados.
+Não há bloqueio técnico conhecido. A publicação de `docs/promote-f5.4` e a abertura do PR #60 foram
+autorizadas e concluídas. Mesclar o PR administrativo, publicar tags, remover branch/ref, fazer
+force-push/bypass ou iniciar a F5.5 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR ESTE REGISTRO NO PR #59 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
-NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5.
+PUBLICAR ESTE REGISTRO PARA FORMAR O HEAD FINAL E AUDITAR TODOS OS CHECKS DO PR #60.
+NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.5 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.4.md` e a Fase 5 do plano.
-2. Confirme branch `task/f5.4-durable-budget`, baseline `4c0527b` e checkpoint `checkpoint/f5.4-ready`.
-3. Confirme a evidência local `202 passed` focados e `856 passed, 5 skipped, 6 subtests passed` no full.
-4. Não altere produto; audite checks, mas merge e F5.5 exigem autorizações próprias.
+1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.4.md` e a DEC-014.
+2. Confirme branch `docs/promote-f5.4`, PR #60, baseline `d624629` e diff estritamente documental.
+3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve a allowlist administrativa.
+4. Execute somente a próxima ação exata; merge, tags/refs e F5.5 exigem nova autorização.
 
 ---
 
-*Atualizado em: 2026-08-13T17:11:16-03:00 | Fonte: F5.4/PR #59 + produto `722916b` + full 856/5/6 + F5.3/CI 31728438719*
+*Atualizado em: 2026-08-13T20:11:25-03:00 | Fonte: F5.4 + PRs #59/#60 + runs 31739876952/31742231398 + merge d624629*
