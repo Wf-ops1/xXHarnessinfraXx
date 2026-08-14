@@ -362,8 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
-    assert "task/f5.6-content-bound-approval" in panel
+    assert "F5.6 `PROMOTED`" in panel
+    assert "docs/promote-f5.6" in panel
     assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
     assert "31771169636" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
@@ -883,8 +883,8 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "checkpoint/f5.5-ready" in dossier
     assert "checkpoint/f5.5-complete" in dossier
     assert "f4460ad" in dossier
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "task/f5.6-content-bound-approval" in panel
+    assert "F5.6 `PROMOTED`" in panel
+    assert "docs/promote-f5.6" in panel
     assert "task/f5.5-secrets-redaction" in dossier
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
     assert "31759971204" in dossier
@@ -932,17 +932,18 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "reload silencioso" in user_guide
 
 
-def test_f5_6_active_gate_binds_approval_to_the_exact_promotion_content() -> None:
+def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> None:
     panel = _read(TASK_PANEL)
-    dossier = _read(ACTIVE_ROOT / "F5.6.md")
+    dossier = _read(COMPLETED_ROOT / "F5.6.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
     user_guide = _read(ROOT / "docs" / "user_guide.md")
 
-    assert (ACTIVE_ROOT / "F5.6.md").is_file()
+    assert not (ACTIVE_ROOT / "F5.6.md").exists()
+    assert (COMPLETED_ROOT / "F5.6.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
-    assert "task/f5.6-content-bound-approval" in panel
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "docs/promote-f5.6" in panel
     assert "checkpoint/f5.6-ready" in dossier
     assert "161e1c26eb0aad6b81e25ebdcda4f12519486ba4" in dossier
     assert "7941dfee0384927acdb5d94cd9e626194b7b1432" in dossier
@@ -966,10 +967,14 @@ def test_f5_6_active_gate_binds_approval_to_the_exact_promotion_content() -> Non
     assert "885 passed, 5 skipped, 6 subtests passed" in dossier
     assert "uv 0.12.3" in dossier
     assert "38 passed, 6 subtests passed" in dossier
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/63" in dossier
+    assert "31813471013" in dossier
+    assert "048838076704fb852129b6ef76e9af6b7f878c35" in dossier
+    assert "31814250746" in dossier
     assert "F5.7" in dossier
     assert "F6" in dossier
-    assert "active/F5.6.md" in panel
-    assert "active/F5.6.md" in task_index
+    assert "docs/tasks/completed/F5.6.md" in panel
+    assert "completed/F5.6.md" in task_index
     assert "885 passed, 5 skipped, 6 subtests passed" in readme
     assert "Aprovação de promoção vinculada ao conteúdo F5.6" in user_guide
     assert "não converte" in user_guide

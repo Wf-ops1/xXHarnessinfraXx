@@ -205,7 +205,7 @@ já redigidos antes de retorná-los ao tool loop.
 
 ## Aprovação de promoção vinculada ao conteúdo F5.6
 
-A F5.6 local separa a pausa de um node `human_approval` da decisão que autoriza promoção. A ordem
+A F5.6 promovida separa a pausa de um node `human_approval` da decisão que autoriza promoção. A ordem
 canônica da API é:
 
 1. `prepare_candidate(execution_id)` cria e persiste o candidate commit real;

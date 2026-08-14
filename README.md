@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.5 estão promovidas: configuração efetiva, policy default-deny, trust boundary, budget durável e secrets/redaction controlam suas fronteiras reais. A F5.6 local acrescenta `approval-request.json` estrito, ligado a artefato/plano/diff/candidate/gates, com expiração e invalidação | A composição automática do lifecycle/tools não foi alegada; a promoção F5.6 continua opt-in por `ExecutionLifecycleService` + `PromotionManager` | Cancelamento/rollback completos F5.7 e governança operacional integral |
+| Configuração e governança | F5.1–F5.6 estão promovidas: configuração efetiva, policy default-deny, trust boundary, budget durável e secrets/redaction controlam suas fronteiras reais; `approval-request.json` é estrito e ligado a artefato/plano/diff/candidate/gates, com expiração e invalidação | A composição automática do lifecycle/tools não foi alegada; a aprovação de promoção continua opt-in por `ExecutionLifecycleService` + `PromotionManager` | Cancelamento/rollback completos F5.7 e governança operacional integral |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry. A F5.4 promovida reconstrói do mesmo journal tokens, tools, duração, tentativas e custo conhecido, e `status`/`inspect` projetam esse saldo | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
@@ -50,7 +50,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`; a F4.7 promovida persiste resultados commit-bound e guarda `COMPLETED`. A F4.8 promovida consome somente essa reprovação, agenda o corretor compilado e exige targeted → full com limites de nó, execução, tokens, custo e tempo | O E2E F4.8 injeta backend e provider de worktree explicitamente, sem alegar composição automática do produto | Matriz integral fail-closed com repair/recovery integrada ao lifecycle padrão |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
-| Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular; F3.7 persiste os SHAs e promove por `git cherry-pick`. Na F5.6 local, a solicitação nasce somente após candidate + full suite, inclui diff digest e é revalidada imediatamente antes do Git; mudança ou expiração persiste `INVALIDATED`/`EXPIRED` sem efeito | Worktree/tools/promoção não são construídos automaticamente por CLI/defaults; rollback permanece parcial | Composição operacional padrão e `git revert` real F5.7 |
+| Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular; F3.7 persiste os SHAs e promove por `git cherry-pick`. Na F5.6 promovida, a solicitação nasce somente após candidate + full suite, inclui diff digest e é revalidada imediatamente antes do Git; mudança ou expiração persiste `INVALIDATED`/`EXPIRED` sem efeito | Worktree/tools/promoção não são construídos automaticamente por CLI/defaults; rollback permanece parcial | Composição operacional padrão e `git revert` real F5.7 |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
 
 ## Estado do roadmap
@@ -160,12 +160,13 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `31769631054` em 5m20s. A reconciliação administrativa
   [PR #62](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62) encerrou no head `45f4fb7`, passou
   11/11 no run `31770761873`, foi incorporada pelo merge `daec37d` e recebeu 11/11 na CI final
-  `31771169636`. A F5.6 está ativa somente na branch local
-  `task/f5.6-content-bound-approval`: gate/checkpoint `161e1c2`, contrato e E2E locais implementados,
-  matriz focada `47 passed` e regressão integral `885 passed, 5 skipped, 6 subtests passed`; quality,
-  wheel e smoke isolado também estão verdes. Produto `7941dfe`; estado `COMPLETED_LOCAL /
-  PROMOTION_PENDING`, com checkpoint COMPLETE somente local. Nenhuma branch, PR ou tag F5.6 foi
-  publicada.
+  `31771169636`. A F5.6 foi promovida pelo
+  [PR #63](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/63), encerrado no head `6717f55` com 11/11
+  checks no run `31813471013`; o merge `0488380` recebeu 11/11 na CI pós-merge `31814250746` em
+  10m34s. O produto `7941dfe` passou `47` testes focados e a regressão integral
+  `885 passed, 5 skipped, 6 subtests passed`; quality, wheel e smoke isolado também ficaram verdes.
+  Os checkpoints permanecem somente locais. A reconciliação administrativa está em
+  `docs/promote-f5.6`; F5.7 não foi iniciada.
 
 ## Dívidas técnicas críticas
 
