@@ -30,18 +30,19 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.6 promovidas |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.7 — cancelamento e rollback seguros, promoção pendente |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Estado corrente** | F5.6 `PROMOTED`; F5.7 implementada e certificada localmente, sem publicação |
+| **Gate** | `REPAIR_ACTIVE / PROMOTION_BLOCKED` |
+| **Estado corrente** | F5.6 `PROMOTED`; F5.7 reaberta por evidência negativa R3, sem publicação |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T14:09:48-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.7-safe-cancel-rollback`, somente local e sem upstream |
-| **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` será o commit documental final; somente locais |
+| **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; R3 READY será materializado antes do reparo; somente locais |
 | **Main sincronizada** | antes da branch, `main == origin/main == a449bd19b5f6535402535bc2815527a9689095dc`; origin confirmado por `ls-remote` |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | `d787ce5f61f2e79415c76c06d928f030c026a4d8` |
 | **Implementação F5.7** | decisão/pedido de cancelamento duráveis, árvore terminada/reapada, cleanup explícito, `git revert` canônico e conflito `BLOCKED_ROLLBACK` |
 | **Validação F5.7** | focado `164 passed, 2 skipped`; segurança `68 passed`; full `900 passed, 5 skipped, 6 subtests passed` |
+| **Revisão R3** | matrizes existentes novamente verdes, mas quatro lacunas não cobertas: Git merge driver executável, aprovação de hook booleana, CLI verde/exit zero em bloqueio e reap ambíguo após falha de binding |
 | **Quality/distribuição F5.7** | mypy 106 arquivos, Ruff, compileall, diff-check, wheel 0.1.0 e smoke oficial offline com uv 0.12.3 verdes |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
@@ -92,41 +93,40 @@ reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Existe um único executor/escritor: `Codex`. A autorização de implementação F5.7 foi consumida somente
-na branch local. Produto, testes e certificação local estão concluídos; nenhum push, PR, merge ou tag
-remota foi criado. Checkpoints F5.6 permanecem exclusivamente locais; branches
+Existe um único executor/escritor: `Codex`. O usuário autorizou nominalmente o reparo R3 em
+`2026-08-14T17:27:25-03:00`, somente na branch local. Nenhum push, PR, merge ou tag remota foi criado.
+Checkpoints F5.6 permanecem exclusivamente locais; branches
 `task/f5.6-content-bound-approval` e `docs/promote-f5.6` estão preservadas no remoto.
 
 ## 5. Tarefa ativa
 
-A F5.7 está concluída localmente no produto `d787ce5`. O controlador durável publica decisão e pedido
-antes do sinal mesmo quando o executor detém o lock; após quiescência, o lifecycle reconcilia o
-journal sob o lock canônico e só então apresenta `CANCELLED`. O terminal encerra e reapera a árvore
-vinculada, o tool loop não persiste sucesso cancelado, cleanup permanece ação distinta e não forçada,
-e rollback usa o SHA de promoção canônico em `git revert --no-edit`, verificando o novo SHA. Conflito
-é abortado com segurança e termina em `BLOCKED_ROLLBACK`.
+A F5.7 foi reaberta antes de qualquer publicação. A revisão provou que `git revert` ainda pode
+executar merge driver configurado pelo repositório e receber ambiente amplo; aprovação de hook
+destrutivo não possui identidade durável content-bound; a CLI declara sucesso para
+`BLOCKED_ROLLBACK`; e o caminho de falha ao vincular processo pode remover evidência ativa sem reap
+comprovado. A implementação anterior e seus testes permanecem preservados como baseline do reparo.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico local. O runtime `uv 0.12.3` já preservado foi usado somente no processo,
-offline, sem instalação. Push da branch, PR, merge, tags remotas, remoção de refs,
-force-push/bypass e início de F6 não estão autorizados.
+Há bloqueio técnico de promoção até corrigir e recertificar R3. O runtime `uv 0.12.3` já preservado
+foi usado somente no processo, offline, sem instalação. Push da branch, PR, merge, tags remotas,
+remoção de refs, force-push/bypass e início de F6 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH LOCAL.
-NÃO CRIAR PR, TAG REMOTA OU MERGE E NÃO INICIAR F6.
+EXECUTAR SOMENTE O REPARO R3 AUTORIZADO E RECERTIFICAR O ACEITE APLICÁVEL.
+NÃO PUBLICAR A BRANCH, CRIAR PR/TAG REMOTA/MERGE OU INICIAR F6.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.7.md` e a Fase 5 do plano.
-2. Confirme branch `task/f5.7-safe-cancel-rollback` e produto `d787ce5` sobre baseline `a449bd1`.
-3. Confirme os checkpoints locais `f5.7-ready`, `f5.7-r1-ready` e `f5.7-complete`.
+2. Confirme branch `task/f5.7-safe-cancel-rollback`, HEAD R3 e produto anterior `d787ce5` sobre baseline `a449bd1`.
+3. Confirme os checkpoints locais `f5.7-ready`, `f5.7-r1-ready`, `f5.7-complete` e `f5.7-r3-ready`.
 4. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve o escopo/aceite certificado.
-5. Não publique branch/PR/tags nem inicie F6 sem autorização nominal separada.
+5. Conclua e recertifique R3; não publique branch/PR/tags nem inicie F6 sem autorização nominal separada.
 
 ---
 
-*Atualizado em: 2026-08-14T16:15:00-03:00 | Fonte: certificação local F5.7 + promoção F5.6/PR #64*
+*Atualizado em: 2026-08-14T17:27:25-03:00 | Fonte: revisão negativa R3 + certificação local F5.7 + promoção F5.6/PR #64*

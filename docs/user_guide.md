@@ -230,6 +230,11 @@ solicitação e nova decisão sobre o conteúdo corrente.
 
 ## Cancelamento, cleanup e rollback F5.7
 
+> **Estado corrente:** a revisão R3 reabriu esta capacidade como
+> `REPAIR_ACTIVE / PROMOTION_BLOCKED`. As garantias abaixo descrevem o contrato a restaurar; não use
+> rollback em repositório valioso até a recertificação registrar Git transitivo bloqueado, aprovação
+> de hook ligada, erro CLI não zero em bloqueio e reap comprovado.
+
 O cancelamento usa arquivos de controle duráveis por execução. `cancellation-policy.json` registra a
 decisão antes de `cancellation-request.json` e antes do sinal. Isso permite interromper uma tool mesmo
 quando o `GraphExecutor` já mantém o lock canônico. O `TerminalAdapter` encerra somente o Windows Job
@@ -249,7 +254,7 @@ zero, novo SHA completo, parent igual ao HEAD anterior e worktree limpo. Em conf
 se o resultado for ambíguo. Hook de produto é injetável/allowlisted e continua default-deny; efeito
 destrutivo exige aprovação específica ligada à tentativa de rollback.
 
-Essas APIs estão concluídas localmente, mas não tornam o protótipo seguro para um repositório valioso:
+Essas APIs estão em reparo local e não tornam o protótipo seguro para um repositório valioso:
 a composição automática de provider/tools/worktree e os gates pós-reversão/evidence recovery
 permanecem pendentes.
 

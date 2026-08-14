@@ -20,16 +20,17 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.7](active/F5.7.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch local
-`task/f5.7-safe-cancel-rollback`. O produto `d787ce5` persiste decisão/pedido de cancelamento,
+A [F5.7](active/F5.7.md) está `REPAIR_ACTIVE / PROMOTION_BLOCKED` na branch local
+`task/f5.7-safe-cancel-rollback`. O produto anterior `d787ce5` persiste decisão/pedido de cancelamento,
 interrompe e reapera a árvore vinculada, impede sucesso pós-dispatch cancelado, mantém cleanup
 explícito e executa `git revert` real do SHA canônico com conflito em `BLOCKED_ROLLBACK`. R2 registra
 que a decisão durável precede o sinal quando o executor já detém o lock, seguida de reconciliação
 canônica após quiescência. O focado passou `164` testes com `2` skips, segurança passou `68` e a
 regressão integral passou `900` com `5` skips e `6` subtests. Mypy em 106 arquivos, Ruff, compileall,
-diff-check, wheel e smoke oficial offline com `uv 0.12.3` ficaram verdes. Os checkpoints
-`checkpoint/f5.7-ready`, `checkpoint/f5.7-r1-ready` e `checkpoint/f5.7-complete` são exclusivamente
-locais. Push, PR, merge, tags remotas e início de F6 não estão autorizados.
+diff-check, wheel e smoke oficial offline com `uv 0.12.3` ficaram verdes, mas revisão posterior
+provou Git transitivo executável, aprovação de hook não ligada, falso sucesso CLI e reap ambíguo não
+cobertos. R3 foi autorizado para corrigir e recertificar. Os checkpoints são exclusivamente locais;
+push, PR, merge, tags remotas e início de F6 não estão autorizados.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge

@@ -987,14 +987,14 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
     assert "não converte" in user_guide
 
 
-def test_f5_7_local_completion_certifies_safe_cancellation_and_real_git_rollback() -> None:
+def test_f5_7_r3_reopens_negative_evidence_before_repair() -> None:
     panel = _read(TASK_PANEL)
     dossier = _read(ACTIVE_ROOT / "F5.7.md")
     task_index = _read(TASKS_INDEX)
 
     assert (ACTIVE_ROOT / "F5.7.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in dossier
     assert "task/f5.7-safe-cancel-rollback" in panel
     assert "task/f5.7-safe-cancel-rollback" in dossier
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in dossier
@@ -1004,6 +1004,7 @@ def test_f5_7_local_completion_certifies_safe_cancellation_and_real_git_rollback
     assert "checkpoint/f5.7-r1-ready" in dossier
     assert "checkpoint/f5.7-complete" in panel
     assert "checkpoint/f5.7-complete" in dossier
+    assert "checkpoint/f5.7-r3-ready" in dossier
     assert "d787ce5f61f2e79415c76c06d928f030c026a4d8" in panel
     assert "d787ce5f61f2e79415c76c06d928f030c026a4d8" in dossier
     assert "runtime/tool_loop.py" in dossier
@@ -1022,6 +1023,10 @@ def test_f5_7_local_completion_certifies_safe_cancellation_and_real_git_rollback
         "shell=False",
         "F5.2 policy",
         "F5.6 approval",
+        "merge.evil.driver",
+        "hook_approval_granted: bool",
+        "exit_code=0",
+        "REPAIR_ACTIVE / PROMOTION_BLOCKED",
     ):
         assert required in dossier
     assert "active/F5.7.md" in task_index
@@ -1030,7 +1035,7 @@ def test_f5_7_local_completion_certifies_safe_cancellation_and_real_git_rollback
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "164 passed, 2 skipped" in panel
     assert "900 passed, 5 skipped, 6 subtests passed" in panel
-    assert "PROMOTION_PENDING" in task_index
+    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

@@ -125,6 +125,9 @@ worktree/provider/tools permanece pendente.
 
 ## Fluxo de auditoria e rollback
 
+> A F5.7 está `REPAIR_ACTIVE / PROMOTION_BLOCKED` após a revisão R3. Esta seção descreve o fluxo
+> pretendido e só volta a ser evidência positiva depois da recertificação integral do reparo.
+
 O diário append-only e sua hash chain são implementações locais testadas. Na F5.7 local, o
 cancelamento publica uma decisão durável antes do pedido/sinal, interrompe e reapera somente a árvore
 de processo pertencente à execução e reconcilia o journal sob o lock canônico depois da quiescência.
