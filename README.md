@@ -157,8 +157,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `16bcbb1` e `checkpoint/f5.5-complete` fecha a certificação local. O
   [PR #61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) encerrou no head `68482da`, passou
   11/11 no run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
-  `31769631054` em 5m20s. A reconciliação administrativa permanece local; checkpoints continuam
-  somente locais, e publicação administrativa, tags remotas, remoção de refs e F5.6 não estão autorizados.
+  `31769631054` em 5m20s. A reconciliação administrativa está no
+  [PR #62](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62), com checks do head final pendentes;
+  checkpoints continuam somente locais, e merge administrativo, tags remotas, remoção de refs e F5.6
+  não estão autorizados.
 
 ## Dívidas técnicas críticas
 

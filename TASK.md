@@ -28,10 +28,10 @@
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | nenhuma implementação; F5.5 promovida e em reconciliação administrativa |
 | **Gate** | nenhum gate `READY` ativo |
-| **Estado corrente** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL / PUBLICATION_PENDING` |
+| **Estado corrente** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T22:21:27-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f5.5`, local e sem upstream |
+| **Branch** | `docs/promote-f5.5`, publicada em `origin/docs/promote-f5.5` |
 | **Checkpoint administrativo** | `73be828a6e4e813e9370eac7f4289179c7f05d79`, reconciliação local validada |
 | **Branch de produto preservada** | `task/f5.5-secrets-redaction`, remota e não removida |
 | **Main sincronizada** | `main == origin/main == 2227b73131d405cde046c58ec83094889a3feb51` antes da branch administrativa |
@@ -46,6 +46,7 @@
 | **Checkpoint** | `checkpoint/f5.5-ready` no commit `16bcbb1`; `checkpoint/f5.5-complete` no commit documental de certificação, ambos somente locais |
 | **PR F5.5** | [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61), head final `68482da`, CI [31765166979](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31765166979) 11/11 success |
 | **Merge F5.5** | `2227b73131d405cde046c58ec83094889a3feb51`; CI pós-merge [31769631054](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31769631054) 11/11 success em 5m20s |
+| **PR administrativo** | [#62](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62), head inicial `82f2395`, run inicial `31770610085` em andamento |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -56,7 +57,7 @@
 | Produto | commit `f4460ad`; focado `192 passed, 3 skipped`; full `873 passed, 5 skipped, 6 subtests passed` |
 | PR de produto | [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61), head final `68482da`, CI `31765166979`, 11/11 success |
 | Merge de produto | `2227b73131d405cde046c58ec83094889a3feb51`; CI de `push` `31769631054`, 11/11 success em 5m20s |
-| Reconciliação administrativa | branch `docs/promote-f5.5` local, sem upstream; publicação e PR ainda não autorizados |
+| Reconciliação administrativa | PR [#62](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62), aberto no head inicial `82f2395`, checks pendentes |
 | Fronteira | `checkpoint/f5.5-ready` e `checkpoint/f5.5-complete` somente locais; branch remota de produto preservada; nenhuma tag/ref removida |
 | Promoção anterior | F5.4 — PR [#59](https://github.com/Wf-ops1/Harnessinfra/pull/59), produto `722916b`, head `21aa4a6`, CI `31739876952`; merge `d624629`, pós-merge `31742231398`; reconciliação [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60), merge/CI final `2f4e391` / `31759971204`; certificação local `856 passed, 5 skipped, 6 subtests passed`; checkpoints `checkpoint/f5.4-ready` e `checkpoint/f5.4-complete` somente locais |
 | Promoção anterior | F5.3 — trust boundary integrado: PR [#57](https://github.com/Wf-ops1/Harnessinfra/pull/57), head `4934aee`, CI `31659293351`; merge `211edcf921912a32429934bf600473d8cc98941c`, pós-merge `31660030240`; reconciliação [#58](https://github.com/Wf-ops1/Harnessinfra/pull/58), merge/CI final `4c0527baacc74821112adf7fe61b82af72589f69` / `31728438719`; fronteira `default-restricted` e checkpoints `checkpoint/f5.3-ready`/`checkpoint/f5.3-complete` somente locais |
@@ -81,17 +82,16 @@ Não há nenhuma tarefa ativa de implementação. A F5.5 está `PROMOTED` em
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A reconciliação administrativa ainda é somente local. Publicação
-da branch `docs/promote-f5.5`, abertura/merge do PR administrativo, tags remotas, remoção de refs,
-force-push/bypass e início da F5.6 não estão autorizados.
+Não há bloqueio técnico conhecido. A reconciliação administrativa está no PR #62 e aguarda os checks
+do head final. Merge do PR administrativo, tags remotas, remoção de refs, force-push/bypass e início
+da F5.6 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
 F5.5 ESTÁ PROMOVIDA; NÃO HÁ IMPLEMENTAÇÃO ATIVA.
-VALIDAR E MATERIALIZAR LOCALMENTE A RECONCILIAÇÃO EM docs/promote-f5.5.
-DEPOIS, AGUARDAR AUTORIZAÇÃO PARA PUBLICAR A BRANCH E ABRIR O PR ADMINISTRATIVO.
-NÃO PUBLICAR, MESCLAR, REMOVER REFS, PUBLICAR TAGS OU INICIAR F5.6 POR INFERÊNCIA.
+PUBLICAR O REGISTRO DO PR #62 E AUDITAR TODOS OS CHECKS DO HEAD FINAL.
+NÃO MESCLAR, REMOVER REFS, PUBLICAR TAGS OU INICIAR F5.6 POR INFERÊNCIA.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -103,4 +103,4 @@ NÃO PUBLICAR, MESCLAR, REMOVER REFS, PUBLICAR TAGS OU INICIAR F5.6 POR INFERÊN
 
 ---
 
-*Atualizado em: 2026-08-14T01:36:12-03:00 | Fonte: F5.5 + PR #61/31765166979 + merge 2227b73 + pós-merge 31769631054 + reconciliação 73be828*
+*Atualizado em: 2026-08-14T01:41:20-03:00 | Fonte: F5.5 + promoção 2227b73/31769631054 + PR administrativo #62/run inicial 31770610085*

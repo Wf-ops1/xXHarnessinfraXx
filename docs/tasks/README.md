@@ -24,8 +24,9 @@ Não há implementação ativa. A [F5.5](completed/F5.5.md) está `PROMOTED`: o 
 [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) encerrou no head `68482da`, passou 11/11 no
 run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
 `31769631054` em 5m20s. O produto é `f4460ad`; focado `192 passed, 3 skipped` e full
-`873 passed, 5 skipped, 6 subtests passed`. A reconciliação `docs/promote-f5.5` permanece local e sem
-upstream; publicação, PR administrativo, tags/refs e F5.6 não estão autorizados.
+`873 passed, 5 skipped, 6 subtests passed`. A reconciliação administrativa PR #62 está aberta no head
+inicial `82f2395`, com o run inicial `31770610085` em andamento; merge, tags/refs e F5.6 não estão
+autorizados.
 
 A [F5.4](completed/F5.4.md) está `PROMOTED`: o PR #59 encerrou no head `21aa4a6`, passou 11/11 checks
 no run `31739876952`, foi incorporado pelo merge `d624629` e recebeu 11/11 na CI pós-merge
