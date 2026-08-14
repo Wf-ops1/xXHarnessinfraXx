@@ -41,11 +41,13 @@ from ai_engineering_harness.runtime import (
     NodeExecutionResult,
     NodeExecutorRegistry,
     NodeExecutorUnavailableError,
+    RollbackHookApproval,
     RollbackManager,
     RollbackResult,
     VerificationLifecyclePrerequisiteError,
 )
 from ai_engineering_harness.security import (
+    TrustAuthorization,
     TrustBoundaryEvaluator,
     TrustEvaluationResult,
 )
@@ -777,11 +779,11 @@ def test_rollback_records_policy_before_effect_and_reaches_compensated(
             "ROLLBACK_POLICY_DECIDED",
             "STATE_TRANSITIONED",
         ]
-        assert kwargs == {
-            "promotion_commit_sha": promotion_sha,
-            "original_branch": "task/f2.5-execution-resume",
-            "hook_approval_granted": False,
-        }
+        assert kwargs["execution_id"] == execution_id
+        assert str(kwargs["rollback_attempt_id"]).startswith("rollback-attempt-")
+        assert kwargs["promotion_commit_sha"] == promotion_sha
+        assert kwargs["original_branch"] == "task/f2.5-execution-resume"
+        assert kwargs["hook_approval"] is None
         return RollbackResult(
             promotion_commit_sha=promotion_sha,
             previous_head_sha=promotion_sha,
@@ -808,6 +810,174 @@ def test_rollback_records_policy_before_effect_and_reaches_compensated(
         "ROLLBACK_COMPLETED"
     )
     assert service.rollback(execution_id) == rolled_back
+
+
+def test_destructive_rollback_hook_approval_is_journaled_and_attempt_bound(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    harness_root = tmp_path / ".harness"
+    harness_root.mkdir()
+    (harness_root / "trusted_repository").touch()
+    boundary = TrustBoundaryEvaluator(
+        tmp_path,
+        authorization=TrustAuthorization(
+            repository_root=str(tmp_path.resolve(strict=True)),
+            executable_aliases=("git",),
+            hook_ids=("rollback-compensation",),
+        ),
+    ).evaluate()
+    manager = RollbackManager(
+        tmp_path,
+        trust_boundary=boundary,
+        compensation_hook=lambda result: None,
+        hook_id="rollback-compensation",
+        hook_destructive=True,
+        clock=lambda: _BASE_TIME + timedelta(minutes=5),
+    )
+    service, storage, _ = _service(
+        tmp_path,
+        trust_boundary=boundary,
+        rollback_manager=manager,
+    )
+    artifact = _compiled_graph(tmp_path, workflow="rollback-hook-approval")
+    execution_id = "exec-rollback-hook-approval"
+    service.start(
+        artifact,
+        execution_id=execution_id,
+        initial_input={},
+        configuration={},
+    )
+    machine = EventSourcedStateMachine(
+        storage,
+        execution_id,
+        clock=service._clock,
+        event_id_factory=service._event_id_factory,
+        owner_id_factory=lambda: "rollback-hook-test-state-owner",
+    )
+    completed = machine.transition_to(
+        ExecutionState.COMPLETED,
+        node_id="execute",
+        attempt=1,
+        reason="verification_completed",
+    )
+    promotion_sha = "d" * 40
+    lock = storage.acquire_execution_lock(
+        execution_id,
+        "rollback-hook-record-owner",
+        timeout_seconds=1,
+    )
+    try:
+        document = completed.model_dump(mode="python")
+        document.update(
+            {
+                "promotion_commit_sha": promotion_sha,
+                "revision": completed.revision + 1,
+                "updated_at": service._clock(),
+            }
+        )
+        storage.compare_and_set_execution(
+            execution_id,
+            completed.revision,
+            ExecutionRecord.model_validate(document),
+            lock=lock,
+        )
+    finally:
+        storage.release_execution_lock(lock)
+
+    request = service.request_rollback_hook_approval(
+        execution_id,
+        reason="run the approved compensation hook",
+        expires_at=_BASE_TIME + timedelta(hours=1),
+    )
+    assert request.status is ApprovalStatus.PENDING
+    approved_record = service.approve(execution_id, approver="reviewer-1")
+    assert approved_record.current_state is ExecutionState.COMPLETED
+
+    def prove_bound_approval(**kwargs: object) -> RollbackResult:
+        approval = kwargs["hook_approval"]
+        assert isinstance(approval, RollbackHookApproval)
+        assert approval.status is ApprovalStatus.APPROVED
+        assert approval.execution_id == execution_id
+        assert approval.hook_id == "rollback-compensation"
+        assert approval.rollback_attempt_id == kwargs["rollback_attempt_id"]
+        assert approval.promotion_commit_sha == promotion_sha
+        return RollbackResult(
+            promotion_commit_sha=promotion_sha,
+            previous_head_sha=promotion_sha,
+            rollback_commit_sha="e" * 40,
+            original_branch="task/f2.5-execution-resume",
+            outcome="compensated",
+            exit_code=0,
+            stdout="",
+            stderr="",
+            conflicting_paths=(),
+            abort_attempted=False,
+            abort_succeeded=False,
+            restored_after_abort=False,
+            hook_executed=True,
+            reason="git_revert_verified",
+        )
+
+    monkeypatch.setattr(manager, "rollback", prove_bound_approval)
+    rolled_back = service.rollback(execution_id)
+    assert rolled_back.current_state is ExecutionState.COMPENSATED
+    event_types = [event.event_type for event in storage.load_events(execution_id)]
+    assert event_types.index("ROLLBACK_HOOK_APPROVAL_REQUESTED") < event_types.index(
+        "ROLLBACK_HOOK_APPROVED"
+    ) < event_types.index("ROLLBACK_POLICY_DECIDED")
+
+
+def test_rollback_hook_approval_history_accepts_durable_expiration_after_approval() -> None:
+    execution_id = "exec-rollback-hook-expiration"
+    requested_at = _BASE_TIME
+    pending = RollbackHookApproval.pending(
+        execution_id=execution_id,
+        hook_id="rollback-compensation",
+        rollback_attempt_id="rollback-attempt-expiration",
+        promotion_commit_sha="f" * 40,
+        reason="bounded expiration proof",
+        requested_at=requested_at,
+        expires_at=requested_at + timedelta(minutes=5),
+    )
+    approved = pending.approve(
+        approver_id="reviewer-1",
+        decided_at=requested_at + timedelta(minutes=1),
+    )
+    expired = approved.expire(decided_at=requested_at + timedelta(minutes=5))
+    events = tuple(
+        ExecutionEvent(
+            event_id=f"rollback-hook-expiration-{index}",
+            execution_id=execution_id,
+            event_type=event_type,
+            timestamp=timestamp,
+            payload={"approval": approval.model_dump(mode="json")},
+        )
+        for index, (event_type, timestamp, approval) in enumerate(
+            (
+                ("ROLLBACK_HOOK_APPROVAL_REQUESTED", requested_at, pending),
+                (
+                    "ROLLBACK_HOOK_APPROVED",
+                    requested_at + timedelta(minutes=1),
+                    approved,
+                ),
+                (
+                    "ROLLBACK_HOOK_APPROVAL_EXPIRED",
+                    requested_at + timedelta(minutes=5),
+                    expired,
+                ),
+            ),
+            start=1,
+        )
+    )
+
+    assert (
+        ExecutionLifecycleService._latest_rollback_hook_approval(
+            events,
+            execution_id,
+        )
+        == expired
+    )
 
 
 def test_cancel_never_cleans_worktree_and_cleanup_is_explicitly_journaled(

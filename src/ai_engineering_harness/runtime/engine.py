@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from ai_engineering_harness.contracts.execution import ExecutionRecord
@@ -20,6 +21,7 @@ from .graph_executor import (
     GraphExecutor,
 )
 from .maf_adapter import MAFAdapter
+from .rollback_manager import RollbackHookApproval
 
 
 class RuntimeGraphConfigurationError(GraphExecutionError):
@@ -141,17 +143,24 @@ class RuntimeEngine:
 
         return self._require_lifecycle().cleanup_worktree(self.execution_id)
 
-    def rollback_execution(
+    def request_rollback_hook_approval(
         self,
         *,
-        hook_approval_granted: bool = False,
-    ) -> ExecutionRecord:
+        reason: str,
+        expires_at: datetime,
+    ) -> RollbackHookApproval:
+        """Request approval for the exact configured destructive rollback hook."""
+
+        return self._require_lifecycle().request_rollback_hook_approval(
+            self.execution_id,
+            reason=reason,
+            expires_at=expires_at,
+        )
+
+    def rollback_execution(self) -> ExecutionRecord:
         """Revert the exact promotion commit recorded for this execution."""
 
-        return self._require_lifecycle().rollback(
-            self.execution_id,
-            hook_approval_granted=hook_approval_granted,
-        )
+        return self._require_lifecycle().rollback(self.execution_id)
 
     def status_execution(self) -> ExecutionStatusView:
         """Return the canonical status view."""

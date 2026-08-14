@@ -8,9 +8,22 @@ import re
 import subprocess
 from collections.abc import Callable, Collection
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal, Self
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
+
+from ai_engineering_harness.contracts import ApprovalStatus
+from ai_engineering_harness.contracts.execution import ExecutionId
+from ai_engineering_harness.persistence import canonical_json_digest, canonical_json_object
 from ai_engineering_harness.security import (
     Redactor,
     TrustAuthorization,
@@ -22,6 +35,41 @@ from ai_engineering_harness.security import (
 
 _FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 _MAX_EVIDENCE_CHARACTERS = 8_000
+_DANGEROUS_LOCAL_CONFIG = re.compile(
+    r"^(?:merge\..+\.driver|filter\..+\.(?:clean|smudge|process)|core\.fsmonitor)$",
+    re.IGNORECASE,
+)
+_NON_EMPTY = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+_DIGEST_PATTERN = r"^sha256:[0-9a-f]{64}$"
+_SAFE_GIT_ENVIRONMENT_NAMES = (
+    "COMSPEC",
+    "ComSpec",
+    "HOME",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "PATH",
+    "Path",
+    "PATHEXT",
+    "SystemRoot",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+    "WINDIR",
+)
+_SAFE_GIT_CONFIGURATION_VALUES = {
+    "core.autocrlf": frozenset({"false", "input", "true"}),
+    "core.eol": frozenset({"crlf", "lf", "native"}),
+    "core.safecrlf": frozenset({"false", "true", "warn"}),
+}
+_GIT_BOOLEAN_ALIASES = {
+    "0": "false",
+    "1": "true",
+    "no": "false",
+    "off": "false",
+    "on": "true",
+    "yes": "true",
+}
 
 
 class RollbackError(RuntimeError):
@@ -38,6 +86,189 @@ class RollbackPrerequisiteError(RollbackError):
 
 class RollbackCommandError(RollbackError):
     """A read-only rollback prerequisite command could not be observed safely."""
+
+
+class RollbackHookApproval(BaseModel):
+    """Durable human decision bound to one destructive rollback-hook attempt."""
+
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    approval_schema_version: Literal["1.0"] = "1.0"
+    execution_id: ExecutionId
+    hook_id: _NON_EMPTY
+    rollback_attempt_id: _NON_EMPTY
+    promotion_commit_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    reason: _NON_EMPTY
+    requested_at: datetime
+    expires_at: datetime
+    status: ApprovalStatus
+    approver_id: _NON_EMPTY | None
+    decided_at: datetime | None
+    comment: _NON_EMPTY | None
+    subject_digest: str = Field(pattern=_DIGEST_PATTERN)
+
+    @field_validator("requested_at", "expires_at", "decided_at")
+    @classmethod
+    def require_utc_timestamp(cls, value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None or value.utcoffset() != timedelta(0):
+            raise ValueError("rollback hook approval timestamps must use UTC")
+        return value.astimezone(UTC)
+
+    @model_validator(mode="after")
+    def require_bound_decision(self) -> Self:
+        if self.expires_at <= self.requested_at:
+            raise ValueError("rollback hook approval expiration must follow its request")
+        if self.subject_digest != self.calculate_subject_digest(
+            execution_id=self.execution_id,
+            hook_id=self.hook_id,
+            rollback_attempt_id=self.rollback_attempt_id,
+            promotion_commit_sha=self.promotion_commit_sha,
+            reason=self.reason,
+            requested_at=self.requested_at,
+            expires_at=self.expires_at,
+        ):
+            raise ValueError("rollback hook approval subject digest diverges")
+        if self.status is ApprovalStatus.PENDING:
+            if any(value is not None for value in (self.approver_id, self.decided_at, self.comment)):
+                raise ValueError("pending rollback hook approval cannot contain a decision")
+            return self
+        if self.status not in {
+            ApprovalStatus.APPROVED,
+            ApprovalStatus.EXPIRED,
+            ApprovalStatus.INVALIDATED,
+        }:
+            raise ValueError("rollback hook approval status is unsupported")
+        if self.decided_at is None or self.decided_at < self.requested_at:
+            raise ValueError("rollback hook approval decision timestamp is invalid")
+        if self.status is ApprovalStatus.APPROVED:
+            if self.approver_id is None or self.decided_at >= self.expires_at:
+                raise ValueError("approved rollback hook request needs a timely approver")
+        elif self.approver_id is not None:
+            raise ValueError("system rollback hook decisions cannot claim an approver")
+        return self
+
+    @classmethod
+    def pending(
+        cls,
+        *,
+        execution_id: str,
+        hook_id: str,
+        rollback_attempt_id: str,
+        promotion_commit_sha: str,
+        reason: str,
+        requested_at: datetime,
+        expires_at: datetime,
+    ) -> RollbackHookApproval:
+        subject_digest = cls.calculate_subject_digest(
+            execution_id=execution_id,
+            hook_id=hook_id,
+            rollback_attempt_id=rollback_attempt_id,
+            promotion_commit_sha=promotion_commit_sha,
+            reason=reason,
+            requested_at=requested_at,
+            expires_at=expires_at,
+        )
+        return cls.model_validate(
+            {
+                "execution_id": execution_id,
+                "hook_id": hook_id,
+                "rollback_attempt_id": rollback_attempt_id,
+                "promotion_commit_sha": promotion_commit_sha,
+                "reason": reason,
+                "requested_at": requested_at,
+                "expires_at": expires_at,
+                "status": ApprovalStatus.PENDING,
+                "approver_id": None,
+                "decided_at": None,
+                "comment": None,
+                "subject_digest": subject_digest,
+            }
+        )
+
+    @staticmethod
+    def calculate_subject_digest(
+        *,
+        execution_id: str,
+        hook_id: str,
+        rollback_attempt_id: str,
+        promotion_commit_sha: str,
+        reason: str,
+        requested_at: datetime,
+        expires_at: datetime,
+    ) -> str:
+        return canonical_json_digest(
+            canonical_json_object(
+                {
+                    "execution_id": execution_id,
+                    "expires_at": expires_at.astimezone(UTC).isoformat(),
+                    "hook_id": hook_id,
+                    "promotion_commit_sha": promotion_commit_sha,
+                    "reason": reason,
+                    "requested_at": requested_at.astimezone(UTC).isoformat(),
+                    "rollback_attempt_id": rollback_attempt_id,
+                }
+            )
+        )
+
+    def approve(
+        self,
+        *,
+        approver_id: str,
+        decided_at: datetime,
+        comment: str | None = None,
+    ) -> RollbackHookApproval:
+        if self.status is not ApprovalStatus.PENDING:
+            raise RollbackConfigurationError("only a pending rollback hook request can be approved")
+        return self._decision(
+            status=ApprovalStatus.APPROVED,
+            approver_id=approver_id,
+            decided_at=decided_at,
+            comment=comment,
+        )
+
+    def expire(self, *, decided_at: datetime) -> RollbackHookApproval:
+        if self.status not in {ApprovalStatus.PENDING, ApprovalStatus.APPROVED}:
+            raise RollbackConfigurationError("rollback hook request is not live")
+        return self._decision(
+            status=ApprovalStatus.EXPIRED,
+            approver_id=None,
+            decided_at=decided_at,
+            comment="approval_expired",
+        )
+
+    def invalidate(self, *, decided_at: datetime, reason: str) -> RollbackHookApproval:
+        if self.status not in {ApprovalStatus.PENDING, ApprovalStatus.APPROVED}:
+            raise RollbackConfigurationError("rollback hook request is not live")
+        return self._decision(
+            status=ApprovalStatus.INVALIDATED,
+            approver_id=None,
+            decided_at=decided_at,
+            comment=reason,
+        )
+
+    def _decision(
+        self,
+        *,
+        status: ApprovalStatus,
+        approver_id: str | None,
+        decided_at: datetime,
+        comment: str | None,
+    ) -> RollbackHookApproval:
+        document = self.model_dump(mode="python")
+        document.update(
+            {
+                "status": status,
+                "approver_id": approver_id,
+                "decided_at": decided_at,
+                "comment": comment,
+            }
+        )
+        try:
+            return RollbackHookApproval.model_validate(document)
+        except ValueError as exc:
+            raise RollbackConfigurationError("rollback hook approval decision is invalid") from exc
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +308,7 @@ class RollbackManager:
         compensation_hook: Callable[[RollbackResult], None] | None = None,
         hook_id: str | None = None,
         hook_destructive: bool = False,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         try:
             root = Path(project_root).resolve(strict=True)
@@ -141,19 +373,46 @@ class RollbackManager:
         self._compensation_hook = compensation_hook
         self._hook_id = hook_id
         self._hook_destructive = hook_destructive
+        self._clock = clock or (lambda: datetime.now(UTC))
+        self._safe_effective_git_configuration: tuple[tuple[str, str], ...] | None = None
+
+    @property
+    def hook_id(self) -> str | None:
+        return self._hook_id
+
+    @property
+    def hook_destructive(self) -> bool:
+        return self._hook_destructive
+
+    @property
+    def has_compensation_hook(self) -> bool:
+        return self._compensation_hook is not None
 
     def rollback(
         self,
         *,
+        execution_id: str,
+        rollback_attempt_id: str,
         promotion_commit_sha: str,
         original_branch: str,
-        hook_approval_granted: bool = False,
+        hook_approval: RollbackHookApproval | None = None,
     ) -> RollbackResult:
         """Run one non-interactive revert, abort conflicts, and never retry ambiguity."""
 
         commit_sha = self._validate_sha(promotion_commit_sha)
         branch = self._validate_branch(original_branch)
-        self._authorize_hook(hook_approval_granted=hook_approval_granted)
+        safe_execution_id = self._validate_identity(execution_id, label="execution_id")
+        safe_attempt_id = self._validate_identity(
+            rollback_attempt_id,
+            label="rollback_attempt_id",
+        )
+        self._authorize_hook(
+            execution_id=safe_execution_id,
+            rollback_attempt_id=safe_attempt_id,
+            promotion_commit_sha=commit_sha,
+            hook_approval=hook_approval,
+        )
+        self._deny_transitive_git_effects()
         observed_branch, previous_head, status = self._original_identity()
         if observed_branch != branch:
             raise RollbackPrerequisiteError(
@@ -324,17 +583,81 @@ class RollbackManager:
             reason=reason if not restored else "git_revert_aborted_after_conflict",
         )
 
-    def _authorize_hook(self, *, hook_approval_granted: bool) -> None:
+    def _authorize_hook(
+        self,
+        *,
+        execution_id: str,
+        rollback_attempt_id: str,
+        promotion_commit_sha: str,
+        hook_approval: RollbackHookApproval | None,
+    ) -> None:
         if self._compensation_hook is None:
+            if hook_approval is not None:
+                raise RollbackPrerequisiteError(
+                    "rollback hook approval was supplied without an injected hook"
+                )
             return
         assert self._hook_id is not None
+        approval_granted = False
+        if self._hook_destructive:
+            if not isinstance(hook_approval, RollbackHookApproval):
+                raise RollbackPrerequisiteError(
+                    "destructive compensation hook requires a bound approval"
+                )
+            now = self._clock()
+            if now.tzinfo is None or now.utcoffset() != timedelta(0):
+                raise RollbackConfigurationError("rollback manager clock must use UTC")
+            if (
+                hook_approval.status is not ApprovalStatus.APPROVED
+                or hook_approval.execution_id != execution_id
+                or hook_approval.hook_id != self._hook_id
+                or hook_approval.rollback_attempt_id != rollback_attempt_id
+                or hook_approval.promotion_commit_sha != promotion_commit_sha
+                or now >= hook_approval.expires_at
+            ):
+                raise RollbackPrerequisiteError(
+                    "destructive compensation hook approval does not match this attempt"
+                )
+            approval_granted = True
+        elif hook_approval is not None:
+            raise RollbackPrerequisiteError(
+                "non-destructive compensation hook does not accept a destructive approval"
+            )
         if not self.trust_boundary.validate_hook(
             self._hook_id,
             destructive=self._hook_destructive,
-            approval_granted=hook_approval_granted,
+            approval_granted=approval_granted,
         ):
             raise RollbackPrerequisiteError(
                 "compensation hook is not explicitly authorized"
+            )
+
+    def _deny_transitive_git_effects(self) -> None:
+        configured = self._run_git(
+            (
+                "config",
+                "--local",
+                "--includes",
+                "--get-regexp",
+                ".*",
+            ),
+            allowed_returncodes=(0, 1),
+        )
+        dangerous: set[str] = set()
+        for line in configured.stdout.splitlines():
+            name, separator, value = line.strip().partition(" ")
+            if _DANGEROUS_LOCAL_CONFIG.fullmatch(name) is None:
+                continue
+            normalized_value = _GIT_BOOLEAN_ALIASES.get(
+                value.strip().casefold(),
+                value.strip().casefold(),
+            )
+            if name.casefold() == "core.fsmonitor" and separator and normalized_value == "false":
+                continue
+            dangerous.add(name)
+        if dangerous:
+            raise RollbackPrerequisiteError(
+                "repository Git configuration enables an external driver or filter"
             )
 
     def _original_identity(self, *, require_clean: bool = True) -> tuple[str, str, str]:
@@ -369,7 +692,7 @@ class RollbackManager:
 
     def _conflicting_paths(self) -> tuple[str, ...]:
         output = self._run_git(
-            ("diff", "--name-only", "--diff-filter=U", "--"),
+            ("diff", "--no-ext-diff", "--name-only", "--diff-filter=U", "--"),
         ).stdout
         return tuple(
             sorted(
@@ -395,6 +718,37 @@ class RollbackManager:
                 "Git is not allowed by the exact rollback trust boundary"
             ) from exc
         try:
+            base_environment = self._safe_git_environment()
+            inherited_configuration = self._discover_safe_git_configuration(
+                base_environment
+            )
+            configuration = (
+                ("core.hooksPath", os.devnull),
+                ("commit.gpgSign", "false"),
+                ("tag.gpgSign", "false"),
+                ("core.fsmonitor", "false"),
+                ("core.attributesFile", os.devnull),
+                *inherited_configuration,
+            )
+            git_environment = {
+                **base_environment,
+                "GIT_ATTR_NOSYSTEM": "1",
+                "GIT_AUTHOR_EMAIL": "harness@localhost",
+                "GIT_AUTHOR_NAME": "AI Engineering Harness",
+                "GIT_COMMITTER_EMAIL": "harness@localhost",
+                "GIT_COMMITTER_NAME": "AI Engineering Harness",
+                "GIT_CONFIG_COUNT": str(len(configuration)),
+                "GIT_CONFIG_GLOBAL": os.devnull,
+                "GIT_CONFIG_NOSYSTEM": "1",
+                "GIT_EDITOR": "true",
+                "GIT_MERGE_AUTOEDIT": "no",
+                "GIT_PAGER": "true",
+                "GIT_SEQUENCE_EDITOR": "true",
+                "GIT_TERMINAL_PROMPT": "0",
+            }
+            for index, (key, value) in enumerate(configuration):
+                git_environment[f"GIT_CONFIG_KEY_{index}"] = key
+                git_environment[f"GIT_CONFIG_VALUE_{index}"] = value
             result = subprocess.run(
                 (self.git_executable, *arguments),
                 cwd=self.project_root,
@@ -405,15 +759,7 @@ class RollbackManager:
                 encoding="utf-8",
                 errors="replace",
                 timeout=self.command_timeout_seconds,
-                env={
-                    **os.environ,
-                    "GIT_CONFIG_COUNT": "2",
-                    "GIT_CONFIG_KEY_0": "core.hooksPath",
-                    "GIT_CONFIG_KEY_1": "commit.gpgSign",
-                    "GIT_CONFIG_VALUE_0": os.devnull,
-                    "GIT_CONFIG_VALUE_1": "false",
-                    "GIT_TERMINAL_PROMPT": "0",
-                },
+                env=git_environment,
             )
         except FileNotFoundError as exc:
             raise RollbackCommandError("configured Git executable was not found") from exc
@@ -427,6 +773,72 @@ class RollbackManager:
                 f"Git operation {operation!r} failed with exit code {result.returncode}"
             )
         return result
+
+    def _discover_safe_git_configuration(
+        self,
+        environment: dict[str, str],
+    ) -> tuple[tuple[str, str], ...]:
+        cached = self._safe_effective_git_configuration
+        if cached is not None:
+            return cached
+        selected: list[tuple[str, str]] = []
+        discovery_environment = {
+            **environment,
+            "GIT_PAGER": "true",
+            "GIT_TERMINAL_PROMPT": "0",
+        }
+        for key, allowed_values in _SAFE_GIT_CONFIGURATION_VALUES.items():
+            try:
+                result = subprocess.run(
+                    (self.git_executable, "config", "--includes", "--get", key),
+                    cwd=self.project_root,
+                    check=False,
+                    shell=False,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=self.command_timeout_seconds,
+                    env=discovery_environment,
+                )
+            except FileNotFoundError as exc:
+                raise RollbackCommandError(
+                    "configured Git executable was not found"
+                ) from exc
+            except subprocess.TimeoutExpired as exc:
+                raise RollbackCommandError(
+                    "Git configuration discovery timed out"
+                ) from exc
+            except OSError as exc:
+                raise RollbackCommandError(
+                    "Git configuration discovery could not start"
+                ) from exc
+            if result.returncode == 1:
+                continue
+            if result.returncode != 0:
+                raise RollbackCommandError(
+                    "Git configuration discovery could not be proven"
+                )
+            value = result.stdout.strip().casefold()
+            value = _GIT_BOOLEAN_ALIASES.get(value, value)
+            if value not in allowed_values:
+                raise RollbackPrerequisiteError(
+                    f"effective Git configuration {key!r} is not canonical"
+                )
+            selected.append((key, value))
+        discovered = tuple(selected)
+        self._safe_effective_git_configuration = discovered
+        return discovered
+
+    @staticmethod
+    def _safe_git_environment() -> dict[str, str]:
+        selected: dict[str, str] = {}
+        available = {name.casefold(): (name, value) for name, value in os.environ.items()}
+        for requested in _SAFE_GIT_ENVIRONMENT_NAMES:
+            current = available.get(requested.casefold())
+            if current is not None:
+                selected[current[0]] = current[1]
+        return selected
 
     @staticmethod
     def _safe_evidence(value: str) -> str:
@@ -453,11 +865,25 @@ class RollbackManager:
             raise RollbackConfigurationError("original_branch must be canonical text")
         return value
 
+    @staticmethod
+    def _validate_identity(value: object, *, label: str) -> str:
+        if (
+            type(value) is not str
+            or not value.strip()
+            or value != value.strip()
+            or "\x00" in value
+            or "\r" in value
+            or "\n" in value
+        ):
+            raise RollbackConfigurationError(f"{label} must be canonical text")
+        return value
+
 
 __all__ = [
     "RollbackCommandError",
     "RollbackConfigurationError",
     "RollbackError",
+    "RollbackHookApproval",
     "RollbackManager",
     "RollbackPrerequisiteError",
     "RollbackResult",

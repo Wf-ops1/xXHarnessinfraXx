@@ -69,8 +69,10 @@ def test_destructive_rollback_requires_approval(tmp_path: Path):
         hook_destructive=True,
     )
 
-    with pytest.raises(RollbackPrerequisiteError, match="not explicitly authorized"):
+    with pytest.raises(RollbackPrerequisiteError, match="bound approval"):
         mgr.rollback(
+            execution_id="exec-phase7-hook-denied",
+            rollback_attempt_id="rollback-attempt-phase7-denied",
             promotion_commit_sha="a" * 40,
             original_branch="main",
         )
@@ -92,6 +94,8 @@ def test_restricted_rollback_denies_hook_before_adapter_effect(
 
     with pytest.raises(RollbackPrerequisiteError, match="not explicitly authorized"):
         manager.rollback(
+            execution_id="exec-phase7-restricted-hook",
+            rollback_attempt_id="rollback-attempt-phase7-restricted",
             promotion_commit_sha="a" * 40,
             original_branch="main",
         )

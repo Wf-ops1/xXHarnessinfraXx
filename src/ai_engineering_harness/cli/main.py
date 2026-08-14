@@ -474,6 +474,10 @@ def rollback(execution_id: str) -> None:
         StateStorageError,
     ) as exc:
         _raise_lifecycle_click_error(exc)
+    if record.current_state is not ExecutionState.COMPENSATED:
+        raise click.ClickException(
+            f"rollback bloqueado em {record.current_state.value}; nenhuma compensação foi declarada"
+        )
     console.print(
         f"[green]{_get_symbol(True)}[/green]Rollback de [bold]{execution_id}[/bold] "
         f"encerrado em {record.current_state.value}."

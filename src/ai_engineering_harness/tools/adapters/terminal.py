@@ -541,13 +541,24 @@ class TerminalAdapter:
             try:
                 controller.command_spawned(command_id, pid=process.pid)
             except Exception as exc:
+                quiescence_error: BaseException | None = None
                 try:
                     spawned.tree.terminate(process)
                     process.wait(timeout=_REAP_SECONDS)
-                except (CommandExecutionError, subprocess.TimeoutExpired):
-                    pass
-                finally:
+                    if process.returncode is None:
+                        raise CommandExecutionError(
+                            "terminated process has no observed exit code"
+                        )
+                except Exception as termination_exc:  # noqa: BLE001 - quiescence must fail closed
+                    quiescence_error = termination_exc
+                try:
                     spawned.tree.close()
+                except Exception as close_exc:  # noqa: BLE001 - quiescence must fail closed
+                    quiescence_error = quiescence_error or close_exc
+                if quiescence_error is not None:
+                    raise CommandExecutionError(
+                        "spawned process binding failed and quiescence is ambiguous"
+                    ) from quiescence_error
                 self._finish_cancellation_command(
                     controller,
                     command_id,

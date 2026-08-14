@@ -126,7 +126,12 @@ from .promotion_manager import (
     PromotionError,
     PromotionManager,
 )
-from .rollback_manager import RollbackError, RollbackManager, RollbackResult
+from .rollback_manager import (
+    RollbackError,
+    RollbackHookApproval,
+    RollbackManager,
+    RollbackResult,
+)
 from .state_machine import VALID_STATE_TRANSITIONS, EventSourcedStateMachine
 
 APPROVAL_REQUESTED: Literal["APPROVAL_REQUESTED"] = "APPROVAL_REQUESTED"
@@ -156,6 +161,10 @@ WORKTREE_CLEANUP_BLOCKED = "WORKTREE_CLEANUP_BLOCKED"
 ROLLBACK_POLICY_DECIDED = "ROLLBACK_POLICY_DECIDED"
 ROLLBACK_COMPLETED = "ROLLBACK_COMPLETED"
 ROLLBACK_BLOCKED = "ROLLBACK_BLOCKED"
+ROLLBACK_HOOK_APPROVAL_REQUESTED = "ROLLBACK_HOOK_APPROVAL_REQUESTED"
+ROLLBACK_HOOK_APPROVED = "ROLLBACK_HOOK_APPROVED"
+ROLLBACK_HOOK_APPROVAL_EXPIRED = "ROLLBACK_HOOK_APPROVAL_EXPIRED"
+ROLLBACK_HOOK_APPROVAL_INVALIDATED = "ROLLBACK_HOOK_APPROVAL_INVALIDATED"
 PROMOTION_APPROVAL_EXPIRED: Literal["PROMOTION_APPROVAL_EXPIRED"] = (
     "PROMOTION_APPROVAL_EXPIRED"
 )
@@ -176,6 +185,14 @@ _PROMOTION_APPROVAL_EVENT_TYPES = frozenset(
         PROMOTION_APPROVED,
         PROMOTION_APPROVAL_EXPIRED,
         PROMOTION_APPROVAL_INVALIDATED,
+    }
+)
+_ROLLBACK_HOOK_APPROVAL_EVENT_TYPES = frozenset(
+    {
+        ROLLBACK_HOOK_APPROVAL_REQUESTED,
+        ROLLBACK_HOOK_APPROVED,
+        ROLLBACK_HOOK_APPROVAL_EXPIRED,
+        ROLLBACK_HOOK_APPROVAL_INVALIDATED,
     }
 )
 _NO_PLAN_DIGEST = canonical_json_digest(
@@ -3772,6 +3789,20 @@ class ExecutionLifecycleService:
             record = self._recover_approval_locked(execution_id, lock)
             machine = self._state_machine(execution_id, lock)
             record = machine.recover(lock=lock)
+            if record.current_state is ExecutionState.COMPLETED:
+                rollback_request = self._latest_rollback_hook_approval(
+                    self._storage.load_events(execution_id, lock=lock),
+                    execution_id,
+                )
+                if rollback_request is not None:
+                    return self._approve_rollback_hook_locked(
+                        execution_id=execution_id,
+                        record=record,
+                        request=rollback_request,
+                        approver=approver,
+                        comment=comment,
+                        lock=lock,
+                    )
             if record.current_state is ExecutionState.VERIFYING:
                 return self._approve_promotion_request_locked(
                     execution_id=execution_id,
@@ -3938,6 +3969,101 @@ class ExecutionLifecycleService:
             timestamp=decided_at,
             lock=lock,
         )
+
+    def _approve_rollback_hook_locked(
+        self,
+        *,
+        execution_id: str,
+        record: ExecutionRecord,
+        request: RollbackHookApproval,
+        approver: str,
+        comment: str | None,
+        lock: ExecutionLock,
+    ) -> ExecutionRecord:
+        manager = self._rollback_manager
+        if (
+            manager is None
+            or not manager.has_compensation_hook
+            or not manager.hook_destructive
+            or manager.hook_id is None
+        ):
+            raise RollbackLifecycleError(
+                "destructive rollback hook configuration is unavailable",
+                execution_id=execution_id,
+            )
+        events = self._storage.load_events(execution_id, lock=lock)
+        minimum = max(
+            record.updated_at,
+            events[-1].timestamp if events else record.updated_at,
+        )
+        decided_at = self._next_timestamp(minimum)
+        if (
+            request.status in {ApprovalStatus.PENDING, ApprovalStatus.APPROVED}
+            and decided_at >= request.expires_at
+        ):
+            expired = request.expire(decided_at=decided_at)
+            self._append_rollback_hook_approval_event(
+                execution_id,
+                ROLLBACK_HOOK_APPROVAL_EXPIRED,
+                expired,
+                timestamp=decided_at,
+                lock=lock,
+            )
+            raise RollbackLifecycleError(
+                "rollback hook approval expired before decision",
+                execution_id=execution_id,
+            )
+        if request.status is ApprovalStatus.APPROVED:
+            if request.approver_id == approver and request.comment == comment:
+                return record
+            raise ApprovalSubjectMismatchError(
+                "rollback hook request was approved by a different decision",
+                execution_id=execution_id,
+            )
+        if request.status is not ApprovalStatus.PENDING:
+            raise RollbackLifecycleError(
+                "rollback hook approval request is not pending",
+                execution_id=execution_id,
+            )
+        if (
+            request.execution_id != execution_id
+            or request.hook_id != manager.hook_id
+            or request.promotion_commit_sha != record.promotion_commit_sha
+        ):
+            invalidated = request.invalidate(
+                decided_at=decided_at,
+                reason="rollback_hook_subject_changed",
+            )
+            self._append_rollback_hook_approval_event(
+                execution_id,
+                ROLLBACK_HOOK_APPROVAL_INVALIDATED,
+                invalidated,
+                timestamp=decided_at,
+                lock=lock,
+            )
+            raise ApprovalSubjectMismatchError(
+                "rollback hook approval subject changed",
+                execution_id=execution_id,
+            )
+        try:
+            approved = request.approve(
+                approver_id=approver,
+                decided_at=decided_at,
+                comment=comment,
+            )
+        except RollbackError as exc:
+            raise ApprovalSubjectMismatchError(
+                "rollback hook approval decision is invalid",
+                execution_id=execution_id,
+            ) from exc
+        self._append_rollback_hook_approval_event(
+            execution_id,
+            ROLLBACK_HOOK_APPROVED,
+            approved,
+            timestamp=decided_at,
+            lock=lock,
+        )
+        return record
 
     def cancel(self, execution_id: str) -> ExecutionRecord:
         """Request cancellation, observe command quiescence, then enter CANCELLED."""
@@ -4232,11 +4358,120 @@ class ExecutionLifecycleService:
         finally:
             self._storage.release_execution_lock(lock)
 
-    def rollback(
+    def request_rollback_hook_approval(
         self,
         execution_id: str,
         *,
-        hook_approval_granted: bool = False,
+        reason: str,
+        expires_at: datetime,
+    ) -> RollbackHookApproval:
+        """Journal one request bound to the exact destructive hook attempt."""
+
+        manager = self._rollback_manager
+        if (
+            manager is None
+            or not manager.has_compensation_hook
+            or not manager.hook_destructive
+            or manager.hook_id is None
+        ):
+            raise RollbackLifecycleError(
+                "no destructive rollback hook is configured",
+                execution_id=execution_id,
+            )
+        if manager.hook_id not in manager.trust_boundary.hook_ids:
+            raise RollbackLifecycleError(
+                "destructive rollback hook is not allowlisted",
+                execution_id=execution_id,
+            )
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._state_machine(execution_id, lock).recover(lock=lock)
+            if record.current_state is not ExecutionState.COMPLETED:
+                raise RollbackLifecycleError(
+                    "rollback hook approval requires a completed execution",
+                    execution_id=execution_id,
+                )
+            if record.promotion_commit_sha is None:
+                raise RollbackLifecycleError(
+                    "completed execution has no canonical promotion commit",
+                    execution_id=execution_id,
+                )
+            events = self._storage.load_events(execution_id, lock=lock)
+            minimum = max(
+                record.updated_at,
+                events[-1].timestamp if events else record.updated_at,
+            )
+            requested_at = self._next_timestamp(minimum)
+            existing = self._latest_rollback_hook_approval(events, execution_id)
+            if existing is not None and existing.status in {
+                ApprovalStatus.PENDING,
+                ApprovalStatus.APPROVED,
+            }:
+                if requested_at >= existing.expires_at:
+                    expired = existing.expire(decided_at=requested_at)
+                    self._append_rollback_hook_approval_event(
+                        execution_id,
+                        ROLLBACK_HOOK_APPROVAL_EXPIRED,
+                        expired,
+                        timestamp=requested_at,
+                        lock=lock,
+                    )
+                    raise RollbackLifecycleError(
+                        "prior rollback hook approval expired; request again",
+                        execution_id=execution_id,
+                    )
+                if (
+                    existing.hook_id == manager.hook_id
+                    and existing.promotion_commit_sha == record.promotion_commit_sha
+                    and existing.reason == reason
+                    and existing.expires_at == expires_at
+                ):
+                    return existing
+                invalidated = existing.invalidate(
+                    decided_at=requested_at,
+                    reason="rollback_hook_subject_changed",
+                )
+                self._append_rollback_hook_approval_event(
+                    execution_id,
+                    ROLLBACK_HOOK_APPROVAL_INVALIDATED,
+                    invalidated,
+                    timestamp=requested_at,
+                    lock=lock,
+                )
+                raise RollbackLifecycleError(
+                    "prior rollback hook approval was invalidated; request again",
+                    execution_id=execution_id,
+                )
+            try:
+                request = RollbackHookApproval.pending(
+                    execution_id=execution_id,
+                    hook_id=manager.hook_id,
+                    rollback_attempt_id=f"rollback-attempt-{uuid.uuid4().hex}",
+                    promotion_commit_sha=record.promotion_commit_sha,
+                    reason=reason,
+                    requested_at=requested_at,
+                    expires_at=expires_at,
+                )
+            except (RollbackError, ValueError) as exc:
+                raise RollbackLifecycleError(
+                    "rollback hook approval request is invalid",
+                    execution_id=execution_id,
+                ) from exc
+            self._append_rollback_hook_approval_event(
+                execution_id,
+                ROLLBACK_HOOK_APPROVAL_REQUESTED,
+                request,
+                timestamp=requested_at,
+                lock=lock,
+            )
+            return request
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def rollback(
+        self,
+        execution_id: str,
     ) -> ExecutionRecord:
         """Revert the recorded promotion once and publish the canonical final state."""
 
@@ -4280,6 +4515,19 @@ class ExecutionLifecycleService:
                     "completed execution has no canonical promotion commit",
                     execution_id=execution_id,
                 )
+            events = self._storage.load_events(execution_id, lock=lock)
+            hook_approval = self._approved_rollback_hook_attempt(
+                execution_id=execution_id,
+                record=record,
+                events=events,
+                manager=manager,
+                lock=lock,
+            )
+            rollback_attempt_id = (
+                hook_approval.rollback_attempt_id
+                if hook_approval is not None
+                else f"rollback-attempt-{uuid.uuid4().hex}"
+            )
             decided_at = self._next_timestamp(record.updated_at)
             decision_id = f"rollback-decision-{uuid.uuid4().hex}"
             self._append_operational_event(
@@ -4288,9 +4536,13 @@ class ExecutionLifecycleService:
                 {
                     "decision_id": decision_id,
                     "fencing_token": lock.fencing_token,
-                    "hook_approval_granted": hook_approval_granted,
+                    "hook_approval_subject_digest": (
+                        None if hook_approval is None else hook_approval.subject_digest
+                    ),
+                    "hook_id": manager.hook_id,
                     "original_branch": record.original_branch,
                     "promotion_commit_sha": record.promotion_commit_sha,
+                    "rollback_attempt_id": rollback_attempt_id,
                 },
                 timestamp=decided_at,
                 lock=lock,
@@ -4304,9 +4556,11 @@ class ExecutionLifecycleService:
             )
             try:
                 result = manager.rollback(
+                    execution_id=execution_id,
+                    rollback_attempt_id=rollback_attempt_id,
                     promotion_commit_sha=record.promotion_commit_sha,
                     original_branch=record.original_branch,
-                    hook_approval_granted=hook_approval_granted,
+                    hook_approval=hook_approval,
                 )
             except RollbackError as exc:
                 result = RollbackResult(
@@ -4355,6 +4609,154 @@ class ExecutionLifecycleService:
             )
         finally:
             self._storage.release_execution_lock(lock)
+
+    def _approved_rollback_hook_attempt(
+        self,
+        *,
+        execution_id: str,
+        record: ExecutionRecord,
+        events: tuple[ExecutionEvent, ...],
+        manager: RollbackManager,
+        lock: ExecutionLock,
+    ) -> RollbackHookApproval | None:
+        if not manager.has_compensation_hook or not manager.hook_destructive:
+            return None
+        request = self._latest_rollback_hook_approval(events, execution_id)
+        if request is None:
+            raise RollbackLifecycleError(
+                "destructive rollback hook requires a prior bound approval request",
+                execution_id=execution_id,
+            )
+        minimum = max(
+            record.updated_at,
+            events[-1].timestamp if events else record.updated_at,
+        )
+        now = self._next_timestamp(minimum)
+        if request.status is ApprovalStatus.APPROVED and now >= request.expires_at:
+            expired = request.expire(decided_at=now)
+            self._append_rollback_hook_approval_event(
+                execution_id,
+                ROLLBACK_HOOK_APPROVAL_EXPIRED,
+                expired,
+                timestamp=now,
+                lock=lock,
+            )
+            raise RollbackLifecycleError(
+                "rollback hook approval expired before the effect",
+                execution_id=execution_id,
+            )
+        if (
+            request.status is not ApprovalStatus.APPROVED
+            or request.execution_id != execution_id
+            or request.hook_id != manager.hook_id
+            or request.promotion_commit_sha != record.promotion_commit_sha
+        ):
+            raise RollbackLifecycleError(
+                "destructive rollback hook approval is absent or does not match",
+                execution_id=execution_id,
+            )
+        return request
+
+    @staticmethod
+    def _latest_rollback_hook_approval(
+        events: tuple[ExecutionEvent, ...],
+        execution_id: str,
+    ) -> RollbackHookApproval | None:
+        observed_attempt_ids: set[str] = set()
+        latest: RollbackHookApproval | None = None
+        expected_status = {
+            ROLLBACK_HOOK_APPROVAL_REQUESTED: ApprovalStatus.PENDING,
+            ROLLBACK_HOOK_APPROVED: ApprovalStatus.APPROVED,
+            ROLLBACK_HOOK_APPROVAL_EXPIRED: ApprovalStatus.EXPIRED,
+            ROLLBACK_HOOK_APPROVAL_INVALIDATED: ApprovalStatus.INVALIDATED,
+        }
+        for event in events:
+            if event.event_type not in _ROLLBACK_HOOK_APPROVAL_EVENT_TYPES:
+                continue
+            raw = event.payload.get("approval")
+            if type(raw) is not dict:
+                raise ApprovalLifecycleIntegrityError(
+                    "rollback hook approval event is invalid",
+                    execution_id=execution_id,
+                )
+            try:
+                approval = RollbackHookApproval.model_validate_json(
+                    canonical_json_object(raw)
+                )
+            except (TypeError, ValueError) as exc:
+                raise ApprovalLifecycleIntegrityError(
+                    "rollback hook approval event is invalid",
+                    execution_id=execution_id,
+                ) from exc
+            if (
+                approval.execution_id != execution_id
+                or approval.status is not expected_status[event.event_type]
+            ):
+                raise ApprovalLifecycleIntegrityError(
+                    "rollback hook approval event identity diverges",
+                    execution_id=execution_id,
+                )
+            if approval.status is ApprovalStatus.PENDING:
+                if (
+                    approval.rollback_attempt_id in observed_attempt_ids
+                    or (
+                        latest is not None
+                        and latest.status
+                        not in {
+                            ApprovalStatus.EXPIRED,
+                            ApprovalStatus.INVALIDATED,
+                        }
+                    )
+                ):
+                    raise ApprovalLifecycleIntegrityError(
+                        "rollback hook approval request overlaps a live attempt",
+                        execution_id=execution_id,
+                    )
+                observed_attempt_ids.add(approval.rollback_attempt_id)
+            else:
+                allowed_transitions = {
+                    ApprovalStatus.PENDING: {
+                        ApprovalStatus.APPROVED,
+                        ApprovalStatus.EXPIRED,
+                        ApprovalStatus.INVALIDATED,
+                    },
+                    ApprovalStatus.APPROVED: {
+                        ApprovalStatus.EXPIRED,
+                        ApprovalStatus.INVALIDATED,
+                    },
+                }
+                if (
+                    latest is None
+                    or latest.rollback_attempt_id != approval.rollback_attempt_id
+                    or latest.subject_digest != approval.subject_digest
+                    or approval.status not in allowed_transitions.get(latest.status, set())
+                ):
+                    raise ApprovalLifecycleIntegrityError(
+                        "rollback hook approval history is divergent",
+                        execution_id=execution_id,
+                    )
+            latest = approval
+        return latest
+
+    def _append_rollback_hook_approval_event(
+        self,
+        execution_id: str,
+        event_type: str,
+        approval: RollbackHookApproval,
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        return self._append_operational_event(
+            execution_id,
+            event_type,
+            {
+                "approval": approval.model_dump(mode="json"),
+                "fencing_token": lock.fencing_token,
+            },
+            timestamp=timestamp,
+            lock=lock,
+        )
 
     def status(self, execution_id: str) -> ExecutionStatusView:
         """Return a redaction-safe canonical execution status."""
@@ -5409,6 +5811,10 @@ __all__ = [
     "PROMOTION_STARTED",
     "ROLLBACK_BLOCKED",
     "ROLLBACK_COMPLETED",
+    "ROLLBACK_HOOK_APPROVAL_EXPIRED",
+    "ROLLBACK_HOOK_APPROVAL_INVALIDATED",
+    "ROLLBACK_HOOK_APPROVAL_REQUESTED",
+    "ROLLBACK_HOOK_APPROVED",
     "ROLLBACK_POLICY_DECIDED",
     "WORKTREE_CLEANUP_BLOCKED",
     "WORKTREE_CLEANUP_COMPLETED",

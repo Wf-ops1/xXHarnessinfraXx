@@ -369,6 +369,28 @@ def test_cli_resume_approve_cancel_status_and_inspect_are_canonical_and_redacted
     assert ("rollback", "exec-cli-runtime") in fake.calls
 
 
+def test_cli_rollback_returns_nonzero_when_compensation_is_blocked(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+
+    def blocked_rollback(execution_id: str):
+        fake.calls.append(("rollback", execution_id))
+        return SimpleNamespace(current_state=ExecutionState.BLOCKED_ROLLBACK)
+
+    fake.rollback = blocked_rollback  # type: ignore[method-assign]
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        result = runner.invoke(main, ["rollback", "exec-cli-runtime"])
+
+    assert result.exit_code != 0
+    assert "BLOCKED_ROLLBACK" in result.output
+    assert "Rollback de" not in result.output
+    assert fake.calls == [("rollback", "exec-cli-runtime")]
+
+
 def test_cli_help_lists_resume_approve_cancel_status_and_inspect() -> None:
     result = CliRunner().invoke(main, ["--help"])
 
