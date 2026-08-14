@@ -99,12 +99,15 @@ Limitações importantes:
 - a F5.2 pré-autoriza cada lote por role/node/workflow/trust/tool/operação/path/aprovação, aplica
   default-deny e persiste a regra antes do efeito; o outcome fica ligado pelo digest da decisão;
 - o `ToolRouter` operacional revalida a decisão, mas não é construído automaticamente pelo lifecycle;
-- a trust boundary F5.3 está promovida/reconciliada; a F5.4 local aplica o mesmo snapshot antes da
-  reserva durável, e aprovação vinculada ao conteúdo permanece F5.6;
+- a trust boundary F5.3 e o budget F5.4 estão promovidos/reconciliados; a F5.6 local cria a aprovação
+  de promoção somente após candidate + full suite e liga artifact/plano/diff/SHA/gates no mesmo
+  `approval-request.json`;
 - planejamento, nós/modelos, tools e verificação compartilham o ledger F5.4 persistido; excesso leva
   a `FAILED_BUDGET_EXCEEDED`, e `status`/`inspect` derivam o saldo do mesmo journal;
-- promoção F3.7 usa candidate/cherry-pick reais quando explicitamente injetada; a indexação Python é real e commit-bound e a F4.3 consome seu snapshot,
-  mas o lifecycle ainda não executa `harness index` automaticamente;
+- promoção F3.7 usa candidate/cherry-pick reais quando explicitamente injetada; a F5.6 recompõe o
+  subject imediatamente antes do Git e persiste `INVALIDATED`/`EXPIRED` sem efeito em mismatch;
+  a indexação Python é real e commit-bound e a F4.3 consome seu snapshot, mas o lifecycle ainda não
+  executa `harness index` automaticamente;
 - o worktree Git existe como primitiva, mas ainda não é criado/injetado nessa sequência.
 
 ## Fluxo de verificação

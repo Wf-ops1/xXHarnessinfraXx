@@ -34,6 +34,11 @@
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.6-content-bound-approval`, somente local e sem upstream |
 | **Checkpoint F5.6** | `checkpoint/f5.6-ready`, commit documental do gate, somente local |
+| **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
+| **Implementação F5.6** | request canônico pós-candidate/gates, diff digest, decisão/expiração/invalidação journaled e guard pré-Git |
+| **Matriz focada F5.6** | `47 passed em 187.74s`; node insuficiente, mismatch, expiry, tamper, CAS/recovery e Git real |
+| **Regressão F5.6** | `885 passed, 5 skipped, 6 subtests passed em 557.95s` |
+| **Quality/distribuição F5.6** | mypy 104 arquivos, Ruff, compileall, diff-check, wheel 0.1.0 e smoke oficial uv 0.12.3 verdes |
 | **Branch de produto preservada** | `task/f5.5-secrets-redaction`, remota e não removida |
 | **Main sincronizada** | `main == origin/main == daec37d119fced3a5e041c412ab01e7524c15800` antes da branch F5.6; origin confirmado por `ls-remote` |
 | **Reconciliação F5.4** | PR [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60), head `7613460`, merge `2f4e391bfe3588f713a436b051d4f60e970e4df1` |
@@ -70,15 +75,16 @@ recertificação integral e reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Existe um único executor/escritor: `Codex`. A F5.6 foi nominalmente autorizada e seu gate documental
-foi validado. Produto só pode ser alterado depois de materializar o commit e a tag local
-`checkpoint/f5.6-ready`, dentro da allowlist congelada.
+Existe um único executor/escritor: `Codex`. O checkpoint `checkpoint/f5.6-ready` foi materializado em
+`161e1c26eb0aad6b81e25ebdcda4f12519486ba4` antes do produto. A implementação permanece restrita à
+allowlist congelada; nenhuma publicação foi autorizada.
 
 ## 5. Tarefa ativa
 
-A F5.6 possui problema reproduzido, baseline válido `32 passed`, escopo/aceite/rollback congelados e
-gate documental `37 passed, 6 subtests passed`. O checkpoint local `checkpoint/f5.6-ready` delimita
-a primeira alteração de produto.
+A F5.6 possui problema reproduzido, checkpoint READY anterior ao produto e implementação validada.
+Contrato/E2E `47 passed`; regressão `885 passed, 5 skipped, 6 subtests passed`; documentação/ledger,
+mypy, Ruff, compileall, diff-check, wheel e smoke isolado verdes. Commit local de produto, repetição
+build/smoke pós-commit e certificação documental final ainda pendem.
 
 ## 6. Bloqueios e fronteiras externas
 
@@ -89,8 +95,8 @@ force-push/bypass não estão autorizados.
 ## 7. Próxima ação exata
 
 ```text
-MATERIALIZAR COMMIT E CHECKPOINT LOCAL READY DA F5.6.
-DEPOIS IMPLEMENTAR SOMENTE A ALLOWLIST E OS CRITÉRIOS CONGELADOS.
+VALIDAR AS SENTINELAS DOCUMENTAIS F5.6 E CRIAR O COMMIT LOCAL DE PRODUTO.
+RECONSTRUIR/TESTAR A WHEEL NO COMMIT EXATO E SÓ ENTÃO CERTIFICAR LOCALMENTE.
 NÃO PUBLICAR BRANCH, PR OU TAGS REMOTAS.
 ```
 
@@ -103,4 +109,4 @@ NÃO PUBLICAR BRANCH, PR OU TAGS REMOTAS.
 
 ---
 
-*Atualizado em: 2026-08-14T10:46:38-03:00 | Fonte: gate F5.6 validado + baseline daec37d/CI 31771169636 + dossiê ativo*
+*Atualizado em: 2026-08-14T11:37:10-03:00 | Fonte: F5.6 full 885/5 + quality/build/smoke verdes + dossiê ativo*

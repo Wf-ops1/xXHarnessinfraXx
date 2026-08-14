@@ -44,6 +44,12 @@ from ai_engineering_harness.contracts.policies import (
 )
 from ai_engineering_harness.core.config import ConfigResolutionError, ConfigResolver
 from ai_engineering_harness.governance import (
+    ApprovalContent,
+    ApprovalContractError,
+    ApprovalGateResult,
+    ApprovalManager,
+    ApprovalPersistenceError,
+    ApprovalRequest,
     BudgetError,
     BudgetLedger,
     BudgetLimits,
@@ -127,6 +133,16 @@ CANDIDATE_COMMIT_RECORDED: Literal["CANDIDATE_COMMIT_RECORDED"] = "CANDIDATE_COM
 PROMOTION_STARTED: Literal["PROMOTION_STARTED"] = "PROMOTION_STARTED"
 PROMOTION_COMPLETED: Literal["PROMOTION_COMPLETED"] = "PROMOTION_COMPLETED"
 PROMOTION_DRY_RUN_RECORDED: Literal["PROMOTION_DRY_RUN_RECORDED"] = "PROMOTION_DRY_RUN_RECORDED"
+PROMOTION_APPROVAL_REQUESTED: Literal["PROMOTION_APPROVAL_REQUESTED"] = (
+    "PROMOTION_APPROVAL_REQUESTED"
+)
+PROMOTION_APPROVED: Literal["PROMOTION_APPROVED"] = "PROMOTION_APPROVED"
+PROMOTION_APPROVAL_EXPIRED: Literal["PROMOTION_APPROVAL_EXPIRED"] = (
+    "PROMOTION_APPROVAL_EXPIRED"
+)
+PROMOTION_APPROVAL_INVALIDATED: Literal["PROMOTION_APPROVAL_INVALIDATED"] = (
+    "PROMOTION_APPROVAL_INVALIDATED"
+)
 _CONTEXT_POLICY_REFERENCE = "policies/context_sufficiency.yaml"
 _TOOL_POLICY_REFERENCE = "policies/tool_policy.yaml"
 _VERIFICATION_POLICY_REFERENCE = "policies/verification_policy.yaml"
@@ -135,6 +151,17 @@ _RETRY_COST_POLICY_REFERENCE = "policies/retry_cost_policy.yaml"
 _DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 _APPROVAL_EVENT_TYPES = frozenset({APPROVAL_REQUESTED, EXECUTION_APPROVED, APPROVAL_INVALIDATED})
+_PROMOTION_APPROVAL_EVENT_TYPES = frozenset(
+    {
+        PROMOTION_APPROVAL_REQUESTED,
+        PROMOTION_APPROVED,
+        PROMOTION_APPROVAL_EXPIRED,
+        PROMOTION_APPROVAL_INVALIDATED,
+    }
+)
+_NO_PLAN_DIGEST = canonical_json_digest(
+    canonical_json_object({"plan": "not-applicable"})
+)
 _VERIFICATION_EVENT_TYPES = frozenset(
     {
         VERIFICATION_GATE_STARTED,
@@ -204,6 +231,10 @@ class ApprovalSubjectMismatchError(ExecutionLifecycleError):
 
 class ApprovalLifecycleIntegrityError(ExecutionLifecycleError):
     """Approval events and the execution snapshot cannot be reconciled."""
+
+
+class PromotionApprovalRequiredError(ExecutionLifecycleError):
+    """Promotion has no current approved content-bound request."""
 
 
 class ExecutionCancellationError(ExecutionLifecycleError):
@@ -423,6 +454,7 @@ class ExecutionLifecycleService:
         )
         self._verification_worktree_provider = verification_worktree_provider
         self._promotion_manager = promotion_manager
+        self._approval_manager = ApprovalManager(self.project_root)
         self._graph_executor = GraphExecutor(
             storage,
             executors,
@@ -774,11 +806,6 @@ class ExecutionLifecycleService:
                     "promotion requires the VERIFYING or recoverable PROMOTING state",
                     execution_id=execution_id,
                 )
-            if record.approval_status is not ApprovalStatus.APPROVED:
-                raise PromotionLifecyclePrerequisiteError(
-                    "promotion requires canonical APPROVED status",
-                    execution_id=execution_id,
-                )
             try:
                 candidate = manager.load_candidate(execution_id)
             except PromotionError as exc:
@@ -787,18 +814,115 @@ class ExecutionLifecycleService:
                     execution_id=execution_id,
                 ) from exc
             self._validate_candidate_identity(candidate, record, execution_id)
-            self._require_passing_candidate_suite(
-                execution_id=execution_id,
-                artifact=artifact,
-                candidate=candidate,
-                lock=lock,
-            )
-
             events = self._storage.load_events(execution_id, lock=lock)
             last_timestamp = max(
                 record.updated_at,
                 events[-1].timestamp if events else record.updated_at,
             )
+            request = self._latest_promotion_approval(events, execution_id)
+            if (
+                request is None
+                or request.status is not ApprovalStatus.APPROVED
+                or record.approval_status is not ApprovalStatus.APPROVED
+            ):
+                raise PromotionApprovalRequiredError(
+                    "promotion requires an approved content-bound request",
+                    execution_id=execution_id,
+                )
+            observed_at = self._next_timestamp(last_timestamp)
+            if observed_at >= request.expires_at:
+                expired = request.expire(decided_at=observed_at)
+                self._commit_promotion_approval_transition(
+                    record=record,
+                    request=expired,
+                    event_type=PROMOTION_APPROVAL_EXPIRED,
+                    timestamp=observed_at,
+                    lock=lock,
+                )
+                raise PromotionApprovalRequiredError(
+                    "promotion approval expired before the Git effect",
+                    execution_id=execution_id,
+                )
+            try:
+                bound_identity_matches = (
+                    request.execution_id == execution_id
+                    and request.artifact_digest == record.artifact_digest
+                    and request.plan_digest
+                    == self._promotion_plan_digest(execution_id, events)
+                    and request.candidate_commit_sha == candidate.candidate_commit_sha
+                    and request.diff_digest == manager.candidate_diff_digest(candidate)
+                )
+            except (PromotionError, ValueError) as exc:
+                raise PromotionApprovalRequiredError(
+                    "current promotion identity cannot be proven",
+                    execution_id=execution_id,
+                ) from exc
+            if not bound_identity_matches:
+                invalidated = request.invalidate(
+                    decided_at=observed_at,
+                    reason="approval_content_changed",
+                )
+                self._commit_promotion_approval_transition(
+                    record=record,
+                    request=invalidated,
+                    event_type=PROMOTION_APPROVAL_INVALIDATED,
+                    timestamp=observed_at,
+                    lock=lock,
+                )
+                raise PromotionApprovalRequiredError(
+                    "promotion identity changed after approval",
+                    execution_id=execution_id,
+                )
+            try:
+                self._require_passing_candidate_suite(
+                    execution_id=execution_id,
+                    artifact=artifact,
+                    candidate=candidate,
+                    lock=lock,
+                )
+            except PromotionLifecyclePrerequisiteError as exc:
+                invalidated = request.invalidate(
+                    decided_at=observed_at,
+                    reason="approval_gates_changed",
+                )
+                self._commit_promotion_approval_transition(
+                    record=record,
+                    request=invalidated,
+                    event_type=PROMOTION_APPROVAL_INVALIDATED,
+                    timestamp=observed_at,
+                    lock=lock,
+                )
+                raise PromotionApprovalRequiredError(
+                    "promotion gates changed after approval",
+                    execution_id=execution_id,
+                ) from exc
+            try:
+                current_content = self._current_promotion_approval_content(
+                    execution_id=execution_id,
+                    record=record,
+                    lock=lock,
+                )
+            except (PromotionError, ValueError) as exc:
+                raise PromotionApprovalRequiredError(
+                    "current promotion content cannot be proven",
+                    execution_id=execution_id,
+                ) from exc
+            if current_content != request.content():
+                invalidated = request.invalidate(
+                    decided_at=observed_at,
+                    reason="approval_content_changed",
+                )
+                self._commit_promotion_approval_transition(
+                    record=record,
+                    request=invalidated,
+                    event_type=PROMOTION_APPROVAL_INVALIDATED,
+                    timestamp=observed_at,
+                    lock=lock,
+                )
+                raise PromotionApprovalRequiredError(
+                    "promotion content changed after approval",
+                    execution_id=execution_id,
+                )
             if dry_run:
                 already_recorded = any(
                     event.event_type == PROMOTION_DRY_RUN_RECORDED
@@ -1006,7 +1130,7 @@ class ExecutionLifecycleService:
         artifact: CompiledGraphArtifact,
         candidate: CandidateCommit,
         lock: ExecutionLock,
-    ) -> None:
+    ) -> _VerificationAttempt:
         policy_context = self._resolved_verification_policy(artifact)
         if policy_context is None:
             raise PromotionLifecyclePrerequisiteError(
@@ -1038,6 +1162,7 @@ class ExecutionLifecycleService:
                 "promotion requires the latest full suite to pass on the candidate SHA",
                 execution_id=execution_id,
             )
+        return latest
 
     def _recover_promotion_fields_locked(
         self,
@@ -1045,6 +1170,7 @@ class ExecutionLifecycleService:
         lock: ExecutionLock,
     ) -> ExecutionRecord:
         record = self._storage.load_execution(execution_id, lock=lock)
+        events = self._storage.load_events(execution_id, lock=lock)
         latest_candidate: tuple[str, str] | None = None
         latest_promotion: str | None = None
         pending: tuple[ExecutionEvent, str, str | None] | None = None
@@ -1056,7 +1182,7 @@ class ExecutionLifecycleService:
             PROMOTION_COMPLETED,
             PROMOTION_DRY_RUN_RECORDED,
         }
-        for event in self._storage.load_events(execution_id, lock=lock):
+        for event in events:
             if event.event_type not in promotion_types:
                 continue
             payload = event.payload
@@ -3460,7 +3586,100 @@ class ExecutionLifecycleService:
     def _is_trimmed_string(value: object) -> bool:
         return type(value) is str and bool(value.strip()) and value == value.strip()
 
-    def approve(self, execution_id: str, *, approver: str) -> ExecutionRecord:
+    def request_promotion_approval(
+        self,
+        execution_id: str,
+        *,
+        reason: str,
+        expires_at: datetime,
+    ) -> ApprovalRequest:
+        """Persist one pending request over the exact promotable content."""
+
+        self._required_promotion_manager(execution_id)
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._recover_promotion_fields_locked(execution_id, lock)
+            record = self._state_machine(execution_id, lock).recover(lock=lock)
+            if record.current_state is not ExecutionState.VERIFYING:
+                raise PromotionApprovalRequiredError(
+                    "promotion approval requires the VERIFYING state",
+                    execution_id=execution_id,
+                )
+            events = self._storage.load_events(execution_id, lock=lock)
+            minimum = max(
+                record.updated_at,
+                events[-1].timestamp if events else record.updated_at,
+            )
+            requested_at = self._next_timestamp(minimum)
+            try:
+                content = self._current_promotion_approval_content(
+                    execution_id=execution_id,
+                    record=record,
+                    lock=lock,
+                )
+                request = ApprovalRequest.pending(
+                    content=content,
+                    reason=reason,
+                    requested_at=requested_at,
+                    expires_at=expires_at,
+                )
+            except (ApprovalContractError, PromotionError, ValueError) as exc:
+                raise PromotionApprovalRequiredError(
+                    "promotion approval request inputs are invalid",
+                    execution_id=execution_id,
+                ) from exc
+
+            existing = self._latest_promotion_approval(events, execution_id)
+            if existing is not None and existing.status in {
+                ApprovalStatus.PENDING,
+                ApprovalStatus.APPROVED,
+            }:
+                if (
+                    existing.content() == request.content()
+                    and existing.reason == request.reason
+                    and existing.expires_at == request.expires_at
+                ):
+                    return existing
+                invalidated_at = self._next_timestamp(requested_at)
+                invalidated = existing.invalidate(
+                    decided_at=invalidated_at,
+                    reason="approval_content_changed",
+                )
+                self._commit_promotion_approval_transition(
+                    record=record,
+                    request=invalidated,
+                    event_type=PROMOTION_APPROVAL_INVALIDATED,
+                    timestamp=invalidated_at,
+                    lock=lock,
+                )
+                raise PromotionApprovalRequiredError(
+                    "prior promotion approval was invalidated; request the current content again",
+                    execution_id=execution_id,
+                )
+            self._commit_promotion_approval_transition(
+                record=record,
+                request=request,
+                event_type=PROMOTION_APPROVAL_REQUESTED,
+                timestamp=requested_at,
+                lock=lock,
+            )
+            return request
+        except StateStorageError as exc:
+            raise ApprovalLifecycleIntegrityError(
+                "promotion approval request could not be persisted or recovered",
+                execution_id=execution_id,
+            ) from exc
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def approve(
+        self,
+        execution_id: str,
+        *,
+        approver: str,
+        comment: str | None = None,
+    ) -> ExecutionRecord:
         """Approve exactly the currently paused immutable subject."""
         if type(approver) is not str or not approver.strip() or approver != approver.strip():
             raise ApprovalSubjectMismatchError(
@@ -3472,9 +3691,22 @@ class ExecutionLifecycleService:
             record = self._recover_approval_locked(execution_id, lock)
             machine = self._state_machine(execution_id, lock)
             record = machine.recover(lock=lock)
+            if record.current_state is ExecutionState.VERIFYING:
+                return self._approve_promotion_request_locked(
+                    execution_id=execution_id,
+                    record=record,
+                    approver=approver,
+                    comment=comment,
+                    lock=lock,
+                )
             if record.current_state != ExecutionState.PAUSED_AWAITING_APPROVAL:
                 raise ApprovalSubjectMismatchError(
                     "execution is not paused for approval",
+                    execution_id=execution_id,
+                )
+            if comment is not None:
+                raise ApprovalSubjectMismatchError(
+                    "workflow-node approval does not accept a promotion comment",
                     execution_id=execution_id,
                 )
             bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
@@ -3538,6 +3770,94 @@ class ExecutionLifecycleService:
         finally:
             self._storage.release_execution_lock(lock)
 
+    def _approve_promotion_request_locked(
+        self,
+        *,
+        execution_id: str,
+        record: ExecutionRecord,
+        approver: str,
+        comment: str | None,
+        lock: ExecutionLock,
+    ) -> ExecutionRecord:
+        events = self._storage.load_events(execution_id, lock=lock)
+        request = self._latest_promotion_approval(events, execution_id)
+        if request is None:
+            raise PromotionApprovalRequiredError(
+                "promotion approval request is missing",
+                execution_id=execution_id,
+            )
+        if request.status is ApprovalStatus.APPROVED:
+            if request.approver_id == approver and request.comment == comment:
+                return record
+            raise ApprovalSubjectMismatchError(
+                "promotion request was approved by a different decision",
+                execution_id=execution_id,
+            )
+        if request.status is not ApprovalStatus.PENDING:
+            raise PromotionApprovalRequiredError(
+                "promotion approval request is not pending",
+                execution_id=execution_id,
+            )
+        decided_at = self._next_timestamp(record.updated_at)
+        if decided_at >= request.expires_at:
+            expired = request.expire(decided_at=decided_at)
+            self._commit_promotion_approval_transition(
+                record=record,
+                request=expired,
+                event_type=PROMOTION_APPROVAL_EXPIRED,
+                timestamp=decided_at,
+                lock=lock,
+            )
+            raise PromotionApprovalRequiredError(
+                "promotion approval request expired before decision",
+                execution_id=execution_id,
+            )
+        try:
+            current = self._current_promotion_approval_content(
+                execution_id=execution_id,
+                record=record,
+                lock=lock,
+            )
+        except (PromotionError, ValueError) as exc:
+            raise PromotionApprovalRequiredError(
+                "current promotion content cannot be proven",
+                execution_id=execution_id,
+            ) from exc
+        if current != request.content():
+            invalidated = request.invalidate(
+                decided_at=decided_at,
+                reason="approval_content_changed",
+            )
+            self._commit_promotion_approval_transition(
+                record=record,
+                request=invalidated,
+                event_type=PROMOTION_APPROVAL_INVALIDATED,
+                timestamp=decided_at,
+                lock=lock,
+            )
+            raise ApprovalSubjectMismatchError(
+                "promotion content changed after the request",
+                execution_id=execution_id,
+            )
+        try:
+            approved = request.approve(
+                approver_id=approver,
+                decided_at=decided_at,
+                comment=comment,
+            )
+        except ApprovalContractError as exc:
+            raise ApprovalSubjectMismatchError(
+                "promotion approval decision is invalid",
+                execution_id=execution_id,
+            ) from exc
+        return self._commit_promotion_approval_transition(
+            record=record,
+            request=approved,
+            event_type=PROMOTION_APPROVED,
+            timestamp=decided_at,
+            lock=lock,
+        )
+
     def cancel(self, execution_id: str) -> ExecutionRecord:
         """Transition a cancelable execution to the final CANCELLED state."""
         lock = self._acquire(execution_id)
@@ -3558,33 +3878,52 @@ class ExecutionLifecycleService:
                 ApprovalStatus.PENDING,
                 ApprovalStatus.APPROVED,
             }:
-                request = self._latest_approval_request(execution_id, lock)
                 timestamp = self._next_timestamp(record.updated_at)
-                target_revision = record.revision + 1
-                self._append_lifecycle_event(
+                promotion_request = self._latest_promotion_approval(
+                    self._storage.load_events(execution_id, lock=lock),
                     execution_id,
-                    APPROVAL_INVALIDATED,
-                    {
-                        "fencing_token": lock.fencing_token,
-                        "node_id": request["node_id"],
-                        "reason": "execution_cancelled",
-                        "record_revision": target_revision,
-                        "subject_digest": request["subject_digest"],
-                    },
-                    timestamp=timestamp,
-                    lock=lock,
                 )
-                record = self._storage.compare_and_set_execution(
-                    execution_id,
-                    record.revision,
-                    self._approval_replacement(
-                        record,
-                        status=ApprovalStatus.INVALIDATED,
-                        revision=target_revision,
-                        updated_at=timestamp,
-                    ),
-                    lock=lock,
-                )
+                if promotion_request is not None and promotion_request.status in {
+                    ApprovalStatus.PENDING,
+                    ApprovalStatus.APPROVED,
+                }:
+                    record = self._commit_promotion_approval_transition(
+                        record=record,
+                        request=promotion_request.invalidate(
+                            decided_at=timestamp,
+                            reason="execution_cancelled",
+                        ),
+                        event_type=PROMOTION_APPROVAL_INVALIDATED,
+                        timestamp=timestamp,
+                        lock=lock,
+                    )
+                else:
+                    request = self._latest_approval_request(execution_id, lock)
+                    target_revision = record.revision + 1
+                    self._append_lifecycle_event(
+                        execution_id,
+                        APPROVAL_INVALIDATED,
+                        {
+                            "fencing_token": lock.fencing_token,
+                            "node_id": request["node_id"],
+                            "reason": "execution_cancelled",
+                            "record_revision": target_revision,
+                            "subject_digest": request["subject_digest"],
+                        },
+                        timestamp=timestamp,
+                        lock=lock,
+                    )
+                    record = self._storage.compare_and_set_execution(
+                        execution_id,
+                        record.revision,
+                        self._approval_replacement(
+                            record,
+                            status=ApprovalStatus.INVALIDATED,
+                            revision=target_revision,
+                            updated_at=timestamp,
+                        ),
+                        lock=lock,
+                    )
             return machine.transition_to(
                 ExecutionState.CANCELLED,
                 node_id=record.current_node_id,
@@ -3785,12 +4124,326 @@ class ExecutionLifecycleService:
         finally:
             self._storage.release_execution_lock(lock)
 
+    def _current_promotion_approval_content(
+        self,
+        *,
+        execution_id: str,
+        record: ExecutionRecord,
+        lock: ExecutionLock,
+    ) -> ApprovalContent:
+        manager = self._required_promotion_manager(execution_id)
+        bundle = self._storage.load_execution_bundle(execution_id, lock=lock)
+        artifact = MAFAdapter.validate_snapshot(
+            bundle.artifact_json,
+            expected_digest=record.artifact_digest,
+        )
+        candidate = manager.load_candidate(execution_id)
+        self._validate_candidate_identity(candidate, record, execution_id)
+        attempt = self._require_passing_candidate_suite(
+            execution_id=execution_id,
+            artifact=artifact,
+            candidate=candidate,
+            lock=lock,
+        )
+        if len(attempt.suite.gate_results) != len(attempt.gate_result_digests):
+            raise ApprovalLifecycleIntegrityError(
+                "verification gate results and digests diverge",
+                execution_id=execution_id,
+            )
+        gate_results = tuple(
+            ApprovalGateResult(
+                gate_id=result.gate_id,
+                required=result.required,
+                status=result.status.value,
+                result_digest=result_digest,
+            )
+            for result, result_digest in zip(
+                attempt.suite.gate_results,
+                attempt.gate_result_digests,
+                strict=True,
+            )
+        )
+        return ApprovalContent(
+            execution_id=execution_id,
+            artifact_digest=record.artifact_digest,
+            plan_digest=self._promotion_plan_digest(
+                execution_id,
+                self._storage.load_events(execution_id, lock=lock),
+            ),
+            diff_digest=manager.candidate_diff_digest(candidate),
+            candidate_commit_sha=candidate.candidate_commit_sha,
+            gate_results=gate_results,
+            verification_suite_digest=attempt.suite_digest,
+        )
+
+    def _promotion_plan_digest(
+        self,
+        execution_id: str,
+        events: tuple[ExecutionEvent, ...],
+    ) -> str:
+        digests: list[str] = []
+        for event in events:
+            if event.event_type != PLAN_GENERATED:
+                continue
+            digest = event.payload.get("plan_digest")
+            if type(digest) is not str or _DIGEST_PATTERN.fullmatch(digest) is None:
+                raise ApprovalLifecycleIntegrityError(
+                    "persisted plan digest is invalid for approval",
+                    execution_id=execution_id,
+                )
+            digests.append(digest)
+        if not digests:
+            return _NO_PLAN_DIGEST
+        if len(set(digests)) != 1:
+            raise ApprovalLifecycleIntegrityError(
+                "promotion approval observed multiple plan identities",
+                execution_id=execution_id,
+            )
+        return digests[-1]
+
+    def _commit_promotion_approval_transition(
+        self,
+        *,
+        record: ExecutionRecord,
+        request: ApprovalRequest,
+        event_type: Literal[
+            "PROMOTION_APPROVAL_REQUESTED",
+            "PROMOTION_APPROVED",
+            "PROMOTION_APPROVAL_EXPIRED",
+            "PROMOTION_APPROVAL_INVALIDATED",
+        ],
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionRecord:
+        expected_status = {
+            PROMOTION_APPROVAL_REQUESTED: ApprovalStatus.PENDING,
+            PROMOTION_APPROVED: ApprovalStatus.APPROVED,
+            PROMOTION_APPROVAL_EXPIRED: ApprovalStatus.EXPIRED,
+            PROMOTION_APPROVAL_INVALIDATED: ApprovalStatus.INVALIDATED,
+        }[event_type]
+        if request.status is not expected_status or request.execution_id != record.execution_id:
+            raise ApprovalLifecycleIntegrityError(
+                "promotion approval transition payload is inconsistent",
+                execution_id=record.execution_id,
+            )
+        target_revision = record.revision + 1
+        self._append_promotion_approval_event(
+            record.execution_id,
+            event_type,
+            {
+                "fencing_token": lock.fencing_token,
+                "record_revision": target_revision,
+                "request": request.model_dump(mode="json"),
+            },
+            timestamp=timestamp,
+            lock=lock,
+        )
+        replacement = self._approval_replacement(
+            record,
+            status=request.status,
+            revision=target_revision,
+            updated_at=timestamp,
+        )
+        persisted = self._storage.compare_and_set_execution(
+            record.execution_id,
+            record.revision,
+            replacement,
+            lock=lock,
+        )
+        try:
+            self._approval_manager.publish(request)
+        except ApprovalPersistenceError as exc:
+            raise ApprovalLifecycleIntegrityError(
+                "approval projection could not be published after its durable event",
+                execution_id=record.execution_id,
+            ) from exc
+        return persisted
+
+    @staticmethod
+    def _latest_promotion_approval(
+        events: tuple[ExecutionEvent, ...],
+        execution_id: str,
+    ) -> ApprovalRequest | None:
+        requests: list[ApprovalRequest] = []
+        for event in events:
+            if event.event_type not in _PROMOTION_APPROVAL_EVENT_TYPES:
+                continue
+            payload = event.payload.get("request")
+            if type(payload) is not dict:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval event request is invalid",
+                    execution_id=execution_id,
+                )
+            try:
+                request = ApprovalRequest.model_validate_json(
+                    canonical_json_object(payload)
+                )
+            except (TypeError, ValueError, ValidationError) as exc:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval event request violates its contract",
+                    execution_id=execution_id,
+                ) from exc
+            if request.execution_id != execution_id:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval event belongs to another execution",
+                    execution_id=execution_id,
+                )
+            requests.append(request)
+        return requests[-1] if requests else None
+
+    def _recover_promotion_approval_locked(
+        self,
+        execution_id: str,
+        lock: ExecutionLock,
+        *,
+        record: ExecutionRecord,
+        events: tuple[ExecutionEvent, ...],
+    ) -> ExecutionRecord:
+        latest: ApprovalRequest | None = None
+        committed: ApprovalRequest | None = None
+        pending: tuple[ExecutionEvent, ApprovalRequest] | None = None
+        documents: list[str] = []
+        last_revision = -1
+        last_fencing_token = 0
+        for event in events:
+            if event.event_type not in _PROMOTION_APPROVAL_EVENT_TYPES:
+                continue
+            payload = event.payload
+            if set(payload) != {"fencing_token", "record_revision", "request"}:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval event shape is invalid",
+                    execution_id=execution_id,
+                )
+            request = self._latest_promotion_approval((event,), execution_id)
+            assert request is not None
+            expected_status = {
+                PROMOTION_APPROVAL_REQUESTED: ApprovalStatus.PENDING,
+                PROMOTION_APPROVED: ApprovalStatus.APPROVED,
+                PROMOTION_APPROVAL_EXPIRED: ApprovalStatus.EXPIRED,
+                PROMOTION_APPROVAL_INVALIDATED: ApprovalStatus.INVALIDATED,
+            }[event.event_type]
+            if request.status is not expected_status:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval event type and status diverge",
+                    execution_id=execution_id,
+                )
+            if event.timestamp != (
+                request.requested_at
+                if request.status is ApprovalStatus.PENDING
+                else request.decided_at
+            ):
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval event timestamp diverges from its request",
+                    execution_id=execution_id,
+                )
+            if latest is None:
+                if request.status is not ApprovalStatus.PENDING:
+                    raise ApprovalLifecycleIntegrityError(
+                        "promotion approval history must begin with a request",
+                        execution_id=execution_id,
+                    )
+            elif request.status is ApprovalStatus.PENDING:
+                if latest.status not in {
+                    ApprovalStatus.EXPIRED,
+                    ApprovalStatus.INVALIDATED,
+                }:
+                    raise ApprovalLifecycleIntegrityError(
+                        "new promotion request follows a live decision",
+                        execution_id=execution_id,
+                    )
+            elif (
+                latest.status not in {ApprovalStatus.PENDING, ApprovalStatus.APPROVED}
+                or request.subject_digest != latest.subject_digest
+                or request.content() != latest.content()
+                or request.reason != latest.reason
+                or request.requested_at != latest.requested_at
+                or request.expires_at != latest.expires_at
+            ):
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval decision does not match its request",
+                    execution_id=execution_id,
+                )
+            revision = self._require_integer(
+                payload["record_revision"],
+                execution_id,
+                minimum=1,
+            )
+            fencing_token = self._require_integer(
+                payload["fencing_token"],
+                execution_id,
+                minimum=1,
+            )
+            if revision <= last_revision or fencing_token <= last_fencing_token:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval revisions and fencing tokens must increase",
+                    execution_id=execution_id,
+                )
+            last_revision = revision
+            last_fencing_token = fencing_token
+            latest = request
+            documents.append(request.canonical_json())
+            if revision <= record.revision:
+                if pending is not None:
+                    raise ApprovalLifecycleIntegrityError(
+                        "committed promotion approval follows a pending transition",
+                        execution_id=execution_id,
+                    )
+                committed = request
+            else:
+                if pending is not None or revision != record.revision + 1:
+                    raise ApprovalLifecycleIntegrityError(
+                        "promotion approval is not the next recoverable revision",
+                        execution_id=execution_id,
+                    )
+                pending = (event, request)
+        if latest is None:
+            return record
+        if committed is not None and pending is None and record.approval_status is not committed.status:
+            raise ApprovalLifecycleIntegrityError(
+                "promotion approval snapshot diverges from committed history",
+                execution_id=execution_id,
+            )
+        if pending is not None:
+            event, request = pending
+            record = self._storage.compare_and_set_execution(
+                execution_id,
+                record.revision,
+                self._approval_replacement(
+                    record,
+                    status=request.status,
+                    revision=record.revision + 1,
+                    updated_at=event.timestamp,
+                ),
+                lock=lock,
+            )
+        try:
+            projection = self._approval_manager.load(execution_id)
+            if projection is None:
+                self._approval_manager.publish(latest)
+            elif projection.canonical_json() != latest.canonical_json():
+                if projection.canonical_json() not in documents:
+                    raise ApprovalLifecycleIntegrityError(
+                        "approval projection has no matching event history",
+                        execution_id=execution_id,
+                    )
+                self._approval_manager.publish(latest)
+        except ApprovalPersistenceError as exc:
+            raise ApprovalLifecycleIntegrityError(
+                "approval projection cannot be reconciled",
+                execution_id=execution_id,
+            ) from exc
+        return record
+
     def _recover_approval_locked(
         self,
         execution_id: str,
         lock: ExecutionLock,
     ) -> ExecutionRecord:
         record = self._storage.load_execution(execution_id, lock=lock)
+        events = self._storage.load_events(execution_id, lock=lock)
+        has_promotion_approval = any(
+            event.event_type in _PROMOTION_APPROVAL_EVENT_TYPES for event in events
+        )
         status = ApprovalStatus.NOT_REQUIRED
         committed_status = ApprovalStatus.NOT_REQUIRED
         active_subject: str | None = None
@@ -3799,7 +4452,7 @@ class ExecutionLifecycleService:
         last_fencing_token = 0
         pending: tuple[ExecutionEvent, ApprovalStatus] | None = None
         saw_event = False
-        for event in self._storage.load_events(execution_id, lock=lock):
+        for event in events:
             if event.event_type not in _APPROVAL_EVENT_TYPES:
                 continue
             saw_event = True
@@ -3902,12 +4555,31 @@ class ExecutionLifecycleService:
                 pending = (event, next_status)
 
         if not saw_event:
+            if has_promotion_approval:
+                return self._recover_promotion_approval_locked(
+                    execution_id,
+                    lock,
+                    record=record,
+                    events=events,
+                )
             if record.approval_status != ApprovalStatus.NOT_REQUIRED:
                 raise ApprovalLifecycleIntegrityError(
                     "approval status has no canonical event history",
                     execution_id=execution_id,
                 )
             return record
+        if has_promotion_approval:
+            if pending is not None:
+                raise ApprovalLifecycleIntegrityError(
+                    "promotion approval follows an unrecovered workflow approval",
+                    execution_id=execution_id,
+                )
+            return self._recover_promotion_approval_locked(
+                execution_id,
+                lock,
+                record=record,
+                events=events,
+            )
         if committed_status != record.approval_status:
             raise ApprovalLifecycleIntegrityError(
                 "approval snapshot does not match committed event history",
@@ -3982,6 +4654,35 @@ class ExecutionLifecycleService:
         except (TypeError, ValueError, ValidationError) as exc:
             raise ApprovalLifecycleIntegrityError(
                 "cannot construct a canonical lifecycle event",
+                execution_id=execution_id,
+            ) from exc
+        return self._storage.append_event(execution_id, event, lock=lock)
+
+    def _append_promotion_approval_event(
+        self,
+        execution_id: str,
+        event_type: Literal[
+            "PROMOTION_APPROVAL_REQUESTED",
+            "PROMOTION_APPROVED",
+            "PROMOTION_APPROVAL_EXPIRED",
+            "PROMOTION_APPROVAL_INVALIDATED",
+        ],
+        payload: dict[str, object],
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=event_type,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ApprovalLifecycleIntegrityError(
+                "cannot construct a canonical promotion approval event",
                 execution_id=execution_id,
             ) from exc
         return self._storage.append_event(execution_id, event, lock=lock)
@@ -4187,6 +4888,10 @@ __all__ = [
     "CANDIDATE_COMMIT_RECORDED",
     "CANDIDATE_COMMIT_STARTED",
     "EXECUTION_APPROVED",
+    "PROMOTION_APPROVAL_EXPIRED",
+    "PROMOTION_APPROVAL_INVALIDATED",
+    "PROMOTION_APPROVAL_REQUESTED",
+    "PROMOTION_APPROVED",
     "PROMOTION_COMPLETED",
     "PROMOTION_DRY_RUN_RECORDED",
     "PROMOTION_STARTED",
@@ -4201,6 +4906,7 @@ __all__ = [
     "ExecutionLifecycleError",
     "ExecutionLifecycleService",
     "ExecutionStatusView",
+    "PromotionApprovalRequiredError",
     "PromotionLifecycleBaseChangedError",
     "PromotionLifecycleError",
     "PromotionLifecycleIntegrityError",

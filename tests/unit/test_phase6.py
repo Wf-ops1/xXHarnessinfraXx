@@ -1,13 +1,18 @@
 """Testes unitários para a Fase 6 (Runtime, FSM, Approval e Migrations)."""
 
-import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
 from ai_engineering_harness.compiler.compiler import GraphCompiler
 from ai_engineering_harness.contracts.execution import ExecutionState
-from ai_engineering_harness.governance.approval import ApprovalManager
+from ai_engineering_harness.governance.approval import (
+    ApprovalContent,
+    ApprovalGateResult,
+    ApprovalManager,
+    ApprovalRequest,
+)
 from ai_engineering_harness.runtime.engine import (
     RuntimeEngine,
     RuntimeGraphConfigurationError,
@@ -60,14 +65,41 @@ def test_workflow_state_machine_transitions(tmp_path: Path):
     assert not state_file.exists()
 
 def test_approval_manager_flow(tmp_path: Path):
+    execution_id = "exec-222"
+    execution_directory = tmp_path / ".harness" / "state" / "executions" / execution_id
+    execution_directory.mkdir(parents=True)
     mgr = ApprovalManager(project_root=tmp_path)
-    req_file = mgr.create_approval_request("exec-222", "Precisa aprovação")
+    requested_at = datetime(2026, 8, 14, tzinfo=UTC)
+    request = ApprovalRequest.pending(
+        content=ApprovalContent(
+            execution_id=execution_id,
+            artifact_digest="sha256:" + "1" * 64,
+            plan_digest="sha256:" + "2" * 64,
+            diff_digest="sha256:" + "3" * 64,
+            candidate_commit_sha="4" * 40,
+            gate_results=(
+                ApprovalGateResult(
+                    gate_id="unit_test",
+                    required=True,
+                    status="PASSED",
+                    result_digest="sha256:" + "5" * 64,
+                ),
+            ),
+            verification_suite_digest="sha256:" + "6" * 64,
+        ),
+        reason="Precisa aprovação",
+        requested_at=requested_at,
+        expires_at=requested_at + timedelta(hours=1),
+    )
+    req_file = mgr.publish(request)
     assert req_file.is_file()
 
-    approved = mgr.approve("exec-222")
-    assert approved is True
-    data = json.loads(req_file.read_text(encoding="utf-8"))
-    assert data["status"] == "APPROVED"
+    approved = request.approve(
+        approver_id="phase6-reviewer",
+        decided_at=requested_at + timedelta(minutes=5),
+    )
+    mgr.publish(approved)
+    assert mgr.load(execution_id) == approved
 
 def test_runtime_engine_with_approval(tmp_path: Path):
     # Compilar grafo primeiro

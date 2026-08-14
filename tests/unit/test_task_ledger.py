@@ -932,6 +932,46 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "reload silencioso" in user_guide
 
 
+def test_f5_6_active_gate_binds_approval_to_the_exact_promotion_content() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.6.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+
+    assert (ACTIVE_ROOT / "F5.6.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "task/f5.6-content-bound-approval" in panel
+    assert "checkpoint/f5.6-ready" in dossier
+    assert "161e1c26eb0aad6b81e25ebdcda4f12519486ba4" in dossier
+    for field in (
+        "execution ID",
+        "artifact digest",
+        "plan digest",
+        "diff digest",
+        "candidate commit SHA",
+        "resultados dos gates",
+        "approver ID",
+        "timestamp da decisão",
+    ):
+        assert field in dossier
+    assert "approval-request.json" in dossier
+    assert "approval_request.json" in dossier
+    assert "INVALIDATED" in dossier
+    assert "EXPIRED" in dossier
+    assert "47 passed" in dossier
+    assert "885 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "uv 0.12.3" in dossier
+    assert "F5.7" in dossier
+    assert "F6" in dossier
+    assert "active/F5.6.md" in panel
+    assert "active/F5.6.md" in task_index
+    assert "885 passed, 5 skipped, 6 subtests passed" in readme
+    assert "Aprovação de promoção vinculada ao conteúdo F5.6" in user_guide
+    assert "não converte" in user_guide
+
+
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
     panel = _read(TASK_PANEL)
     rules = _read(AGENT_RULES)

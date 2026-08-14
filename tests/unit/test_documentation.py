@@ -76,7 +76,7 @@ def test_current_docs_recognize_f3_8_tools_without_claiming_lifecycle_integratio
     assert "ainda não constrói esse registry" in operating_model.casefold()
 
 
-def test_current_docs_explain_f5_2_without_claiming_later_trust_or_approval() -> None:
+def test_current_docs_separate_tool_policy_from_content_bound_promotion() -> None:
     readme = _read(ROOT / "README.md")
     lifecycle = _read(ROOT / "docs" / "agentic_lifecycle_audit.md")
     user_guide = _read(ROOT / "docs" / "user_guide.md")
@@ -91,6 +91,11 @@ def test_current_docs_explain_f5_2_without_claiming_later_trust_or_approval() ->
     assert "TOOL_CALLED" in user_guide
     assert "F5.3" in user_guide
     assert "F5.6" in user_guide
+    assert "Aprovação de promoção vinculada ao conteúdo F5.6" in user_guide
+    assert "approval-request.json" in user_guide
+    assert "INVALIDATED" in user_guide
+    assert "EXPIRED" in user_guide
+    assert "não converte" in user_guide
     assert "não é construído automaticamente" in walkthrough
 
 

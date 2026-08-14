@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import subprocess
@@ -151,6 +152,30 @@ class PromotionManager:
 
         worktree = self.worktree_manager.load_worktree(execution_id)
         return self._candidate_from_worktree(execution_id, worktree)
+
+    def candidate_diff_digest(self, candidate: CandidateCommit) -> str:
+        """Hash the exact binary-safe Git diff from execution base to candidate."""
+
+        self._validate_candidate(candidate)
+        result = self._run_git_bytes(
+            (
+                "diff",
+                "--binary",
+                "--full-index",
+                "--no-color",
+                "--no-ext-diff",
+                "--no-renames",
+                candidate.base_commit_sha,
+                candidate.candidate_commit_sha,
+                "--",
+            ),
+            cwd=self.project_root,
+        )
+        if not result.stdout:
+            raise PromotionPrerequisiteError(
+                "candidate diff is empty despite a changed candidate tree"
+            )
+        return "sha256:" + hashlib.sha256(result.stdout).hexdigest()
 
     def promote(
         self,
@@ -405,6 +430,43 @@ class PromotionManager:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
+                timeout=self.command_timeout_seconds,
+                env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+            )
+        except FileNotFoundError as exc:
+            raise PromotionCommandError("configured Git executable was not found") from exc
+        except subprocess.TimeoutExpired as exc:
+            raise PromotionCommandError("Git promotion command timed out") from exc
+        except OSError as exc:
+            raise PromotionCommandError("Git promotion command could not start") from exc
+        if result.returncode not in allowed_returncodes:
+            operation = " ".join(tuple(arguments)[:2])
+            raise PromotionCommandError(
+                f"Git operation {operation!r} failed with exit code {result.returncode}"
+            )
+        return result
+
+    def _run_git_bytes(
+        self,
+        arguments: Collection[str],
+        *,
+        cwd: Path,
+        allowed_returncodes: Collection[int] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
+        try:
+            self.trust_boundary.require_executable(self.git_executable)
+        except TrustCapabilityDeniedError as exc:
+            raise PromotionPrerequisiteError(
+                "Git executable is not allowed by the trust boundary"
+            ) from exc
+        try:
+            result = subprocess.run(
+                (self.git_executable, *arguments),
+                cwd=cwd,
+                check=False,
+                shell=False,
+                capture_output=True,
+                text=False,
                 timeout=self.command_timeout_seconds,
                 env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
             )
