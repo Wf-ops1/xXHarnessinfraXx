@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from ai_engineering_harness.contracts.execution import ExecutionRecord
 from ai_engineering_harness.verification import VerificationSuiteResult
+from ai_engineering_harness.workspace import WorktreeReference
 
 from .execution_lifecycle import (
     ExecutionInspection,
@@ -19,6 +21,7 @@ from .graph_executor import (
     GraphExecutor,
 )
 from .maf_adapter import MAFAdapter
+from .rollback_manager import RollbackHookApproval
 
 
 class RuntimeGraphConfigurationError(GraphExecutionError):
@@ -134,6 +137,30 @@ class RuntimeEngine:
     def cancel_execution(self) -> ExecutionRecord:
         """Cancel the configured execution under its lifecycle lock."""
         return self._require_lifecycle().cancel(self.execution_id)
+
+    def cleanup_execution_worktree(self) -> WorktreeReference:
+        """Explicitly remove the clean external worktree without deleting its branch."""
+
+        return self._require_lifecycle().cleanup_worktree(self.execution_id)
+
+    def request_rollback_hook_approval(
+        self,
+        *,
+        reason: str,
+        expires_at: datetime,
+    ) -> RollbackHookApproval:
+        """Request approval for the exact configured destructive rollback hook."""
+
+        return self._require_lifecycle().request_rollback_hook_approval(
+            self.execution_id,
+            reason=reason,
+            expires_at=expires_at,
+        )
+
+    def rollback_execution(self) -> ExecutionRecord:
+        """Revert the exact promotion commit recorded for this execution."""
+
+        return self._require_lifecycle().rollback(self.execution_id)
 
     def status_execution(self) -> ExecutionStatusView:
         """Return the canonical status view."""

@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import io
 import os
 import subprocess
 import sys
 import time
+from collections.abc import Sequence
 from dataclasses import FrozenInstanceError
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from ai_engineering_harness.security import PathGuard, PathOutsideRootError, PathTraversalError
 from ai_engineering_harness.tools.adapters import (
+    CommandExecutionError,
     CommandRequest,
     CommandValidationError,
     EnvironmentNotAllowedError,
@@ -21,6 +25,54 @@ from ai_engineering_harness.tools.adapters import (
     TerminalAdapter,
     TerminalConfigurationError,
 )
+
+
+class _BindingFailureController:
+    def __init__(self) -> None:
+        self.finished: list[tuple[str, str, int | None]] = []
+
+    @property
+    def is_cancelled(self) -> bool:
+        return False
+
+    def command_started(self, argv: Sequence[str]) -> str:
+        assert tuple(argv) == ("python", "-V")
+        return "command-binding-failure"
+
+    def command_spawned(self, command_id: str, *, pid: int) -> None:
+        assert command_id == "command-binding-failure"
+        assert pid == 1234
+        raise RuntimeError("controlled binding failure")
+
+    def command_finished(
+        self,
+        command_id: str,
+        *,
+        outcome: str,
+        exit_code: int | None,
+    ) -> None:
+        self.finished.append((command_id, outcome, exit_code))
+
+
+class _AmbiguousProcess:
+    pid = 1234
+    returncode: int | None = None
+
+    def __init__(self) -> None:
+        self.stdout = io.BytesIO()
+        self.stderr = io.BytesIO()
+
+    def wait(self, *, timeout: float) -> int:
+        raise AssertionError("wait must not run after termination could not be proven")
+
+
+class _AmbiguousTree:
+    def terminate(self, process: _AmbiguousProcess) -> None:
+        assert process.pid == 1234
+        raise OSError("controlled termination failure")
+
+    def close(self) -> None:
+        return None
 
 
 def _controlled_environment(**extra: str) -> dict[str, str]:
@@ -44,6 +96,34 @@ def _adapter(root: Path, **environment: str) -> TerminalAdapter:
 
 def _base_environment_names(adapter_environment: dict[str, str]) -> tuple[str, ...]:
     return tuple(adapter_environment)
+
+
+def test_binding_failure_keeps_cancellation_slot_when_quiescence_is_ambiguous(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    adapter = _adapter(tmp_path)
+    controller = _BindingFailureController()
+    process = _AmbiguousProcess()
+    tree = _AmbiguousTree()
+    monkeypatch.setattr(
+        TerminalAdapter,
+        "_spawn",
+        staticmethod(lambda **_: SimpleNamespace(process=process, tree=tree)),
+    )
+
+    with pytest.raises(CommandExecutionError, match="quiescence is ambiguous") as captured:
+        adapter.execute(
+            CommandRequest(
+                argv=("python", "-V"),
+                cwd=".",
+                cancellation=controller,
+            )
+        )
+
+    assert isinstance(captured.value.__cause__, OSError)
+    assert process.returncode is None
+    assert controller.finished == []
 
 
 def test_request_is_normalized_immutable_and_rejects_ambiguous_values() -> None:

@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -14,8 +15,10 @@ from pydantic import JsonValue
 
 from ai_engineering_harness.governance import PolicyEngine, ToolPolicyRequest, ToolPolicyRule
 from ai_engineering_harness.models import ToolCall
+from ai_engineering_harness.runtime import CancellationController
 from ai_engineering_harness.security import PathGuard
 from ai_engineering_harness.tools import (
+    ToolExecutionCancelledError,
     ToolPayloadValidationError,
     ToolUnauthorizedError,
     ToolUnavailableError,
@@ -222,9 +225,38 @@ def test_run_command_keeps_metacharacters_literal_and_returns_json(tmp_path: Pat
 
     assert isinstance(result, dict)
     assert result["exit_code"] == 0
+    assert result["cancelled"] is False
     assert str(result["stdout"]).strip() == literal
     assert not marker.exists()
     assert json.loads(json.dumps(result)) == result
+
+
+def test_run_command_uses_execution_cancellation_and_surfaces_typed_failure(
+    tmp_path: Path,
+) -> None:
+    execution_id = "exec-operational-cancel"
+    (tmp_path / ".harness" / "state" / "executions" / execution_id).mkdir(
+        parents=True
+    )
+    controller = CancellationController(tmp_path, execution_id)
+    controller.request(
+        decision_id="decision-operational-cancel",
+        requested_at=datetime.now(UTC),
+    )
+    local, terminal, _ = _adapters(tmp_path)
+    router = build_operational_tool_router(
+        ["run_command"],
+        local_adapter=local,
+        terminal_adapter=terminal,
+        cancellation=controller,
+    )
+
+    with pytest.raises(ToolExecutionCancelledError, match="was cancelled"):
+        _dispatch(
+            router,
+            "run_command",
+            {"argv": ["python", "-V"], "cwd": "."},
+        )
 
 
 def test_git_handlers_are_fixed_read_only_argv_over_the_confined_repo(tmp_path: Path) -> None:

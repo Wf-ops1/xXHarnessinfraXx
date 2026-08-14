@@ -15,7 +15,12 @@ from ai_engineering_harness.security import (
 )
 from ai_engineering_harness.tools.adapters.local_editing import LocalEditingAdapter
 from ai_engineering_harness.tools.adapters.serena import SerenaAdapter
-from ai_engineering_harness.tools.adapters.terminal import CommandRequest, CommandResult, TerminalAdapter
+from ai_engineering_harness.tools.adapters.terminal import (
+    CommandCancellation,
+    CommandRequest,
+    CommandResult,
+    TerminalAdapter,
+)
 from ai_engineering_harness.tools.router import ToolDefinition, ToolRegistration, ToolRouter
 
 _SERENA_EDIT_TOOLS = (
@@ -33,6 +38,7 @@ def build_operational_tool_router(
     terminal_adapter: TerminalAdapter | None = None,
     serena_adapter: SerenaAdapter | None = None,
     trust_boundary: TrustEvaluationResult | None = None,
+    cancellation: CommandCancellation | None = None,
 ) -> ToolRouter:
     """Build an explicit registry; missing optional backends remain unavailable."""
 
@@ -61,7 +67,13 @@ def build_operational_tool_router(
             raise ValueError("terminal and local adapters must share the same PathGuard instance")
         if terminal_adapter.trust_boundary != boundary:
             raise ValueError("terminal and tool router must share the same trust boundary")
-        registrations.update(_terminal_registrations(terminal_adapter, local_adapter))
+        registrations.update(
+            _terminal_registrations(
+                terminal_adapter,
+                local_adapter,
+                cancellation=cancellation,
+            )
+        )
 
     if serena_adapter is not None:
         if not isinstance(serena_adapter, SerenaAdapter):
@@ -161,6 +173,8 @@ def _local_registrations(adapter: LocalEditingAdapter) -> dict[str, ToolRegistra
 def _terminal_registrations(
     terminal: TerminalAdapter,
     local: LocalEditingAdapter,
+    *,
+    cancellation: CommandCancellation | None,
 ) -> dict[str, ToolRegistration]:
     return {
         "run_command": _registration(
@@ -184,7 +198,7 @@ def _terminal_registrations(
                 },
                 required=("argv", "cwd"),
             ),
-            lambda payload: _run_command(terminal, payload),
+            lambda payload: _run_command(terminal, payload, cancellation),
             operation="execute",
             path_argument="cwd",
         ),
@@ -192,7 +206,7 @@ def _terminal_registrations(
             "git_status",
             "Inspect the confined worktree status through a fixed read-only Git argv.",
             _object_schema({}),
-            lambda payload: _git_status(terminal, payload),
+            lambda payload: _git_status(terminal, payload, cancellation),
             operation="status",
             path_argument="cwd",
             default_path=".",
@@ -201,7 +215,7 @@ def _terminal_registrations(
             "git_diff",
             "Inspect a confined worktree diff through a fixed read-only Git argv.",
             _object_schema({"path": _path_schema()}),
-            lambda payload: _git_diff(terminal, local, payload),
+            lambda payload: _git_diff(terminal, local, payload, cancellation),
             operation="diff",
             path_argument="path",
             default_path=".",
@@ -254,22 +268,32 @@ def _apply_patch(adapter: LocalEditingAdapter, payload: dict[str, JsonValue]) ->
     }
 
 
-def _run_command(terminal: TerminalAdapter, payload: dict[str, JsonValue]) -> JsonValue:
+def _run_command(
+    terminal: TerminalAdapter,
+    payload: dict[str, JsonValue],
+    cancellation: CommandCancellation | None,
+) -> JsonValue:
     request = CommandRequest(
         argv=cast(list[str], payload["argv"]),
         cwd=cast(str, payload["cwd"]),
         timeout_seconds=cast(float, payload.get("timeout_seconds", 30.0)),
         env_allowlist=cast(list[str], payload.get("env_allowlist", [])),
         max_output_bytes=cast(int, payload.get("max_output_bytes", 1_000_000)),
+        cancellation=cancellation,
     )
     return _command_result(terminal.execute(request))
 
 
-def _git_status(terminal: TerminalAdapter, payload: dict[str, JsonValue]) -> JsonValue:
+def _git_status(
+    terminal: TerminalAdapter,
+    payload: dict[str, JsonValue],
+    cancellation: CommandCancellation | None,
+) -> JsonValue:
     del payload
     request = CommandRequest(
         argv=("git", "--no-pager", "status", "--short", "--branch", "--untracked-files=all"),
         cwd=".",
+        cancellation=cancellation,
     )
     return _command_result(terminal.execute(request))
 
@@ -278,12 +302,15 @@ def _git_diff(
     terminal: TerminalAdapter,
     local: LocalEditingAdapter,
     payload: dict[str, JsonValue],
+    cancellation: CommandCancellation | None,
 ) -> JsonValue:
     argv = ["git", "--no-pager", "diff", "--no-ext-diff", "--no-color", "--"]
     if "path" in payload:
         guarded = local.path_guard.guard_read(cast(str, payload["path"]))
         argv.append(guarded.relative_path)
-    return _command_result(terminal.execute(CommandRequest(argv=argv, cwd=".")))
+    return _command_result(
+        terminal.execute(CommandRequest(argv=argv, cwd=".", cancellation=cancellation))
+    )
 
 
 def _serena_edit(adapter: SerenaAdapter, payload: dict[str, JsonValue]) -> JsonValue:
@@ -310,6 +337,7 @@ def _command_result(result: CommandResult) -> JsonValue:
         "stdout": result.stdout,
         "stderr": result.stderr,
         "timed_out": result.timed_out,
+        "cancelled": result.cancelled,
         "stdout_truncated": result.stdout_truncated,
         "stderr_truncated": result.stderr_truncated,
     }

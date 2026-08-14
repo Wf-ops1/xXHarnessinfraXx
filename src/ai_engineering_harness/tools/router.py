@@ -25,6 +25,7 @@ from ai_engineering_harness.security import (
     TrustEvaluationResult,
 )
 from ai_engineering_harness.security.redaction import Redactor
+from ai_engineering_harness.tools.adapters.terminal import CommandCancelledError
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ToolHandler = Callable[[dict[str, JsonValue]], JsonValue]
@@ -48,6 +49,10 @@ class ToolPayloadValidationError(ToolRouterError):
 
 class ToolExecutionError(ToolRouterError):
     """An operational tool handler failed without exposing its raw exception."""
+
+
+class ToolExecutionCancelledError(ToolExecutionError):
+    """An operational command was cancelled after its process tree was reaped."""
 
 
 class ToolDefinition(BaseModel):
@@ -225,6 +230,10 @@ class ToolRouter:
             return _copy_json_value(cast(JsonValue, projected))
         except ToolRouterError:
             raise
+        except CommandCancelledError as exc:
+            raise ToolExecutionCancelledError(
+                f"tool {tool_name} was cancelled"
+            ) from exc
         except Exception as exc:
             safe_type = Redactor.redact_text(type(exc).__name__)
             raise ToolExecutionError(f"tool {tool_name} failed: {safe_type}") from exc
@@ -346,6 +355,7 @@ def _copy_json_value(value: object) -> JsonValue:
 __all__ = [
     "ToolDefinition",
     "ToolDispatchTarget",
+    "ToolExecutionCancelledError",
     "ToolExecutionError",
     "ToolPayloadValidationError",
     "ToolRegistration",

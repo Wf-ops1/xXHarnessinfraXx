@@ -25,6 +25,8 @@ from .serena import (
     SerenaTransport,
 )
 from .terminal import (
+    CommandCancellation,
+    CommandCancelledError,
     CommandExecutionError,
     CommandRequest,
     CommandResult,
@@ -38,6 +40,8 @@ from .terminal import (
 )
 
 __all__ = [
+    "CommandCancellation",
+    "CommandCancelledError",
     "CommandExecutionError",
     "CommandRequest",
     "CommandResult",

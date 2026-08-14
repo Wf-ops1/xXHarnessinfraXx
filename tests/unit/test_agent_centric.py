@@ -294,23 +294,24 @@ def test_runtime_no_longer_runs_fixed_post_verification_sequence(tmp_path: Path)
     assert not evidence_file.exists()
 
 
-def test_rollback_does_not_alter_audit_journal(tmp_path: Path):
+def test_legacy_nonpromoted_rollback_path_cannot_claim_success(tmp_path: Path):
     audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-rollback-audit")
     audit.log_event("STEP_1", {"data": "ok"})
     
     initial_content = audit.journal_file.read_text(encoding="utf-8")
-    
+
     rb_mgr = RollbackManager(project_root=tmp_path)
-    rb_mgr.execute_rollback("exec-rollback-audit", is_promoted=False)
-    
-    new_content = audit.journal_file.read_text(encoding="utf-8")
-    assert initial_content in new_content
+    assert not hasattr(rb_mgr, "execute_rollback")
+    assert audit.journal_file.read_text(encoding="utf-8") == initial_content
 
 
-def test_audit_append_only_after_rollback(tmp_path: Path):
+def test_rollback_manager_does_not_create_a_parallel_audit_journal(tmp_path: Path):
     rb_mgr = RollbackManager(project_root=tmp_path)
-    rb_mgr.execute_rollback("exec-rollback-integrity", is_promoted=False)
-    
-    audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-rollback-integrity")
-    is_valid, _ = audit.verify_integrity()
-    assert is_valid is True
+    assert not hasattr(rb_mgr, "execute_rollback")
+    assert not (
+        tmp_path
+        / ".harness"
+        / "state"
+        / "executions"
+        / "exec-rollback-integrity"
+    ).exists()

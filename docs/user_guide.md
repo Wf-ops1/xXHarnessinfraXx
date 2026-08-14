@@ -39,9 +39,11 @@ uv run python -m build
 | `harness inspect <id>` | Exibe digests, eventos, aprovação e saldo por execução/nó sem secrets | Implementado como inspeção local; não usa contador paralelo de apresentação |
 | `harness approve <id>` | Aprova a pausa de node ou uma solicitação de promoção já criada e ligada ao conteúdo | A CLI não cria candidate/request automaticamente; promoção opt-in usa a API canônica e continua separada |
 | `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Não aceita perfil/override novo nem relê configuração viva; depende dos mesmos backends explicitamente injetados |
+| `harness cancel <id>` | Publica decisão/pedido duráveis, interrompe comando operacional vinculado e reconcilia `CANCELLED` após quiescência | Não remove worktree; a tool/terminal precisa ter sido composta com o controlador da mesma execução |
+| `harness cleanup-worktree <id>` | Remove explicitamente o worktree ativo, limpo e no HEAD esperado | Nunca usa force nem apaga branch; worktree sujo ou divergente é recusado |
 | `harness verify <execution_id> [--project-id <id>]` | Carrega o `ProvisionedWorktree`, detecta configuração e executa a suíte canônica compilada | F4.5–F4.8 bloqueiam pré-requisito inválido, persistem resultados commit-bound e exigem targeted → full após reparo; worktree/provider ainda precisam existir |
 | `harness audit <id>` | Verifica/exporta o diário local | Implementação local; não prova efeitos reais |
-| `harness rollback <id>` | Registra compensação e possui caminho Git legado | Não usar em repo valioso; não está ligado ao worktree/terminal tipado nem reexecuta gates |
+| `harness rollback <id>` | Reverte por argv o `promotion_commit_sha` canônico e verifica o novo SHA/parent/worktree | Exige execução `COMPLETED`, raiz/branch/trust exatas e checkout limpo; conflito faz abort e termina `BLOCKED_ROLLBACK`; ainda não reexecuta gates |
 
 ## Configuração efetiva F5.1
 
@@ -226,6 +228,37 @@ terminar antes da decisão ou promoção, persiste `EXPIRED`. Tamper, evento/CAS
 histórico falham fechados. Nenhum desses casos executa `cherry-pick`. Uma nova tentativa exige nova
 solicitação e nova decisão sobre o conteúdo corrente.
 
+## Cancelamento, cleanup e rollback F5.7
+
+> **Estado corrente:** o reparo R3 está `COMPLETED_LOCAL / PROMOTION_PENDING`. A recertificação local
+> comprovou Git transitivo bloqueado, aprovação de hook ligada, erro CLI não zero em bloqueio e reap
+> fail-closed; a capacidade ainda não foi publicada e permanece restrita a repositórios descartáveis.
+
+O cancelamento usa arquivos de controle duráveis por execução. `cancellation-policy.json` registra a
+decisão antes de `cancellation-request.json` e antes do sinal. Isso permite interromper uma tool mesmo
+quando o `GraphExecutor` já mantém o lock canônico. O `TerminalAdapter` encerra somente o Windows Job
+ou process group criado para aquele comando, reapera o processo e devolve stdout/stderr já limitados
+e redigidos. Depois da quiescência, o lifecycle adquire o lock, invalida a aprovação e reconcilia o
+journal; só então o estado público vira `CANCELLED`. `resume` recusa primeiro o pedido durável, então
+um crash não reabre a aprovação.
+
+Cancelamento nunca remove o worktree. Use `harness cleanup-worktree <id>` como ação separada; ela
+exige vínculo da execução, worktree ativo, limpo e no HEAD esperado e delega ao manager não forçado.
+
+`harness rollback <id>` não recebe SHA nem `--promoted`. O lifecycle exige `COMPLETED` e usa somente
+o `promotion_commit_sha` persistido. O manager valida raiz, branch, trust, ancestralidade e limpeza,
+nega drivers/filtros/fsmonitor executáveis definidos pelo repositório, seleciona ambiente mínimo,
+desabilita hooks/signing e executa `git revert --no-edit <sha>` com `shell=False`. Sucesso requer exit
+zero, novo SHA completo, parent igual ao HEAD anterior e worktree limpo. Em conflito, somente
+`git revert --abort` é permitido; a execução termina `BLOCKED_ROLLBACK` e não tenta um segundo revert
+se o resultado for ambíguo. Hook de produto é injetável/allowlisted e continua default-deny; efeito
+destrutivo exige request/decisão durável ligada à execução, hook, promotion SHA e tentativa de
+rollback. Estado bloqueado retorna erro CLI sem símbolo de sucesso.
+
+Essas APIs estão recertificadas somente na branch local e não tornam o protótipo seguro para um repositório valioso:
+a composição automática de provider/tools/worktree e os gates pós-reversão/evidence recovery
+permanecem pendentes.
+
 ## Teste controlado de `init`
 
 Crie um repositório descartável e execute o binário instalado pelo ambiente do clone. Confirme os
@@ -240,7 +273,7 @@ commitado.
 - ligação automática entre worktree Git, guard e registry operacional;
 - promoção por candidate commit e cherry-pick;
 - execução E2E autônoma que use a retomada persistida com backends operacionais;
-- rollback seguro e gates pós-reversão;
+- gates pós-reversão e evidence/recovery abrangente;
 - doctor confiável.
 - composição automática de worktree, provider e tools no lifecycle padrão; o E2E F4.8 usa
   dependências explicitamente injetadas.
