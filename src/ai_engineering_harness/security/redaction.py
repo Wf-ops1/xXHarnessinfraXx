@@ -71,7 +71,8 @@ class Redactor:
     )
     _assignment_pattern: ClassVar[re.Pattern[str]] = re.compile(
         r"(?i)(?P<prefix>\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|token)"
-        r"\b\s*[:=]\s*)(?P<quote>[\"']?)(?P<value>[^\"'\s,;}]+)(?P=quote)"
+        r"\b\s*[:=]\s*)(?:(?P<quote>[\"'])(?P<quoted_value>[^\r\n]*?)"
+        r"(?P=quote)|(?P<value>[^\"'\s,;}]+))"
     )
     _header_pattern: ClassVar[re.Pattern[str]] = re.compile(
         r"(?im)^(?P<prefix>[ \t]*(?:authorization|proxy-authorization|cookie|set-cookie|"
@@ -114,8 +115,8 @@ class Redactor:
         )
         redacted = cls._assignment_pattern.sub(
             lambda match: (
-                f"{match.group('prefix')}{match.group('quote')}"
-                f"[REDACTED_SECRET]{match.group('quote')}"
+                f"{match.group('prefix')}{match.group('quote') or ''}"
+                f"[REDACTED_SECRET]{match.group('quote') or ''}"
             ),
             redacted,
         )

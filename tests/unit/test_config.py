@@ -172,6 +172,36 @@ def test_redacted_projection_is_required_for_persisted_configuration(
         resolver.validate_persisted(tampered)
 
 
+def test_project_camel_pascal_and_acronym_secret_keys_are_redacted(
+    tmp_path: Path,
+) -> None:
+    resolver = ConfigResolver(tmp_path)
+    sensitive_keys = (
+        "apiKey",
+        "APIKey",
+        "deployToken",
+        "PrivateKey",
+        "servicePassword",
+        "accessToken",
+    )
+    controlled_value = "credential-visible-value"
+
+    effective = resolver.resolve(
+        cli_overrides={
+            "project": {
+                **{key: controlled_value for key in sensitive_keys},
+                "publicMetadata": "safe",
+            }
+        }
+    )
+
+    project = effective["project"]
+    assert all(project[key] == "[REDACTED_SECRET]" for key in sensitive_keys)
+    assert project["publicMetadata"] == "safe"
+    assert controlled_value not in repr(project)
+    assert resolver.validate_persisted(effective) == effective
+
+
 def test_api_key_environment_reference_is_not_treated_as_a_secret(
     tmp_path: Path,
 ) -> None:

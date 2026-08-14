@@ -244,7 +244,11 @@ def redact_configuration(value: object) -> object:
 
 
 def _is_sensitive_key(raw_key: str) -> bool:
-    normalized = raw_key.casefold().replace("-", "_")
+    # Keep configuration redaction consistent across snake_case, kebab-case,
+    # camelCase, PascalCase and acronym-prefixed public document keys.
+    normalized = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", raw_key)
+    normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", normalized)
+    normalized = normalized.casefold().replace("-", "_")
     if normalized.endswith("_env"):
         return False
     return normalized in _SENSITIVE_KEY_NAMES or any(
