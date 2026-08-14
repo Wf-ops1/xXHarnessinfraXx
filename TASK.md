@@ -32,6 +32,7 @@
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T22:21:27-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `docs/promote-f5.5`, local e sem upstream |
+| **Checkpoint administrativo** | `73be828a6e4e813e9370eac7f4289179c7f05d79`, reconciliação local validada |
 | **Branch de produto preservada** | `task/f5.5-secrets-redaction`, remota e não removida |
 | **Main sincronizada** | `main == origin/main == 2227b73131d405cde046c58ec83094889a3feb51` antes da branch administrativa |
 | **Reconciliação F5.4** | PR [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60), head `7613460`, merge `2f4e391bfe3588f713a436b051d4f60e970e4df1` |
@@ -102,4 +103,4 @@ NÃO PUBLICAR, MESCLAR, REMOVER REFS, PUBLICAR TAGS OU INICIAR F5.6 POR INFERÊN
 
 ---
 
-*Atualizado em: 2026-08-14T01:28:30-03:00 | Fonte: F5.5 + PR #61/31765166979 + merge 2227b73 + pós-merge 31769631054*
+*Atualizado em: 2026-08-14T01:36:12-03:00 | Fonte: F5.5 + PR #61/31765166979 + merge 2227b73 + pós-merge 31769631054 + reconciliação 73be828*

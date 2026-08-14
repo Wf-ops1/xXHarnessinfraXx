@@ -892,6 +892,8 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "31765166979" in dossier
     assert "2227b73131d405cde046c58ec83094889a3feb51" in dossier
     assert "31769631054" in dossier
+    assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in dossier
+    assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in panel
     assert "RedactionContext" in dossier
     assert "'split_dynamic_secret_leaks': True" in dossier
     assert "'unscoped_runtime_redaction_leaks': True" in dossier
