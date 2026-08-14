@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.6 estão promovidas; a F5.7 está em reparo local R3 após revisão negativa. Configuração efetiva, policy default-deny, trust boundary, budget, redaction e aprovação ligada ao conteúdo controlam suas fronteiras promovidas | Cancelamento/rollback R3 precisa bloquear Git transitivo, ligar aprovação de hook e remover falso sucesso CLI antes de nova certificação | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.6 estão promovidas; a F5.7 R3 foi corrigida e recertificada localmente. Configuração efetiva, policy default-deny, trust boundary, budget, redaction e aprovações ligadas ao conteúdo controlam as fronteiras | Publicação da F5.7 ainda exige autorização/CI; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 local persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -50,7 +50,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`; policy vazia/duplicada/desconhecida e runner `0/0` falham antes de subprocessos. A F4.6 promovida resolve a suíte no `ProvisionedWorktree`; a F4.7 promovida persiste resultados commit-bound e guarda `COMPLETED`. A F4.8 promovida consome somente essa reprovação, agenda o corretor compilado e exige targeted → full com limites de nó, execução, tokens, custo e tempo | O E2E F4.8 injeta backend e provider de worktree explicitamente, sem alegar composição automática do produto | Matriz integral fail-closed com repair/recovery integrada ao lifecycle padrão |
 | Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
-| Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito, limpo e não forçado; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo | F5.7 R3 está `PROMOTION_BLOCKED`: revisão provou merge driver transitivo, aprovação de hook não ligada e falso sucesso CLI; rollback não reexecuta gates pós-reversão | Composição operacional padrão e recovery/evidence F6 |
+| Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo; F5.7 R3 confina Git, liga aprovação destrutiva à tentativa e falha corretamente em rollback bloqueado | R3 está somente local e rollback não reexecuta gates pós-reversão | Composição operacional padrão e recovery/evidence F6 |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
 
 ## Estado do roadmap
@@ -168,13 +168,13 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   Os checkpoints permanecem somente locais. A reconciliação administrativa
   [PR #64](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/64) encerrou no head `7a1f6ed`, passou
   11/11 no run `31816727870`, foi incorporada pelo merge `a449bd1` e recebeu 11/11 na CI final
-  `31817497094`. A F5.7 chegou à conclusão local no produto `d787ce5`: focado
-  `164 passed, 2 skipped`, segurança `68 passed` e full
-  `900 passed, 5 skipped, 6 subtests passed`; mypy em 106 arquivos, Ruff, compileall, diff-check,
-  wheel 0.1.0 e smoke oficial offline ficaram verdes. Os três checkpoints permanecem exclusivamente
-  locais. Evidência negativa posterior reabriu R3 como `REPAIR_ACTIVE / PROMOTION_BLOCKED`; a
-  publicação está proibida até corrigir Git transitivo, aprovação de hook, falso sucesso CLI e reap
-  ambíguo, seguida de recertificação integral.
+  `31817497094`. A F5.7 chegou à conclusão local anterior em `d787ce5`; evidência negativa posterior
+  reabriu R3. O reparo `26bb04d` bloqueia Git transitivo, usa aprovação de hook durável e ligada,
+  remove falso sucesso CLI e preserva reap ambíguo. A recertificação passou focado
+  `174 passed, 2 skipped`, segurança `68 passed` e full
+  `910 passed, 5 skipped, 6 subtests passed`; mypy em 106 arquivos, Ruff, compileall, diff-check,
+  wheel 0.1.0 e smoke oficial offline ficaram verdes. O estado local é
+  `COMPLETED_LOCAL / PROMOTION_PENDING`; checkpoints permanecem exclusivamente locais.
 
 ## Dívidas técnicas críticas
 

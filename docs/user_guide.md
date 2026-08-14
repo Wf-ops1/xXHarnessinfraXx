@@ -230,10 +230,9 @@ solicitação e nova decisão sobre o conteúdo corrente.
 
 ## Cancelamento, cleanup e rollback F5.7
 
-> **Estado corrente:** a revisão R3 reabriu esta capacidade como
-> `REPAIR_ACTIVE / PROMOTION_BLOCKED`. As garantias abaixo descrevem o contrato a restaurar; não use
-> rollback em repositório valioso até a recertificação registrar Git transitivo bloqueado, aprovação
-> de hook ligada, erro CLI não zero em bloqueio e reap comprovado.
+> **Estado corrente:** o reparo R3 está `COMPLETED_LOCAL / PROMOTION_PENDING`. A recertificação local
+> comprovou Git transitivo bloqueado, aprovação de hook ligada, erro CLI não zero em bloqueio e reap
+> fail-closed; a capacidade ainda não foi publicada e permanece restrita a repositórios descartáveis.
 
 O cancelamento usa arquivos de controle duráveis por execução. `cancellation-policy.json` registra a
 decisão antes de `cancellation-request.json` e antes do sinal. Isso permite interromper uma tool mesmo
@@ -248,13 +247,15 @@ exige vínculo da execução, worktree ativo, limpo e no HEAD esperado e delega 
 
 `harness rollback <id>` não recebe SHA nem `--promoted`. O lifecycle exige `COMPLETED` e usa somente
 o `promotion_commit_sha` persistido. O manager valida raiz, branch, trust, ancestralidade e limpeza,
+nega drivers/filtros/fsmonitor executáveis definidos pelo repositório, seleciona ambiente mínimo,
 desabilita hooks/signing e executa `git revert --no-edit <sha>` com `shell=False`. Sucesso requer exit
 zero, novo SHA completo, parent igual ao HEAD anterior e worktree limpo. Em conflito, somente
 `git revert --abort` é permitido; a execução termina `BLOCKED_ROLLBACK` e não tenta um segundo revert
 se o resultado for ambíguo. Hook de produto é injetável/allowlisted e continua default-deny; efeito
-destrutivo exige aprovação específica ligada à tentativa de rollback.
+destrutivo exige request/decisão durável ligada à execução, hook, promotion SHA e tentativa de
+rollback. Estado bloqueado retorna erro CLI sem símbolo de sucesso.
 
-Essas APIs estão em reparo local e não tornam o protótipo seguro para um repositório valioso:
+Essas APIs estão recertificadas somente na branch local e não tornam o protótipo seguro para um repositório valioso:
 a composição automática de provider/tools/worktree e os gates pós-reversão/evidence recovery
 permanecem pendentes.
 

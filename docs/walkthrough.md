@@ -125,8 +125,8 @@ worktree/provider/tools permanece pendente.
 
 ## Fluxo de auditoria e rollback
 
-> A F5.7 está `REPAIR_ACTIVE / PROMOTION_BLOCKED` após a revisão R3. Esta seção descreve o fluxo
-> pretendido e só volta a ser evidência positiva depois da recertificação integral do reparo.
+> A F5.7 R3 está `COMPLETED_LOCAL / PROMOTION_PENDING`. Esta seção descreve o fluxo recertificado
+> localmente; publicação e CI remoto ainda dependem de autorização separada.
 
 O diário append-only e sua hash chain são implementações locais testadas. Na F5.7 local, o
 cancelamento publica uma decisão durável antes do pedido/sinal, interrompe e reapera somente a árvore
@@ -138,7 +138,9 @@ Depois de uma promoção `COMPLETED`, o lifecycle usa somente o `promotion_commi
 transita por `ROLLBACK_IN_PROGRESS` e executa `git revert --no-edit` por argv/`shell=False`. Exit
 zero, novo SHA, parent anterior e worktree limpo são comprovados antes de `COMPENSATED`. Conflito
 executa somente `git revert --abort` e termina `BLOCKED_ROLLBACK`; ambiguidade não produz retry ou
-sucesso. A composição automática de tools/worktree e os gates pós-reversão/evidence recovery ainda
+sucesso. R3 bloqueia drivers/filtros Git executáveis, exige aprovação destrutiva journaled e ligada à
+tentativa, retorna erro CLI em bloqueio e não limpa o slot sem reap comprovado. A composição
+automática de tools/worktree e os gates pós-reversão/evidence recovery ainda
 permanecem pendentes, portanto o protótipo continua restrito a ambientes descartáveis.
 
 ## Onde acompanhar

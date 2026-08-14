@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.7](docs/tasks/active/F5.7.md): produto concluído localmente; promoção ainda não autorizada.
+2. [F5.7](docs/tasks/active/F5.7.md): reparo R3 concluído e recertificado localmente; promoção ainda não autorizada.
 3. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
    incorporado por `docs/promote-f5.6` é complementado pela evidência externa posterior abaixo.
 4. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
@@ -30,19 +30,19 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.6 promovidas |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.7 — cancelamento e rollback seguros, promoção pendente |
-| **Gate** | `REPAIR_ACTIVE / PROMOTION_BLOCKED` |
-| **Estado corrente** | F5.6 `PROMOTED`; F5.7 reaberta por evidência negativa R3, sem publicação |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | F5.6 `PROMOTED`; F5.7 R3 corrigida e recertificada localmente, sem publicação |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T14:09:48-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.7-safe-cancel-rollback`, somente local e sem upstream |
-| **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; R3 READY será materializado antes do reparo; somente locais |
+| **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Main sincronizada** | antes da branch, `main == origin/main == a449bd19b5f6535402535bc2815527a9689095dc`; origin confirmado por `ls-remote` |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
-| **Produto F5.7** | `d787ce5f61f2e79415c76c06d928f030c026a4d8` |
-| **Implementação F5.7** | decisão/pedido de cancelamento duráveis, árvore terminada/reapada, cleanup explícito, `git revert` canônico e conflito `BLOCKED_ROLLBACK` |
-| **Validação F5.7** | focado `164 passed, 2 skipped`; segurança `68 passed`; full `900 passed, 5 skipped, 6 subtests passed` |
-| **Revisão R3** | matrizes existentes novamente verdes, mas quatro lacunas não cobertas: Git merge driver executável, aprovação de hook booleana, CLI verde/exit zero em bloqueio e reap ambíguo após falha de binding |
+| **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
+| **Implementação F5.7** | além do cancelamento/cleanup/revert canônicos, R3 confina ambiente/configuração Git, persiste aprovação de hook ligada à tentativa, retorna erro CLI em bloqueio e preserva ambiguidade sem reap comprovado |
+| **Validação F5.7** | focado R3 `174 passed, 2 skipped`; segurança `68 passed`; full isolado `910 passed, 5 skipped, 6 subtests passed` |
+| **Revisão R3** | quatro lacunas corrigidas e cobertas; a primeira full R3 foi inválida somente por `LOCALAPPDATA` bloqueado, e a repetição com `TEMP`/`TMP`/`LOCALAPPDATA`/basetemp externos passou integralmente |
 | **Quality/distribuição F5.7** | mypy 106 arquivos, Ruff, compileall, diff-check, wheel 0.1.0 e smoke oficial offline com uv 0.12.3 verdes |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
@@ -94,39 +94,39 @@ reconciliação antes de restaurar estado positivo.
 ## 4. Coordenação
 
 Existe um único executor/escritor: `Codex`. O usuário autorizou nominalmente o reparo R3 em
-`2026-08-14T17:27:25-03:00`, somente na branch local. Nenhum push, PR, merge ou tag remota foi criado.
+`2026-08-14T17:27:25-03:00`, somente na branch local. O produto R3 está no commit `26bb04d`; nenhum
+push, PR, merge ou tag remota foi criado.
 Checkpoints F5.6 permanecem exclusivamente locais; branches
 `task/f5.6-content-bound-approval` e `docs/promote-f5.6` estão preservadas no remoto.
 
 ## 5. Tarefa ativa
 
-A F5.7 foi reaberta antes de qualquer publicação. A revisão provou que `git revert` ainda pode
-executar merge driver configurado pelo repositório e receber ambiente amplo; aprovação de hook
-destrutivo não possui identidade durável content-bound; a CLI declara sucesso para
-`BLOCKED_ROLLBACK`; e o caminho de falha ao vincular processo pode remover evidência ativa sem reap
-comprovado. A implementação anterior e seus testes permanecem preservados como baseline do reparo.
+A F5.7 corrigiu as quatro evidências negativas R3 sem ampliar o escopo: Git perigoso é negado antes
+do revert e recebe ambiente mínimo; aprovação destrutiva é journaled e ligada a execução/hook/SHA/
+tentativa; `BLOCKED_ROLLBACK` retorna falha na CLI; e falha de binding só libera o slot após término e
+reap comprovados. O produto foi recertificado localmente e aguarda autorização separada de promoção.
 
 ## 6. Bloqueios e fronteiras externas
 
-Há bloqueio técnico de promoção até corrigir e recertificar R3. O runtime `uv 0.12.3` já preservado
-foi usado somente no processo, offline, sem instalação. Push da branch, PR, merge, tags remotas,
-remoção de refs, force-push/bypass e início de F6 não estão autorizados.
+Não há bloqueio técnico R3 conhecido. A fronteira restante é externa: push da branch, PR, merge,
+tags remotas, remoção de refs, force-push/bypass e início de F6 não estão autorizados. O `uv 0.12.3`
+foi exposto somente ao smoke isolado em modo offline, fora do projeto.
 
 ## 7. Próxima ação exata
 
 ```text
-EXECUTAR SOMENTE O REPARO R3 AUTORIZADO E RECERTIFICAR O ACEITE APLICÁVEL.
-NÃO PUBLICAR A BRANCH, CRIAR PR/TAG REMOTA/MERGE OU INICIAR F6.
+AGUARDAR AUTORIZAÇÃO NOMINAL SEPARADA PARA PUBLICAR A BRANCH E CRIAR O PR DA F5.7.
+NÃO CRIAR PUSH/PR/TAG REMOTA/MERGE NEM INICIAR F6 SEM ESSA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.7.md` e a Fase 5 do plano.
-2. Confirme branch `task/f5.7-safe-cancel-rollback`, HEAD R3 e produto anterior `d787ce5` sobre baseline `a449bd1`.
+2. Confirme branch `task/f5.7-safe-cancel-rollback`, produto R3 `26bb04d` e baseline `a449bd1`.
 3. Confirme os checkpoints locais `f5.7-ready`, `f5.7-r1-ready`, `f5.7-complete` e `f5.7-r3-ready`.
 4. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve o escopo/aceite certificado.
-5. Conclua e recertifique R3; não publique branch/PR/tags nem inicie F6 sem autorização nominal separada.
+5. R3 já está recertificada; não publique branch/PR/tags nem inicie F6 sem autorização nominal separada.
 
 ---
 
-*Atualizado em: 2026-08-14T17:27:25-03:00 | Fonte: revisão negativa R3 + certificação local F5.7 + promoção F5.6/PR #64*
+*Atualizado em: 2026-08-14T18:31:54-03:00 | Fonte: produto/recertificação R3 local + promoção F5.6/PR #64*
