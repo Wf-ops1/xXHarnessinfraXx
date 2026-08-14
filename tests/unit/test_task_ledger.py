@@ -362,7 +362,10 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`ACTIVE / READY`" in panel
+    assert "task/f5.6-content-bound-approval" in panel
+    assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
+    assert "31771169636" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
@@ -880,7 +883,8 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "checkpoint/f5.5-ready" in dossier
     assert "checkpoint/f5.5-complete" in dossier
     assert "f4460ad" in dossier
-    assert "PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "ACTIVE / READY" in panel
+    assert "task/f5.6-content-bound-approval" in panel
     assert "task/f5.5-secrets-redaction" in dossier
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
     assert "31759971204" in dossier
@@ -893,7 +897,9 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "2227b73131d405cde046c58ec83094889a3feb51" in dossier
     assert "31769631054" in dossier
     assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in dossier
-    assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in panel
+    assert "45f4fb7" in panel
+    assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
+    assert "31771169636" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62" in dossier
     assert "31770610085" in dossier
     assert "RedactionContext" in dossier
