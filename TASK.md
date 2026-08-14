@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.6](docs/tasks/active/F5.6.md): gate `READY` para aprovação vinculada ao conteúdo.
+2. [F5.6](docs/tasks/active/F5.6.md): `COMPLETED_LOCAL / PROMOTION_PENDING` para aprovação vinculada ao conteúdo.
 3. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
 4. [F5.4](docs/tasks/completed/F5.4.md): orçamento promovido; reconciliação administrativa incorporada.
 5. [F5.3](docs/tasks/completed/F5.3.md): trust boundary promovido e reconciliação incorporada.
@@ -29,11 +29,12 @@
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.6 — aprovação vinculada ao conteúdo |
 | **Gate** | `READY` — problema, escopo, aceite e rollback congelados |
-| **Estado corrente** | `ACTIVE / READY` |
+| **Estado corrente** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T10:30:31-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.6-content-bound-approval`, somente local e sem upstream |
-| **Checkpoint F5.6** | `checkpoint/f5.6-ready`, commit documental do gate, somente local |
+| **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` no fechamento documental; somente locais |
+| **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
 | **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
 | **Implementação F5.6** | request canônico pós-candidate/gates, diff digest, decisão/expiração/invalidação journaled e guard pré-Git |
 | **Matriz focada F5.6** | `47 passed em 187.74s`; node insuficiente, mismatch, expiry, tamper, CAS/recovery e Git real |
@@ -76,28 +77,25 @@ recertificação integral e reconciliação antes de restaurar estado positivo.
 ## 4. Coordenação
 
 Existe um único executor/escritor: `Codex`. O checkpoint `checkpoint/f5.6-ready` foi materializado em
-`161e1c26eb0aad6b81e25ebdcda4f12519486ba4` antes do produto. A implementação permanece restrita à
-allowlist congelada; nenhuma publicação foi autorizada.
+`161e1c26eb0aad6b81e25ebdcda4f12519486ba4` antes do produto `7941dfe`. O fechamento local recebe
+`checkpoint/f5.6-complete`; nenhuma publicação foi autorizada.
 
 ## 5. Tarefa ativa
 
-A F5.6 possui problema reproduzido, checkpoint READY anterior ao produto e implementação validada.
-Contrato/E2E `47 passed`; regressão `885 passed, 5 skipped, 6 subtests passed`; documentação/ledger,
-mypy, Ruff, compileall, diff-check, wheel e smoke isolado verdes. Commit local de produto, repetição
-build/smoke pós-commit e certificação documental final ainda pendem.
+A F5.6 está `COMPLETED_LOCAL / PROMOTION_PENDING`. Produto `7941dfe`; contrato/E2E `47 passed`;
+regressão `885 passed, 5 skipped, 6 subtests passed`; documentação/ledger, mypy, Ruff, compileall,
+diff-check, wheel e smoke isolado verdes. Build e smoke foram repetidos sobre o commit de produto.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido para implementação. O smoke final depende de `uv`, ausente no
-`PATH`, e não autoriza instalação silenciosa. Push, PR, merge, tags remotas, remoção de refs e
-force-push/bypass não estão autorizados.
+Não há bloqueio técnico conhecido. A fronteira atual é de autorização: push, PR, merge, tags remotas,
+remoção de refs, force-push/bypass e início de F5.7 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR AS SENTINELAS DOCUMENTAIS F5.6 E CRIAR O COMMIT LOCAL DE PRODUTO.
-RECONSTRUIR/TESTAR A WHEEL NO COMMIT EXATO E SÓ ENTÃO CERTIFICAR LOCALMENTE.
-NÃO PUBLICAR BRANCH, PR OU TAGS REMOTAS.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH E ABRIR O PR ÚNICO DA F5.6.
+NÃO PUBLICAR TAGS, MESCLAR, REMOVER REFS OU INICIAR F5.7.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -109,4 +107,4 @@ NÃO PUBLICAR BRANCH, PR OU TAGS REMOTAS.
 
 ---
 
-*Atualizado em: 2026-08-14T11:37:10-03:00 | Fonte: F5.6 full 885/5 + quality/build/smoke verdes + dossiê ativo*
+*Atualizado em: 2026-08-14T11:41:10-03:00 | Fonte: produto F5.6 7941dfe + certificação local verde*

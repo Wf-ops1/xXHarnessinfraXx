@@ -186,7 +186,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`ACTIVE / READY`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "task/f5.6-content-bound-approval" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel

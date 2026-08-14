@@ -163,8 +163,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `31771169636`. A F5.6 está ativa somente na branch local
   `task/f5.6-content-bound-approval`: gate/checkpoint `161e1c2`, contrato e E2E locais implementados,
   matriz focada `47 passed` e regressão integral `885 passed, 5 skipped, 6 subtests passed`; quality,
-  wheel e smoke isolado também estão verdes. Commit/certificação local ainda pendem. Nenhuma branch,
-  PR ou tag F5.6 foi publicada.
+  wheel e smoke isolado também estão verdes. Produto `7941dfe`; estado `COMPLETED_LOCAL /
+  PROMOTION_PENDING`, com checkpoint COMPLETE somente local. Nenhuma branch, PR ou tag F5.6 foi
+  publicada.
 
 ## Dívidas técnicas críticas
 

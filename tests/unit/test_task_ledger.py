@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`ACTIVE / READY`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
     assert "task/f5.6-content-bound-approval" in panel
     assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
     assert "31771169636" in panel
@@ -883,7 +883,7 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "checkpoint/f5.5-ready" in dossier
     assert "checkpoint/f5.5-complete" in dossier
     assert "f4460ad" in dossier
-    assert "ACTIVE / READY" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "task/f5.6-content-bound-approval" in panel
     assert "task/f5.5-secrets-redaction" in dossier
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
@@ -941,10 +941,12 @@ def test_f5_6_active_gate_binds_approval_to_the_exact_promotion_content() -> Non
 
     assert (ACTIVE_ROOT / "F5.6.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
     assert "task/f5.6-content-bound-approval" in panel
     assert "checkpoint/f5.6-ready" in dossier
     assert "161e1c26eb0aad6b81e25ebdcda4f12519486ba4" in dossier
+    assert "7941dfee0384927acdb5d94cd9e626194b7b1432" in dossier
+    assert "checkpoint/f5.6-complete" in dossier
     for field in (
         "execution ID",
         "artifact digest",
@@ -963,6 +965,7 @@ def test_f5_6_active_gate_binds_approval_to_the_exact_promotion_content() -> Non
     assert "47 passed" in dossier
     assert "885 passed, 5 skipped, 6 subtests passed" in dossier
     assert "uv 0.12.3" in dossier
+    assert "38 passed, 6 subtests passed" in dossier
     assert "F5.7" in dossier
     assert "F6" in dossier
     assert "active/F5.6.md" in panel

@@ -20,15 +20,16 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.6](active/F5.6.md) está `READY / ACTIVE` na branch local
+A [F5.6](active/F5.6.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch local
 `task/f5.6-content-bound-approval`. O preflight registrou Python 3.12.13, baseline remoto exato
 `daec37d` e CI final anterior `31771169636` com 11/11 checks. O problema foi reproduzido: o JSON
 legado possui só três campos e a mudança do candidate SHA não altera o subject aprovado. Escopo,
 aceite e rollback estão congelados; `checkpoint/f5.6-ready` aponta localmente para `161e1c2`. A
 implementação corrente passou `47` testes focados e a regressão integral passou `885`, com `5` skips
 e `6` subtests; documentação/ledger, mypy, Ruff, compileall, diff-check, wheel e smoke oficial com
-`uv 0.12.3` também estão verdes. Commit local, repetição da distribuição sobre o commit e
-certificação final ainda pendem. Push, PR e tags remotas não estão autorizados.
+`uv 0.12.3` também estão verdes. O produto é `7941dfe`; wheel e smoke foram repetidos sobre esse
+commit. `checkpoint/f5.6-complete` fecha a certificação local. Push, PR e tags remotas não estão
+autorizados.
 
 A [F5.5](completed/F5.5.md) está `PROMOTED`: o PR #61 encerrou no head `68482da`, passou 11/11 no
 run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
