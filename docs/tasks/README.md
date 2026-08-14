@@ -20,14 +20,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.5](active/F5.5.md) está `READY / ACTIVE` na branch local
+A [F5.5](active/F5.5.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch publicada
 `task/f5.5-secrets-redaction`, criada do baseline `2f4e391`. O gate congela resolução por nome e
 consumer autorizado, injeção somente no adapter, redaction dinâmica/multiline antes de persistência,
 JSON estrutural, ausência de secrets em prompts e rotação por nova composição. A baseline focada
 válida passou `230 passed, 3 skipped`; a implementação corrente passou o focado exato final com
 `192 passed, 3 skipped` e o full final com `873 passed, 5 skipped, 6 subtests passed`. O checkpoint READY
-aponta para `16bcbb1`; o produto local está em `f4460ad` e `checkpoint/f5.5-complete` fecha a
-certificação local. Push, PR, merge, tags/refs e F5.6 não estão autorizados.
+aponta para `16bcbb1`; o produto está em `f4460ad` e `checkpoint/f5.5-complete` fecha a certificação
+local. O PR [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) está aberto com checks pendentes;
+merge, tags/refs e F5.6 não estão autorizados.
 
 A [F5.4](completed/F5.4.md) está `PROMOTED`: o PR #59 encerrou no head `21aa4a6`, passou 11/11 checks
 no run `31739876952`, foi incorporado pelo merge `d624629` e recebeu 11/11 na CI pós-merge

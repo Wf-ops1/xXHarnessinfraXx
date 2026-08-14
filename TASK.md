@@ -27,11 +27,11 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.5 — integrar secrets e redaction no caminho crítico |
-| **Gate** | `READY / ACTIVE` |
-| **Estado local** | `IMPLEMENTED / CERTIFIED / UNPUBLISHED` |
+| **Gate** | `READY` |
+| **Estado corrente** | `COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING` |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T22:21:27-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f5.5-secrets-redaction`, local e sem upstream |
+| **Branch** | `task/f5.5-secrets-redaction`, publicada em `origin/task/f5.5-secrets-redaction` |
 | **Baseline** | `main == origin/main == 2f4e391bfe3588f713a436b051d4f60e970e4df1` antes da branch |
 | **Reconciliação F5.4** | PR [#60](https://github.com/Wf-ops1/Harnessinfra/pull/60), head `7613460`, merge `2f4e391bfe3588f713a436b051d4f60e970e4df1` |
 | **CI final anterior** | run [31759971204](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31759971204), `push`, 11/11 success em 4m42s no baseline exato |
@@ -42,6 +42,7 @@
 | **Quality/build** | ruff, mypy, compileall, diff-check, wheel e smoke oficial offline verdes |
 | **Produto** | commit local `f4460ad`; wheel e smoke reconstruídos após esse commit |
 | **Checkpoint** | `checkpoint/f5.5-ready` no commit `16bcbb1`; `checkpoint/f5.5-complete` no commit documental de certificação, ambos somente locais |
+| **PR F5.5** | [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61), aberto, não draft, base `main`, head inicial `e762c32`; CI inicial `31764961921` em andamento antes deste registro |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -69,37 +70,38 @@ em `docs/tasks/active/F5.5.md`. Dependências, lockfile, CI, versões, schemas e
 
 ## 5. Tarefa ativa
 
-A F5.5 está `READY / ACTIVE` em `docs/tasks/active/F5.5.md`. O baseline provou quatro lacunas sem
+A F5.5 está `COMPLETED_LOCAL / PROMOTION_PENDING` em `docs/tasks/active/F5.5.md`. O baseline provou quatro lacunas sem
 imprimir o valor usado: secret fragmentado e chamada sem contexto escapam do redator, o adapter OpenAI
 legado lê o ambiente sem boundary e a configuração Serena expõe header sensível no `repr`. O escopo
 congela resolução por nome/consumer, injeção somente no adapter, redaction antes de persistência e
 truncamento, JSON estrutural, rotação por nova composição e ausência de secrets em prompts/journal.
 A implementação corrigiu esses quatro pontos e passou o focado exato `192/3` e o full `873/5 + 6`;
-quality integral, wheel e smoke isolado pós-commit também passaram. O produto local está em
-`f4460ad` e o checkpoint COMPLETE encerra a certificação local sem promover a tarefa.
+quality integral, wheel e smoke isolado pós-commit também passaram. O produto está em `f4460ad`, o
+checkpoint COMPLETE encerra a certificação local e o PR #61 está aberto sem promover a tarefa.
 
 ## 6. Bloqueios e fronteiras externas
 
 Não há bloqueio técnico conhecido. O R0 focado foi inválido somente porque o sandbox negou o temp/cache
-do pytest; a repetição R1 passou `230 passed, 3 skipped`. A implementação local F5.5 está autorizada
-depois do checkpoint READY. Push, PR, merge, publicação de tags, remoção de refs, force-push/bypass e
-início da F5.6 não estão autorizados.
+do pytest; a repetição R1 passou `230 passed, 3 skipped`. A branch foi publicada e o PR #61 aberto sob
+a autorização nominal `autorizo`; o run inicial `31764961921` foi observado com 8 checks em progresso
+e 2 em fila. Merge, publicação de tags, remoção de refs, force-push/bypass e início da F5.6 não estão
+autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-F5.5 LOCAL ESTÁ IMPLEMENTADA E CERTIFICADA; PRESERVAR BRANCH E CHECKPOINTS.
-AGUARDAR AUTORIZAÇÃO NOMINAL SEPARADA PARA QUALQUER PUBLICAÇÃO OU PR.
-NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.6 SEM NOVA AUTORIZAÇÃO.
+F5.5 ESTÁ IMPLEMENTADA, CERTIFICADA E PUBLICADA NO PR #61.
+AUDITAR TODOS OS CHECKS DO HEAD FINAL DO PR #61; NÃO MESCLAR.
+NÃO PUBLICAR TAGS, REMOVER REFS, USAR FORCE-PUSH/BYPASS OU INICIAR F5.6 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.5.md` e a Fase 5 do plano.
-2. Confirme branch `task/f5.5-secrets-redaction`, baseline `2f4e391` e checkpoint `checkpoint/f5.5-ready`.
+2. Confirme branch `task/f5.5-secrets-redaction`, PR #61, baseline `2f4e391` e os checkpoints locais.
 3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve os critérios congelados.
-4. Não amplie arquivos/efeitos sem recongelar; push, PR, merge, tags/refs e F5.6 exigem nova autorização.
+4. Não amplie arquivos/efeitos sem recongelar; merge, tags/refs, force-push/bypass e F5.6 exigem nova autorização.
 
 ---
 
-*Atualizado em: 2026-08-13T23:13:27-03:00 | Fonte: F5.5 + produto f4460ad + focado 192/3 + full 873/5/6 + wheel/smoke pós-commit*
+*Atualizado em: 2026-08-13T23:51:53-03:00 | Fonte: F5.5 + PR #61 + run inicial 31764961921 + produto f4460ad + focado 192/3 + full 873/5/6*

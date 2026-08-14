@@ -362,7 +362,7 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`READY / ACTIVE`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`" in panel
     assert "docs/tasks/active/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
@@ -876,17 +876,19 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert (ACTIVE_ROOT / "F5.5.md").is_file()
     assert not (COMPLETED_ROOT / "F5.5.md").exists()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
     assert "checkpoint/f5.5-ready" in dossier
     assert "checkpoint/f5.5-complete" in dossier
     assert "f4460ad" in dossier
-    assert "IMPLEMENTED / CERTIFIED / UNPUBLISHED" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING" in panel
     assert "task/f5.5-secrets-redaction" in dossier
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
     assert "31759971204" in dossier
     assert "230 passed, 3 skipped" in dossier
     assert "192 passed, 3 skipped" in dossier
     assert "873 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61" in dossier
+    assert "31764961921" in dossier
     assert "RedactionContext" in dossier
     assert "'split_dynamic_secret_leaks': True" in dossier
     assert "'unscoped_runtime_redaction_leaks': True" in dossier
