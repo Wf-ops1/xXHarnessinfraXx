@@ -943,6 +943,7 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
     assert (COMPLETED_ROOT / "F5.6.md").is_file()
     assert "> **Gate:** `READY`" in dossier
     assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "docs/promote-f5.6" in panel
     assert "checkpoint/f5.6-ready" in dossier
     assert "161e1c26eb0aad6b81e25ebdcda4f12519486ba4" in dossier
@@ -971,6 +972,8 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
     assert "31813471013" in dossier
     assert "048838076704fb852129b6ef76e9af6b7f878c35" in dossier
     assert "31814250746" in dossier
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/64" in dossier
+    assert "31816395182" in dossier
     assert "F5.7" in dossier
     assert "F6" in dossier
     assert "docs/tasks/completed/F5.6.md" in panel

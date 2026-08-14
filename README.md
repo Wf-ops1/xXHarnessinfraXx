@@ -166,7 +166,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   10m34s. O produto `7941dfe` passou `47` testes focados e a regressão integral
   `885 passed, 5 skipped, 6 subtests passed`; quality, wheel e smoke isolado também ficaram verdes.
   Os checkpoints permanecem somente locais. A reconciliação administrativa está em
-  `docs/promote-f5.6`; F5.7 não foi iniciada.
+  `docs/promote-f5.6`, publicada no [PR #64](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/64),
+  com checks pendentes no head documental final; F5.7 não foi iniciada.
 
 ## Dívidas técnicas críticas
 

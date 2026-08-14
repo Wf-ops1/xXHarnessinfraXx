@@ -187,6 +187,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
 
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
     assert "F5.6 `PROMOTED`" in panel
+    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "docs/promote-f5.6" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
