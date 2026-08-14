@@ -211,6 +211,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f5.3-ready" in panel
     assert "checkpoint/f5.4-ready" in panel
     assert "checkpoint/f5.4-complete" in panel
+    assert "checkpoint/f5.5-complete" in panel
+    assert "f4460ad" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/59" in panel
     assert "856 passed, 5 skipped, 6 subtests passed" in panel
     assert "FAILED_BUDGET_EXCEEDED" in user_guide

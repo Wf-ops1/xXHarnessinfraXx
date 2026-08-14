@@ -28,6 +28,7 @@
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
 | **Tarefa ativa** | F5.5 — integrar secrets e redaction no caminho crítico |
 | **Gate** | `READY / ACTIVE` |
+| **Estado local** | `IMPLEMENTED / CERTIFIED / UNPUBLISHED` |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-13T22:21:27-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.5-secrets-redaction`, local e sem upstream |
@@ -39,7 +40,8 @@
 | **Implementação local** | contexto imutável, provider/Serena/terminal/tool outcome redigidos; fallback secreto removido; matriz focada `192 passed, 3 skipped` |
 | **Regressão integral** | `873 passed, 5 skipped, 6 subtests passed em 187.14s` |
 | **Quality/build** | ruff, mypy, compileall, diff-check, wheel e smoke oficial offline verdes |
-| **Checkpoint** | `checkpoint/f5.5-ready` no commit `16bcbb1`; COMPLETE ainda pendente, ambos somente locais |
+| **Produto** | commit local `f4460ad`; wheel e smoke reconstruídos após esse commit |
+| **Checkpoint** | `checkpoint/f5.5-ready` no commit `16bcbb1`; `checkpoint/f5.5-complete` no commit documental de certificação, ambos somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -73,8 +75,8 @@ legado lê o ambiente sem boundary e a configuração Serena expõe header sens�
 congela resolução por nome/consumer, injeção somente no adapter, redaction antes de persistência e
 truncamento, JSON estrutural, rotação por nova composição e ausência de secrets em prompts/journal.
 A implementação corrigiu esses quatro pontos e passou o focado exato `192/3` e o full `873/5 + 6`;
-quality integral, wheel e smoke isolado também passaram; restam o commit de produto e o checkpoint
-COMPLETE locais.
+quality integral, wheel e smoke isolado pós-commit também passaram. O produto local está em
+`f4460ad` e o checkpoint COMPLETE encerra a certificação local sem promover a tarefa.
 
 ## 6. Bloqueios e fronteiras externas
 
@@ -86,8 +88,8 @@ início da F5.6 não estão autorizados.
 ## 7. Próxima ação exata
 
 ```text
-REVALIDAR DOCUMENTAÇÃO E O DIFF FINAL.
-DEPOIS CRIAR O COMMIT LOCAL DE PRODUTO E `checkpoint/f5.5-complete`.
+F5.5 LOCAL ESTÁ IMPLEMENTADA E CERTIFICADA; PRESERVAR BRANCH E CHECKPOINTS.
+AGUARDAR AUTORIZAÇÃO NOMINAL SEPARADA PARA QUALQUER PUBLICAÇÃO OU PR.
 NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.6 SEM NOVA AUTORIZAÇÃO.
 ```
 
@@ -100,4 +102,4 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.6 SE
 
 ---
 
-*Atualizado em: 2026-08-13T23:09:44-03:00 | Fonte: F5.5 + checkpoint 16bcbb1 + focado 192/3 + full 873/5/6 + wheel/smoke*
+*Atualizado em: 2026-08-13T23:13:27-03:00 | Fonte: F5.5 + produto f4460ad + focado 192/3 + full 873/5/6 + wheel/smoke pós-commit*

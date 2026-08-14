@@ -153,7 +153,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `task/f5.5-secrets-redaction` com gate `READY`, baseline focado `230 passed, 3 skipped` e quatro
   lacunas reproduzidas sem imprimir valores sensíveis. A implementação local corrente passou a matriz
   focada exata final com `192 passed, 3 skipped` e a regressão integral final com
-  `873 passed, 5 skipped, 6 subtests passed`; o checkpoint READY está no commit `16bcbb1`.
+  `873 passed, 5 skipped, 6 subtests passed`; o produto local está em `f4460ad`, o checkpoint READY
+  está em `16bcbb1` e `checkpoint/f5.5-complete` fecha a certificação local. A tarefa ainda não foi
+  publicada nem promovida.
   Checkpoints permanecem somente locais; push, PR, merge, tags remotas, remoção de refs e F5.6 não
   estão autorizados.
 
