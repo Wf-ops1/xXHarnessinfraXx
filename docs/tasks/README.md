@@ -26,8 +26,9 @@ A [F5.7](active/F5.7.md) está `READY / ACTIVE` na branch local
 falhando antes do Git porque chama a API legada de shell desabilitada; cancelamento atual só muda
 estado e não alcança o processo. O baseline válido passou `90` testes com `2` skips. Escopo, aceite e
 rollback estão congelados; a matriz documental passou `39` testes e `6` subtests.
-`checkpoint/f5.7-ready` é exclusivamente local e precede qualquer produto. Implementação, push, PR e
-tags remotas não estão autorizados.
+`checkpoint/f5.7-ready` é exclusivamente local. R1 acrescenta apenas `runtime/tool_loop.py` à
+allowlist para tratar cancelamento pós-dispatch e será delimitado por `checkpoint/f5.7-r1-ready`
+antes do produto. Implementação local foi autorizada; push, PR e tags remotas não estão autorizados.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge

@@ -1000,6 +1000,10 @@ def test_f5_7_ready_gate_freezes_safe_cancellation_and_real_git_rollback() -> No
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in dossier
     assert "checkpoint/f5.7-ready" in panel
     assert "checkpoint/f5.7-ready" in dossier
+    assert "checkpoint/f5.7-r1-ready" in panel
+    assert "checkpoint/f5.7-r1-ready" in dossier
+    assert "runtime/tool_loop.py" in dossier
+    assert "pós-dispatch" in dossier
     assert "LegacyShellCommandError" in dossier
     assert "90 passed, 2 skipped" in dossier
     for required in (
