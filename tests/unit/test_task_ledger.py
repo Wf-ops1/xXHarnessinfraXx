@@ -945,6 +945,10 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
     assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "docs/promote-f5.6" in panel
+    assert "7a1f6ed84947f8bd3326aca70b3e8aeaaf761f24" in panel
+    assert "31816727870" in panel
+    assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
+    assert "31817497094" in panel
     assert "checkpoint/f5.6-ready" in dossier
     assert "161e1c26eb0aad6b81e25ebdcda4f12519486ba4" in dossier
     assert "7941dfee0384927acdb5d94cd9e626194b7b1432" in dossier
@@ -981,6 +985,40 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
     assert "885 passed, 5 skipped, 6 subtests passed" in readme
     assert "Aprovação de promoção vinculada ao conteúdo F5.6" in user_guide
     assert "não converte" in user_guide
+
+
+def test_f5_7_ready_gate_freezes_safe_cancellation_and_real_git_rollback() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.7.md")
+    task_index = _read(TASKS_INDEX)
+
+    assert (ACTIVE_ROOT / "F5.7.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `ACTIVE`" in dossier
+    assert "task/f5.7-safe-cancel-rollback" in panel
+    assert "task/f5.7-safe-cancel-rollback" in dossier
+    assert "a449bd19b5f6535402535bc2815527a9689095dc" in dossier
+    assert "checkpoint/f5.7-ready" in panel
+    assert "checkpoint/f5.7-ready" in dossier
+    assert "LegacyShellCommandError" in dossier
+    assert "90 passed, 2 skipped" in dossier
+    for required in (
+        "cancelamento durante comando",
+        "git revert --no-edit",
+        "BLOCKED_ROLLBACK",
+        "git revert --abort",
+        "cleanup-worktree",
+        "hook destrutivo",
+        "shell=False",
+        "F5.2 policy",
+        "F5.6 approval",
+    ):
+        assert required in dossier
+    assert "active/F5.7.md" in task_index
+    assert "31817497094" in panel
+    assert "31817497094" in task_index
+    assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
+    assert "produto F5.7 intocado" in panel
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

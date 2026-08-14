@@ -189,6 +189,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "F5.6 `PROMOTED`" in panel
     assert "ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "docs/promote-f5.6" in panel
+    assert "F5.7 — cancelamento e rollback seguros" in panel
+    assert "task/f5.7-safe-cancel-rollback" in panel
+    assert "31817497094" in panel
+    assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
