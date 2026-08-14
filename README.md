@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny; a F5.3 promovida integra trust boundary; a F5.4 promovida adiciona budget durável; a F5.5 remove fallback secreto, exige grant exato, injeta somente no adapter e redige texto/JSON antes de truncar ou persistir | A F5.5 está `COMPLETED_LOCAL / PROMOTION_PENDING` no PR #61; composição automática do lifecycle não foi alegada | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
+| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny; a F5.3 promovida integra trust boundary; a F5.4 promovida adiciona budget durável; a F5.5 promovida remove fallback secreto, exige grant exato, injeta somente no adapter e redige texto/JSON antes de truncar ou persistir | Composição automática do lifecycle não foi alegada; aprovação vinculada ao conteúdo permanece F5.6 | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry. A F5.4 promovida reconstrói do mesmo journal tokens, tools, duração, tentativas e custo conhecido, e `status`/`inspect` projetam esse saldo | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
@@ -154,10 +154,11 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   lacunas reproduzidas sem imprimir valores sensíveis. A implementação local corrente passou a matriz
   focada exata final com `192 passed, 3 skipped` e a regressão integral final com
   `873 passed, 5 skipped, 6 subtests passed`; o produto está em `f4460ad`, o checkpoint READY está em
-  `16bcbb1` e `checkpoint/f5.5-complete` fecha a certificação local. A branch foi publicada sem tags e
-  o [PR #61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) está aberto com checks pendentes.
-  Checkpoints permanecem somente locais; merge, tags remotas, remoção de refs e F5.6 não estão
-  autorizados.
+  `16bcbb1` e `checkpoint/f5.5-complete` fecha a certificação local. O
+  [PR #61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) encerrou no head `68482da`, passou
+  11/11 no run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
+  `31769631054` em 5m20s. A reconciliação administrativa permanece local; checkpoints continuam
+  somente locais, e publicação administrativa, tags remotas, remoção de refs e F5.6 não estão autorizados.
 
 ## Dívidas técnicas críticas
 

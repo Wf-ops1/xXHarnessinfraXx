@@ -181,8 +181,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`" in panel
-    assert "docs/tasks/active/F5.5.md" in panel
+    assert "`PROMOTED / ADMIN_RECONCILIATION_LOCAL / PUBLICATION_PENDING`" in panel
+    assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
     assert "31759971204" in panel
@@ -190,7 +190,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "192 passed, 3 skipped" in panel
     assert "873 passed, 5 skipped, 6 subtests passed" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61" in panel
-    assert "31764961921" in panel
+    assert "31765166979" in panel
+    assert "2227b73131d405cde046c58ec83094889a3feb51" in panel
+    assert "31769631054" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/60" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
