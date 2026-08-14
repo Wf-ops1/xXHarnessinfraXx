@@ -3,19 +3,21 @@
 import os
 from typing import ClassVar
 
+from .redaction import RedactionContext
 from .trust import TrustEvaluationResult
 
 
 class SecretManager:
     """Carrega chaves e tokens de variáveis de ambiente sem persistir no disco."""
 
-    _sensitive_keys: ClassVar[list[str]] = [
+    _sensitive_keys: ClassVar[tuple[str, ...]] = (
         "OPENAI_API_KEY",
         "ANTHROPIC_API_KEY",
+        "HARNESS_LOCAL_MODEL_API_KEY",
         "SERENA_MCP_TOKEN",
         "CODEBASE_MEMORY_TOKEN",
-        "HARNESS_SECRET_KEY"
-    ]
+        "HARNESS_SECRET_KEY",
+    )
 
     @classmethod
     def get_secret(
@@ -39,8 +41,8 @@ class SecretManager:
         *,
         boundary: TrustEvaluationResult,
         consumer: str,
-    ) -> dict[str, str]:
-        """Return only known secrets explicitly granted to one consumer."""
+    ) -> RedactionContext:
+        """Resolve granted catalog names into a repr-safe, non-enumerable context."""
 
         if not isinstance(boundary, TrustEvaluationResult):
             raise TypeError("boundary must be a TrustEvaluationResult")
@@ -57,4 +59,4 @@ class SecretManager:
             val = os.environ.get(key)
             if val:
                 found[key] = val
-        return found
+        return RedactionContext(found)

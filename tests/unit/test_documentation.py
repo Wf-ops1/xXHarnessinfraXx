@@ -187,6 +187,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
     assert "31759971204" in panel
     assert "230 passed, 3 skipped" in panel
+    assert "192 passed, 3 skipped" in panel
+    assert "873 passed, 5 skipped, 6 subtests passed" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/60" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel

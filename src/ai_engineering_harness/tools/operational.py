@@ -8,6 +8,7 @@ from typing import Any, cast
 from pydantic import JsonValue
 
 from ai_engineering_harness.security import (
+    RedactionContext,
     TrustBoundaryEvaluator,
     TrustCapabilityDeniedError,
     TrustEvaluationResult,
@@ -83,6 +84,7 @@ def build_operational_tool_router(
             lambda payload: _serena_edit(serena_adapter, payload),
             operation="write",
             path_argument="relative_path",
+            redaction_context=serena_adapter.redaction_context,
         )
 
     return ToolRouter(
@@ -322,6 +324,7 @@ def _registration(
     operation: str,
     path_argument: str | None = None,
     default_path: str | None = None,
+    redaction_context: RedactionContext | None = None,
 ) -> ToolRegistration:
     return ToolRegistration(
         definition=ToolDefinition(
@@ -333,6 +336,7 @@ def _registration(
         operation=operation,
         path_argument=path_argument,
         default_path=default_path,
+        redaction_context=redaction_context or RedactionContext(),
     )
 
 

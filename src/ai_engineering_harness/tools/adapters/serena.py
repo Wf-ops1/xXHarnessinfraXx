@@ -22,7 +22,15 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
 
-from ai_engineering_harness.security import PathGuard, Redactor
+from ai_engineering_harness.security import (
+    PathGuard,
+    RedactionContext,
+    Redactor,
+    SecretManager,
+    TrustBoundaryConfigurationError,
+    TrustCapabilityDeniedError,
+    TrustEvaluationResult,
+)
 
 from .local_editing import LocalEditingAdapter
 
@@ -55,6 +63,23 @@ class SerenaTransport(str, Enum):
 
 
 _ENVIRONMENT_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_SECRET_REFERENCE = re.compile(r"^[A-Z][A-Z0-9_]*$")
+_SENSITIVE_HEADER_NAMES = frozenset(
+    {
+        "authorization",
+        "proxy-authorization",
+        "cookie",
+        "set-cookie",
+        "x-api-key",
+        "api-key",
+    }
+)
+_SENSITIVE_HEADER_NAME = re.compile(
+    r"(?i)(?:^|-)(?:authorization|auth|cookie|token|secret|api-key)(?:$|-)"
+)
+_SENSITIVE_ENVIRONMENT_NAME = re.compile(
+    r"(?i)(?:^|_)(?:password|passwd|secret|token|api_?key|private_?key)(?:$|_)"
+)
 _ALLOWED_EDIT_TOOLS = frozenset(
     {
         "insert_after_symbol",
@@ -73,8 +98,10 @@ class SerenaMcpConfiguration:
     command: str | None = None
     args: tuple[str, ...] = ()
     endpoint: str | None = None
-    environment: Mapping[str, str] = field(default_factory=dict)
-    headers: Mapping[str, str] = field(default_factory=dict)
+    environment: Mapping[str, str] = field(default_factory=dict, repr=False)
+    headers: Mapping[str, str] = field(default_factory=dict, repr=False)
+    secret_environment: Mapping[str, str] = field(default_factory=dict, repr=False)
+    secret_headers: Mapping[str, str] = field(default_factory=dict, repr=False)
     timeout_seconds: float = 30.0
     _resolved_command: str | None = field(default=None, init=False, repr=False, compare=False)
 
@@ -86,13 +113,35 @@ class SerenaMcpConfiguration:
         args = _string_tuple("args", self.args)
         environment = _environment(self.environment)
         headers = _headers(self.headers)
+        secret_environment = _secret_references(
+            "secret_environment",
+            self.secret_environment,
+            target_validator=_environment_target,
+        )
+        secret_headers = _secret_references(
+            "secret_headers",
+            self.secret_headers,
+            target_validator=_header_target,
+        )
         object.__setattr__(self, "args", args)
         object.__setattr__(self, "environment", MappingProxyType(environment))
         object.__setattr__(self, "headers", MappingProxyType(headers))
+        object.__setattr__(self, "secret_environment", MappingProxyType(secret_environment))
+        object.__setattr__(self, "secret_headers", MappingProxyType(secret_headers))
+        if _casefold_overlap(environment, secret_environment):
+            raise SerenaConfigurationError(
+                "public and secret environment targets must not overlap"
+            )
+        if _casefold_overlap(headers, secret_headers):
+            raise SerenaConfigurationError(
+                "public and secret HTTP header targets must not overlap"
+            )
 
         if self.transport is SerenaTransport.STDIO:
-            if self.endpoint is not None or headers:
-                raise SerenaConfigurationError("stdio transport cannot define endpoint or HTTP headers")
+            if self.endpoint is not None or headers or secret_headers:
+                raise SerenaConfigurationError(
+                    "stdio transport cannot define endpoint or HTTP headers"
+                )
             if not isinstance(self.command, str) or not self.command or "\x00" in self.command:
                 raise SerenaConfigurationError("stdio command must be an absolute executable path")
             command = Path(self.command)
@@ -109,8 +158,10 @@ class SerenaMcpConfiguration:
             object.__setattr__(self, "_resolved_command", os.fspath(resolved))
             return
 
-        if self.command is not None or args or environment:
-            raise SerenaConfigurationError("Streamable HTTP cannot define a stdio command, args, or environment")
+        if self.command is not None or args or environment or secret_environment:
+            raise SerenaConfigurationError(
+                "Streamable HTTP cannot define a stdio command, args, or environment"
+            )
         if not isinstance(self.endpoint, str) or "\x00" in self.endpoint:
             raise SerenaConfigurationError("Streamable HTTP requires an explicit endpoint")
         parsed = urlsplit(self.endpoint)
@@ -145,13 +196,21 @@ class SerenaEditResult:
 class SerenaAdapter:
     """Call allowlisted Serena edit tools only after proving the active worktree."""
 
-    __slots__ = ("_configuration", "_local", "_path_guard")
+    __slots__ = (
+        "_configuration",
+        "_local",
+        "_path_guard",
+        "_redaction_context",
+        "_secret_environment",
+        "_secret_headers",
+    )
 
     def __init__(
         self,
         *,
         path_guard: PathGuard,
         configuration: SerenaMcpConfiguration,
+        trust_boundary: TrustEvaluationResult | None = None,
     ) -> None:
         if not isinstance(path_guard, PathGuard):
             raise SerenaConfigurationError("path_guard must be an explicit PathGuard")
@@ -160,12 +219,35 @@ class SerenaAdapter:
         self._path_guard = path_guard
         self._configuration = configuration
         self._local = LocalEditingAdapter(path_guard=path_guard)
+        has_secret_references = bool(
+            configuration.secret_environment or configuration.secret_headers
+        )
+        if has_secret_references and isinstance(trust_boundary, TrustEvaluationResult):
+            try:
+                trust_boundary.require_root(path_guard.authorized_root)
+            except (TrustBoundaryConfigurationError, TrustCapabilityDeniedError) as exc:
+                raise SerenaConfigurationError(
+                    "Serena trust boundary must match the PathGuard root"
+                ) from exc
+        secret_environment, secret_headers, context = _resolve_configuration_secrets(
+            configuration,
+            trust_boundary=trust_boundary,
+        )
+        self._secret_environment = MappingProxyType(secret_environment)
+        self._secret_headers = MappingProxyType(secret_headers)
+        self._redaction_context = context
 
     @property
     def authorized_root(self) -> Path:
         """Return the exact worktree root that every session must prove."""
 
         return self._path_guard.authorized_root
+
+    @property
+    def redaction_context(self) -> RedactionContext:
+        """Return the value-safe context for downstream public projections."""
+
+        return self._redaction_context
 
     def probe(self) -> SerenaCapabilities:
         """Initialize a fresh MCP session and return only observed capabilities."""
@@ -236,8 +318,10 @@ class SerenaAdapter:
         except RuntimeError:
             try:
                 return asyncio.run(self._run_with_timeout(operation))
-            except TimeoutError as exc:
-                raise SerenaConnectionError("Serena MCP operation exceeded its configured timeout") from exc
+            except TimeoutError:
+                raise SerenaConnectionError(
+                    "Serena MCP operation exceeded its configured timeout"
+                ) from None
         operation.close()
         raise SerenaConfigurationError("synchronous SerenaAdapter cannot run inside an active event loop")
 
@@ -279,7 +363,7 @@ class SerenaAdapter:
             payload = {**arguments, "relative_path": relative_path}
             result = await session.call_tool(tool_name, arguments=payload)
             self._require_success(result, operation=tool_name)
-            return _redacted_result(result)
+            return _redacted_result(result, context=self._redaction_context)
 
     @asynccontextmanager
     async def _session(self) -> AsyncIterator[tuple[ClientSession, Any]]:
@@ -290,7 +374,10 @@ class SerenaAdapter:
                 parameters = StdioServerParameters(
                     command=command,
                     args=list(self._configuration.args),
-                    env=dict(self._configuration.environment),
+                    env={
+                        **self._configuration.environment,
+                        **self._secret_environment,
+                    },
                     cwd=self.authorized_root,
                     encoding="utf-8",
                     encoding_error_handler="strict",
@@ -308,7 +395,10 @@ class SerenaAdapter:
 
             assert self._configuration.endpoint is not None
             async with httpx.AsyncClient(
-                headers=dict(self._configuration.headers),
+                headers={
+                    **self._configuration.headers,
+                    **self._secret_headers,
+                },
                 timeout=self._configuration.timeout_seconds,
                 follow_redirects=False,
             ) as http_client, streamable_http_client(
@@ -326,16 +416,22 @@ class SerenaAdapter:
             if adapter_error is not None:
                 raise adapter_error
             if _contains_timeout(exc):
-                raise SerenaConnectionError("Serena MCP operation exceeded its configured timeout") from exc
+                raise SerenaConnectionError(
+                    "Serena MCP operation exceeded its configured timeout"
+                ) from None
             if _contains_cancellation(exc):
                 raise asyncio.CancelledError from exc
             safe_type = Redactor.redact_text(type(exc).__name__)
-            raise SerenaConnectionError(f"Serena MCP connection failed: {safe_type}") from exc
+            raise SerenaConnectionError(
+                f"Serena MCP connection failed: {safe_type}"
+            ) from None
         except SerenaAdapterError:
             raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - external MCP transports are normalized here
             safe_type = Redactor.redact_text(type(exc).__name__)
-            raise SerenaConnectionError(f"Serena MCP connection failed: {safe_type}") from exc
+            raise SerenaConnectionError(
+                f"Serena MCP connection failed: {safe_type}"
+            ) from None
 
     def _validated_stdio_command(self) -> str:
         command = self._configuration.command
@@ -424,19 +520,18 @@ def _contains_timeout(exc: BaseException) -> bool:
     return False
 
 
-def _redacted_result(result: CallToolResult) -> dict[str, Any]:
-    serialized = json.dumps(
+def _redacted_result(
+    result: CallToolResult,
+    *,
+    context: RedactionContext,
+) -> dict[str, Any]:
+    projected = Redactor.redact_json(
         result.model_dump(mode="json", by_alias=True, exclude_none=True),
-        ensure_ascii=False,
-        allow_nan=False,
-        sort_keys=True,
-        separators=(",", ":"),
+        context=context,
     )
-    redacted = Redactor.redact_text(serialized)
-    loaded = json.loads(redacted)
-    if not isinstance(loaded, dict):  # pragma: no cover - model_dump invariant
+    if not isinstance(projected, dict):  # pragma: no cover - model_dump invariant
         raise SerenaToolExecutionError("Serena result was not a JSON object")
-    return loaded
+    return projected
 
 
 def _validate_json_arguments(arguments: Mapping[str, Any]) -> None:
@@ -476,6 +571,10 @@ def _environment(values: Mapping[str, str]) -> dict[str, str]:
             raise SerenaConfigurationError("environment names must be portable identifiers")
         if not isinstance(value, str) or "\x00" in value:
             raise SerenaConfigurationError("environment values must be text without null bytes")
+        if _SENSITIVE_ENVIRONMENT_NAME.search(name) is not None:
+            raise SerenaConfigurationError(
+                "sensitive environment values must use secret_environment references"
+            )
         if name.casefold() in {key.casefold() for key in result}:
             raise SerenaConfigurationError("environment names must be unique case-insensitively")
         result[name] = value
@@ -491,10 +590,102 @@ def _headers(values: Mapping[str, str]) -> dict[str, str]:
             raise SerenaConfigurationError("HTTP header name is invalid")
         if not isinstance(value, str) or any(character in value for character in "\r\n\x00"):
             raise SerenaConfigurationError("HTTP header value is invalid")
+        if _is_sensitive_header_name(name):
+            raise SerenaConfigurationError(
+                "sensitive HTTP headers must use secret_headers references"
+            )
         if name.casefold() in {key.casefold() for key in result}:
             raise SerenaConfigurationError("HTTP headers must be unique case-insensitively")
         result[name] = value
     return result
+
+
+def _secret_references(
+    label: str,
+    values: Mapping[str, str],
+    *,
+    target_validator: Any,
+) -> dict[str, str]:
+    if not isinstance(values, Mapping):
+        raise SerenaConfigurationError(f"{label} must be a mapping")
+    result: dict[str, str] = {}
+    for target, secret_name in values.items():
+        target_validator(target)
+        if not isinstance(secret_name, str) or _SECRET_REFERENCE.fullmatch(secret_name) is None:
+            raise SerenaConfigurationError(f"{label} values must be environment secret names")
+        if target.casefold() in {name.casefold() for name in result}:
+            raise SerenaConfigurationError(f"{label} targets must be unique case-insensitively")
+        result[target] = secret_name
+    return result
+
+
+def _environment_target(name: object) -> None:
+    if not isinstance(name, str) or _ENVIRONMENT_NAME.fullmatch(name) is None:
+        raise SerenaConfigurationError("secret environment targets must be portable identifiers")
+
+
+def _header_target(name: object) -> None:
+    if not isinstance(name, str) or not _is_sensitive_header_name(name):
+        raise SerenaConfigurationError("secret header targets must be supported sensitive headers")
+
+
+def _is_sensitive_header_name(name: str) -> bool:
+    return (
+        name.casefold() in _SENSITIVE_HEADER_NAMES
+        or _SENSITIVE_HEADER_NAME.search(name) is not None
+    )
+
+
+def _casefold_overlap(
+    public: Mapping[str, str],
+    secret: Mapping[str, str],
+) -> bool:
+    return bool(
+        {name.casefold() for name in public}
+        & {name.casefold() for name in secret}
+    )
+
+
+def _resolve_configuration_secrets(
+    configuration: SerenaMcpConfiguration,
+    *,
+    trust_boundary: TrustEvaluationResult | None,
+) -> tuple[dict[str, str], dict[str, str], RedactionContext]:
+    references = {
+        *configuration.secret_environment.values(),
+        *configuration.secret_headers.values(),
+    }
+    if not references:
+        return {}, {}, RedactionContext()
+    if not isinstance(trust_boundary, TrustEvaluationResult):
+        raise SerenaConfigurationError(
+            "Serena secret references require an explicit trust boundary"
+        )
+
+    resolved: dict[str, str] = {}
+    for secret_name in sorted(references):
+        value = SecretManager.get_secret(
+            secret_name,
+            boundary=trust_boundary,
+            consumer="tool:serena",
+        )
+        if not value:
+            raise SerenaConfigurationError("configured Serena secret is unavailable")
+        resolved[secret_name] = value
+
+    environment = {
+        target: resolved[secret_name]
+        for target, secret_name in configuration.secret_environment.items()
+    }
+    headers = {
+        target: (
+            f"Bearer {resolved[secret_name]}"
+            if target.casefold() in {"authorization", "proxy-authorization"}
+            else resolved[secret_name]
+        )
+        for target, secret_name in configuration.secret_headers.items()
+    }
+    return environment, headers, RedactionContext(resolved)
 
 
 __all__ = [

@@ -36,7 +36,10 @@
 | **CI final anterior** | run [31759971204](https://github.com/Wf-ops1/Harnessinfra/actions/runs/31759971204), `push`, 11/11 success em 4m42s no baseline exato |
 | **Problema F5.5** | multiline/contexto dinâmico, fallback de credencial OpenAI e `repr` Serena reproduzidos como vazamentos booleanos, sem expor valores |
 | **Baseline focado** | R0 inválido por sandbox; R1 válido `230 passed, 3 skipped em 59.15s` |
-| **Checkpoint** | `checkpoint/f5.5-ready`, somente local, no commit documental deste gate |
+| **Implementação local** | contexto imutável, provider/Serena/terminal/tool outcome redigidos; fallback secreto removido; matriz focada `192 passed, 3 skipped` |
+| **Regressão integral** | `873 passed, 5 skipped, 6 subtests passed em 187.14s` |
+| **Quality/build** | ruff, mypy, compileall, diff-check, wheel e smoke oficial offline verdes |
+| **Checkpoint** | `checkpoint/f5.5-ready` no commit `16bcbb1`; COMPLETE ainda pendente, ambos somente locais |
 | **Python** | `.\.venv\Scripts\python.exe` — 3.12.13 |
 
 ## 3. Última promoção comprovada
@@ -69,6 +72,9 @@ imprimir o valor usado: secret fragmentado e chamada sem contexto escapam do red
 legado lê o ambiente sem boundary e a configuração Serena expõe header sensível no `repr`. O escopo
 congela resolução por nome/consumer, injeção somente no adapter, redaction antes de persistência e
 truncamento, JSON estrutural, rotação por nova composição e ausência de secrets em prompts/journal.
+A implementação corrigiu esses quatro pontos e passou o focado exato `192/3` e o full `873/5 + 6`;
+quality integral, wheel e smoke isolado também passaram; restam o commit de produto e o checkpoint
+COMPLETE locais.
 
 ## 6. Bloqueios e fronteiras externas
 
@@ -80,8 +86,8 @@ início da F5.6 não estão autorizados.
 ## 7. Próxima ação exata
 
 ```text
-MATERIALIZAR O COMMIT DOCUMENTAL E O CHECKPOINT LOCAL `checkpoint/f5.5-ready`.
-DEPOIS IMPLEMENTAR SOMENTE O CONTRATO CONGELADO, COMEÇANDO PELOS TESTES NEGATIVOS.
+REVALIDAR DOCUMENTAÇÃO E O DIFF FINAL.
+DEPOIS CRIAR O COMMIT LOCAL DE PRODUTO E `checkpoint/f5.5-complete`.
 NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.6 SEM NOVA AUTORIZAÇÃO.
 ```
 
@@ -94,4 +100,4 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS, REMOVER REFS OU INICIAR F5.6 SE
 
 ---
 
-*Atualizado em: 2026-08-13T22:29:07-03:00 | Fonte: F5.5 + baseline 2f4e391 + PR #60 + run 31759971204 + R1 230/3*
+*Atualizado em: 2026-08-13T23:09:44-03:00 | Fonte: F5.5 + checkpoint 16bcbb1 + focado 192/3 + full 873/5/6 + wheel/smoke*

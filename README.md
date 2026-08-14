@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny; a F5.3 promovida integra trust boundary; a F5.4 promovida adiciona limites tipados, reserva pré-efeito e saldo durável por execução/nó | A F5.5 está `READY / ACTIVE`: vazamentos por fragmentação/contexto ausente, fallback de credencial e representação de header foram reproduzidos, mas ainda não corrigidos | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
+| Configuração e governança | A F5.1 promovida resolve seis níveis por `importlib.resources`; a F5.2 promovida unifica policy default-deny; a F5.3 promovida integra trust boundary; a F5.4 promovida adiciona budget durável; a F5.5 local remove fallback secreto, exige grant exato, injeta somente no adapter e redige texto/JSON antes de truncar ou persistir | A F5.5 segue `READY / ACTIVE` e ainda aguarda commit COMPLETE/promoção; composição automática do lifecycle não foi alegada | Configuração e governança operacionais completas junto da conclusão da Fase 5 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit, verify e rollback ainda cobrem componentes incompletos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing; FSM event-sourced e lifecycle retomável suportam aprovação, cancelamento e retry. A F5.4 promovida reconstrói do mesmo journal tokens, tools, duração, tentativas e custo conhecido, e `status`/`inspect` projetam esse saldo | Efeito iniciado sem outcome exige intervenção; executores e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão nas Fases 3–6 |
@@ -151,8 +151,11 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   encerrou no head `7613460`, passou 11/11 checks no run `31753299879`, foi incorporada pelo merge
   `2f4e391` e recebeu 11/11 na CI pós-merge `31759971204` em 4m42s. A F5.5 iniciou na branch local
   `task/f5.5-secrets-redaction` com gate `READY`, baseline focado `230 passed, 3 skipped` e quatro
-  lacunas reproduzidas sem imprimir valores sensíveis. Checkpoints permanecem somente locais; push,
-  PR, merge, tags remotas, remoção de refs e F5.6 não estão autorizados.
+  lacunas reproduzidas sem imprimir valores sensíveis. A implementação local corrente passou a matriz
+  focada exata final com `192 passed, 3 skipped` e a regressão integral final com
+  `873 passed, 5 skipped, 6 subtests passed`; o checkpoint READY está no commit `16bcbb1`.
+  Checkpoints permanecem somente locais; push, PR, merge, tags remotas, remoção de refs e F5.6 não
+  estão autorizados.
 
 ## Dívidas técnicas críticas
 
@@ -172,9 +175,10 @@ operacionais:
 - [SerenaAdapter](src/ai_engineering_harness/tools/adapters/serena.py) abre transporte MCP stdio ou
   Streamable HTTP configurado, comprova capability/raiz e valida a mudança real; instalação,
   configuração e injeção live continuam externas e opt-in;
-- a F5.5 ainda precisa remover fallback secreto direto dos adapters legados, impedir headers sensíveis
-  em representações e propagar um contexto imutável que redija multiline, journal, exceptions,
-  stdout/stderr e evidence sem inserir valores em prompts;
+- a F5.5 local introduz `RedactionContext` imutável/repr-safe, remove fallback secreto dos adapters
+  OpenAI/local, redige respostas de provider e outcomes de tools estruturalmente, restringe Serena a
+  referências nominais e preserva stdout/stderr redigidos antes do truncamento. Essa fronteira ainda
+  depende de composição explícita e não torna Serena live, tools ou providers automáticos;
 - [PythonAstIndexer](src/ai_engineering_harness/indexer/python_ast_indexer.py) lê somente blobs Python
   regulares do commit Git resolvido, produz símbolos AST reais e publica pelo contrato íntegro F4.1;
   `harness index` aciona esse rebuild explicitamente, enquanto `CodebaseMemoryAdapter` permanece

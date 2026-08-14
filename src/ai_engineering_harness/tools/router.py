@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
-from typing import Annotated, Any
+from dataclasses import dataclass, field
+from typing import Annotated, Any, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
@@ -20,6 +20,7 @@ from ai_engineering_harness.governance import (
 )
 from ai_engineering_harness.models.provider import ToolCall
 from ai_engineering_harness.security import (
+    RedactionContext,
     TrustCapabilityDeniedError,
     TrustEvaluationResult,
 )
@@ -87,6 +88,11 @@ class ToolRegistration:
     operation: str = "invoke"
     path_argument: str | None = None
     default_path: str | None = None
+    redaction_context: RedactionContext = field(
+        default_factory=RedactionContext,
+        repr=False,
+        compare=False,
+    )
 
     def __post_init__(self) -> None:
         if not self.operation.strip() or self.operation != self.operation.strip():
@@ -98,6 +104,8 @@ class ToolRegistration:
             raise ValueError("tool registration path_argument must be canonical and non-empty")
         if self.path_argument is None and self.default_path is not None:
             raise ValueError("default_path requires a path_argument")
+        if not isinstance(self.redaction_context, RedactionContext):
+            raise TypeError("redaction_context must be a RedactionContext")
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,7 +218,11 @@ class ToolRouter:
         self._require_verified_decision(target, policy_engine, decision)
         try:
             result = registration.handler(payload)
-            return _copy_json_value(result)
+            projected = Redactor.redact_json(
+                result,
+                context=registration.redaction_context,
+            )
+            return _copy_json_value(cast(JsonValue, projected))
         except ToolRouterError:
             raise
         except Exception as exc:

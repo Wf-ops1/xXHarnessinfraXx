@@ -871,6 +871,7 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     dossier = _read(ACTIVE_ROOT / "F5.5.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
 
     assert (ACTIVE_ROOT / "F5.5.md").is_file()
     assert not (COMPLETED_ROOT / "F5.5.md").exists()
@@ -881,6 +882,9 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
     assert "31759971204" in dossier
     assert "230 passed, 3 skipped" in dossier
+    assert "192 passed, 3 skipped" in dossier
+    assert "873 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "RedactionContext" in dossier
     assert "'split_dynamic_secret_leaks': True" in dossier
     assert "'unscoped_runtime_redaction_leaks': True" in dossier
     assert "'legacy_adapter_reads_env_without_boundary': True" in dossier
@@ -898,6 +902,16 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "docs/tasks/active/F5.5.md" in panel
     assert "active/F5.5.md" in task_index
     assert "F5.5" in readme
+    assert "a F5.5 ainda precisa remover" not in readme
+    for name, consumer in (
+        ("OPENAI_API_KEY", "provider:openai"),
+        ("HARNESS_LOCAL_MODEL_API_KEY", "provider:local"),
+        ("SERENA_MCP_TOKEN", "tool:serena"),
+    ):
+        assert name in user_guide
+        assert consumer in user_guide
+    assert "instâncias existentes não fazem hot" in user_guide
+    assert "reload silencioso" in user_guide
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

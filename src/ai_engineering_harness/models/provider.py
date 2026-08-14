@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
-from ai_engineering_harness.security.redaction import Redactor
+from ai_engineering_harness.security.redaction import RedactionContext, Redactor
 
 ProviderErrorCategory = Literal[
     "auth",
@@ -310,6 +310,7 @@ class OpenAICompatibleHTTPProvider(BaseLLMProvider):
         base_url: str,
         api_style: APIStyle,
         api_key: str | None,
+        redaction_context: RedactionContext | None = None,
         requires_api_key: bool,
         timeout_seconds: float = 60.0,
         max_retries: int = 2,
@@ -329,6 +330,12 @@ class OpenAICompatibleHTTPProvider(BaseLLMProvider):
         self.base_url = base_url.rstrip("/")
         self.api_style = api_style
         self._api_key = api_key
+        if redaction_context is not None and not isinstance(redaction_context, RedactionContext):
+            raise TypeError("redaction_context must be a RedactionContext or None")
+        context = redaction_context or RedactionContext()
+        self._redaction_context = (
+            context._with_secret("PROVIDER_API_KEY", api_key) if api_key else context
+        )
         self._requires_api_key = requires_api_key
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
@@ -587,7 +594,8 @@ class OpenAICompatibleHTTPProvider(BaseLLMProvider):
             self._raise_if_cancelled(cancellation_token)
             try:
                 response = self._send_once(body, cancellation_token)
-                request_id = response.headers.get("x-request-id")
+                raw_request_id = response.headers.get("x-request-id")
+                request_id = self._redact(raw_request_id) if raw_request_id else None
                 if not response.is_success:
                     raise self._http_error(response, request_id=request_id)
                 try:
@@ -607,7 +615,15 @@ class OpenAICompatibleHTTPProvider(BaseLLMProvider):
                         status_code=response.status_code,
                     )
                 self._raise_if_cancelled(cancellation_token)
-                return payload, request_id
+                safe_payload = Redactor.redact_json(payload, context=self._redaction_context)
+                if not isinstance(safe_payload, dict):  # pragma: no cover - payload invariant
+                    raise ProviderResponseError(
+                        "provider retornou payload não-objeto",
+                        provider_id=self.provider_id,
+                        request_id=request_id,
+                        status_code=response.status_code,
+                    )
+                return safe_payload, request_id
             except ProviderError as exc:
                 last_error = exc
             except httpx.TimeoutException as exc:
@@ -891,8 +907,7 @@ class OpenAICompatibleHTTPProvider(BaseLLMProvider):
         return value
 
     def _redact(self, text: str) -> str:
-        dynamic = {"PROVIDER_API_KEY": self._api_key} if self._api_key else None
-        return Redactor.redact_text(text[: self._MAX_ERROR_CHARS], dynamic_secrets=dynamic)
+        return Redactor.redact_text(text, context=self._redaction_context)[: self._MAX_ERROR_CHARS]
 
 
 def _strict_json_loads(raw: str) -> JsonValue:

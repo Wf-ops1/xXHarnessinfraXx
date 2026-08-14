@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from pathlib import Path
 
@@ -52,6 +53,7 @@ if not arguments.omit_edit:
         replacement: str,
         fail: bool = False,
         delay_seconds: float = 0.0,
+        echo_environment: str = "",
     ) -> dict[str, object]:
         if delay_seconds > 0:
             time.sleep(delay_seconds)
@@ -63,7 +65,13 @@ if not arguments.omit_edit:
             raise RuntimeError("controlled test failure")
         updated = content.replace(needle, replacement)
         target.write_text(updated, encoding="utf-8", errors="strict", newline="")
-        return {"path": relative_path, "changed": updated != content}
+        result: dict[str, object] = {
+            "path": relative_path,
+            "changed": updated != content,
+        }
+        if echo_environment:
+            result["environment"] = os.environ.get(echo_environment)
+        return result
 
 
 if __name__ == "__main__":

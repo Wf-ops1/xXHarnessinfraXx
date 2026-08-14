@@ -11,7 +11,7 @@ from .path_guard import (
     PathSizeLimitError,
     PathTraversalError,
 )
-from .redaction import Redactor
+from .redaction import RedactionContext, Redactor
 from .secrets import SecretManager
 from .trust import (
     SecretGrant,
@@ -34,6 +34,7 @@ __all__ = [
     "PathResolutionError",
     "PathSizeLimitError",
     "PathTraversalError",
+    "RedactionContext",
     "Redactor",
     "SecretGrant",
     "SecretManager",
