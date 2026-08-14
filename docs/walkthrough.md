@@ -99,7 +99,7 @@ Limitações importantes:
 - a F5.2 pré-autoriza cada lote por role/node/workflow/trust/tool/operação/path/aprovação, aplica
   default-deny e persiste a regra antes do efeito; o outcome fica ligado pelo digest da decisão;
 - o `ToolRouter` operacional revalida a decisão, mas não é construído automaticamente pelo lifecycle;
-- a trust boundary F5.3 e o budget F5.4 estão promovidos/reconciliados; a F5.6 local cria a aprovação
+- a trust boundary F5.3 e o budget F5.4 estão promovidos/reconciliados; a F5.6 promovida cria a aprovação
   de promoção somente após candidate + full suite e liga artifact/plano/diff/SHA/gates no mesmo
   `approval-request.json`;
 - planejamento, nós/modelos, tools e verificação compartilham o ledger F5.4 persistido; excesso leva
