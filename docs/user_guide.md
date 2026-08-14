@@ -37,7 +37,7 @@ uv run python -m build
 | `harness run <workflow> [--profile <nome>] [--config-json <objeto>]` | Compila/carrega artefato, resolve a configuração tipada e inicia o lifecycle canônico | Fail-closed: configuração inválida não cria execução; o wiring padrão possui registry de executores vazio e não executa modelos/tools automaticamente |
 | `harness status <id>` | Lê a visão canônica do estado persistido e o snapshot agregado de budget | Implementado como leitura local; o saldo F5.4 vem do mesmo journal que governa a execução |
 | `harness inspect <id>` | Exibe digests, eventos, aprovação e saldo por execução/nó sem secrets | Implementado como inspeção local; não usa contador paralelo de apresentação |
-| `harness approve <id>` | Persiste decisão ligada à revisão corrente | Exige retomada explícita e ainda não promove por Git |
+| `harness approve <id>` | Aprova a pausa de node ou uma solicitação de promoção já criada e ligada ao conteúdo | A CLI não cria candidate/request automaticamente; promoção opt-in usa a API canônica e continua separada |
 | `harness resume <id>` | Retoma exclusivamente do bundle canônico persistido | Não aceita perfil/override novo nem relê configuração viva; depende dos mesmos backends explicitamente injetados |
 | `harness verify <execution_id> [--project-id <id>]` | Carrega o `ProvisionedWorktree`, detecta configuração e executa a suíte canônica compilada | F4.5–F4.8 bloqueiam pré-requisito inválido, persistem resultados commit-bound e exigem targeted → full após reparo; worktree/provider ainda precisam existir |
 | `harness audit <id>` | Verifica/exporta o diário local | Implementação local; não prova efeitos reais |
@@ -167,13 +167,14 @@ o outcome guarda seu digest. O replay aceita journals históricos, mas rejeita e
 ou divergente.
 
 Isso não liga as tools automaticamente ao lifecycle padrão. O caminho executável atual não aceita um
-booleano do chamador como prova: policy que exige aprovação bloqueia antes do egress. Vincular uma
-aprovação real a conteúdo/diff permanece reservado à F5.6. A F5.3 está promovida e reconciliada; a
-F5.4 local preserva essa fronteira antes de qualquer reserva de budget.
+booleano do chamador como prova: policy que exige aprovação bloqueia antes do egress. A F5.6 liga a
+decisão humana de **promoção** ao candidate e à evidência verificada; ela não converte
+`approval_granted` da policy de tools em autorização humana. A F5.3 e a F5.4 preservam trust e budget
+antes de qualquer efeito.
 
 ## Secrets e redaction F5.5
 
-A implementação F5.5 está local e ainda não promovida. Valores só são lidos do ambiente depois de um
+A implementação F5.5 está promovida e reconciliada. Valores só são lidos do ambiente depois de um
 `TrustEvaluationResult` autorizar o nome e o consumer exatos. A configuração efetiva persiste apenas
 o nome em `api_key_env`; não coloque valores em YAML, JSON, prompt, system prompt, argumentos de tool
 ou arquivos `.env` do projeto.
@@ -201,6 +202,29 @@ reload silencioso. Texto exato ou fragmentado por whitespace, headers conhecidos
 e JSON recursivo são redigidos antes de truncamento e persistência. Provider recebe a credencial
 somente no header, nunca no corpo/prompt; terminal e Serena projetam stdout, stderr e resultados MCP
 já redigidos antes de retorná-los ao tool loop.
+
+## Aprovação de promoção vinculada ao conteúdo F5.6
+
+A F5.6 local separa a pausa de um node `human_approval` da decisão que autoriza promoção. A ordem
+canônica da API é:
+
+1. `prepare_candidate(execution_id)` cria e persiste o candidate commit real;
+2. `verify(execution_id)` persiste a última suíte completa verde no mesmo SHA;
+3. `request_promotion_approval(execution_id, reason=..., expires_at=<UTC>)` cria
+   `.harness/state/executions/<id>/approval-request.json`;
+4. `approve(execution_id, approver=..., comment=...)` registra a decisão humana;
+5. `promote(execution_id)` recompõe e compara todo o subject antes de chamar Git.
+
+O JSON contém execution ID, artifact/plan/diff digests, candidate SHA, resultados e digests dos
+gates, razão, validade, status, approver, timestamp e comentário opcional. Em workflows sem planner,
+`plan_digest` liga explicitamente a ausência por um marcador canônico; não fica `null`. O arquivo
+legado `approval_request.json` e um status `APPROVED` originado apenas por node nunca autorizam
+promoção.
+
+Se candidate/diff, plano ou gates divergirem, o lifecycle persiste `INVALIDATED`; se a validade
+terminar antes da decisão ou promoção, persiste `EXPIRED`. Tamper, evento/CAS ambíguo ou projeção sem
+histórico falham fechados. Nenhum desses casos executa `cherry-pick`. Uma nova tentativa exige nova
+solicitação e nova decisão sobre o conteúdo corrente.
 
 ## Teste controlado de `init`
 

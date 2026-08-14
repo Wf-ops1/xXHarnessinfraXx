@@ -114,6 +114,12 @@ def test_candidate_is_one_real_squashed_commit_without_touching_original(tmp_pat
         candidate.candidate_commit_sha
     )
 
+    first_digest = promotion.candidate_diff_digest(candidate)
+    second_digest = promotion.candidate_diff_digest(candidate)
+    assert first_digest == second_digest
+    assert first_digest.startswith("sha256:")
+    assert len(first_digest) == 71
+
 
 def test_candidate_squashes_a_clean_repair_child_back_to_the_execution_base(tmp_path: Path) -> None:
     repository, worktrees, promotion, base_sha, _ = _fixture(tmp_path)

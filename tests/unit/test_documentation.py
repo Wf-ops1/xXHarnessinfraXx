@@ -76,7 +76,7 @@ def test_current_docs_recognize_f3_8_tools_without_claiming_lifecycle_integratio
     assert "ainda não constrói esse registry" in operating_model.casefold()
 
 
-def test_current_docs_explain_f5_2_without_claiming_later_trust_or_approval() -> None:
+def test_current_docs_separate_tool_policy_from_content_bound_promotion() -> None:
     readme = _read(ROOT / "README.md")
     lifecycle = _read(ROOT / "docs" / "agentic_lifecycle_audit.md")
     user_guide = _read(ROOT / "docs" / "user_guide.md")
@@ -91,6 +91,11 @@ def test_current_docs_explain_f5_2_without_claiming_later_trust_or_approval() ->
     assert "TOOL_CALLED" in user_guide
     assert "F5.3" in user_guide
     assert "F5.6" in user_guide
+    assert "Aprovação de promoção vinculada ao conteúdo F5.6" in user_guide
+    assert "approval-request.json" in user_guide
+    assert "INVALIDATED" in user_guide
+    assert "EXPIRED" in user_guide
+    assert "não converte" in user_guide
     assert "não é construído automaticamente" in walkthrough
 
 
@@ -181,7 +186,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "runner `0/0` falham antes de subprocessos" in readme
 
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "task/f5.6-content-bound-approval" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
@@ -194,7 +200,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "2227b73131d405cde046c58ec83094889a3feb51" in panel
     assert "31769631054" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62" in panel
-    assert "31770610085" in panel
+    assert "45f4fb7" in panel
+    assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
+    assert "31771169636" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/60" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel

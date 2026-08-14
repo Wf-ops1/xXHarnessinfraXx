@@ -1,5 +1,14 @@
 """Módulo de Governança, Orçamento e Avaliação de Suficiência."""
 
+from .approval import (
+    ApprovalContent,
+    ApprovalContractError,
+    ApprovalError,
+    ApprovalGateResult,
+    ApprovalManager,
+    ApprovalPersistenceError,
+    ApprovalRequest,
+)
 from .budget import (
     BUDGET_COMMITTED,
     BUDGET_EVENT_TYPES,
@@ -45,6 +54,13 @@ __all__ = [
     "BUDGET_EXCEEDED",
     "BUDGET_RELEASED",
     "BUDGET_RESERVED",
+    "ApprovalContent",
+    "ApprovalContractError",
+    "ApprovalError",
+    "ApprovalGateResult",
+    "ApprovalManager",
+    "ApprovalPersistenceError",
+    "ApprovalRequest",
     "BudgetBoundary",
     "BudgetCommit",
     "BudgetConfigurationError",

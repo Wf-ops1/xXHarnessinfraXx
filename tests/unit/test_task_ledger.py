@@ -362,7 +362,10 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING`" in panel
+    assert "task/f5.6-content-bound-approval" in panel
+    assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
+    assert "31771169636" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
@@ -880,7 +883,8 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "checkpoint/f5.5-ready" in dossier
     assert "checkpoint/f5.5-complete" in dossier
     assert "f4460ad" in dossier
-    assert "PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "task/f5.6-content-bound-approval" in panel
     assert "task/f5.5-secrets-redaction" in dossier
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
     assert "31759971204" in dossier
@@ -893,7 +897,9 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "2227b73131d405cde046c58ec83094889a3feb51" in dossier
     assert "31769631054" in dossier
     assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in dossier
-    assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in panel
+    assert "45f4fb7" in panel
+    assert "daec37d119fced3a5e041c412ab01e7524c15800" in panel
+    assert "31771169636" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62" in dossier
     assert "31770610085" in dossier
     assert "RedactionContext" in dossier
@@ -924,6 +930,49 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
         assert consumer in user_guide
     assert "instâncias existentes não fazem hot" in user_guide
     assert "reload silencioso" in user_guide
+
+
+def test_f5_6_active_gate_binds_approval_to_the_exact_promotion_content() -> None:
+    panel = _read(TASK_PANEL)
+    dossier = _read(ACTIVE_ROOT / "F5.6.md")
+    task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+
+    assert (ACTIVE_ROOT / "F5.6.md").is_file()
+    assert "> **Gate:** `READY`" in dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "task/f5.6-content-bound-approval" in panel
+    assert "checkpoint/f5.6-ready" in dossier
+    assert "161e1c26eb0aad6b81e25ebdcda4f12519486ba4" in dossier
+    assert "7941dfee0384927acdb5d94cd9e626194b7b1432" in dossier
+    assert "checkpoint/f5.6-complete" in dossier
+    for field in (
+        "execution ID",
+        "artifact digest",
+        "plan digest",
+        "diff digest",
+        "candidate commit SHA",
+        "resultados dos gates",
+        "approver ID",
+        "timestamp da decisão",
+    ):
+        assert field in dossier
+    assert "approval-request.json" in dossier
+    assert "approval_request.json" in dossier
+    assert "INVALIDATED" in dossier
+    assert "EXPIRED" in dossier
+    assert "47 passed" in dossier
+    assert "885 passed, 5 skipped, 6 subtests passed" in dossier
+    assert "uv 0.12.3" in dossier
+    assert "38 passed, 6 subtests passed" in dossier
+    assert "F5.7" in dossier
+    assert "F6" in dossier
+    assert "active/F5.6.md" in panel
+    assert "active/F5.6.md" in task_index
+    assert "885 passed, 5 skipped, 6 subtests passed" in readme
+    assert "Aprovação de promoção vinculada ao conteúdo F5.6" in user_guide
+    assert "não converte" in user_guide
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

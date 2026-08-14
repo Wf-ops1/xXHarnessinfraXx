@@ -20,13 +20,22 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há implementação ativa. A [F5.5](completed/F5.5.md) está `PROMOTED`: o PR
-[#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) encerrou no head `68482da`, passou 11/11 no
-run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
-`31769631054` em 5m20s. O produto é `f4460ad`; focado `192 passed, 3 skipped` e full
-`873 passed, 5 skipped, 6 subtests passed`. A reconciliação administrativa PR #62 está aberta no head
-inicial `82f2395`, com o run inicial `31770610085` em andamento; merge, tags/refs e F5.6 não estão
+A [F5.6](active/F5.6.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch local
+`task/f5.6-content-bound-approval`. O preflight registrou Python 3.12.13, baseline remoto exato
+`daec37d` e CI final anterior `31771169636` com 11/11 checks. O problema foi reproduzido: o JSON
+legado possui só três campos e a mudança do candidate SHA não altera o subject aprovado. Escopo,
+aceite e rollback estão congelados; `checkpoint/f5.6-ready` aponta localmente para `161e1c2`. A
+implementação corrente passou `47` testes focados e a regressão integral passou `885`, com `5` skips
+e `6` subtests; documentação/ledger, mypy, Ruff, compileall, diff-check, wheel e smoke oficial com
+`uv 0.12.3` também estão verdes. O produto é `7941dfe`; wheel e smoke foram repetidos sobre esse
+commit. `checkpoint/f5.6-complete` fecha a certificação local. Push, PR e tags remotas não estão
 autorizados.
+
+A [F5.5](completed/F5.5.md) está `PROMOTED`: o PR #61 encerrou no head `68482da`, passou 11/11 no
+run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
+`31769631054` em 5m20s. A reconciliação administrativa PR #62 encerrou no head `45f4fb7`, passou
+11/11 no run `31770761873`, foi incorporada pelo merge `daec37d` e recebeu 11/11 na CI final
+`31771169636`.
 
 A [F5.4](completed/F5.4.md) está `PROMOTED`: o PR #59 encerrou no head `21aa4a6`, passou 11/11 checks
 no run `31739876952`, foi incorporado pelo merge `d624629` e recebeu 11/11 na CI pós-merge
@@ -96,6 +105,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.2 | [Política unificada de autorização de tools](completed/F5.2.md) | PR #55 / merge `df5fee5` / pós-merge `31646282269`; administrativo #56 / merge `0607a0b` / pós-merge `31650131258` |
 | F5 | F5.3 | [Trust boundary integrado](completed/F5.3.md) | PR #57 / merge `211edcf` / pós-merge `31660030240`; administrativo #58 / merge `4c0527b` / pós-merge `31728438719` |
 | F5 | F5.4 | [Orçamento durável por execução e nó](completed/F5.4.md) | PR #59 / merge `d624629` / pós-merge `31742231398`; administrativo #60 / merge `2f4e391` / pós-merge `31759971204` |
+| F5 | F5.5 | [Secrets e redaction no caminho crítico](completed/F5.5.md) | PR #61 / merge `2227b73` / pós-merge `31769631054`; administrativo #62 / merge `daec37d` / pós-merge `31771169636` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
