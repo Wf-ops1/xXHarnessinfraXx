@@ -20,17 +20,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.7](active/F5.7.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch local
-`task/f5.7-safe-cancel-rollback`. O produto R3 `26bb04d`, sobre o anterior `d787ce5`, persiste decisão/pedido de cancelamento,
-interrompe e reapera a árvore vinculada, impede sucesso pós-dispatch cancelado, mantém cleanup
-explícito e executa `git revert` real do SHA canônico com conflito em `BLOCKED_ROLLBACK`. R2 registra
-que a decisão durável precede o sinal quando o executor já detém o lock, seguida de reconciliação
-canônica após quiescência. R3 nega Git transitivo executável, liga a aprovação destrutiva à tentativa,
-faz a CLI falhar em bloqueio e preserva ambiguidade sem reap. O focado passou `174` testes com `2`
-skips, segurança passou `68` e a regressão integral isolada passou `910` com `5` skips e `6` subtests.
-Mypy em 106 arquivos, Ruff, compileall, diff-check, wheel e smoke oficial offline com `uv 0.12.3`
-ficaram verdes. Os checkpoints são exclusivamente locais;
-push, PR, merge, tags remotas e início de F6 não estão autorizados.
+Nenhuma tarefa de implementação está ativa. A [F5.7](completed/F5.7.md) está `PROMOTED`: o produto
+R3 `26bb04d`, sobre o anterior `d787ce5`, persiste decisão/pedido de cancelamento, interrompe e reapera
+a árvore vinculada, mantém cleanup explícito e executa `git revert` real do SHA canônico com conflito
+em `BLOCKED_ROLLBACK`. O head final `b1cca81` passou 11/11 checks no run `31845896973` do PR #65,
+foi incorporado pelo merge `e8470ec` e recebeu 11/11 na CI pós-merge `31846634851` em 5m30s. O focado
+passou `174` testes com `2` skips, segurança passou `68` e a regressão integral isolada passou `910`
+com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
+verdes. A reconciliação `docs/promote-f5.7` está `LOCAL_READY / PUBLICATION_PENDING`; checkpoints
+permanecem locais e F6 não pode começar antes da incorporação administrativa.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge
@@ -118,6 +116,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.4 | [Orçamento durável por execução e nó](completed/F5.4.md) | PR #59 / merge `d624629` / pós-merge `31742231398`; administrativo #60 / merge `2f4e391` / pós-merge `31759971204` |
 | F5 | F5.5 | [Secrets e redaction no caminho crítico](completed/F5.5.md) | PR #61 / merge `2227b73` / pós-merge `31769631054`; administrativo #62 / merge `daec37d` / pós-merge `31771169636` |
 | F5 | F5.6 | [Aprovação vinculada ao conteúdo](completed/F5.6.md) | PR #63 / merge `0488380` / pós-merge `31814250746`; administrativo #64 / merge `a449bd1` / CI final `31817497094` |
+| F5 | F5.7 | [Cancelamento e rollback seguros](completed/F5.7.md) | PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação administrativa local pendente de publicação |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

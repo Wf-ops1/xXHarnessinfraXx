@@ -987,15 +987,17 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
     assert "não converte" in user_guide
 
 
-def test_f5_7_r3_recertifies_negative_evidence_before_promotion() -> None:
+def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> None:
     panel = _read(TASK_PANEL)
-    dossier = _read(ACTIVE_ROOT / "F5.7.md")
+    dossier = _read(COMPLETED_ROOT / "F5.7.md")
     task_index = _read(TASKS_INDEX)
+    readme = _read(ROOT / "README.md")
 
-    assert (ACTIVE_ROOT / "F5.7.md").is_file()
+    assert not (ACTIVE_ROOT / "F5.7.md").exists()
+    assert (COMPLETED_ROOT / "F5.7.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
-    assert "task/f5.7-safe-cancel-rollback" in panel
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
+    assert "docs/promote-f5.7" in panel
     assert "task/f5.7-safe-cancel-rollback" in dossier
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in dossier
     assert "checkpoint/f5.7-ready" in panel
@@ -1031,13 +1033,20 @@ def test_f5_7_r3_recertifies_negative_evidence_before_promotion() -> None:
         "COMPLETED_LOCAL / PROMOTION_PENDING",
     ):
         assert required in dossier
-    assert "active/F5.7.md" in task_index
+    assert "completed/F5.7.md" in task_index
     assert "31817497094" in panel
     assert "31817497094" in task_index
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "174 passed, 2 skipped" in panel
     assert "910 passed, 5 skipped, 6 subtests passed" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
+    assert "LOCAL_READY / PUBLICATION_PENDING" in task_index
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65" in dossier
+    assert "31845896973" in dossier
+    assert "e8470ece8bdb7e98ddfe9817270d0b17032404d4" in dossier
+    assert "31846634851" in dossier
+    assert "b1cca8134b04671c27f18c9260fa098739f7415b" in dossier
+    assert "PR #65" in readme
+    assert "31846634851" in readme
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
