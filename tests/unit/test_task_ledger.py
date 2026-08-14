@@ -362,8 +362,8 @@ def test_f4_3_r6_preserves_prior_gates_and_names_every_phase4_owner() -> None:
     assert "ao menos um gate obrigatório" in decision
     assert "checkpoint/f4.3-promotion-sync-ready" in dossier
     assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
-    assert "`COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`" in panel
-    assert "docs/tasks/active/F5.5.md" in panel
+    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "docs/tasks/completed/F5.5.md" in panel
     assert "task/f5.5-secrets-redaction" in panel
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
     assert "31759971204" in panel
@@ -868,19 +868,19 @@ def test_f5_4_promotion_preserves_durable_execution_and_node_budget() -> None:
 
 def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     panel = _read(TASK_PANEL)
-    dossier = _read(ACTIVE_ROOT / "F5.5.md")
+    dossier = _read(COMPLETED_ROOT / "F5.5.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
     user_guide = _read(ROOT / "docs" / "user_guide.md")
 
-    assert (ACTIVE_ROOT / "F5.5.md").is_file()
-    assert not (COMPLETED_ROOT / "F5.5.md").exists()
+    assert not (ACTIVE_ROOT / "F5.5.md").exists()
+    assert (COMPLETED_ROOT / "F5.5.md").is_file()
     assert "> **Gate:** `READY`" in dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in dossier
+    assert "> **Lifecycle:** `PROMOTED`" in dossier
     assert "checkpoint/f5.5-ready" in dossier
     assert "checkpoint/f5.5-complete" in dossier
     assert "f4460ad" in dossier
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING" in panel
+    assert "PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING" in panel
     assert "task/f5.5-secrets-redaction" in dossier
     assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in dossier
     assert "31759971204" in dossier
@@ -889,6 +889,13 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "873 passed, 5 skipped, 6 subtests passed" in dossier
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61" in dossier
     assert "31764961921" in dossier
+    assert "31765166979" in dossier
+    assert "2227b73131d405cde046c58ec83094889a3feb51" in dossier
+    assert "31769631054" in dossier
+    assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in dossier
+    assert "73be828a6e4e813e9370eac7f4289179c7f05d79" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62" in dossier
+    assert "31770610085" in dossier
     assert "RedactionContext" in dossier
     assert "'split_dynamic_secret_leaks': True" in dossier
     assert "'unscoped_runtime_redaction_leaks': True" in dossier
@@ -904,8 +911,8 @@ def test_f5_5_gate_freezes_secret_injection_and_redaction() -> None:
     assert "provider:local" in dossier
     assert "tool:serena" in dossier
     assert "rollback" in dossier.casefold()
-    assert "docs/tasks/active/F5.5.md" in panel
-    assert "active/F5.5.md" in task_index
+    assert "docs/tasks/completed/F5.5.md" in panel
+    assert "completed/F5.5.md" in task_index
     assert "F5.5" in readme
     assert "a F5.5 ainda precisa remover" not in readme
     for name, consumer in (

@@ -20,15 +20,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.5](active/F5.5.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch publicada
-`task/f5.5-secrets-redaction`, criada do baseline `2f4e391`. O gate congela resolução por nome e
-consumer autorizado, injeção somente no adapter, redaction dinâmica/multiline antes de persistência,
-JSON estrutural, ausência de secrets em prompts e rotação por nova composição. A baseline focada
-válida passou `230 passed, 3 skipped`; a implementação corrente passou o focado exato final com
-`192 passed, 3 skipped` e o full final com `873 passed, 5 skipped, 6 subtests passed`. O checkpoint READY
-aponta para `16bcbb1`; o produto está em `f4460ad` e `checkpoint/f5.5-complete` fecha a certificação
-local. O PR [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) está aberto com checks pendentes;
-merge, tags/refs e F5.6 não estão autorizados.
+Não há implementação ativa. A [F5.5](completed/F5.5.md) está `PROMOTED`: o PR
+[#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61) encerrou no head `68482da`, passou 11/11 no
+run `31765166979`, foi incorporado pelo merge `2227b73` e recebeu 11/11 na CI pós-merge
+`31769631054` em 5m20s. O produto é `f4460ad`; focado `192 passed, 3 skipped` e full
+`873 passed, 5 skipped, 6 subtests passed`. A reconciliação administrativa PR #62 está aberta no head
+inicial `82f2395`, com o run inicial `31770610085` em andamento; merge, tags/refs e F5.6 não estão
+autorizados.
 
 A [F5.4](completed/F5.4.md) está `PROMOTED`: o PR #59 encerrou no head `21aa4a6`, passou 11/11 checks
 no run `31739876952`, foi incorporado pelo merge `d624629` e recebeu 11/11 na CI pós-merge
