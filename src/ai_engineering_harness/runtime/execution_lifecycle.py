@@ -64,6 +64,8 @@ from ai_engineering_harness.models.router import (
 from ai_engineering_harness.persistence import (
     ExecutionBundle,
     ExecutionLock,
+    LockAcquisitionTimeoutError,
+    LockOwnershipError,
     ResumeStateStorageProvider,
     StateStorageError,
     canonical_json_digest,
@@ -87,10 +89,17 @@ from ai_engineering_harness.verification import (
     VerificationSuiteResult,
 )
 from ai_engineering_harness.workspace import (
+    ExternalWorktreeManager,
     ProvisionedWorktree,
     WorktreeError,
+    WorktreeReference,
 )
 
+from .cancellation import (
+    CancellationController,
+    CancellationControllerError,
+    CancellationStateIntegrityError,
+)
 from .context_assembler import (
     ContextAssembler,
     ContextPrerequisiteError,
@@ -117,6 +126,7 @@ from .promotion_manager import (
     PromotionError,
     PromotionManager,
 )
+from .rollback_manager import RollbackError, RollbackManager, RollbackResult
 from .state_machine import VALID_STATE_TRANSITIONS, EventSourcedStateMachine
 
 APPROVAL_REQUESTED: Literal["APPROVAL_REQUESTED"] = "APPROVAL_REQUESTED"
@@ -137,6 +147,15 @@ PROMOTION_APPROVAL_REQUESTED: Literal["PROMOTION_APPROVAL_REQUESTED"] = (
     "PROMOTION_APPROVAL_REQUESTED"
 )
 PROMOTION_APPROVED: Literal["PROMOTION_APPROVED"] = "PROMOTION_APPROVED"
+CANCELLATION_POLICY_DECIDED = "CANCELLATION_POLICY_DECIDED"
+CANCELLATION_COMPLETED = "CANCELLATION_COMPLETED"
+CANCELLATION_BLOCKED = "CANCELLATION_BLOCKED"
+WORKTREE_CLEANUP_POLICY_DECIDED = "WORKTREE_CLEANUP_POLICY_DECIDED"
+WORKTREE_CLEANUP_COMPLETED = "WORKTREE_CLEANUP_COMPLETED"
+WORKTREE_CLEANUP_BLOCKED = "WORKTREE_CLEANUP_BLOCKED"
+ROLLBACK_POLICY_DECIDED = "ROLLBACK_POLICY_DECIDED"
+ROLLBACK_COMPLETED = "ROLLBACK_COMPLETED"
+ROLLBACK_BLOCKED = "ROLLBACK_BLOCKED"
 PROMOTION_APPROVAL_EXPIRED: Literal["PROMOTION_APPROVAL_EXPIRED"] = (
     "PROMOTION_APPROVAL_EXPIRED"
 )
@@ -239,6 +258,14 @@ class PromotionApprovalRequiredError(ExecutionLifecycleError):
 
 class ExecutionCancellationError(ExecutionLifecycleError):
     """The requested execution cannot be cancelled or resumed."""
+
+
+class WorktreeCleanupLifecycleError(ExecutionLifecycleError):
+    """Explicit worktree cleanup was unavailable, unsafe, or unsuccessful."""
+
+
+class RollbackLifecycleError(ExecutionLifecycleError):
+    """Canonical rollback was unavailable, unsafe, or blocked."""
 
 
 class ExecutionBudgetExceededError(ExecutionLifecycleError):
@@ -393,6 +420,10 @@ class ExecutionLifecycleService:
         verification_worktree_provider: Callable[[str], ProvisionedWorktree] | None = None,
         promotion_manager: PromotionManager | None = None,
         trust_boundary: TrustEvaluationResult | None = None,
+        cancellation_controller_factory: Callable[[str], CancellationController] | None = None,
+        cancellation_wait_seconds: float = 30.0,
+        worktree_manager: ExternalWorktreeManager | None = None,
+        rollback_manager: RollbackManager | None = None,
     ) -> None:
         if not isinstance(storage, ResumeStateStorageProvider):
             raise TypeError("storage must implement ResumeStateStorageProvider")
@@ -407,9 +438,34 @@ class ExecutionLifecycleService:
             raise TypeError("promotion_manager must be a PromotionManager")
         if promotion_manager is not None and promotion_manager.project_root != resolved_project_root:
             raise ValueError("promotion_manager project root must match project_root")
+        if worktree_manager is not None and not isinstance(
+            worktree_manager, ExternalWorktreeManager
+        ):
+            raise TypeError("worktree_manager must be an ExternalWorktreeManager")
+        if worktree_manager is not None and worktree_manager.project_root != resolved_project_root:
+            raise ValueError("worktree_manager project root must match project_root")
+        if rollback_manager is not None and not isinstance(rollback_manager, RollbackManager):
+            raise TypeError("rollback_manager must be a RollbackManager")
+        if rollback_manager is not None and rollback_manager.project_root != resolved_project_root:
+            raise ValueError("rollback_manager project root must match project_root")
+        if cancellation_controller_factory is not None and not callable(
+            cancellation_controller_factory
+        ):
+            raise TypeError("cancellation_controller_factory must be callable")
+        if (
+            isinstance(cancellation_wait_seconds, bool)
+            or not isinstance(cancellation_wait_seconds, (int, float))
+            or not math.isfinite(cancellation_wait_seconds)
+            or cancellation_wait_seconds < 0
+        ):
+            raise ValueError("cancellation_wait_seconds must be finite and non-negative")
         boundary = trust_boundary
         if boundary is None and promotion_manager is not None:
             boundary = promotion_manager.trust_boundary
+        if boundary is None and worktree_manager is not None:
+            boundary = worktree_manager.trust_boundary
+        if boundary is None and rollback_manager is not None:
+            boundary = rollback_manager.trust_boundary
         if boundary is None:
             boundary = TrustBoundaryEvaluator(resolved_project_root).evaluate()
         if not isinstance(boundary, TrustEvaluationResult):
@@ -425,6 +481,14 @@ class ExecutionLifecycleService:
         if promotion_manager is not None and promotion_manager.trust_boundary != boundary:
             raise ValueError(
                 "promotion_manager and execution lifecycle must share one trust boundary"
+            )
+        if worktree_manager is not None and worktree_manager.trust_boundary != boundary:
+            raise ValueError(
+                "worktree_manager and execution lifecycle must share one trust boundary"
+            )
+        if rollback_manager is not None and rollback_manager.trust_boundary != boundary:
+            raise ValueError(
+                "rollback_manager and execution lifecycle must share one trust boundary"
             )
         if (
             isinstance(lock_timeout_seconds, bool)
@@ -454,6 +518,17 @@ class ExecutionLifecycleService:
         )
         self._verification_worktree_provider = verification_worktree_provider
         self._promotion_manager = promotion_manager
+        self._worktree_manager = worktree_manager
+        self._rollback_manager = rollback_manager
+        self._cancellation_wait_seconds = float(cancellation_wait_seconds)
+        self._cancellation_controller_factory = cancellation_controller_factory or (
+            lambda execution_id: CancellationController(
+                self.project_root,
+                execution_id,
+                clock=self._clock,
+                monotonic=self._monotonic,
+            )
+        )
         self._approval_manager = ApprovalManager(self.project_root)
         self._graph_executor = GraphExecutor(
             storage,
@@ -581,6 +656,12 @@ class ExecutionLifecycleService:
         execution_id: str,
     ) -> GraphExecutionResult | GraphExecutionPausedResult:
         """Resume only from the immutable bundle and canonical journal."""
+        controller = self.cancellation_controller(execution_id)
+        if controller.is_cancelled:
+            raise ExecutionCancellationError(
+                "cancelled execution cannot be resumed",
+                execution_id=execution_id,
+            )
         record, bundle, artifact = self._prepare_resume(execution_id)
         if record.current_state == ExecutionState.CANCELLED:
             raise ExecutionCancellationError(
@@ -3859,7 +3940,38 @@ class ExecutionLifecycleService:
         )
 
     def cancel(self, execution_id: str) -> ExecutionRecord:
-        """Transition a cancelable execution to the final CANCELLED state."""
+        """Request cancellation, observe command quiescence, then enter CANCELLED."""
+        existing = self._cancel_preflight_if_unlocked(execution_id)
+        if existing is not None:
+            return existing
+        controller = self.cancellation_controller(execution_id)
+        policy = controller.policy_decision
+        if policy is None:
+            decision_id = f"cancel-decision-{uuid.uuid4().hex}"
+            requested_at = self._control_timestamp()
+        else:
+            decision_id = policy.decision_id
+            requested_at = policy.requested_at
+        try:
+            cancellation_request = controller.request(
+                decision_id=decision_id,
+                requested_at=requested_at,
+            )
+            observation = controller.wait_for_quiescence(
+                cancellation_request.active_command_id,
+                timeout_seconds=self._cancellation_wait_seconds,
+            )
+        except CancellationControllerError as exc:
+            raise ExecutionCancellationError(
+                "cancellation state could not be reconciled",
+                execution_id=execution_id,
+            ) from exc
+        if not observation.quiescent:
+            raise ExecutionCancellationError(
+                "active command termination was not observed; cancellation remains blocked",
+                execution_id=execution_id,
+            )
+
         lock = self._acquire(execution_id)
         try:
             record = self._recover_approval_locked(execution_id, lock)
@@ -3870,6 +3982,13 @@ class ExecutionLifecycleService:
             if not VALID_STATE_TRANSITIONS[record.current_state] or (
                 ExecutionState.CANCELLED not in VALID_STATE_TRANSITIONS[record.current_state]
             ):
+                self._append_cancellation_blocked(
+                    execution_id,
+                    decision_id=decision_id,
+                    reason="execution_state_changed_after_request",
+                    minimum=record.updated_at,
+                    lock=lock,
+                )
                 raise ExecutionCancellationError(
                     "execution state cannot transition to CANCELLED",
                     execution_id=execution_id,
@@ -3924,11 +4043,314 @@ class ExecutionLifecycleService:
                         ),
                         lock=lock,
                     )
+            events = self._storage.load_events(execution_id, lock=lock)
+            decisions = [
+                event
+                for event in events
+                if event.event_type == CANCELLATION_POLICY_DECIDED
+            ]
+            if decisions:
+                decision = decisions[-1]
+                recorded_decision_id = self._canonical_event_text(
+                    decision.payload.get("decision_id"),
+                    label="cancellation decision_id",
+                    execution_id=execution_id,
+                )
+                if recorded_decision_id != decision_id:
+                    raise ExecutionCancellationError(
+                        "canonical cancellation decision diverges from control state",
+                        execution_id=execution_id,
+                    )
+            else:
+                decided_at = self._next_timestamp(record.updated_at)
+                self._append_operational_event(
+                    execution_id,
+                    CANCELLATION_POLICY_DECIDED,
+                    {
+                        "decision_id": decision_id,
+                        "fencing_token": lock.fencing_token,
+                        "from_state": record.current_state.value,
+                        "requested_at": requested_at.isoformat().replace(
+                            "+00:00", "Z"
+                        ),
+                    },
+                    timestamp=decided_at,
+                    lock=lock,
+                )
+                record = self._storage.load_execution(execution_id, lock=lock)
+            completed_at = self._next_timestamp(record.updated_at)
+            self._append_operational_event(
+                execution_id,
+                CANCELLATION_COMPLETED,
+                {
+                    "command_id": observation.command_id,
+                    "decision_id": decision_id,
+                    "fencing_token": lock.fencing_token,
+                    "outcome": observation.outcome,
+                    "termination_observed": observation.termination_observed,
+                },
+                timestamp=completed_at,
+                lock=lock,
+            )
             return machine.transition_to(
                 ExecutionState.CANCELLED,
                 node_id=record.current_node_id,
                 attempt=record.attempt_by_node.get(record.current_node_id, 0),
                 reason="execution_cancelled",
+                lock=lock,
+            )
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def _cancel_preflight_if_unlocked(
+        self,
+        execution_id: str,
+    ) -> ExecutionRecord | None:
+        """Reject terminal states without delaying an active execution's control signal."""
+
+        try:
+            lock = self._storage.acquire_execution_lock(
+                execution_id,
+                self._owner_id_factory(),
+                timeout_seconds=0,
+            )
+        except (LockAcquisitionTimeoutError, LockOwnershipError):
+            return None
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._state_machine(execution_id, lock).recover(lock=lock)
+            if record.current_state == ExecutionState.CANCELLED:
+                return record
+            if not VALID_STATE_TRANSITIONS[record.current_state] or (
+                ExecutionState.CANCELLED
+                not in VALID_STATE_TRANSITIONS[record.current_state]
+            ):
+                raise ExecutionCancellationError(
+                    "execution state cannot transition to CANCELLED",
+                    execution_id=execution_id,
+                )
+            return None
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def cancellation_controller(self, execution_id: str) -> CancellationController:
+        """Return the execution-bound controller injected into operational commands."""
+
+        try:
+            controller = self._cancellation_controller_factory(execution_id)
+        except CancellationControllerError:
+            raise
+        except Exception as exc:
+            raise CancellationStateIntegrityError(
+                "cancellation controller factory failed"
+            ) from exc
+        if not isinstance(controller, CancellationController):
+            raise CancellationStateIntegrityError(
+                "cancellation controller factory returned an invalid controller"
+            )
+        if (
+            controller.project_root != self.project_root
+            or controller.execution_id != execution_id
+        ):
+            raise CancellationStateIntegrityError(
+                "cancellation controller identity does not match the lifecycle"
+            )
+        return controller
+
+    def cleanup_worktree(self, execution_id: str) -> WorktreeReference:
+        """Explicitly remove only a clean execution worktree; never called by cancel."""
+
+        manager = self._worktree_manager
+        if manager is None:
+            raise WorktreeCleanupLifecycleError(
+                "worktree cleanup manager is not configured",
+                execution_id=execution_id,
+            )
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            record = self._state_machine(execution_id, lock).recover(lock=lock)
+            terminal_states = {
+                ExecutionState.BLOCKED_ROLLBACK,
+                ExecutionState.CANCELLED,
+                ExecutionState.COMPENSATED,
+                ExecutionState.COMPLETED,
+                ExecutionState.DRY_RUN_COMPLETED,
+                ExecutionState.FAILED,
+                ExecutionState.FAILED_BUDGET_EXCEEDED,
+                ExecutionState.FAILED_RETRY_EXHAUSTED,
+            }
+            if record.current_state not in terminal_states:
+                raise WorktreeCleanupLifecycleError(
+                    "worktree cleanup requires a terminal execution state",
+                    execution_id=execution_id,
+                )
+            decided_at = self._next_timestamp(record.updated_at)
+            decision_id = f"cleanup-decision-{uuid.uuid4().hex}"
+            self._append_operational_event(
+                execution_id,
+                WORKTREE_CLEANUP_POLICY_DECIDED,
+                {
+                    "decision_id": decision_id,
+                    "fencing_token": lock.fencing_token,
+                    "state": record.current_state.value,
+                },
+                timestamp=decided_at,
+                lock=lock,
+            )
+            try:
+                reference = manager.cleanup_worktree(execution_id)
+            except WorktreeError as exc:
+                self._append_operational_event(
+                    execution_id,
+                    WORKTREE_CLEANUP_BLOCKED,
+                    {
+                        "decision_id": decision_id,
+                        "error_code": type(exc).__name__,
+                        "fencing_token": lock.fencing_token,
+                    },
+                    timestamp=self._next_timestamp(decided_at),
+                    lock=lock,
+                )
+                raise WorktreeCleanupLifecycleError(
+                    "explicit worktree cleanup was refused",
+                    execution_id=execution_id,
+                ) from exc
+            self._append_operational_event(
+                execution_id,
+                WORKTREE_CLEANUP_COMPLETED,
+                {
+                    "decision_id": decision_id,
+                    "fencing_token": lock.fencing_token,
+                    "status": reference.status.value,
+                    "worktree_branch": reference.worktree_branch,
+                },
+                timestamp=self._next_timestamp(decided_at),
+                lock=lock,
+            )
+            return reference
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def rollback(
+        self,
+        execution_id: str,
+        *,
+        hook_approval_granted: bool = False,
+    ) -> ExecutionRecord:
+        """Revert the recorded promotion once and publish the canonical final state."""
+
+        manager = self._rollback_manager
+        if manager is None:
+            raise RollbackLifecycleError(
+                "rollback manager is not configured",
+                execution_id=execution_id,
+            )
+        lock = self._acquire(execution_id)
+        try:
+            record = self._recover_approval_locked(execution_id, lock)
+            machine = self._state_machine(execution_id, lock)
+            record = machine.recover(lock=lock)
+            if record.current_state == ExecutionState.COMPENSATED:
+                return record
+            if record.current_state == ExecutionState.BLOCKED_ROLLBACK:
+                raise RollbackLifecycleError(
+                    "blocked rollback cannot be retried automatically",
+                    execution_id=execution_id,
+                )
+            if record.current_state == ExecutionState.ROLLBACK_IN_PROGRESS:
+                blocked = machine.transition_to(
+                    ExecutionState.BLOCKED_ROLLBACK,
+                    node_id=record.current_node_id,
+                    attempt=record.attempt_by_node.get(record.current_node_id, 0),
+                    reason="rollback_outcome_ambiguous",
+                    lock=lock,
+                )
+                raise RollbackLifecycleError(
+                    "interrupted rollback outcome is ambiguous and cannot be retried",
+                    execution_id=blocked.execution_id,
+                )
+            if record.current_state != ExecutionState.COMPLETED:
+                raise RollbackLifecycleError(
+                    "only a completed promoted execution can be rolled back",
+                    execution_id=execution_id,
+                )
+            if record.promotion_commit_sha is None:
+                raise RollbackLifecycleError(
+                    "completed execution has no canonical promotion commit",
+                    execution_id=execution_id,
+                )
+            decided_at = self._next_timestamp(record.updated_at)
+            decision_id = f"rollback-decision-{uuid.uuid4().hex}"
+            self._append_operational_event(
+                execution_id,
+                ROLLBACK_POLICY_DECIDED,
+                {
+                    "decision_id": decision_id,
+                    "fencing_token": lock.fencing_token,
+                    "hook_approval_granted": hook_approval_granted,
+                    "original_branch": record.original_branch,
+                    "promotion_commit_sha": record.promotion_commit_sha,
+                },
+                timestamp=decided_at,
+                lock=lock,
+            )
+            in_progress = machine.transition_to(
+                ExecutionState.ROLLBACK_IN_PROGRESS,
+                node_id=record.current_node_id,
+                attempt=record.attempt_by_node.get(record.current_node_id, 0),
+                reason="rollback_requested",
+                lock=lock,
+            )
+            try:
+                result = manager.rollback(
+                    promotion_commit_sha=record.promotion_commit_sha,
+                    original_branch=record.original_branch,
+                    hook_approval_granted=hook_approval_granted,
+                )
+            except RollbackError as exc:
+                result = RollbackResult(
+                    promotion_commit_sha=record.promotion_commit_sha,
+                    previous_head_sha=record.promotion_commit_sha,
+                    rollback_commit_sha=None,
+                    original_branch=record.original_branch,
+                    outcome="blocked",
+                    exit_code=None,
+                    stdout="",
+                    stderr="",
+                    conflicting_paths=(),
+                    abort_attempted=False,
+                    abort_succeeded=False,
+                    restored_after_abort=False,
+                    hook_executed=False,
+                    reason=type(exc).__name__,
+                )
+            event_type = ROLLBACK_COMPLETED if result.compensated else ROLLBACK_BLOCKED
+            self._append_operational_event(
+                execution_id,
+                event_type,
+                self._rollback_event_payload(
+                    result,
+                    decision_id=decision_id,
+                    fencing_token=lock.fencing_token,
+                ),
+                timestamp=self._next_timestamp(in_progress.updated_at),
+                lock=lock,
+            )
+            target = (
+                ExecutionState.COMPENSATED
+                if result.compensated
+                else ExecutionState.BLOCKED_ROLLBACK
+            )
+            return machine.transition_to(
+                target,
+                node_id=in_progress.current_node_id,
+                attempt=in_progress.attempt_by_node.get(in_progress.current_node_id, 0),
+                reason=(
+                    "rollback_compensated"
+                    if result.compensated
+                    else "rollback_blocked"
+                ),
                 lock=lock,
             )
         finally:
@@ -4630,6 +5052,90 @@ class ExecutionLifecycleService:
         ]
         return grants[-1] if grants else None
 
+    def _append_cancellation_blocked(
+        self,
+        execution_id: str,
+        *,
+        decision_id: str,
+        reason: str,
+        minimum: datetime,
+        lock: ExecutionLock,
+    ) -> None:
+        self._append_operational_event(
+            execution_id,
+            CANCELLATION_BLOCKED,
+            {
+                "decision_id": decision_id,
+                "fencing_token": lock.fencing_token,
+                "reason": Redactor.redact_text(reason)[:200],
+            },
+            timestamp=self._next_timestamp(minimum),
+            lock=lock,
+        )
+
+    @staticmethod
+    def _rollback_event_payload(
+        result: RollbackResult,
+        *,
+        decision_id: str,
+        fencing_token: int,
+    ) -> dict[str, object]:
+        return {
+            "abort_attempted": result.abort_attempted,
+            "abort_succeeded": result.abort_succeeded,
+            "conflicting_paths": list(result.conflicting_paths),
+            "decision_id": decision_id,
+            "exit_code": result.exit_code,
+            "fencing_token": fencing_token,
+            "hook_executed": result.hook_executed,
+            "outcome": result.outcome,
+            "previous_head_sha": result.previous_head_sha,
+            "promotion_commit_sha": result.promotion_commit_sha,
+            "reason": result.reason,
+            "restored_after_abort": result.restored_after_abort,
+            "rollback_commit_sha": result.rollback_commit_sha,
+            "stderr": result.stderr,
+            "stdout": result.stdout,
+        }
+
+    def _append_operational_event(
+        self,
+        execution_id: str,
+        event_type: str,
+        payload: dict[str, object],
+        *,
+        timestamp: datetime,
+        lock: ExecutionLock,
+    ) -> ExecutionEvent:
+        try:
+            event = ExecutionEvent(
+                event_id=self._event_id_factory(),
+                execution_id=execution_id,
+                event_type=event_type,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ExecutionLifecycleError(
+                "cannot construct a canonical operational lifecycle event",
+                execution_id=execution_id,
+            ) from exc
+        return self._storage.append_event(execution_id, event, lock=lock)
+
+    @staticmethod
+    def _canonical_event_text(
+        value: object,
+        *,
+        label: str,
+        execution_id: str,
+    ) -> str:
+        if type(value) is not str or not value.strip() or value != value.strip():
+            raise ExecutionCancellationError(
+                f"{label} is invalid",
+                execution_id=execution_id,
+            )
+        return value
+
     def _append_lifecycle_event(
         self,
         execution_id: str,
@@ -4720,6 +5226,9 @@ class ExecutionLifecycleService:
         ):
             raise ExecutionLifecycleError("lifecycle clock must be UTC and cannot regress")
         return observed.astimezone(UTC)
+
+    def _control_timestamp(self) -> datetime:
+        return self._next_timestamp(datetime.min.replace(tzinfo=UTC))
 
     def _budget_tick(self) -> float:
         observed = self._monotonic()
@@ -4885,6 +5394,9 @@ class ExecutionLifecycleService:
 __all__ = [
     "APPROVAL_INVALIDATED",
     "APPROVAL_REQUESTED",
+    "CANCELLATION_BLOCKED",
+    "CANCELLATION_COMPLETED",
+    "CANCELLATION_POLICY_DECIDED",
     "CANDIDATE_COMMIT_RECORDED",
     "CANDIDATE_COMMIT_STARTED",
     "EXECUTION_APPROVED",
@@ -4895,6 +5407,12 @@ __all__ = [
     "PROMOTION_COMPLETED",
     "PROMOTION_DRY_RUN_RECORDED",
     "PROMOTION_STARTED",
+    "ROLLBACK_BLOCKED",
+    "ROLLBACK_COMPLETED",
+    "ROLLBACK_POLICY_DECIDED",
+    "WORKTREE_CLEANUP_BLOCKED",
+    "WORKTREE_CLEANUP_COMPLETED",
+    "WORKTREE_CLEANUP_POLICY_DECIDED",
     "ApprovalLifecycleIntegrityError",
     "ApprovalSubjectMismatchError",
     "ExecutionApprovalRequiredError",
@@ -4911,5 +5429,7 @@ __all__ = [
     "PromotionLifecycleError",
     "PromotionLifecycleIntegrityError",
     "PromotionLifecyclePrerequisiteError",
+    "RollbackLifecycleError",
     "VerificationRetryExhaustedError",
+    "WorktreeCleanupLifecycleError",
 ]

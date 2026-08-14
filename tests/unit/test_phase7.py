@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
-import ai_engineering_harness.cli.commands.rollback as rollback_module
 from ai_engineering_harness.artifacts.generator import ArtifactGenerator
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.knowledge.transaction import KnowledgeTransactionManager, TransactionState
 from ai_engineering_harness.observability.audit import AuditTrailManager
+from ai_engineering_harness.runtime import RollbackPrerequisiteError
 from ai_engineering_harness.security import TrustAuthorization, TrustBoundaryEvaluator
 
 
@@ -56,42 +56,47 @@ def test_destructive_rollback_requires_approval(tmp_path: Path):
         tmp_path,
         authorization=TrustAuthorization(
             repository_root=str(tmp_path.resolve()),
+            executable_aliases=("git",),
             hook_ids=("rollback-compensation",),
         ),
     ).evaluate()
-    mgr = RollbackManager(project_root=tmp_path, trust_boundary=boundary)
-    res = mgr.execute_rollback(
-        execution_id="exec-roll-1",
-        is_promoted=True,
-        commit_sha="",
-        is_destructive_hook=True,
-        user_approved=False
+    calls: list[str] = []
+    mgr = RollbackManager(
+        project_root=tmp_path,
+        trust_boundary=boundary,
+        compensation_hook=lambda result: calls.append(result.promotion_commit_sha),
+        hook_id="rollback-compensation",
+        hook_destructive=True,
     )
-    assert res["product_rollback"] is False
-    assert "[AWAITING_APPROVAL]" in res["product_message"]
+
+    with pytest.raises(RollbackPrerequisiteError, match="not explicitly authorized"):
+        mgr.rollback(
+            promotion_commit_sha="a" * 40,
+            original_branch="main",
+        )
+
+    assert calls == []
 
 
 def test_restricted_rollback_denies_hook_before_adapter_effect(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    called = False
-
-    def fail_if_called(*_args: object, **_kwargs: object) -> None:
-        nonlocal called
-        called = True
-        raise AssertionError("restricted hook reached its adapter")
-
-    monkeypatch.setattr(rollback_module, "CodebaseMemoryAdapter", fail_if_called)
-
-    result = RollbackManager(project_root=tmp_path).execute_rollback(
-        execution_id="exec-restricted-hook",
-        is_promoted=False,
+    del monkeypatch
+    calls: list[str] = []
+    manager = RollbackManager(
+        project_root=tmp_path,
+        compensation_hook=lambda result: calls.append(result.promotion_commit_sha),
+        hook_id="rollback-compensation",
     )
 
-    assert result["product_rollback"] is False
-    assert "[DENIED]" in result["product_message"]
-    assert called is False
+    with pytest.raises(RollbackPrerequisiteError, match="not explicitly authorized"):
+        manager.rollback(
+            promotion_commit_sha="a" * 40,
+            original_branch="main",
+        )
+
+    assert calls == []
 
 def test_artifact_generator_latest(tmp_path: Path):
     gen = ArtifactGenerator(project_root=tmp_path)

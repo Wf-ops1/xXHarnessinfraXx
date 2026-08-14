@@ -10,7 +10,6 @@ from rich.console import Console
 from rich.table import Table
 
 from ai_engineering_harness import __version__
-from ai_engineering_harness.cli.commands.rollback import RollbackManager
 from ai_engineering_harness.compiler import GraphCompiler, GraphCompilerError
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
 from ai_engineering_harness.contracts import ExecutionState
@@ -27,6 +26,7 @@ from ai_engineering_harness.runtime import (
     GraphExecutionPausedResult,
     NodeExecutorError,
     NodeExecutorRegistry,
+    RollbackManager,
     StateMachineError,
 )
 from ai_engineering_harness.runtime.maf_adapter import ArtifactValidationError
@@ -54,6 +54,10 @@ def _lifecycle_service(
         project_id,
         trust_boundary=boundary,
     )
+    rollbacks = RollbackManager(
+        project_root,
+        trust_boundary=boundary,
+    )
     return ExecutionLifecycleService(
         project_root,
         AtomicFileStateStorage(project_root),
@@ -61,6 +65,8 @@ def _lifecycle_service(
         config_resolver=ConfigResolver(project_root),
         verification_worktree_provider=worktrees.load_worktree,
         trust_boundary=boundary,
+        worktree_manager=worktrees,
+        rollback_manager=rollbacks,
     )
 
 
@@ -391,6 +397,26 @@ def cancel(execution_id):
         f"cancelada na revisão {record.revision}."
     )
 
+@main.command(
+    name="cleanup-worktree",
+    help="Remove explicitamente um worktree limpo sem apagar sua branch.",
+)
+@click.argument("execution_id")
+def cleanup_worktree(execution_id: str) -> None:
+    try:
+        reference = _lifecycle_service(Path.cwd()).cleanup_worktree(execution_id)
+    except (
+        ExecutionLifecycleError,
+        StateMachineError,
+        StateStorageError,
+    ) as exc:
+        _raise_lifecycle_click_error(exc)
+    console.print(
+        f"[green]{_get_symbol(True)}[/green]Worktree de [bold]{execution_id}[/bold] "
+        f"removido com status {reference.status.value}; branch preservada."
+    )
+
+
 @main.command(help="Executa gates configurados em um worktree validado.")
 @click.argument("execution_id")
 @click.option("--project-id", default="default-proj", show_default=True)
@@ -437,13 +463,21 @@ def audit(execution_id, export):
     else:
         console.print(f"[red]{_get_symbol(False)}[/red][bold]AUDIT FAILURE:[/bold] {msg}")
 
-@main.command(help="Executa a reversão controlada em duas fases (Código / Efeitos).")
+@main.command(help="Reverte o commit de promoção canônico vinculado à execução.")
 @click.argument("execution_id")
-@click.option("--promoted", is_flag=True, help="Indica se a alteração já foi promovida.")
-def rollback(execution_id, promoted):
-    mgr = RollbackManager(project_root=Path.cwd())
-    res = mgr.execute_rollback(execution_id=execution_id, is_promoted=promoted)
-    console.print(f"[yellow]Rollback executado:[/yellow] {res['code_message']}")
+def rollback(execution_id: str) -> None:
+    try:
+        record = _lifecycle_service(Path.cwd()).rollback(execution_id)
+    except (
+        ExecutionLifecycleError,
+        StateMachineError,
+        StateStorageError,
+    ) as exc:
+        _raise_lifecycle_click_error(exc)
+    console.print(
+        f"[green]{_get_symbol(True)}[/green]Rollback de [bold]{execution_id}[/bold] "
+        f"encerrado em {record.current_state.value}."
+    )
 
 if __name__ == "__main__":
     main()

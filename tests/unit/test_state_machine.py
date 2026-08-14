@@ -225,7 +225,7 @@ def test_states_table_is_closed_and_illegal_self_terminal_transitions_preserve_b
 ) -> None:
     terminal_states = {
         ExecutionState.DRY_RUN_COMPLETED,
-        ExecutionState.COMPLETED,
+        ExecutionState.BLOCKED_ROLLBACK,
         ExecutionState.CANCELLED,
         ExecutionState.FAILED,
         ExecutionState.FAILED_BUDGET_EXCEEDED,
@@ -234,11 +234,19 @@ def test_states_table_is_closed_and_illegal_self_terminal_transitions_preserve_b
     }
     assert set(VALID_STATE_TRANSITIONS) == set(ExecutionState)
     assert all(not VALID_STATE_TRANSITIONS[state] for state in terminal_states)
+    assert VALID_STATE_TRANSITIONS[ExecutionState.COMPLETED] == {
+        ExecutionState.ROLLBACK_IN_PROGRESS
+    }
+    assert VALID_STATE_TRANSITIONS[ExecutionState.ROLLBACK_IN_PROGRESS] == {
+        ExecutionState.BLOCKED_ROLLBACK,
+        ExecutionState.COMPENSATED,
+    }
     assert {
         ExecutionState.PREPARING_WORKSPACE,
         ExecutionState.PAUSED_AWAITING_APPROVAL,
         ExecutionState.BLOCKED_PREREQUISITE,
         ExecutionState.BLOCKED_BASE_CHANGED,
+        ExecutionState.BLOCKED_ROLLBACK,
         ExecutionState.CANCELLED,
         ExecutionState.DRY_RUN_COMPLETED,
         ExecutionState.ROLLBACK_IN_PROGRESS,

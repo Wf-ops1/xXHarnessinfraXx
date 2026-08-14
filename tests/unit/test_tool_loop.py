@@ -52,6 +52,7 @@ from ai_engineering_harness.tools import (
     ToolUnauthorizedError,
     ToolUnavailableError,
 )
+from ai_engineering_harness.tools.adapters import CommandCancelledError, CommandResult
 
 _CONTRACT = "ai_engineering_harness.contracts.nodes.context_sufficiency.RetrievalRequest"
 
@@ -835,6 +836,39 @@ def test_cancellation_is_rechecked_before_each_dispatch_in_batch() -> None:
         _execute(loop, tool_router, cancellation_token=token)
 
     assert effects == [{"query": "routing"}]
+
+
+def test_cancelled_terminal_handler_records_failure_before_loop_cancellation() -> None:
+    def cancelled(_: object) -> object:
+        raise CommandCancelledError(
+            CommandResult(
+                argv=("python", "-V"),
+                cwd_relative=".",
+                exit_code=1,
+                stdout="bounded evidence",
+                stderr="",
+                timed_out=False,
+                cancelled=True,
+                stdout_truncated=False,
+                stderr_truncated=False,
+            )
+        )
+
+    tool_router = _tool_router(cancelled)
+    provider = _ToolProvider("local", [_response(calls=(_call(),))])
+    loop, _ = _loop(provider, tool_router)
+    recorder = _MemoryRecorder()
+
+    with pytest.raises(ToolLoopCancelledError) as captured:
+        _execute(loop, tool_router, tool_effect_recorder=recorder)
+
+    assert len(captured.value.tool_executions) == 1
+    failure = captured.value.tool_executions[0]
+    assert not failure.succeeded
+    assert failure.error_code == "ToolExecutionCancelledError"
+    assert recorder.outcomes == [failure]
+    assert len(provider.prompts) == 1
+    assert provider.conversations == []
 
 
 def test_tool_error_stops_without_another_model_call_and_carries_failed_record() -> None:

@@ -47,7 +47,11 @@ from ai_engineering_harness.models.router import (
     ModelRoutingIntegrityError,
 )
 from ai_engineering_harness.security.redaction import Redactor
-from ai_engineering_harness.tools import ToolRouter, ToolRouterError
+from ai_engineering_harness.tools import (
+    ToolExecutionCancelledError,
+    ToolRouter,
+    ToolRouterError,
+)
 
 from .node_executors import (
     ModelCallMetadata,
@@ -453,6 +457,12 @@ class ToolLoopExecutor:
                         records,
                         model_call_records,
                     )
+                    if isinstance(exc, ToolExecutionCancelledError):
+                        raise ToolLoopCancelledError(
+                            "tool execution was cancelled",
+                            tool_executions=tuple(records),
+                            model_call_records=tuple(model_call_records),
+                        ) from exc
                     raise ToolLoopExecutionError(
                         "tool execution failed",
                         tool_executions=tuple(records),

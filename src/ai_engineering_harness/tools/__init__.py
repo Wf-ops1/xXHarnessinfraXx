@@ -4,6 +4,7 @@ from .operational import build_operational_tool_router
 from .router import (
     ToolDefinition,
     ToolDispatchTarget,
+    ToolExecutionCancelledError,
     ToolExecutionError,
     ToolPayloadValidationError,
     ToolRegistration,
@@ -16,6 +17,7 @@ from .router import (
 __all__ = [
     "ToolDefinition",
     "ToolDispatchTarget",
+    "ToolExecutionCancelledError",
     "ToolExecutionError",
     "ToolPayloadValidationError",
     "ToolRegistration",

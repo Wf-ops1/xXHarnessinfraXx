@@ -208,10 +208,11 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
         {ExecutionState.COMPLETED, ExecutionState.FAILED}
     ),
     ExecutionState.ROLLBACK_IN_PROGRESS: frozenset(
-        {ExecutionState.COMPENSATED, ExecutionState.FAILED}
+        {ExecutionState.BLOCKED_ROLLBACK, ExecutionState.COMPENSATED}
     ),
     ExecutionState.DRY_RUN_COMPLETED: frozenset(),
-    ExecutionState.COMPLETED: frozenset(),
+    ExecutionState.COMPLETED: frozenset({ExecutionState.ROLLBACK_IN_PROGRESS}),
+    ExecutionState.BLOCKED_ROLLBACK: frozenset(),
     ExecutionState.CANCELLED: frozenset(),
     ExecutionState.FAILED: frozenset(),
     ExecutionState.FAILED_BUDGET_EXCEEDED: frozenset(),

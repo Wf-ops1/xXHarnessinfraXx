@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ai_engineering_harness.contracts.execution import ExecutionRecord
 from ai_engineering_harness.verification import VerificationSuiteResult
+from ai_engineering_harness.workspace import WorktreeReference
 
 from .execution_lifecycle import (
     ExecutionInspection,
@@ -134,6 +135,23 @@ class RuntimeEngine:
     def cancel_execution(self) -> ExecutionRecord:
         """Cancel the configured execution under its lifecycle lock."""
         return self._require_lifecycle().cancel(self.execution_id)
+
+    def cleanup_execution_worktree(self) -> WorktreeReference:
+        """Explicitly remove the clean external worktree without deleting its branch."""
+
+        return self._require_lifecycle().cleanup_worktree(self.execution_id)
+
+    def rollback_execution(
+        self,
+        *,
+        hook_approval_granted: bool = False,
+    ) -> ExecutionRecord:
+        """Revert the exact promotion commit recorded for this execution."""
+
+        return self._require_lifecycle().rollback(
+            self.execution_id,
+            hook_approval_granted=hook_approval_granted,
+        )
 
     def status_execution(self) -> ExecutionStatusView:
         """Return the canonical status view."""

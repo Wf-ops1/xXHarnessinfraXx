@@ -8,11 +8,12 @@ import re
 import signal
 import subprocess
 import threading
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, BinaryIO, Protocol, cast
+from typing import Any, BinaryIO, Protocol, cast, runtime_checkable
 
 from ai_engineering_harness.security import (
     PathGuard,
@@ -49,6 +50,14 @@ class CommandExecutionError(TerminalAdapterError):
     """Raised when the subprocess cannot be started or reaped safely."""
 
 
+class CommandCancelledError(CommandExecutionError):
+    """Raised after a cancelled process tree is terminated and its evidence captured."""
+
+    def __init__(self, result: CommandResult) -> None:
+        super().__init__("authorized command was cancelled")
+        self.result = result
+
+
 class LegacyShellCommandError(CommandValidationError):
     """Raised when a legacy shell-string caller attempts execution."""
 
@@ -62,6 +71,31 @@ _CREATE_NEW_PROCESS_GROUP = 0x00000200
 _JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9
 _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
 _TIMEOUT_EXIT_CODE = 1
+_CANCELLATION_POLL_SECONDS = 0.05
+
+
+@runtime_checkable
+class CommandCancellation(Protocol):
+    """Execution-bound controller used without coupling tools to runtime storage."""
+
+    @property
+    def is_cancelled(self) -> bool:
+        """Return whether cancellation has been durably requested."""
+
+    def command_started(self, argv: Sequence[str]) -> str:
+        """Reserve one execution-owned command before spawn."""
+
+    def command_spawned(self, command_id: str, *, pid: int) -> None:
+        """Bind the reservation to its process leader."""
+
+    def command_finished(
+        self,
+        command_id: str,
+        *,
+        outcome: str,
+        exit_code: int | None,
+    ) -> None:
+        """Publish the observed outcome and clear the active slot."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +107,7 @@ class CommandRequest:
     timeout_seconds: float = 30.0
     env_allowlist: tuple[str, ...] = ()
     max_output_bytes: int = 1_000_000
+    cancellation: CommandCancellation | None = None
 
     def __init__(
         self,
@@ -82,18 +117,21 @@ class CommandRequest:
         timeout_seconds: float = 30.0,
         env_allowlist: Sequence[str] = (),
         max_output_bytes: int = 1_000_000,
+        cancellation: CommandCancellation | None = None,
     ) -> None:
         normalized_argv = _normalize_argv(argv)
         normalized_cwd = _normalize_cwd(cwd)
         normalized_timeout = _normalize_timeout(timeout_seconds)
         normalized_environment = _normalize_environment_names(env_allowlist)
         normalized_output_limit = _normalize_output_limit(max_output_bytes)
+        normalized_cancellation = _normalize_cancellation(cancellation)
 
         object.__setattr__(self, "argv", normalized_argv)
         object.__setattr__(self, "cwd", normalized_cwd)
         object.__setattr__(self, "timeout_seconds", normalized_timeout)
         object.__setattr__(self, "env_allowlist", normalized_environment)
         object.__setattr__(self, "max_output_bytes", normalized_output_limit)
+        object.__setattr__(self, "cancellation", normalized_cancellation)
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +144,7 @@ class CommandResult:
     stdout: str
     stderr: str
     timed_out: bool
+    cancelled: bool
     stdout_truncated: bool
     stderr_truncated: bool
 
@@ -440,15 +479,84 @@ class TerminalAdapter:
         stderr_bytes = _BoundedBytes.create(capture_limit)
         argv_for_process = [os.fspath(executable), *request.argv[1:]]
 
+        controller = request.cancellation
+        command_id: str | None = None
+        if controller is not None and controller.is_cancelled:
+            raise CommandCancelledError(
+                CommandResult(
+                    argv=request.argv,
+                    cwd_relative=guarded_cwd.relative_path,
+                    exit_code=_TIMEOUT_EXIT_CODE,
+                    stdout="",
+                    stderr="",
+                    timed_out=False,
+                    cancelled=True,
+                    stdout_truncated=False,
+                    stderr_truncated=False,
+                )
+            )
+        if controller is not None:
+            try:
+                command_id = controller.command_started(request.argv)
+            except Exception as exc:
+                if controller.is_cancelled:
+                    raise CommandCancelledError(
+                        CommandResult(
+                            argv=request.argv,
+                            cwd_relative=guarded_cwd.relative_path,
+                            exit_code=_TIMEOUT_EXIT_CODE,
+                            stdout="",
+                            stderr="",
+                            timed_out=False,
+                            cancelled=True,
+                            stdout_truncated=False,
+                            stderr_truncated=False,
+                        )
+                    ) from exc
+                raise CommandExecutionError(
+                    "cancellation controller rejected command reservation"
+                ) from exc
+
         self._authorize_request(request)
-        spawned = self._spawn(
-            argv=argv_for_process,
-            cwd=guarded_cwd.absolute_path,
-            environment=selected_environment,
-        )
+        try:
+            spawned = self._spawn(
+                argv=argv_for_process,
+                cwd=guarded_cwd.absolute_path,
+                environment=selected_environment,
+            )
+        except Exception:
+            if controller is not None and command_id is not None:
+                self._finish_cancellation_command(
+                    controller,
+                    command_id,
+                    outcome="spawn_failed",
+                    exit_code=None,
+                )
+            raise
         process = spawned.process
         assert process.stdout is not None
         assert process.stderr is not None
+
+        if controller is not None and command_id is not None:
+            try:
+                controller.command_spawned(command_id, pid=process.pid)
+            except Exception as exc:
+                try:
+                    spawned.tree.terminate(process)
+                    process.wait(timeout=_REAP_SECONDS)
+                except (CommandExecutionError, subprocess.TimeoutExpired):
+                    pass
+                finally:
+                    spawned.tree.close()
+                self._finish_cancellation_command(
+                    controller,
+                    command_id,
+                    outcome="spawn_failed",
+                    exit_code=process.returncode,
+                )
+                raise CommandExecutionError(
+                    "spawned process could not be bound to cancellation state"
+                ) from exc
 
         drain_errors: list[BaseException] = []
         stdout_thread = self._start_drain(
@@ -459,15 +567,35 @@ class TerminalAdapter:
         )
 
         timed_out = False
+        cancelled = False
+        deadline = time.monotonic() + request.timeout_seconds
         try:
-            process.wait(timeout=request.timeout_seconds)
-        except subprocess.TimeoutExpired:
-            timed_out = True
-            spawned.tree.terminate(process)
-            try:
-                process.wait(timeout=_REAP_SECONDS)
-            except subprocess.TimeoutExpired as exc:
-                raise CommandExecutionError("timed-out process could not be reaped safely") from exc
+            while process.poll() is None:
+                if controller is not None and controller.is_cancelled:
+                    cancelled = True
+                    spawned.tree.terminate(process)
+                    try:
+                        process.wait(timeout=_REAP_SECONDS)
+                    except subprocess.TimeoutExpired as exc:
+                        raise CommandExecutionError(
+                            "cancelled process could not be reaped safely"
+                        ) from exc
+                    break
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    timed_out = True
+                    spawned.tree.terminate(process)
+                    try:
+                        process.wait(timeout=_REAP_SECONDS)
+                    except subprocess.TimeoutExpired as exc:
+                        raise CommandExecutionError(
+                            "timed-out process could not be reaped safely"
+                        ) from exc
+                    break
+                try:
+                    process.wait(timeout=min(_CANCELLATION_POLL_SECONDS, remaining))
+                except subprocess.TimeoutExpired:
+                    continue
         finally:
             try:
                 spawned.tree.close()
@@ -489,16 +617,47 @@ class TerminalAdapter:
             max_output_bytes=request.max_output_bytes,
             dynamic_secrets=dynamic_secrets,
         )
-        return CommandResult(
+        result = CommandResult(
             argv=request.argv,
             cwd_relative=guarded_cwd.relative_path,
             exit_code=process.returncode,
             stdout=stdout,
             stderr=stderr,
             timed_out=timed_out,
+            cancelled=cancelled,
             stdout_truncated=stdout_truncated,
             stderr_truncated=stderr_truncated,
         )
+        if controller is not None and command_id is not None:
+            outcome = "cancelled" if cancelled else "timed_out" if timed_out else "completed"
+            self._finish_cancellation_command(
+                controller,
+                command_id,
+                outcome=outcome,
+                exit_code=process.returncode,
+            )
+        if cancelled:
+            raise CommandCancelledError(result)
+        return result
+
+    @staticmethod
+    def _finish_cancellation_command(
+        controller: CommandCancellation,
+        command_id: str,
+        *,
+        outcome: str,
+        exit_code: int | None,
+    ) -> None:
+        try:
+            controller.command_finished(
+                command_id,
+                outcome=outcome,
+                exit_code=exit_code,
+            )
+        except Exception as exc:
+            raise CommandExecutionError(
+                "command cancellation outcome could not be persisted"
+            ) from exc
 
     def _authorize_request(self, request: CommandRequest) -> None:
         try:
@@ -763,6 +922,16 @@ def _normalize_output_limit(max_output_bytes: int) -> int:
     return max_output_bytes
 
 
+def _normalize_cancellation(
+    cancellation: CommandCancellation | None,
+) -> CommandCancellation | None:
+    if cancellation is not None and not isinstance(cancellation, CommandCancellation):
+        raise CommandValidationError(
+            "cancellation must implement the execution-bound command protocol"
+        )
+    return cancellation
+
+
 def _drain_stream(
     stream: BinaryIO,
     destination: _BoundedBytes,
@@ -796,6 +965,8 @@ def _safe_output(
 
 
 __all__ = [
+    "CommandCancellation",
+    "CommandCancelledError",
     "CommandExecutionError",
     "CommandRequest",
     "CommandResult",
