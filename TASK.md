@@ -6,7 +6,7 @@
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
 2. [F5.7](docs/tasks/completed/F5.7.md): produto promovido no PR #65; reconciliação administrativa
-   preparada localmente em `docs/promote-f5.7` e ainda não publicada.
+   publicada no PR #66, com checks do head final ainda pendentes.
 3. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
    incorporado por `docs/promote-f5.6` é complementado pela evidência externa posterior abaixo.
 4. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
@@ -30,12 +30,12 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 promovidas no produto |
 | **Fase ativa** | Fase 5 — fechamento administrativo da governança e segurança |
-| **Tarefa ativa** | Nenhuma tarefa ativa de implementação; reconciliação administrativa F5.7 somente local |
-| **Gate** | `PROMOTED / LOCAL_READY / PUBLICATION_PENDING` |
+| **Tarefa ativa** | Nenhuma tarefa ativa de implementação; PR administrativo F5.7 aberto |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Estado corrente** | F5.6 `PROMOTED`; F5.7 incorporada em `main`; CI pós-merge 11/11 verde; F6 ainda não iniciada |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T14:09:48-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f5.7`, somente local e sem upstream |
+| **Branch** | `docs/promote-f5.7`, publicada e rastreando `origin/docs/promote-f5.7` |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Main sincronizada** | antes da branch administrativa, `main == origin/main == e8470ece8bdb7e98ddfe9817270d0b17032404d4` |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
@@ -47,7 +47,7 @@
 | **Quality/distribuição F5.7** | mypy 106 arquivos, Ruff, compileall, diff-check, wheel 0.1.0 e smoke oficial offline com uv 0.12.3 verdes |
 | **PR F5.7** | [#65](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65), head final `b1cca81`, CI [31845896973](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31845896973) 11/11 success em 5m47s |
 | **Merge F5.7** | `e8470ece8bdb7e98ddfe9817270d0b17032404d4`; CI pós-merge [31846634851](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31846634851) 11/11 success em 5m30s |
-| **Reconciliação F5.7** | `docs/promote-f5.7`, `LOCAL_READY / PUBLICATION_PENDING`; dossiê arquivado em `completed/`; nenhuma publicação administrativa |
+| **Reconciliação F5.7** | PR [#66](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66), head inicial `bb8d32e`, CI inicial [31848981895](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31848981895); `ADMIN_PR_OPEN / CHECKS_PENDING` |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
 | **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
@@ -82,7 +82,7 @@
 | Produto | R3 `26bb04d`; head final `b1cca81`; focado `174 passed, 2 skipped`; full `910 passed, 5 skipped, 6 subtests passed` |
 | PR de produto | [#65](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65), head final `b1cca81`, CI `31845896973`, 11/11 success |
 | Merge de produto | `e8470ece8bdb7e98ddfe9817270d0b17032404d4`; CI de `push` `31846634851`, 11/11 success em 5m30s |
-| Reconciliação administrativa | `docs/promote-f5.7` preparada localmente; publicação, PR e merge ainda não autorizados |
+| Reconciliação administrativa | PR [#66](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66), head inicial `bb8d32e`, CI inicial `31848981895`; merge não autorizado |
 | Fronteira | checkpoints F5.7 somente locais; branches preservadas; nenhuma tag/ref removida; F6 bloqueada até a reconciliação administrativa |
 | Promoção anterior | F5.6 — PR [#63](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/63), merge `0488380`, pós-merge `31814250746`; reconciliação [#64](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/64), merge/CI final `a449bd1` / `31817497094` |
 | Promoção anterior | F5.5 — integrar secrets e redaction no caminho crítico: PR [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61), head final `68482da`, CI `31765166979`; merge `2227b73`, pós-merge `31769631054`; reconciliação [#62](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62), merge/CI final `daec37d119fced3a5e041c412ab01e7524c15800` / `31771169636` |
@@ -100,39 +100,39 @@ reconciliação antes de restaurar estado positivo.
 
 Existe um único executor/escritor: `Codex`. O usuário autorizou nominalmente a publicação/PR e depois
 o merge da F5.7. O PR #65 foi incorporado às `2026-08-14T19:26:38-03:00`; o CI pós-merge encerrou
-11/11 verde às `2026-08-14T19:32:11-03:00`. A reconciliação administrativa é somente local.
+11/11 verde às `2026-08-14T19:32:11-03:00`. A reconciliação administrativa foi publicada no PR #66;
+o merge não está autorizado.
 Checkpoints F5.6 permanecem exclusivamente locais; branches
 `task/f5.6-content-bound-approval` e `docs/promote-f5.6` estão preservadas no remoto.
 
 ## 5. Tarefa ativa
 
 Não há tarefa de implementação ativa. A F5.7 foi promovida com as quatro correções R3 preservadas e
-o gate de saída técnico da Fase 5 está verde. A branch `docs/promote-f5.7` registra localmente a
-evidência externa e precisa ser publicada/incorporada antes da preparação da F6.1.
+o gate de saída técnico da Fase 5 está verde. A branch `docs/promote-f5.7` publicou a evidência
+externa no PR #66, que precisa ser certificado e incorporado antes da preparação da F6.1.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A fronteira restante é administrativa: push da branch
-`docs/promote-f5.7`, abertura/merge do PR documental, tags remotas, remoção de refs,
-force-push/bypass e início de F6 não estão autorizados. O `uv 0.12.3` foi exposto somente ao smoke
-isolado em modo offline, fora do projeto.
+Não há bloqueio técnico conhecido. A fronteira restante é administrativa: checks e merge do PR #66,
+tags remotas, remoção de refs, force-push/bypass e início de F6 não estão autorizados. O `uv 0.12.3`
+foi exposto somente ao smoke isolado em modo offline, fora do projeto.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR E MATERIALIZAR LOCALMENTE A RECONCILIAÇÃO EM docs/promote-f5.7.
-DEPOIS, AGUARDAR AUTORIZAÇÃO NOMINAL SEPARADA PARA PUBLICAR A BRANCH E CRIAR O PR ADMINISTRATIVO.
-NÃO CRIAR PUSH/PR/TAG REMOTA/MERGE NEM INICIAR F6 SEM ESSA AUTORIZAÇÃO.
+VALIDAR E PUBLICAR O REGISTRO DO PR #66 NO MESMO HEAD ADMINISTRATIVO.
+AUDITAR TODOS OS CHECKS DO HEAD FINAL.
+NÃO CRIAR MERGE/TAG REMOTA, REMOVER REFS NEM INICIAR F6 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.7.md` e a Fase 5 do plano.
-2. Confirme branch `docs/promote-f5.7` e `main == origin/main == e8470ec` antes da branch.
-3. Confirme PR #65, head `b1cca81`, merge `e8470ec` e runs `31845896973` / `31846634851`.
+2. Confirme branch `docs/promote-f5.7`, upstream remoto e base `e8470ec`.
+3. Confirme PR #66, head final publicado e CI; preserve PR #65, merge `e8470ec` e runs `31845896973` / `31846634851`.
 4. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve o escopo documental da DEC-014.
-5. Não publique a reconciliação nem inicie F6 sem autorização nominal separada.
+5. Não mescle o PR administrativo nem inicie F6 sem autorização nominal separada.
 
 ---
 
-*Atualizado em: 2026-08-14T19:35:03-03:00 | Fonte: PR #65 + merge `e8470ec` + CI pós-merge `31846634851`*
+*Atualizado em: 2026-08-14T20:04:10-03:00 | Fonte: PR #66 + head inicial `bb8d32e` + CI `31848981895` iniciada*

@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7 estão promovidas. Configuração efetiva, policy default-deny, trust boundary, budget, redaction, aprovações ligadas ao conteúdo, cancelamento e rollback seguro controlam as fronteiras | A reconciliação documental da F5.7 ainda precisa ser publicada; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7 estão promovidas. Configuração efetiva, policy default-deny, trust boundary, budget, redaction, aprovações ligadas ao conteúdo, cancelamento e rollback seguro controlam as fronteiras | A reconciliação documental da F5.7 está no PR #66 com checks pendentes; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -176,8 +176,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   wheel 0.1.0 e smoke oficial offline ficaram verdes. O head final `b1cca81` passou 11/11 checks no
   run `31845896973` do [PR #65](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65), foi incorporado
   pelo merge `e8470ec` e recebeu 11/11 na CI pós-merge `31846634851`. A F5.7 está `PROMOTED`; sua
-  reconciliação administrativa está `LOCAL_READY / PUBLICATION_PENDING` e os checkpoints permanecem
-  exclusivamente locais.
+  reconciliação administrativa está `ADMIN_PR_OPEN / CHECKS_PENDING` no PR #66, com CI inicial
+  `31848981895`; os checkpoints permanecem exclusivamente locais.
 
 ## Dívidas técnicas críticas
 

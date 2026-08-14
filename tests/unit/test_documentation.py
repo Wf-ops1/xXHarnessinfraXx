@@ -195,6 +195,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31845896973" in panel
     assert "e8470ece8bdb7e98ddfe9817270d0b17032404d4" in panel
     assert "31846634851" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66" in panel
+    assert "bb8d32e" in panel
+    assert "31848981895" in panel
     assert "31817497094" in panel
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
