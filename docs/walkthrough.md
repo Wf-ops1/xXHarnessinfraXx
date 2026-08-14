@@ -125,10 +125,18 @@ worktree/provider/tools permanece pendente.
 
 ## Fluxo de auditoria e rollback
 
-O diário append-only e sua hash chain são implementações locais testadas. O rollback registra eventos,
-mas ainda usa um adapter Git legado incompatível com o terminal tipado e não recebe o worktree real,
-candidate commit ou gates pós-reversão. Portanto, o fluxo serve para testes do protocolo, não para
-recuperação confiável de um produto.
+O diário append-only e sua hash chain são implementações locais testadas. Na F5.7 local, o
+cancelamento publica uma decisão durável antes do pedido/sinal, interrompe e reapera somente a árvore
+de processo pertencente à execução e reconcilia o journal sob o lock canônico depois da quiescência.
+O tool loop persiste falha redigida, nunca sucesso pós-cancelamento. Cleanup é uma ação separada,
+limitada ao worktree ativo, limpo e no HEAD esperado, sem force nem remoção de branch.
+
+Depois de uma promoção `COMPLETED`, o lifecycle usa somente o `promotion_commit_sha` persistido,
+transita por `ROLLBACK_IN_PROGRESS` e executa `git revert --no-edit` por argv/`shell=False`. Exit
+zero, novo SHA, parent anterior e worktree limpo são comprovados antes de `COMPENSATED`. Conflito
+executa somente `git revert --abort` e termina `BLOCKED_ROLLBACK`; ambiguidade não produz retry ou
+sucesso. A composição automática de tools/worktree e os gates pós-reversão/evidence recovery ainda
+permanecem pendentes, portanto o protótipo continua restrito a ambientes descartáveis.
 
 ## Onde acompanhar
 

@@ -20,15 +20,16 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.7](active/F5.7.md) está `READY / ACTIVE` na branch local
-`task/f5.7-safe-cancel-rollback`. O preflight registrou Python 3.12.13, baseline remoto exato
-`a449bd1` e CI final anterior `31817497094` com 11/11 checks. O rollback promovido foi reproduzido
-falhando antes do Git porque chama a API legada de shell desabilitada; cancelamento atual só muda
-estado e não alcança o processo. O baseline válido passou `90` testes com `2` skips. Escopo, aceite e
-rollback estão congelados; a matriz documental passou `39` testes e `6` subtests.
-`checkpoint/f5.7-ready` é exclusivamente local. R1 acrescenta apenas `runtime/tool_loop.py` à
-allowlist para tratar cancelamento pós-dispatch e será delimitado por `checkpoint/f5.7-r1-ready`
-antes do produto. Implementação local foi autorizada; push, PR e tags remotas não estão autorizados.
+A [F5.7](active/F5.7.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch local
+`task/f5.7-safe-cancel-rollback`. O produto `d787ce5` persiste decisão/pedido de cancelamento,
+interrompe e reapera a árvore vinculada, impede sucesso pós-dispatch cancelado, mantém cleanup
+explícito e executa `git revert` real do SHA canônico com conflito em `BLOCKED_ROLLBACK`. R2 registra
+que a decisão durável precede o sinal quando o executor já detém o lock, seguida de reconciliação
+canônica após quiescência. O focado passou `164` testes com `2` skips, segurança passou `68` e a
+regressão integral passou `900` com `5` skips e `6` subtests. Mypy em 106 arquivos, Ruff, compileall,
+diff-check, wheel e smoke oficial offline com `uv 0.12.3` ficaram verdes. Os checkpoints
+`checkpoint/f5.7-ready`, `checkpoint/f5.7-r1-ready` e `checkpoint/f5.7-complete` são exclusivamente
+locais. Push, PR, merge, tags remotas e início de F6 não estão autorizados.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge

@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.7](docs/tasks/active/F5.7.md): gate em preparação para cancelamento e rollback seguros.
+2. [F5.7](docs/tasks/active/F5.7.md): produto concluído localmente; promoção ainda não autorizada.
 3. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
    incorporado por `docs/promote-f5.6` é complementado pela evidência externa posterior abaixo.
 4. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
@@ -29,16 +29,20 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.6 promovidas |
 | **Fase ativa** | Fase 5 — governança e segurança no caminho crítico |
-| **Tarefa ativa** | F5.7 — cancelamento e rollback seguros |
-| **Gate** | `READY` — R1 recongelou a propagação pós-dispatch sem relaxar critérios |
-| **Estado corrente** | F5.6 `PROMOTED`; F5.7 `ACTIVE / READY_R1`; produto F5.7 intocado |
+| **Tarefa ativa** | F5.7 — cancelamento e rollback seguros, promoção pendente |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | F5.6 `PROMOTED`; F5.7 implementada e certificada localmente, sem publicação |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T14:09:48-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.7-safe-cancel-rollback`, somente local e sem upstream |
-| **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; R1 será `checkpoint/f5.7-r1-ready`; somente locais |
+| **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` será o commit documental final; somente locais |
 | **Main sincronizada** | antes da branch, `main == origin/main == a449bd19b5f6535402535bc2815527a9689095dc`; origin confirmado por `ls-remote` |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
+| **Produto F5.7** | `d787ce5f61f2e79415c76c06d928f030c026a4d8` |
+| **Implementação F5.7** | decisão/pedido de cancelamento duráveis, árvore terminada/reapada, cleanup explícito, `git revert` canônico e conflito `BLOCKED_ROLLBACK` |
+| **Validação F5.7** | focado `164 passed, 2 skipped`; segurança `68 passed`; full `900 passed, 5 skipped, 6 subtests passed` |
+| **Quality/distribuição F5.7** | mypy 106 arquivos, Ruff, compileall, diff-check, wheel 0.1.0 e smoke oficial offline com uv 0.12.3 verdes |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
 | **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
@@ -88,42 +92,41 @@ reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Existe um único executor/escritor: `Codex`. A autorização atual cobre F0.0, branch local, dossiê
-`BLOCKED`, reprodução, congelamento e materialização local do checkpoint `READY`. Produto só poderá
-ser alterado depois do checkpoint e de uma autorização separada para implementação. Checkpoints
-F5.6 permanecem exclusivamente locais; branches `task/f5.6-content-bound-approval` e
-`docs/promote-f5.6` estão preservadas no remoto.
+Existe um único executor/escritor: `Codex`. A autorização de implementação F5.7 foi consumida somente
+na branch local. Produto, testes e certificação local estão concluídos; nenhum push, PR, merge ou tag
+remota foi criado. Checkpoints F5.6 permanecem exclusivamente locais; branches
+`task/f5.6-content-bound-approval` e `docs/promote-f5.6` estão preservadas no remoto.
 
 ## 5. Tarefa ativa
 
-A F5.7 possui problema reproduzido, baseline válido e gate documental verde. R1 acrescenta somente
-`runtime/tool_loop.py` à allowlist para impedir que cancelamento durante dispatch seja persistido como
-sucesso. O dossiê congela propagação de cancelamento até
-o terminal, terminação confinada da árvore de processos, cleanup explícito e não forçado, rollback do
-SHA canônico com novo SHA comprovado, conflito bloqueado e aprovação específica de hook destrutivo.
-Nenhum arquivo de produto foi alterado.
+A F5.7 está concluída localmente no produto `d787ce5`. O controlador durável publica decisão e pedido
+antes do sinal mesmo quando o executor detém o lock; após quiescência, o lifecycle reconcilia o
+journal sob o lock canônico e só então apresenta `CANCELLED`. O terminal encerra e reapera a árvore
+vinculada, o tool loop não persiste sucesso cancelado, cleanup permanece ação distinta e não forçada,
+e rollback usa o SHA de promoção canônico em `git revert --no-edit`, verificando o novo SHA. Conflito
+é abortado com segurança e termina em `BLOCKED_ROLLBACK`.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico para materializar o commit/checkpoint local R1. O smoke final depende de
-`uv`, ausente no `PATH`, e não autoriza instalação silenciosa. Implementação de produto, push, PR,
-merge, tags remotas, remoção de refs e force-push/bypass não estão autorizados.
+Não há bloqueio técnico local. O runtime `uv 0.12.3` já preservado foi usado somente no processo,
+offline, sem instalação. Push da branch, PR, merge, tags remotas, remoção de refs,
+force-push/bypass e início de F6 não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-MATERIALIZAR O COMMIT DOCUMENTAL R1 E CRIAR checkpoint/f5.7-r1-ready SOMENTE LOCAL.
-DEPOIS IMPLEMENTAR SOMENTE A ALLOWLIST RECONGELADA; NÃO PUBLICAR E NÃO INICIAR F6.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUBLICAR A BRANCH LOCAL.
+NÃO CRIAR PR, TAG REMOTA OU MERGE E NÃO INICIAR F6.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.7.md` e a Fase 5 do plano.
-2. Confirme branch `task/f5.7-safe-cancel-rollback`, baseline `a449bd1` e ausência de produto alterado.
-3. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve o escopo/aceite congelados.
-4. Confirme que `checkpoint/f5.7-r1-ready` aponta para o commit documental R1 antes de alterar produto.
+2. Confirme branch `task/f5.7-safe-cancel-rollback` e produto `d787ce5` sobre baseline `a449bd1`.
+3. Confirme os checkpoints locais `f5.7-ready`, `f5.7-r1-ready` e `f5.7-complete`.
+4. Use exclusivamente `.\.venv\Scripts\python.exe` e preserve o escopo/aceite certificado.
 5. Não publique branch/PR/tags nem inicie F6 sem autorização nominal separada.
 
 ---
 
-*Atualizado em: 2026-08-14T14:28:00-03:00 | Fonte: gate F5.7 + recongelamento R1 pré-produto + promoção F5.6/PR #64*
+*Atualizado em: 2026-08-14T16:15:00-03:00 | Fonte: certificação local F5.7 + promoção F5.6/PR #64*
