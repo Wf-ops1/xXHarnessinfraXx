@@ -7,6 +7,7 @@ import os
 import httpx
 
 from ai_engineering_harness.models.provider import OpenAICompatibleHTTPProvider
+from ai_engineering_harness.security import RedactionContext
 
 
 class LocalAdapter(OpenAICompatibleHTTPProvider):
@@ -17,6 +18,7 @@ class LocalAdapter(OpenAICompatibleHTTPProvider):
         model_name: str | None = None,
         *,
         api_key: str | None = None,
+        redaction_context: RedactionContext | None = None,
         base_url: str | None = None,
         timeout_seconds: float = 60.0,
         max_retries: int = 2,
@@ -29,11 +31,8 @@ class LocalAdapter(OpenAICompatibleHTTPProvider):
             base_url=base_url
             or os.environ.get("HARNESS_LOCAL_MODEL_BASE_URL", "http://127.0.0.1:11434/v1"),
             api_style="chat_completions",
-            api_key=(
-                api_key
-                if api_key is not None
-                else os.environ.get("HARNESS_LOCAL_MODEL_API_KEY")
-            ),
+            api_key=api_key,
+            redaction_context=redaction_context,
             requires_api_key=False,
             timeout_seconds=timeout_seconds,
             max_retries=max_retries,

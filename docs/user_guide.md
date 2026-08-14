@@ -171,6 +171,37 @@ booleano do chamador como prova: policy que exige aprovação bloqueia antes do 
 aprovação real a conteúdo/diff permanece reservado à F5.6. A F5.3 está promovida e reconciliada; a
 F5.4 local preserva essa fronteira antes de qualquer reserva de budget.
 
+## Secrets e redaction F5.5
+
+A implementação F5.5 está local e ainda não promovida. Valores só são lidos do ambiente depois de um
+`TrustEvaluationResult` autorizar o nome e o consumer exatos. A configuração efetiva persiste apenas
+o nome em `api_key_env`; não coloque valores em YAML, JSON, prompt, system prompt, argumentos de tool
+ou arquivos `.env` do projeto.
+
+| Nome suportado | Consumer exato | Fronteira de injeção |
+|---|---|---|
+| `OPENAI_API_KEY` | `provider:openai` | header `Authorization` do transporte OpenAI |
+| `HARNESS_LOCAL_MODEL_API_KEY` | `provider:local` | header do endpoint local, quando configurado |
+| `SERENA_MCP_TOKEN` | `tool:serena` | `secret_headers` ou `secret_environment` da Serena |
+
+Nomes adicionais de provider continuam possíveis somente quando `api_key_env` e o grant declaram o
+mesmo nome para `provider:<id>`. O adapter Anthropic permanece fail-closed e não deve ser tratado como
+integração funcional. OpenAI/local não consultam mais variáveis de credencial diretamente; sem nome,
+boundary e grant, a chamada remota falha antes do transporte.
+
+Na Serena, `headers` e `environment` são públicos. `Authorization`, cookies, API keys e nomes de
+ambiente sensíveis em claro são rejeitados; use referências como
+`secret_headers={"Authorization": "SERENA_MCP_TOKEN"}` ou
+`secret_environment={"SERENA_TOKEN": "SERENA_MCP_TOKEN"}` e forneça ao adapter o mesmo boundary.
+Configuração, contexto e representações não enumeram valores crus.
+
+Cada composição do provider/adapter cria um `RedactionContext` imutável somente em memória. Rotação
+passa a valer na próxima composição ou reconstrução do resume; instâncias existentes não fazem hot
+reload silencioso. Texto exato ou fragmentado por whitespace, headers conhecidos, pares chave/valor
+e JSON recursivo são redigidos antes de truncamento e persistência. Provider recebe a credencial
+somente no header, nunca no corpo/prompt; terminal e Serena projetam stdout, stderr e resultados MCP
+já redigidos antes de retorná-los ao tool loop.
+
 ## Teste controlado de `init`
 
 Crie um repositório descartável e execute o binário instalado pelo ambiente do clone. Confirme os

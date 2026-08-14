@@ -180,8 +180,17 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "typecheck/lint/unit_test/build/security_scan" in readme
     assert "runner `0/0` falham antes de subprocessos" in readme
 
-    assert "F5.4 — integrar orçamento durável por execução e nó" in panel
-    assert "`PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING`" in panel
+    assert "F5.5 — integrar secrets e redaction no caminho crítico" in panel
+    assert "`COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`" in panel
+    assert "docs/tasks/active/F5.5.md" in panel
+    assert "task/f5.5-secrets-redaction" in panel
+    assert "2f4e391bfe3588f713a436b051d4f60e970e4df1" in panel
+    assert "31759971204" in panel
+    assert "230 passed, 3 skipped" in panel
+    assert "192 passed, 3 skipped" in panel
+    assert "873 passed, 5 skipped, 6 subtests passed" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61" in panel
+    assert "31764961921" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/60" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/58" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/54" in panel
@@ -204,6 +213,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "checkpoint/f5.3-ready" in panel
     assert "checkpoint/f5.4-ready" in panel
     assert "checkpoint/f5.4-complete" in panel
+    assert "checkpoint/f5.5-complete" in panel
+    assert "f4460ad" in panel
     assert "https://github.com/Wf-ops1/Harnessinfra/pull/59" in panel
     assert "856 passed, 5 skipped, 6 subtests passed" in panel
     assert "FAILED_BUDGET_EXCEEDED" in user_guide

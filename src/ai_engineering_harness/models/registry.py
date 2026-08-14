@@ -12,7 +12,7 @@ from ai_engineering_harness.models.adapters.anthropic import AnthropicAdapter
 from ai_engineering_harness.models.adapters.local import LocalAdapter
 from ai_engineering_harness.models.adapters.openai import OpenAIAdapter
 from ai_engineering_harness.models.provider import BaseLLMProvider
-from ai_engineering_harness.security import SecretManager, TrustEvaluationResult
+from ai_engineering_harness.security import RedactionContext, SecretManager, TrustEvaluationResult
 
 AdapterId = Literal["openai", "anthropic", "local"]
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -108,6 +108,7 @@ class ProviderRegistry:
             raise ValueError(f"Provedor não configurado: {provider_id}") from exc
 
         api_key = None
+        redaction_context = RedactionContext()
         if spec.api_key_env is not None:
             if self._trust_boundary is None:
                 raise PermissionError(
@@ -118,10 +119,13 @@ class ProviderRegistry:
                 boundary=self._trust_boundary,
                 consumer=f"provider:{provider_id}",
             )
+            if api_key:
+                redaction_context = RedactionContext({spec.api_key_env: api_key})
         if spec.adapter == "openai":
             return OpenAIAdapter(
                 model_name=spec.model,
                 api_key=api_key if api_key is not None else "",
+                redaction_context=redaction_context,
                 base_url=spec.base_url,
                 timeout_seconds=spec.timeout_seconds,
                 max_retries=spec.max_retries,
@@ -131,6 +135,7 @@ class ProviderRegistry:
             return LocalAdapter(
                 model_name=spec.model,
                 api_key=api_key if api_key is not None else "",
+                redaction_context=redaction_context,
                 base_url=spec.base_url,
                 timeout_seconds=spec.timeout_seconds,
                 max_retries=spec.max_retries,
