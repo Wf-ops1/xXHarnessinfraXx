@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7 e a corretiva F5.C1 estão promovidas; duas formas adicionais de redaction foram recertificadas | A reconciliação administrativa F5.C1 está no PR #68 com checks pendentes; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7 e a corretiva F5.C1 estão promovidas; a reconciliação administrativa #68 também foi incorporada e certificada | A F6.1 iniciou apenas com gate documental; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -183,9 +183,13 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `914 passed, 5 skipped, 6 subtests passed` no full, além de quality, wheel e smoke offline. O estado
   anterior `POST_PROMOTION_BLOCKED` foi reparado. O head final `3158d3b` passou 11/11 na CI
   `31855763587` do [PR #67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67), foi incorporado pelo
-  merge `2b405fd` e recebeu 11/11 na CI pós-merge `31857239235`. A reconciliação administrativa foi
-  publicada no [PR #68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68); o run inicial
-  `31858431821` permanece com checks pendentes. F6 aguarda sua incorporação e CI pós-merge final.
+  merge `2b405fd` e recebeu 11/11 na CI pós-merge `31857239235`. A reconciliação administrativa
+  [PR #68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68) encerrou no head `5b8e558`, foi
+  incorporada pelo merge `29e8a975` e recebeu 11/11 na CI final `31859624571`. Pela DEC-014, esse PR
+  termina a cadeia sem reconciliação recursiva. A F6.1 está na branch local
+  `task/f6.1-unified-event-schema`, com gate `READY / IMPLEMENTATION_NOT_STARTED`, probe de dois
+  envelopes concorrentes e baseline focado válido de `96 passed`; nenhuma capacidade F6 foi declarada
+  entregue por esse gate.
 
 ## Dívidas técnicas críticas
 

@@ -207,6 +207,11 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31857239235" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68" in panel
     assert "31858431821" in panel
+    assert "5b8e5585f2fd729787589feeb0ed9f4d217e6e7f" in panel
+    assert "29e8a9751c2cc1bf4e45fa530d971e969f22342f" in panel
+    assert "31859624571" in panel
+    assert "task/f6.1-unified-event-schema" in panel
+    assert "docs/tasks/active/F6.1.md" in panel
     assert "31817497094" in panel
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "docs/tasks/completed/F5.5.md" in panel

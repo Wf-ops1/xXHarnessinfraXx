@@ -5,8 +5,11 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
-   CI pós-merge `31857239235` 11/11 verde; reconciliação administrativa aberta no PR #68.
+2. [F6.1](docs/tasks/active/F6.1.md): gate congelado para o schema único de eventos; implementação
+   ainda não iniciada.
+3. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
+   CI pós-merge `31857239235` 11/11 verde; reconciliação administrativa #68 incorporada em `29e8a975`,
+   com CI pós-merge `31859624571` 11/11 verde.
 3. [F5.7](docs/tasks/completed/F5.7.md): produto promovido no PR #65; reconciliação administrativa
    incorporada pelo PR #66 no merge `998a7ac`, com CI pós-merge `31849767573` 11/11 verde.
 4. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
@@ -31,17 +34,20 @@
 | Campo | Estado observado |
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1 promovidas no produto |
-| **Fase ativa** | nenhuma fase de implementação; reconciliação administrativa F5.C1 em CI remota |
-| **Tarefa ativa** | nenhuma tarefa ativa; PR administrativo F5.C1 aberto |
-| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Estado corrente** | F5.C1 `PROMOTED`; PR #68 aberto e checks pendentes; F6 aguarda merge e CI pós-merge administrativos |
+| **Fase ativa** | Fase 6 — observabilidade, auditoria, doctor e recovery |
+| **Tarefa ativa** | F6.1 — schema único de eventos; dossiê `docs/tasks/active/F6.1.md` |
+| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |
+| **Estado corrente** | F5.C1 encerrada administrativamente; F6.1 congelada, com produto ainda intocado |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | nenhuma implementação ativa; `Codex` acompanha somente a reconciliação documental |
+| **Executor ativo** | `Codex`, único escritor da F6.1 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f5.c1`, publicada e rastreando `origin/docs/promote-f5.c1`; criada de `main == origin/main == 2b405fd` |
+| **Branch** | `task/f6.1-unified-event-schema`, local e sem upstream; criada de `main == origin/main == 29e8a975` |
+| **Checkpoint F6.1** | `checkpoint/f6.1-ready` local no commit do gate, antes do primeiro arquivo de produto |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
-| **Main sincronizada** | antes da branch administrativa, `main == origin/main == 2b405fdae5ea5560ce8e411297a0c11c4abc1bf9` |
+| **Main sincronizada** | antes da branch F6.1, `main == origin/main == 29e8a9751c2cc1bf4e45fa530d971e969f22342f` |
+| **Problema F6.1** | `ExecutionEvent` carece de 6 campos obrigatórios; `HarnessTraceEvent` carece de 5 e forma um segundo schema independente |
+| **Baseline F6.1** | R0 inválido por temp bloqueado; R1 confinado `96 passed em 9.10s`; probe negativo reproduzível |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
@@ -59,7 +65,7 @@
 | **Quality/distribuição F5.C1** | Ruff, mypy 106 arquivos, compileall, diff-check, wheel 0.1.0 e smoke oficial exato offline verdes |
 | **PR F5.C1** | [#67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67), head final `3158d3b`; CI [31855763587](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31855763587) 11/11 success |
 | **Merge F5.C1** | `2b405fdae5ea5560ce8e411297a0c11c4abc1bf9`; CI pós-merge [31857239235](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31857239235) 11/11 success |
-| **Reconciliação F5.C1** | commit-base `7c41c520e11825c74cc8e95e9dd79c20532bc359`; PR [#68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68), head inicial `23ea12630b23c097523f7fa2f2667ebec251a324`, CI inicial [31858431821](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31858431821), checks pendentes; gate documental `35 passed, 6 subtests passed` |
+| **Reconciliação F5.C1** | commit-base `7c41c520e11825c74cc8e95e9dd79c20532bc359`; PR [#68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68), CI inicial `31858431821`, head final `5b8e5585f2fd729787589feeb0ed9f4d217e6e7f`, 11 checks verdes; merge `29e8a9751c2cc1bf4e45fa530d971e969f22342f`; CI de push [31859624571](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31859624571), 11/11 success em 7m37s; encerramento terminal sem reconciliação recursiva |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
 | **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
@@ -94,8 +100,8 @@
 | Produto | `ec8aa96`; focado F5 `267 passed, 2 skipped`; full `914 passed, 5 skipped, 6 subtests passed` |
 | PR de produto | [#67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67), head final `3158d3b`, CI `31855763587`, 11/11 success |
 | Merge de produto | `2b405fdae5ea5560ce8e411297a0c11c4abc1bf9`; CI de `push` `31857239235`, 11/11 success |
-| Reconciliação administrativa | PR [#68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68), run inicial `31858431821`, checks pendentes |
-| Fronteira | checkpoints somente locais; branch de produto remota preservada; F6 bloqueada até a reconciliação administrativa ser incorporada e recertificada |
+| Reconciliação administrativa | PR [#68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68), head `5b8e558`, merge `29e8a975`, CI final `31859624571`, 11/11 success |
+| Fronteira | encerramento administrativo terminal pela DEC-014; branches remotas preservadas e F6.1 iniciada em branch própria |
 | Promoção anterior | F5.7 — cancelamento e rollback seguros: PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação PR #66 / merge `998a7ac` / pós-merge `31849767573` |
 | Promoção anterior | F5.6 — PR [#63](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/63), merge `0488380`, pós-merge `31814250746`; reconciliação [#64](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/64), merge/CI final `a449bd1` / `31817497094` |
 | Promoção anterior | F5.5 — integrar secrets e redaction no caminho crítico: PR [#61](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/61), head final `68482da`, CI `31765166979`; merge `2227b73`, pós-merge `31769631054`; reconciliação [#62](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/62), merge/CI final `daec37d119fced3a5e041c412ab01e7524c15800` / `31771169636` |
@@ -111,36 +117,37 @@ reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Não há executor de implementação ativo. O usuário autorizou publicar `docs/promote-f5.c1` e abrir o
-PR administrativo #68; o run inicial `31858431821` está em andamento. `Codex` é o único escritor e
-não possui autorização para mesclar esse PR.
+`Codex` é o único executor/escritor da F6.1. A autorização veio do prompt de retomada anexado em
+`2026-08-15T00:18:48-03:00`; não há outro agente registrado como executor ativo.
 
 ## 5. Tarefa ativa
 
-Nenhuma tarefa de implementação está ativa. A F5.C1 está `PROMOTED`; o estado anterior
-`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece como fato histórico e foi encerrado pela correção,
-recertificação, merge e CI pós-merge. A reconciliação administrativa está no PR #68, aguardando CI.
+A F6.1 está ativa com gate `READY / IMPLEMENTATION_NOT_STARTED`. O problema, baseline, dependências,
+escopo, aceite, condições de falha, rollback, executor e runtime estão congelados no dossiê ativo. A
+F5.C1 permanece `PROMOTED`; seu estado anterior `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` é histórico.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico ou de ambiente conhecido. Publicar `docs/promote-f5.c1`, abrir/mesclar seu PR,
-criar tags remotas, remover refs, usar force-push/bypass ou iniciar F6 exigem autorização separada.
+Não há bloqueio técnico conhecido. O pytest deve usar temp/basetemp em raiz gravável no sandbox atual.
+Push, abertura de PR, merge, tags remotas, remoção de refs, force-push e bypass continuam não
+autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUBLICAR docs/promote-f5.c1 E ABRIR O PR ADMINISTRATIVO.
-NÃO MESCLAR ESSE PR, REMOVER REFS, PUBLICAR TAGS NEM INICIAR F6 SEM NOVA AUTORIZAÇÃO.
+CRIAR O CHECKPOINT LOCAL checkpoint/f6.1-ready NO COMMIT DOCUMENTAL DO GATE.
+DEPOIS, IMPLEMENTAR SOMENTE O ENVELOPE/TAXONOMIA F6.1 CONGELADOS E EXECUTAR O ACEITE.
+NÃO FAZER PUSH, ABRIR/MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇÃO EXPLÍCITA.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F5.C1.md` e a Fase 5 do plano.
-2. Confirme branch `docs/promote-f5.c1`, upstream homônimo e PR administrativo #68 aberto.
-3. Preserve PR #67/merge `2b405fd` e CI pós-merge `31857239235`; evidência histórica não é reescrita.
-4. Preserve a certificação local `267 passed, 2 skipped` / `914 passed, 5 skipped, 6 subtests passed`.
-5. Não mescle o PR #68, remova refs, publique tags nem inicie F6 sem autorização nominal separada.
+1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.1.md` e a Fase 6 do plano.
+2. Confirme branch `task/f6.1-unified-event-schema`, checkpoint local e baseline `29e8a975`.
+3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
+4. Preserve o baseline válido F6.1 `96 passed`; R0 é inválido somente por temp bloqueado.
+5. Não amplie o escopo para F6.2–F6.7 nem faça efeitos remotos sem autorização explícita.
 
 ---
 
-*Atualizado em: 2026-08-14T23:09:00-03:00 | Fonte: F5.C1 + merge `2b405fd` + CI `31857239235` + PR administrativo #68 / run `31858431821`*
+*Atualizado em: 2026-08-15T00:18:48-03:00 | Fonte: F6.1 + PR #68 / merge `29e8a975` / CI `31859624571` + baseline focado `96 passed`*

@@ -1074,11 +1074,11 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
-    assert "nenhuma implementação ativa" in panel
-    assert "nenhuma tarefa ativa" in panel.casefold()
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in task_index
-    assert "F6 aguarda" in task_index
+    assert "| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |" in panel
+    assert "docs/tasks/active/F6.1.md" in panel
+    assert (ACTIVE_ROOT / "F6.1.md").is_file()
+    assert "active/F6.1.md" in task_index
+    assert "96" in task_index
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
         assert "3158d3b" in source
@@ -1088,9 +1088,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31855627698" in f5_c1_dossier
     assert "7c41c520e11825c74cc8e95e9dd79c20532bc359" in f5_c1_dossier
     assert "7c41c520e11825c74cc8e95e9dd79c20532bc359" in panel
-    for source in (panel, task_index, f5_c1_dossier, readme):
+    assert "31858431821" in f5_c1_dossier
+    for source in (panel, task_index, readme):
         assert "PR #68" in source or "pull/68" in source
-        assert "31858431821" in source
+        assert "5b8e558" in source
+        assert "29e8a975" in source
+        assert "31859624571" in source
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
