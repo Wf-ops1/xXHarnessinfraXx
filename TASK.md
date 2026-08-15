@@ -32,14 +32,14 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 promovidas no produto |
 | **Fase ativa** | Fase 5 — corretiva pós-promoção de redaction e documentação |
-| **Tarefa ativa** | F5.C1 — hardening de redaction e realinhamento da Fase 5 |
-| **Gate** | `READY / ACTIVE / POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` |
-| **Estado corrente** | F5.1–F5.7 historicamente `PROMOTED`; dois vazamentos reproduzidos bloqueiam o estado positivo corrente e F6 |
+| **Tarefa ativa** | F5.C1 — concluída localmente, aguardando promoção própria |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | F5.1–F5.7 historicamente `PROMOTED`; as duas lacunas pós-promoção foram corrigidas e recertificadas localmente; F6 aguarda a promoção F5.C1 |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T20:51:52-03:00` |
+| **Executor ativo** | nenhuma implementação ativa; `Codex` concluiu a certificação local autorizada |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.c1-redaction-alignment`, local e sem upstream |
-| **Checkpoint F5.C1** | `checkpoint/f5.c1-ready`, local, antes da implementação |
+| **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Main sincronizada** | antes da branch corretiva, `main == origin/main == 998a7acaca46dc7f751798be4e2be9266d8028d1` |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
@@ -54,6 +54,9 @@
 | **Reconciliação F5.7** | branch `docs/promote-f5.7`; PR [#66](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66), head inicial `bb8d32e`, CI inicial `31848981895`, merge `998a7acaca46dc7f751798be4e2be9266d8028d1`; CI pós-merge [31849767573](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31849767573), 11/11 success |
 | **Problema F5.C1** | `apiKey`/`deployToken`/`privateKey` atravessam config redaction; `password="valor com espaço"` atravessa `redact_text`; documentos descrevem estados anteriores |
 | **Baseline F5.C1** | focado `263 passed, 2 skipped`; full `910 passed, 5 skipped, 6 subtests passed`; Ruff/mypy/diff verdes, mas evidência negativa posterior prevalece |
+| **Produto F5.C1** | `ec8aa96` corrige as duas fronteiras; `5da7052` realinha documentos e testes de estado; nenhuma refatoração ampla |
+| **Validação F5.C1** | probes redigidos; unidade `36 passed`; documentos `35 passed, 6 subtests`; F5 `267 passed, 2 skipped`; full `914 passed, 5 skipped, 6 subtests passed` |
+| **Quality/distribuição F5.C1** | Ruff, mypy 106 arquivos, compileall, diff-check, wheel 0.1.0 e smoke oficial exato offline verdes |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
 | **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
@@ -114,32 +117,32 @@ Checkpoints F5.6 permanecem exclusivamente locais; branches
 
 ## 5. Tarefa ativa
 
-A F5.C1 está `READY / ACTIVE / POST_PROMOTION_BLOCKED / REPAIR_ACTIVE`. O produto F5.7 permanece
-historicamente promovido, mas o gate positivo da Fase 5 foi reaberto pelas duas evidências negativas
-de redaction. A implementação permitida é exclusivamente localizada e F6 permanece bloqueada.
+A F5.C1 está `COMPLETED_LOCAL / PROMOTION_PENDING`. O estado anterior
+`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` foi encerrado localmente somente depois da correção sem
+relaxamento e da recertificação integral. Não há implementação ativa; F6 permanece bloqueada até a
+promoção remota desta corretiva e sua reconciliação administrativa.
 
 ## 6. Bloqueios e fronteiras externas
 
-Há dois bloqueios técnicos reproduzidos e uma inconsistência documental, detalhados no dossiê F5.C1.
-Não há bloqueio de ambiente. Push, PR, merge, tags remotas, remoção de refs, force-push/bypass e
-início de F6 não estão autorizados por inferência.
+Não há bloqueio técnico ou de ambiente conhecido. A única fronteira é administrativa: push, PR,
+merge, tags remotas, remoção de refs, force-push/bypass e início de F6 não estão autorizados por
+inferência.
 
 ## 7. Próxima ação exata
 
 ```text
-CORRIGIR SOMENTE AS DUAS FRONTEIRAS DE REDACTION CONGELADAS NA F5.C1.
-ADICIONAR SENTINELAS, REALINHAR OS DOCUMENTOS CORRENTES E RECERTIFICAR TODO O ACEITE.
-NÃO PUBLICAR/ABRIR PR/MESCLAR NEM INICIAR F6 SEM NOVA AUTORIZAÇÃO.
+AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUBLICAR A BRANCH E ABRIR O ÚNICO PR DA F5.C1.
+NÃO MESCLAR, CRIAR TAG REMOTA, REMOVER REFS NEM INICIAR F6 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F5.C1.md` e a Fase 5 do plano.
-2. Confirme branch `task/f5.c1-redaction-alignment`, base `998a7ac` e checkpoint READY local.
+2. Confirme branch `task/f5.c1-redaction-alignment`, base `998a7ac` e checkpoints READY/COMPLETE locais.
 3. Preserve PR #65/merge `e8470ec` e PR #66/merge `998a7ac`; evidência histórica não é reescrita.
-4. Use exclusivamente `.\.venv\Scripts\python.exe` e não amplie o escopo congelado.
+4. Preserve a certificação local `267 passed, 2 skipped` / `914 passed, 5 skipped, 6 subtests passed`.
 5. Não publique a branch, abra/mescle PR nem inicie F6 sem autorização nominal separada.
 
 ---
 
-*Atualizado em: 2026-08-14T20:51:52-03:00 | Fonte: F5.C1 + baseline `998a7ac` + CI `31849767573` + evidências negativas reproduzidas*
+*Atualizado em: 2026-08-14T21:48:21-03:00 | Fonte: F5.C1 + commits `ec8aa96`/`5da7052` + recertificação local integral*

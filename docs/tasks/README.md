@@ -20,10 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.C1](active/F5.C1.md) está `READY / ACTIVE / POST_PROMOTION_BLOCKED / REPAIR_ACTIVE`. A revisão
-pós-promoção reproduziu duas lacunas de redaction: chaves sensíveis camel/Pascal/acrônimo na
-configuração e atribuições textuais citadas com whitespace. A corretiva é localizada, preserva o
-histórico F5.1–F5.7 e bloqueia F6 até recertificação e promoção próprias.
+A [F5.C1](active/F5.C1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING`. A corretiva localizada fechou
+as duas lacunas de redaction, preservou o histórico F5.1–F5.7 e passou probes, `36` testes unitários,
+documentação `35/6`, matriz F5 `267 passed, 2 skipped`, full `914 passed, 5 skipped, 6 subtests`,
+quality, wheel e smoke offline. Não há implementação ativa; F6 aguarda promoção e reconciliação
+próprias da F5.C1.
 
 A [F5.7](completed/F5.7.md) permanece historicamente `PROMOTED`: o produto
 R3 `26bb04d`, sobre o anterior `d787ce5`, persiste decisão/pedido de cancelamento, interrompe e reapera
@@ -34,7 +35,7 @@ passou `174` testes com `2` skips, segurança passou `68` e a regressão integra
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
 pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a pendência corrente é
-exclusivamente a corretiva F5.C1.
+exclusivamente a promoção da corretiva F5.C1 já recertificada localmente.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge

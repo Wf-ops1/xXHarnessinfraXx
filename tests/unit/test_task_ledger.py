@@ -990,6 +990,7 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
 def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> None:
     panel = _read(TASK_PANEL)
     dossier = _read(COMPLETED_ROOT / "F5.7.md")
+    f5_c1_dossier = _read(ACTIVE_ROOT / "F5.C1.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
 
@@ -1057,6 +1058,23 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31848981895" in dossier
     assert "PR #66" in readme
     assert "31849767573" in task_index
+    assert "> **Gate:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f5_c1_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f5_c1_dossier
+    assert "checkpoint/f5.c1-ready" in f5_c1_dossier
+    assert "checkpoint/f5.c1-complete" in f5_c1_dossier
+    assert "ec8aa96" in f5_c1_dossier
+    assert "5da7052" in f5_c1_dossier
+    for result in (
+        "36 passed em 2.17s",
+        "35 passed, 6 subtests passed",
+        "267 passed, 2 skipped em 173.65s",
+        "914 passed, 5 skipped, 6 subtests passed em 328.79s",
+    ):
+        assert result in f5_c1_dossier
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "nenhuma implementação ativa" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
+    assert "F6 aguarda" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
