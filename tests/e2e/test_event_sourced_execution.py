@@ -130,8 +130,13 @@ def test_crash_recovery_pending_transition_is_idempotent_after_provider_restart(
             ExecutionEvent(
                 event_id="e2e-pending-transition",
                 execution_id=execution_id,
+                sequence_number=0,
                 event_type="STATE_TRANSITIONED",
                 timestamp=_BASE_TIME + timedelta(seconds=1),
+                graph_name="event-sourced-lifecycle",
+                node_id="start",
+                attempt=1,
+                actor="event_sourced_test",
                 payload={
                     "from_state": "INITIATED",
                     "to_state": "EXECUTING",

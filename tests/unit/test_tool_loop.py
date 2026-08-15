@@ -342,6 +342,7 @@ def _durable_boundary(tmp_path):
         storage=storage,
         lock=lock,
         execution_id=execution_id,
+        graph_name="tool-loop",
         node_id="agent",
         attempt=1,
         limits=limits,

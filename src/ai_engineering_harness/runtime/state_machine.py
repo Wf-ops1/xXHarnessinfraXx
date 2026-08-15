@@ -14,7 +14,7 @@ from typing import Annotated, Final
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.events import EventType, ExecutionEvent
 from ai_engineering_harness.contracts.execution import (
     ExecutionId,
     ExecutionRecord,
@@ -350,9 +350,14 @@ class EventSourcedStateMachine:
                 event = ExecutionEvent(
                     event_id=self._event_id_factory(),
                     execution_id=self.execution_id,
-                    event_type=STATE_TRANSITIONED,
+                    sequence_number=0,
+                    event_type=EventType(STATE_TRANSITIONED),
                     timestamp=timestamp,
-                    payload=payload,
+                    graph_name=record.workflow_name,
+                    node_id=node_id,
+                    attempt=attempt,
+                    actor="state_machine",
+                    details=payload,
                 )
             except (TypeError, ValueError, ValidationError) as exc:
                 raise StateTransitionIntegrityError(

@@ -264,21 +264,38 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
                 "event must be an ExecutionEvent",
                 execution_id=validated_id,
             )
+        try:
+            event = ExecutionEvent.model_validate(event.model_dump(mode="python"))
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise JournalIntegrityError(
+                "event envelope is invalid",
+                execution_id=validated_id,
+            ) from exc
         if event.execution_id != validated_id:
             raise ExecutionIdentityMismatchError(
                 "event execution_id does not match the requested execution",
                 execution_id=validated_id,
             )
-        if event.previous_hash is not None or event.current_hash is not None:
+        if (
+            event.sequence_number != 0
+            or event.previous_hash is not None
+            or event.current_hash is not None
+        ):
             raise JournalIntegrityError(
-                "caller-supplied event hashes must both be null",
+                "caller-supplied event sequence must be zero and hashes must both be null",
                 execution_id=validated_id,
             )
 
         with self._execution_guard(validated_id, lock):
-            if self._recover_record(validated_id) is None:
+            record = self._recover_record(validated_id)
+            if record is None:
                 raise ExecutionNotFoundError(
                     f"execution {validated_id!r} does not exist",
+                    execution_id=validated_id,
+                )
+            if event.graph_name != record.workflow_name:
+                raise ExecutionIdentityMismatchError(
+                    "event graph_name does not match the execution workflow",
                     execution_id=validated_id,
                 )
             journal_bytes, events = self._recover_journal(validated_id)
@@ -289,7 +306,12 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
                 )
             previous_hash = events[-1].current_hash if events else _FIRST_EVENT_HASH
             assert previous_hash is not None
-            with_previous = event.model_copy(update={"previous_hash": previous_hash})
+            with_previous = event.model_copy(
+                update={
+                    "sequence_number": len(events) + 1,
+                    "previous_hash": previous_hash,
+                }
+            )
             current_hash = _event_hash(with_previous)
             persisted = ExecutionEvent.model_validate(
                 with_previous.model_copy(update={"current_hash": current_hash}).model_dump()
@@ -721,6 +743,11 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
             if event.event_id in event_ids:
                 raise JournalIntegrityError(
                     f"event journal contains duplicate event_id {event.event_id!r}",
+                    execution_id=execution_id,
+                )
+            if event.sequence_number != line_number:
+                raise JournalIntegrityError(
+                    f"event journal sequence is invalid at line {line_number}",
                     execution_id=execution_id,
                 )
             if (

@@ -22,9 +22,14 @@ def test_execution_event_serialization():
     event = ExecutionEvent(
         event_id="evt-100",
         execution_id="exec-42",
-        event_type="STEP_COMPLETED",
+        sequence_number=1,
+        event_type="NODE_COMPLETED",
         timestamp=now,
-        payload={"step": "code_gen", "status": "GREEN"},
+        graph_name="new-feature",
+        node_id="code_gen",
+        attempt=1,
+        actor="contract_test",
+        details={"step": "code_gen", "status": "GREEN"},
         previous_hash="hash-1",
         current_hash="hash-2"
     )
@@ -32,7 +37,7 @@ def test_execution_event_serialization():
     restored = ExecutionEvent.model_validate_json(json_str)
     assert restored.event_id == "evt-100"
     assert restored.execution_id == "exec-42"
-    assert restored.payload["status"] == "GREEN"
+    assert restored.details["status"] == "GREEN"
 
 def test_context_sufficiency_report():
     report = ContextSufficiencyReport(

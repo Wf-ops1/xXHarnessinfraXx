@@ -26,7 +26,7 @@ from ai_engineering_harness.contracts import (
     ResolvedContractSpec,
     TerminalStateSpec,
 )
-from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.events import EventType, ExecutionEvent
 from ai_engineering_harness.contracts.execution import (
     ExecutionId,
     ExecutionRecord,
@@ -1434,9 +1434,17 @@ class GraphExecutor:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=node.id,
+                attempt=attempt,
+                actor="graph_executor",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise GraphEventConstructionError(
@@ -1479,9 +1487,17 @@ class GraphExecutor:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=VERIFICATION_REPAIR_SCHEDULED,
+                sequence_number=0,
+                event_type=EventType(VERIFICATION_REPAIR_SCHEDULED),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=request.target_node_id,
+                attempt=request.repair_attempt,
+                actor="graph_executor",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise GraphEventConstructionError(
@@ -1536,9 +1552,17 @@ class GraphExecutor:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=node.id,
+                attempt=attempt,
+                actor="graph_executor",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise GraphEventConstructionError(
@@ -1577,6 +1601,10 @@ class GraphExecutor:
             storage=self._storage,
             lock=lock,
             execution_id=execution_id,
+            graph_name=self._storage.load_execution(
+                execution_id,
+                lock=lock,
+            ).workflow_name,
             node_id=node_id,
             attempt=attempt,
             limits=limits,

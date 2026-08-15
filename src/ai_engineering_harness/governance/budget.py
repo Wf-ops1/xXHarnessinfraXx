@@ -23,7 +23,7 @@ from pydantic import (
     model_validator,
 )
 
-from ai_engineering_harness.contracts.events.execution_event import ExecutionEvent
+from ai_engineering_harness.contracts.events import EventType, ExecutionEvent
 from ai_engineering_harness.persistence import (
     ExecutionLock,
     ResumeStateStorageProvider,
@@ -1309,6 +1309,7 @@ class JournalBudgetBoundary:
         storage: ResumeStateStorageProvider,
         lock: ExecutionLock,
         execution_id: str,
+        graph_name: str,
         node_id: str,
         attempt: int,
         limits: BudgetLimits,
@@ -1320,11 +1321,14 @@ class JournalBudgetBoundary:
             raise TypeError("storage must implement ResumeStateStorageProvider")
         if lock.execution_id != execution_id or lock.fencing_token <= 0:
             raise ValueError("budget lock identity is invalid")
+        if not graph_name.strip() or graph_name != graph_name.strip():
+            raise ValueError("budget graph identity is invalid")
         if not node_id.strip() or attempt < 1:
             raise ValueError("budget node identity is invalid")
         self._storage = storage
         self._lock = lock
         self.execution_id = execution_id
+        self.graph_name = graph_name
         self.node_id = node_id
         self.attempt = attempt
         self.limits = limits
@@ -1707,9 +1711,14 @@ class JournalBudgetBoundary:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=self.execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self.graph_name,
+                node_id=self.node_id,
+                attempt=self.attempt,
+                actor="budget_boundary",
+                details=payload,
             )
             return self._storage.append_event(self.execution_id, event, lock=self._lock)
         except BudgetError:

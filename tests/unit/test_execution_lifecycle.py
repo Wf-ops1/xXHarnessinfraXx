@@ -564,8 +564,13 @@ def test_approval_tampered_fencing_token_fails_closed(tmp_path: Path) -> None:
         ExecutionEvent(
             event_id="forged-approval-event",
             execution_id="exec-approval-tamper",
+            sequence_number=0,
             event_type="EXECUTION_APPROVED",
             timestamp=record.updated_at + timedelta(seconds=1),
+            graph_name=record.workflow_name,
+            node_id=str(request.payload["node_id"]),
+            attempt=0,
+            actor="execution_lifecycle_test",
             payload={
                 "approver": "forged-reviewer",
                 "fencing_token": request.payload["fencing_token"],
@@ -949,8 +954,13 @@ def test_rollback_hook_approval_history_accepts_durable_expiration_after_approva
         ExecutionEvent(
             event_id=f"rollback-hook-expiration-{index}",
             execution_id=execution_id,
+            sequence_number=0,
             event_type=event_type,
             timestamp=timestamp,
+            graph_name="rollback-test",
+            node_id=None,
+            attempt=0,
+            actor="execution_lifecycle_test",
             payload={"approval": approval.model_dump(mode="json")},
         )
         for index, (event_type, timestamp, approval) in enumerate(

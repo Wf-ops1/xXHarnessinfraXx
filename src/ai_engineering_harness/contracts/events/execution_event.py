@@ -8,36 +8,75 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     ConfigDict,
     Field,
     StringConstraints,
     field_validator,
+    model_validator,
 )
 
-from ..execution import ExecutionId
+from ai_engineering_harness.security import Redactor
 
-EXECUTION_EVENT_SCHEMA_VERSION = "1.0"
+from ..execution import ExecutionId
+from .event_types import NODE_SCOPED_EVENT_TYPES, EventType
+
+EXECUTION_EVENT_SCHEMA_VERSION = "2.0"
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
+_NUMERIC_CONTROL_METADATA_KEYS = frozenset(
+    {
+        "completion_tokens",
+        "consumed_tokens",
+        "fencing_token",
+        "input_tokens",
+        "max_completion_tokens",
+        "max_completion_tokens_per_call",
+        "max_prompt_tokens",
+        "max_tokens",
+        "max_total_tokens",
+        "model_completion_tokens",
+        "model_prompt_tokens",
+        "model_total_tokens",
+        "output_tokens",
+        "prompt_tokens",
+        "remaining_tokens",
+        "token_count",
+        "total_tokens",
+    }
+)
+
 
 class ExecutionEvent(BaseModel):
-    """Strict JSON-native envelope used by the canonical F2.2 journal."""
+    """Strict, redacted envelope used by every canonical execution event."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     event_schema_version: Annotated[
         str,
-        StringConstraints(pattern=r"^1\.0$"),
+        StringConstraints(pattern=r"^2\.0$"),
     ] = EXECUTION_EVENT_SCHEMA_VERSION
     event_id: ExecutionId = Field(description="Identificador único do evento")
     execution_id: ExecutionId = Field(description="ID da execução vinculada")
-    event_type: _NonEmptyStr = Field(
-        description="Tipo de evento (ex: STEP_STARTED, STEP_COMPLETED)"
+    sequence_number: int = Field(
+        ge=0,
+        description="Posição no journal; zero identifica somente um draft pré-append",
     )
+    event_type: EventType = Field(description="Tipo fechado do evento operacional")
     timestamp: datetime = Field(description="Timestamp ISO do evento")
-    payload: dict[str, Any] = Field(default_factory=dict, description="Dados específicos do evento")
+    graph_name: _NonEmptyStr = Field(description="Nome canônico do grafo/workflow")
+    node_id: _NonEmptyStr | None = Field(
+        default=None,
+        description="Nó relacionado, quando o evento é node-scoped",
+    )
+    attempt: int = Field(ge=0, description="Tentativa relacionada; zero quando não aplicável")
+    actor: _NonEmptyStr = Field(description="Subsistema ou ator que produziu o evento")
+    details: dict[str, Any] = Field(
+        validation_alias=AliasChoices("details", "payload"),
+        description="Detalhes JSON-native redigidos antes da persistência",
+    )
     previous_hash: _NonEmptyStr | None = Field(
         default=None,
         description="SHA-256 do evento anterior no Hash Chain",
@@ -56,13 +95,41 @@ class ExecutionEvent(BaseModel):
             raise ValueError("event timestamp must use UTC")
         return value.astimezone(UTC)
 
-    @field_validator("payload", mode="before")
+    @field_validator("event_type", mode="before")
     @classmethod
-    def require_json_native_payload(cls, value: object) -> object:
-        copied = _copy_json_native(value, path="payload")
+    def require_known_event_type(cls, value: object) -> EventType:
+        if isinstance(value, EventType):
+            return value
+        if type(value) is not str:
+            raise TypeError("event_type must be a canonical event type string")
+        try:
+            return EventType(value)
+        except ValueError as exc:
+            raise ValueError(f"unknown canonical event_type: {value!r}") from exc
+
+    @field_validator("details", mode="before")
+    @classmethod
+    def require_redacted_json_native_details(cls, value: object) -> object:
+        redacted = _redact_event_json(value)
+        copied = _copy_json_native(redacted, path="details")
         if not isinstance(copied, dict):
-            raise TypeError("event payload must be a JSON object")
+            raise TypeError("event details must be a JSON object")
         return copied
+
+    @model_validator(mode="after")
+    def require_scoped_metadata(self) -> ExecutionEvent:
+        if self.event_type in NODE_SCOPED_EVENT_TYPES:
+            if self.node_id is None:
+                raise ValueError("node-scoped events require node_id")
+            if self.attempt < 1:
+                raise ValueError("node-scoped events require a positive attempt")
+        return self
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        """Compatibility read alias; canonical serialization uses ``details``."""
+
+        return self.details
 
     def canonical_json(self) -> str:
         """Serialize the envelope as one compact canonical journal line."""
@@ -100,10 +167,37 @@ def _copy_json_native(value: object, *, path: str) -> object:
         return copied
     raise ValueError(f"{path} contains non-JSON-native value {type(value).__name__}")
 
-class KnowledgeSyncEvent(BaseModel):
-    model_config = ConfigDict(strict=True, frozen=True)
 
-    tx_id: str = Field(description="ID da transação de conhecimento")
-    status: str = Field(description="Status da transação (STAGING, PREPARED, COMMITTED)")
-    synced_at: datetime = Field(description="Timestamp do sync")
-    ki_count: int = Field(description="Quantidade de KIs sincronizadas")
+def _redact_event_json(value: object) -> object:
+    """Redact secret-bearing text without destroying numeric control metadata."""
+
+    if isinstance(value, str):
+        return Redactor.redact_text(value)
+    if value is None or type(value) in {bool, int, float}:
+        return value
+    if type(value) is list:
+        return [_redact_event_json(item) for item in value]
+    if type(value) is dict:
+        redacted: dict[str, object] = {}
+        for key, item in value.items():
+            if type(key) is not str:
+                raise TypeError("event detail keys must be strings")
+            safe_key = Redactor.redact_text(key)
+            probe = Redactor.redact_json({key: "event-redaction-probe"})
+            sensitive_key = isinstance(probe, dict) and probe.get(safe_key) != "event-redaction-probe"
+            if sensitive_key and not _is_numeric_control_metadata(key, item):
+                redacted[safe_key] = "[REDACTED_SECRET]"
+            else:
+                redacted[safe_key] = _redact_event_json(item)
+        return redacted
+    return value
+
+
+def _is_numeric_control_metadata(key: str, value: object) -> bool:
+    """Identify non-secret counters that happen to contain the word ``token``."""
+
+    return type(value) in {int, float} and key in _NUMERIC_CONTROL_METADATA_KEYS
+
+# Backward-compatible import name. It is intentionally the canonical envelope,
+# never a second Pydantic event schema.
+KnowledgeSyncEvent = ExecutionEvent

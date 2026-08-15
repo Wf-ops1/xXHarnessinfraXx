@@ -310,7 +310,7 @@ class _ModelEventShapeStorage(AtomicFileStateStorage):
             event = ExecutionEvent.model_validate(
                 {
                     **event.model_dump(),
-                    "payload": payload,
+                    "details": payload,
                     "previous_hash": None,
                     "current_hash": None,
                 }
@@ -330,7 +330,7 @@ class _TamperedToolDecisionStorage(_FailOutcomeCasStorage):
             event = ExecutionEvent.model_validate(
                 {
                     **event.model_dump(),
-                    "payload": {
+                    "details": {
                         **event.payload,
                         "policy_decision_digest": f"sha256:{'f' * 64}",
                     },
@@ -358,7 +358,7 @@ class _LegacyToolEventStorage(_FailOutcomeCasStorage):
             event = ExecutionEvent.model_validate(
                 {
                     **event.model_dump(),
-                    "payload": payload,
+                    "details": payload,
                     "previous_hash": None,
                     "current_hash": None,
                 }
@@ -861,15 +861,15 @@ def test_linear_execution_persists_events_cas_terminal_and_fencing(tmp_path: Pat
         "NODE_COMPLETED",
         "STATE_TRANSITIONED",
     ]
-    assert all(event["payload"]["fencing_token"] == result.fencing_token for event in events)
-    assert [event["payload"].get("next_id") for event in events[1:-1]] == [
+    assert all(event["details"]["fencing_token"] == result.fencing_token for event in events)
+    assert [event["details"].get("next_id") for event in events[1:-1]] == [
         None,
         "second",
         None,
         "completed",
     ]
-    assert events[0]["payload"]["to_state"] == "EXECUTING"
-    assert events[-1]["payload"]["to_state"] == "COMPLETED"
+    assert events[0]["details"]["to_state"] == "EXECUTING"
+    assert events[-1]["details"]["to_state"] == "COMPLETED"
 
 
 def test_lifecycle_can_defer_success_terminal_to_verifying(tmp_path: Path) -> None:
@@ -893,7 +893,7 @@ def test_lifecycle_can_defer_success_terminal_to_verifying(tmp_path: Path) -> No
     assert storage.load_execution("exec-deferred-verification").current_state == (
         ExecutionState.VERIFYING
     )
-    assert _journal(tmp_path, "exec-deferred-verification")[-1]["payload"] == {
+    assert _journal(tmp_path, "exec-deferred-verification")[-1]["details"] == {
         "attempt": 0,
         "fencing_token": result.fencing_token,
         "from_state": "EXECUTING",
@@ -961,10 +961,10 @@ def test_model_metadata_and_usage_are_journaled_only_on_node_outcome(
     events = _journal(tmp_path, execution_id)
     started = next(event for event in events if event["event_type"] == "NODE_STARTED")
     outcome = next(event for event in events if event["event_type"] == "NODE_COMPLETED")
-    assert not any(key.startswith("model_") for key in started["payload"])
+    assert not any(key.startswith("model_") for key in started["details"])
     assert {
         key: value
-        for key, value in outcome["payload"].items()
+        for key, value in outcome["details"].items()
         if key.startswith("model_")
     } == {
         "model_calls": [
@@ -1158,8 +1158,8 @@ def test_tool_events_are_paired_redacted_and_precede_node_outcome(tmp_path: Path
         "NODE_COMPLETED",
         "STATE_TRANSITIONED",
     ]
-    called = events[2]["payload"]
-    completed = events[3]["payload"]
+    called = events[2]["details"]
+    completed = events[3]["details"]
     assert called["arguments_digest"] == f"sha256:{'1' * 64}"
     assert "arguments" not in called
     assert completed["redacted_result"] == '{"token":"[REDACTED_SECRET]"}'
@@ -1475,7 +1475,8 @@ def test_tool_event_replay_rejects_adulterated_extra_outcome(tmp_path: Path) -> 
             **outcome.model_dump(),
             "event_id": "adulterated-tool-outcome",
             "timestamp": outcome.timestamp + timedelta(seconds=10),
-            "payload": {**outcome.payload, "call_id": "call-adulterated"},
+            "sequence_number": 0,
+            "details": {**outcome.payload, "call_id": "call-adulterated"},
             "previous_hash": None,
             "current_hash": None,
         }
@@ -1533,8 +1534,8 @@ def test_invalid_output_follows_failure_edge(tmp_path: Path) -> None:
         "NODE_FAILED",
         "STATE_TRANSITIONED",
     ]
-    assert events[-2]["payload"]["error_code"] == "invalid_node_output"
-    assert events[-1]["payload"]["to_state"] == "FAILED"
+    assert events[-2]["details"]["error_code"] == "invalid_node_output"
+    assert events[-1]["details"]["to_state"] == "FAILED"
 
 
 def test_backend_failure_follows_only_failure_edge(tmp_path: Path) -> None:
@@ -1752,14 +1753,14 @@ def test_retry_context_corrects_on_second_attempt_and_is_redacted(
         for event in events
         if event["event_type"] in {"NODE_COMPLETED", "NODE_FAILED"}
     ]
-    assert ["retry_context_digest" in event["payload"] for event in starts] == [
+    assert ["retry_context_digest" in event["details"] for event in starts] == [
         False,
         False,
         True,
         True,
     ]
     assert [
-        "next_retry_context_digest" in event["payload"] for event in outcomes
+        "next_retry_context_digest" in event["details"] for event in outcomes
     ] == [False, True, True, False]
     assert storage.load_execution(execution_id).attempt_by_node == {
         "code": 2,
@@ -2159,6 +2160,7 @@ def test_resume_duplicate_outcome_is_rejected_without_backend(tmp_path: Path) ->
             **outcome.model_dump(),
             "event_id": "duplicate-outcome-event",
             "timestamp": outcome.timestamp + timedelta(seconds=1),
+            "sequence_number": 0,
             "previous_hash": None,
             "current_hash": None,
         }
@@ -2217,8 +2219,13 @@ def test_resume_tampered_ledger_attempt_next_digest_or_gap_fails_closed(
         ExecutionEvent(
             event_id=f"started-{tamper}",
             execution_id=execution_id,
+            sequence_number=0,
             event_type="NODE_STARTED",
             timestamp=_BASE_TIME + timedelta(seconds=2),
+            graph_name=storage.load_execution(execution_id).workflow_name,
+            node_id="gate",
+            attempt=attempt,
+            actor="graph_executor_test",
             payload={
                 "attempt": attempt,
                 "fencing_token": fencing_token,
@@ -2233,8 +2240,13 @@ def test_resume_tampered_ledger_attempt_next_digest_or_gap_fails_closed(
         ExecutionEvent(
             event_id=f"outcome-{tamper}",
             execution_id=execution_id,
+            sequence_number=0,
             event_type="NODE_COMPLETED",
             timestamp=_BASE_TIME + timedelta(seconds=3),
+            graph_name=storage.load_execution(execution_id).workflow_name,
+            node_id="gate",
+            attempt=attempt,
+            actor="graph_executor_test",
             payload={
                 "attempt": attempt,
                 "fencing_token": fencing_token,
@@ -2286,8 +2298,13 @@ def test_resume_rejects_partial_model_metadata_without_backend(tmp_path: Path) -
         ExecutionEvent(
             event_id="started-partial-model-metadata",
             execution_id=execution_id,
+            sequence_number=0,
             event_type="NODE_STARTED",
             timestamp=_BASE_TIME + timedelta(seconds=2),
+            graph_name=storage.load_execution(execution_id).workflow_name,
+            node_id="gate",
+            attempt=1,
+            actor="graph_executor_test",
             payload={
                 "attempt": 1,
                 "fencing_token": fencing_token,
@@ -2302,8 +2319,13 @@ def test_resume_rejects_partial_model_metadata_without_backend(tmp_path: Path) -
         ExecutionEvent(
             event_id="outcome-partial-model-metadata",
             execution_id=execution_id,
+            sequence_number=0,
             event_type="NODE_COMPLETED",
             timestamp=_BASE_TIME + timedelta(seconds=3),
+            graph_name=storage.load_execution(execution_id).workflow_name,
+            node_id="gate",
+            attempt=1,
+            actor="graph_executor_test",
             payload={
                 "attempt": 1,
                 "fencing_token": fencing_token,
