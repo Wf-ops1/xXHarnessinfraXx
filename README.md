@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7 estão promovidas. A F5.C1 corrigiu e recertificou localmente duas formas adicionais de redaction | A F5.C1 aguarda promoção própria; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7 estão promovidas. A F5.C1 corrigiu e recertificou localmente duas formas adicionais de redaction | A F5.C1 está no PR #67 com checks pendentes; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -181,7 +181,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   A corretiva `ec8aa96` normaliza chaves sensíveis camel/Pascal/acrônimo e redige atribuições citadas
   com whitespace. Sua recertificação local passou `267 passed, 2 skipped` na matriz F5 e
   `914 passed, 5 skipped, 6 subtests passed` no full, além de quality, wheel e smoke offline. O estado
-  anterior `POST_PROMOTION_BLOCKED` foi reparado localmente, mas F6 aguarda a promoção própria da F5.C1.
+  anterior `POST_PROMOTION_BLOCKED` foi reparado localmente. O PR #67 está aberto, com CI inicial
+  `31855627698`; F6 aguarda merge, CI pós-merge verde e reconciliação própria da F5.C1.
 
 ## Dívidas técnicas críticas
 

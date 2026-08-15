@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F5.C1](active/F5.C1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING`. A corretiva localizada fechou
+A [F5.C1](active/F5.C1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`. A corretiva localizada fechou
 as duas lacunas de redaction, preservou o histórico F5.1–F5.7 e passou probes, `36` testes unitários,
 documentação `35/6`, matriz F5 `267 passed, 2 skipped`, full `914 passed, 5 skipped, 6 subtests`,
-quality, wheel e smoke offline. Não há implementação ativa; F6 aguarda promoção e reconciliação
-próprias da F5.C1.
+quality, wheel e smoke offline. O PR [#67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67)
+está aberto contra `main`, com CI inicial `31855627698` em andamento. Não há implementação ativa;
+F6 aguarda merge, CI pós-merge e reconciliação próprias da F5.C1.
 
 A [F5.7](completed/F5.7.md) permanece historicamente `PROMOTED`: o produto
 R3 `26bb04d`, sobre o anterior `d787ce5`, persiste decisão/pedido de cancelamento, interrompe e reapera

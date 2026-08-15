@@ -1058,7 +1058,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31848981895" in dossier
     assert "PR #66" in readme
     assert "31849767573" in task_index
-    assert "> **Gate:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f5_c1_dossier
+    assert "> **Gate:** `COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`" in f5_c1_dossier
     assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f5_c1_dossier
     assert "checkpoint/f5.c1-ready" in f5_c1_dossier
     assert "checkpoint/f5.c1-complete" in f5_c1_dossier
@@ -1071,10 +1071,16 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert (
+        "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING` |"
+        in panel
+    )
     assert "nenhuma implementação ativa" in panel
     assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
     assert "F6 aguarda" in task_index
+    for source in (panel, task_index, f5_c1_dossier, readme):
+        assert "PR #67" in source or "pull/67" in source
+        assert "31855627698" in source
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
