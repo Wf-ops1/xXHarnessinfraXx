@@ -42,7 +42,7 @@
 | **Executor ativo** | `Codex`, único escritor da F6.1 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f6.1-unified-event-schema`, local e sem upstream; criada de `main == origin/main == 29e8a975` |
-| **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; `checkpoint/f6.1-r1-ready` → `eea6baa`; COMPLETE a criar; somente locais |
+| **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; `checkpoint/f6.1-r1-ready` → `eea6baa`; `checkpoint/f6.1-complete` → `016f4ca`; somente locais |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Main sincronizada** | antes da branch F6.1, `main == origin/main == 29e8a9751c2cc1bf4e45fa530d971e969f22342f` |
@@ -140,7 +140,6 @@ autorizados.
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL checkpoint/f6.1-complete NO COMMIT DOCUMENTAL DE CERTIFICAÇÃO R1.
 AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUSH E ABERTURA DE PR DA F6.1.
 NÃO FAZER PUSH, ABRIR/MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇÃO EXPLÍCITA.
 ```
@@ -155,4 +154,4 @@ NÃO FAZER PUSH, ABRIR/MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇ
 
 ---
 
-*Atualizado em: 2026-08-15T01:43:50-03:00 | Fonte: F6.1 R1 `c4aef27` + probe único + focado `320` + full `930` + quality/build/smoke*
+*Atualizado em: 2026-08-15T01:50:04-03:00 | Fonte: F6.1 R1 `c4aef27` + certificação `016f4ca` + checkpoint COMPLETE local + aceite integral*

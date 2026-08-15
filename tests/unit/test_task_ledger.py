@@ -1093,6 +1093,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "KnowledgeSyncEvent" in f6_1_dossier
     assert "KnowledgeUpdateEvent" in f6_1_dossier
     assert "registered_event_models ['ExecutionEvent']" in f6_1_dossier
+    for source in (panel, f6_1_dossier):
+        assert "checkpoint/f6.1-complete" in source
+        assert "016f4ca" in source
     for historical_evidence in ("282 passed", "929 passed", "REPAIR_ACTIVE", "evidência negativa"):
         assert historical_evidence in f6_1_dossier
     for source in (panel, task_index, f5_c1_dossier, readme):
