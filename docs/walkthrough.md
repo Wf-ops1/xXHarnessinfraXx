@@ -125,8 +125,10 @@ worktree/provider/tools permanece pendente.
 
 ## Fluxo de auditoria e rollback
 
-> A F5.7 R3 está `COMPLETED_LOCAL / PROMOTION_PENDING`. Esta seção descreve o fluxo recertificado
-> localmente; publicação e CI remoto ainda dependem de autorização separada.
+> A F5.7 R3 está `PROMOTED`: PR #65, merge `e8470ec` e CI pós-merge `31846634851` verdes. A
+> reconciliação administrativa foi incorporada pelo PR #66 no merge `998a7ac`, com CI pós-merge
+> `31849767573` 11/11 verde. A corretiva F5.C1 preserva esse histórico e reabre somente os dois
+> critérios de redaction reproduzidos na revisão posterior.
 
 O diário append-only e sua hash chain são implementações locais testadas. Na F5.7 local, o
 cancelamento publica uma decisão durável antes do pedido/sinal, interrompe e reapera somente a árvore

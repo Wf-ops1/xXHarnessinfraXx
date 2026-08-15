@@ -198,6 +198,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66" in panel
     assert "bb8d32e" in panel
     assert "31848981895" in panel
+    assert "998a7acaca46dc7f751798be4e2be9266d8028d1" in panel
+    assert "31849767573" in panel
+    assert "F5.C1" in panel
+    assert "POST_PROMOTION_BLOCKED" in panel
     assert "31817497094" in panel
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "docs/tasks/completed/F5.5.md" in panel
@@ -248,6 +252,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
 
     assert "OpenAI Responses e endpoint local fazem HTTP real" in lifecycle
     assert "Serena não é MCP" not in lifecycle
+    assert "F5.7 `PROMOTED`" in lifecycle
+    assert "git revert --no-edit" in lifecycle
+    assert "F5.7 R3 está `PROMOTED`" in walkthrough
     assert "terminal usa `shell=True`" not in lifecycle
     assert "registry de executores vazio" in user_guide
     assert "harness resume <id>" in user_guide

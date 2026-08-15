@@ -1,6 +1,6 @@
 # Auditoria do Ciclo de Vida Agentic — Desejado vs. Implementado
 
-> **Status da auditoria: Protótipo / Em desenvolvimento**
+> **Status da auditoria: Protótipo / Em desenvolvimento — atualizado após a promoção F5.7 e a abertura da corretiva F5.C1**
 
 A matriz abaixo classifica efeitos observáveis no código atual. “Experimental” significa que existe
 estrutura executável ou teste, mas a etapa ainda depende de simulação, sequência fixa ou garantia
@@ -12,15 +12,15 @@ incompleta. “Planejada” aponta para a fase responsável no plano operacional
 | Contexto | `ContextAssembler` + `ExecutionLifecycleService` | Policy compilada, seis dimensões `Decimal`, dual gate, identidade/digest e partição exata de evidência, `context.json`, evento por digest, estados bloqueantes e resume possuem testes | F4.3 `PROMOTED` | PR #36 e reconciliação #37 foram incorporados com CI pós-merge verde; a entrada ainda depende de artefatos e snapshot previamente produzidos |
 | Plano | `Planner` + `ExecutionLifecycleService` | Contrato Pydantic versionado, structured output roteado, evidência/policies por digest, payload/projeção/eventos antes do nó e resume idempotente possuem testes positivos e fail-closed | F4.4 `PROMOTED` | Provider/configuração operacional continuam injetáveis; verificação e reparo posteriores já compõem o lifecycle, mas não tornam os backends automáticos |
 | Agente/modelo | `AgentExecutor`, `ModelRouter` e adapters | OpenAI Responses e endpoint local fazem HTTP real quando configurados; F5.4 local reserva antes do transporte e confirma usage real no journal | Primitiva real/injetável; budget F5.4 local | CLI/lifecycle padrão não seleciona backend; integração live é opt-in e Anthropic falha como indisponível |
-| Ferramentas | `PolicyEngine`, `ToolRouter` e factory operacional | A F5.2 promovida avalia oito eixos com default-deny/deny-wins; a F5.3 promovida exige snapshot comum; F5.4 local reserva depois desses guards e persiste contagem/duração/custo | Primitiva real/injetável; budget F5.4 local | Lifecycle padrão não constrói o registry nem injeta adapters; aprovação content-bound F5.6 ainda não está integrada |
+| Ferramentas | `PolicyEngine`, `ToolRouter` e factory operacional | A F5.2 promovida avalia oito eixos com default-deny/deny-wins; a F5.3 exige snapshot comum; a F5.4 reserva depois desses guards e persiste contagem/duração/custo | Primitiva real/injetável; F5.2–F5.5 promovidas | Lifecycle padrão não constrói o registry nem injeta adapters; a aprovação F5.6 governa promoção e não converte o booleano de aprovação de tool em decisão humana |
 | Verificação | `VerificationEngine` + `ExecutionLifecycleService` | F4.5 normaliza cinco IDs; F4.6 resolve a suíte no `ProvisionedWorktree`; F4.7 persiste resultados commit-bound; F4.8 executa targeted → full; F5.4 local inclui tentativas/duração no ledger geral | F4.7/F4.8 `PROMOTED`; budget F5.4 local | Provider e worktree permanecem injetados no E2E |
 | Reparo | `ExecutionLifecycleService` + `GraphExecutor` | Reprovação F4.7 vira `RetryContext` redigido para o `on_failure` compilado; schedule, deadline e budgets são duráveis; crash-resume e limites possuem E2E | F4.8 `PROMOTED` | Sem composição automática das tools/worktree/provider, o caminho padrão ainda não executa reparo autônomo em repositório externo |
-| Aprovação | Lifecycle/FSM | Solicitação, decisão e bundle de retomada são persistidos; F3.7 exige `ApprovalStatus.APPROVED` antes do efeito | Implementada como contrato | Aprovação exige `resume` explícito e ainda não é vinculada ao conteúdo/diff do candidate |
+| Aprovação | Lifecycle/FSM | A F5.6 cria solicitação após candidate + full suite e vincula execution/artifact/plano/diff/SHA/gates, motivo, validade e decisão no `approval-request.json`; mismatch/expiry bloqueiam antes do Git | F5.6 `PROMOTED` | Aprovação de promoção exige decisão explícita; aprovação humana de tool continua uma fronteira distinta não composta automaticamente |
 | Promoção | `PromotionManager` + `ExecutionLifecycleService` | Candidate real no worktree, full suite no mesmo SHA, write-ahead/outcome, cherry-pick único, dry-run e recovery possuem E2E; F5.3 promovida acrescenta capability de promoção + aprovação antes do efeito | F3.7 `PROMOTED`; F5.3 `PROMOTED` | Composição permanece opt-in; CLI/defaults não constroem manager/provider automaticamente |
 | Memória | `PythonAstIndexer` + `CodebaseMemoryAdapter` + `SnapshotManager` | Rebuild AST de blobs Python do commit exato e snapshot canônico com SHA/schema/status/digest validados; F4.3 consome o snapshot commit-bound | Backend local implementado | Execução do índice é explícita por `harness index`; o lifecycle não reindexa automaticamente e o backend MCP ainda não substitui esse backend |
 | Knowledge sync | `KnowledgeSynchronizer` | Transação local em etapas | Experimental | Falta integrar backend real, idempotência/recovery e política no caminho crítico |
 | Evidência | `RuntimeEngine` e audit trail | `evidence.json` e hash chain locais | Experimental | Evidência pode registrar SHA/efeitos simulados e não prova alteração entregue |
-| Rollback | `RollbackManager` | Eventos de compensação e adapter Git legado existem | Experimental/inseguro | Não usa o worktree real nem o terminal tipado atual; promoção, recovery e gates pós-reversão faltam |
+| Rollback | `RollbackManager` + `ExecutionLifecycleService` | A F5.7 executa `git revert --no-edit` real do SHA promovido, valida novo commit/parent/árvore limpa, aborta conflito e termina `BLOCKED_ROLLBACK`; hook destrutivo exige aprovação ligada à tentativa | F5.7 `PROMOTED`; efeito real/injetável | Composição padrão continua opt-in; gates pós-reversão e evidence recovery integral pertencem à F6 |
 | Doctor | `HealthProbe` | Formato de seis estágios e relatório | Simulado | Todos os estágios retornam OK sem probe; F6 |
 
 ## Interpretação correta dos testes
@@ -40,7 +40,9 @@ tool loop durável com decisão F5.2 persistida, worktree Git real, terminal por
 contra fixtures. Integrações live
 OpenAI/Serena continuam condicionadas a configuração externa. A F3.7 prova promoção segura sobre
 repositório/worktree externos temporários, incluindo falhas e recovery, mas por composição explícita.
-Eles ainda não provam que a CLI compõe todas as primitivas numa execução autônoma nem reversão segura.
+Eles ainda não provam que a CLI compõe todas as primitivas numa execução autônoma. A reversão F5.7
+é real e fail-closed por composição explícita, mas gates pós-reversão e evidence recovery integral
+continuam pendentes para F6.
 O E2E atual usa diretórios temporários e backends determinísticos injetados; não cobre o gate final do
 produto sem mocks.
 

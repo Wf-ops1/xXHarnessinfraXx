@@ -116,6 +116,30 @@ def test_dynamic_exact_multiline_and_line_wrapped_values_are_redacted() -> None:
     assert redacted.count("[REDACTED_DYNAMIC_TOKEN]") == 2
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            'password="visible password", next=safe',
+            'password="[REDACTED_SECRET]", next=safe',
+        ),
+        (
+            "api_key='alpha beta gamma'; next=safe",
+            "api_key='[REDACTED_SECRET]'; next=safe",
+        ),
+        (
+            'token: "first\tsecond"}',
+            'token: "[REDACTED_SECRET]"}',
+        ),
+    ],
+)
+def test_quoted_sensitive_assignments_with_whitespace_are_redacted(
+    text: str,
+    expected: str,
+) -> None:
+    assert Redactor.redact_text(text) == expected
+
+
 def test_recursive_json_redaction_stays_valid_and_preserves_public_shape() -> None:
     context = RedactionContext({"SERENA_MCP_TOKEN": _SECRET})
     projected = Redactor.redact_json(
