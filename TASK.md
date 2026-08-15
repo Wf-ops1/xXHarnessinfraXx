@@ -5,8 +5,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F6.3](docs/tasks/active/F6.3.md): evidence manifest concluído e certificado localmente;
-   alterações aguardam autorização para commit e checkpoint COMPLETE.
+2. [F6.3](docs/tasks/active/F6.3.md): evidence manifest concluído e certificado; branch publicada e
+   PR #73 aberto, com checks em andamento.
 3. [F6.2](docs/tasks/completed/F6.2.md): hardening do journal promovido pelo PR #71 no merge
    `3f63428`; reconciliação PR #72 incorporada em `f5d2a33`, com CI pós-merge `31902119059` 11/11.
 4. [F6.1](docs/tasks/completed/F6.1.md): schema único promovido; reconciliação PR #70 incorporada em
@@ -40,12 +40,12 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1, F6.1 e F6.2 promovidas no produto |
 | **Fase ativa** | Fase 6 — evidence, recovery e operação |
 | **Tarefa ativa** | [F6.3 — gerar e validar o evidence manifest](docs/tasks/active/F6.3.md) |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Estado corrente** | implementação F6.3 certificada e commitada localmente em `0bf3a59`; promoção remota pendente |
+| **Gate** | `COMPLETED_LOCAL / PR_OPEN / CHECKS_PENDING` |
+| **Estado corrente** | implementação F6.3 certificada; PR #73 aberto contra `main`; CI `31913270722` em andamento no head inicial |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor autorizado do gate documental F6.3 |
+| **Executor ativo** | GitHub Actions certifica o PR #73; merge não autorizado |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f6.3-evidence-manifest`, local, sem upstream; criada de `main == origin/main == f5d2a33` |
+| **Branch** | `task/f6.3-evidence-manifest`, publicada como `origin/task/f6.3-evidence-manifest` e configurada como upstream; criada de `main == origin/main == f5d2a33` |
 | **Branch de produto F6.2** | `task/f6.2-harden-journal`, remota e preservada após o merge |
 | **Branch de produto F6.1** | `task/f6.1-unified-event-schema`, remota e preservada após o merge |
 | **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; R1 READY `eea6baa`; `checkpoint/f6.1-complete` histórico → `016f4ca`; `checkpoint/f6.1-r2-ready` → `3cb2a4b`; `checkpoint/f6.1-r2-complete` → `4785c22`; somente locais |
@@ -58,6 +58,8 @@
 | **Baseline F6.3** | tentativa R0 inválida por diretório externo ausente; probe R1 válido `2 passed in 5.44s`; matriz confinada `127 passed in 34.85s` |
 | **Implementação F6.3** | contrato estrito/canônico; publicação imutável e atômica; agregação redigida; `VERIFYING`/`PROMOTING` → `GENERATING_EVIDENCE` → `COMPLETED`; recovery terminal idempotente e fail-closed |
 | **Validação F6.3** | dedicado `7 passed in 6.56s`; recovery R2 `35 passed in 30.29s`; focado R2 `253 passed in 188.59s`; full R2 `965 passed, 5 skipped, 6 subtests passed in 404.00s`; Ruff, mypy 109 arquivos, compileall, diff-check, sdist/wheel e smoke oficial offline verdes |
+| **Recertificação de promoção F6.3** | focado atual `205 passed in 59.59s`; full atual `965 passed, 5 skipped in 794.91s`; Ruff, mypy 109 arquivos, compileall e diff-check verdes |
+| **PR F6.3** | [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73), base `main`, head inicial `7c6e47502a863524700cbccbe45fe8c8c36359a4`; CI inicial [31913270722](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31913270722), 10 jobs disparados e ainda pendentes na abertura |
 | **Problema F6.2** | manager legado e storage canônico escrevem schemas distintos no mesmo journal; `execution_id` ausente, append sem lock e corrupção gera erro cru |
 | **Baseline F6.2** | probe determinístico reproduziu quebra entre duas instâncias; matriz confinada `127 passed in 19.84s` |
 | **Implementação F6.2** | manager delega append/read ao storage canônico; erros audit tipados; checkpoint local/HMAC-SHA256 opcional; JSON/SARIF fail-closed; CLI preserva export sem reflow |
@@ -128,7 +130,7 @@
 | PR de produto | [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71), head final `9fdd3cd`, CI `31899279536`, 11/11 success |
 | Merge de produto | `3f63428fba6223b8cb4a96f35fae609fbfffaa7f`; CI de `push` `31899659117`, 11/11 success em 5m12s |
 | Reconciliação administrativa | PR [#72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72), head final `d9e4010`, CI `31901668046` 11/11; merge `f5d2a33`; CI pós-merge `31902119059` 11/11 em 5m02s; encerramento terminal |
-| Fronteira | produto e reconciliação F6.2 promovidos; F6.3 `COMPLETED_LOCAL / PROMOTION_PENDING`, com produto/checkpoint locais e sem efeito remoto |
+| Fronteira | produto e reconciliação F6.2 promovidos; F6.3 publicada no PR #73, com checks pendentes e merge não autorizado |
 | Promoção anterior | F6.1 — PR #69 / merge `7d6a0e1` / pós-merge `31887143905`; reconciliação PR #70 / merge `ac887b0` / pós-merge `31888960272` |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
 | Promoção anterior | F5.7 — cancelamento e rollback seguros: PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação PR #66 / merge `998a7ac` / pós-merge `31849767573` |
@@ -151,34 +153,35 @@ encerrou terminalmente no merge `f5d2a33`/CI `31902119059`. Em `2026-08-15T16:03
 autorizou revisar e preparar o gate F6.3. Em `2026-08-15T16:13:17-03:00`, autorizou também a
 implementação local no escopo congelado. Em `2026-08-15T17:12:55-03:00`, produto e certificação
 local foram concluídos. Em `2026-08-15T17:57:20-03:00`, a autorização seguinte foi consumida para
-criar o commit de produto `0bf3a59` e o checkpoint local `checkpoint/f6.3-complete`. Push, PR, merge,
-tags remotas e remoção de refs continuam não autorizados.
+criar o commit de produto `0bf3a59` e o checkpoint local `checkpoint/f6.3-complete`. Em
+`2026-08-15T19:53:08-03:00`, a autorização nominal de continuação foi consumida no push sem force e
+na abertura do PR #73 contra `main`. Merge, tags remotas e remoção de refs continuam não autorizados.
 
 ## 5. Tarefa ativa
 
-A [F6.3](docs/tasks/active/F6.3.md) é o único dossiê ativo e está `COMPLETED_LOCAL /
-PROMOTION_PENDING`. O manifest canônico, a publicação atômica, a terminalização evidence-aware e a
-recovery idempotente passaram a certificação integral. `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE`
-permanece apenas como estado corretivo histórico da F5.C1. F6.4–F6.7 não foram iniciadas.
+A [F6.3](docs/tasks/active/F6.3.md) é o único dossiê ativo e está `COMPLETED_LOCAL / PR_OPEN /
+CHECKS_PENDING`. O manifest canônico, a publicação atômica, a terminalização evidence-aware e a
+recovery idempotente passaram a certificação integral e estão publicados no PR #73.
+`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece apenas como estado corretivo histórico da
+F5.C1. F6.4–F6.7 não foram iniciadas.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido na F6.3. Produto e checkpoint COMPLETE já existem localmente; o
-próximo efeito possível é a promoção remota, mediante nova autorização explícita. Force-push, bypass,
-publicação, merge, tags remotas e remoção de refs continuam fora de escopo.
+Não há bloqueio técnico conhecido na F6.3. A CI do PR #73 ainda precisa terminar verde. Merge,
+force-push, bypass, tags remotas e remoção de refs continuam fora da autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-OBTER AUTORIZAÇÃO EXPLÍCITA ANTES DE QUALQUER PROMOÇÃO REMOTA DA F6.3.
-PRESERVAR O PRODUTO CERTIFICADO `0bf3a59` E O CHECKPOINT `checkpoint/f6.3-complete`.
-NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS SEM ESSA AUTORIZAÇÃO.
+AGUARDAR A CI DO HEAD FINAL DO PR #73 E VALIDAR TODOS OS CHECKS.
+SE FICAR VERDE, PAUSAR E SOLICITAR AUTORIZAÇÃO EXPLÍCITA ANTES DO MERGE.
+NÃO MESCLAR, PUBLICAR TAGS, REMOVER REFS OU AMPLIAR PARA F6.4–F6.7 SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.3.md` e a Fase 6 do plano.
-2. Confirme `task/f6.3-evidence-manifest` local, sem upstream, derivada de `f5d2a33`.
+2. Confirme `task/f6.3-evidence-manifest` publicada com upstream, derivada de `f5d2a33`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
@@ -187,9 +190,9 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS SEM ESSA AUTORIZ
 7. Preserve PR #71/head `9fdd3cd`/CI `31899279536`/merge `3f63428`/pós-merge `31899659117`.
 8. Preserve PR #72/head `d9e4010`/CI `31901668046`/merge `f5d2a33`/pós-merge `31902119059` como
    encerramento terminal da F6.2.
-9. Confirme `checkpoint/f6.3-ready` em `27a9f70`, produto/checkpoint COMPLETE em `0bf3a59` e a
-   certificação R2 `7`/`35`/`253`/`965`; não execute efeito remoto sem autorização explícita.
+9. Confirme PR #73, head remoto corrente e CI iniciada em `31913270722`; aguarde todos os checks do
+   head final e não faça merge sem autorização explícita.
 
 ---
 
-*Atualizado em: 2026-08-15T17:57:20-03:00 | Fonte: F6.3 `COMPLETED_LOCAL / PROMOTION_PENDING` + produto/checkpoint locais*
+*Atualizado em: 2026-08-15T19:53:08-03:00 | Fonte: F6.3 certificada + PR #73 + CI inicial `31913270722`*

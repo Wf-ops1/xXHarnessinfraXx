@@ -20,13 +20,14 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F6.3 — gerar e validar o evidence manifest](active/F6.3.md) está `COMPLETED_LOCAL /
-PROMOTION_PENDING` na branch local `task/f6.3-evidence-manifest`, derivada de
+A [F6.3 — gerar e validar o evidence manifest](active/F6.3.md) está `PR_OPEN / CHECKS_PENDING` na
+branch publicada `task/f6.3-evidence-manifest`, derivada de
 `main == origin/main == f5d2a33`. O checkpoint READY local aponta para `27a9f70`; o contrato,
 storage atômico, terminalização e recovery passaram `7` testes dedicados, `253` focados e a full R2
 com `965 passed, 5 skipped, 6 subtests passed`. Wheel e smoke oficial offline estão verdes.
-O produto está commitado localmente em `0bf3a59`, e `checkpoint/f6.3-complete` aponta para esse SHA.
-Push, PR, merge e publicação de tags não estão autorizados.
+O produto é `0bf3a59`, e `checkpoint/f6.3-complete` aponta para esse SHA. A branch foi publicada e o
+PR [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73) foi aberto contra `main`; a CI inicial
+`31913270722` começou com 10 jobs pendentes. Merge permanece não autorizado.
 
 A [F6.2 — fortalecer o journal de auditoria](completed/F6.2.md) está terminalmente `PROMOTED`: o
 head final `9fdd3cd` do [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run

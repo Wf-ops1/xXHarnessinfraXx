@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PR_OPEN / CHECKS_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1108,7 +1108,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert evidence in f6_2_dossier
     f6_3_dossier = _read(ACTIVE_ROOT / "F6.3.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_3_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f6_3_dossier
+    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f6_3_dossier
     assert "docs/tasks/active/F6.3.md" in panel
     assert "active/F6.3.md" in task_index
     for evidence in (
@@ -1121,6 +1121,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "checkpoint/f6.3-ready",
         "NOT_APPLICABLE",
         "tamper-evident local",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73",
+        "7c6e47502a863524700cbccbe45fe8c8c36359a4",
+        "31913270722",
     ):
         assert evidence in f6_3_dossier
     for source in (panel, task_index, readme):
