@@ -20,16 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6.2.md). Seu estado está
-`PR_OPEN / CHECKS_PENDING` na branch `task/f6.2-harden-journal`, criada de
-`main == origin/main == ac887b0`. O probe reproduziu writer paralelo, perda de `execution_id`,
-ausência de sequence e quebra de hash entre duas instâncias. O produto agora delega ao journal
-canônico, oferece erros tipados, checkpoint HMAC opcional, exports fail-closed e CLI com saída JSON
-íntegra. O focado passou `146 passed in 27.87s`; o full passou
-`954 passed, 5 skipped, 6 subtests passed in 471.73s`; quality, wheel e smoke oficial estão verdes.
-O produto/checkpoint COMPLETE é `63e5091`. A branch foi publicada e o PR
-[#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) foi aberto contra `main`; a CI inicial
-`31899154429` começou com 10 jobs em andamento. Merge permanece não autorizado.
+Não há tarefa de implementação ativa. A [F6.2 — fortalecer o journal de
+auditoria](completed/F6.2.md) está `PROMOTED`: o head final `9fdd3cd` do
+[#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run `31899279536`, foi
+incorporado pelo merge `3f63428` e recebeu 11/11 na CI pós-merge `31899659117` em 5m12s. A
+reconciliação `docs/promote-f6.2` está `LOCAL_READY / PUBLICATION_PENDING`, sem upstream; F6.3 não
+possui gate nem autorização.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2
@@ -61,8 +57,8 @@ foi incorporado pelo merge `e8470ec` e recebeu 11/11 na CI pós-merge `318466348
 passou `174` testes com `2` skips, segurança passou `68` e a regressão integral isolada passou `910`
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
-pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a F6.1 e sua
-reconciliação foram promovidas, e a F6.2 aguarda autorização de promoção após certificação local.
+pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; F6.1 e F6.2 foram
+promovidas, e a reconciliação administrativa F6.2 aguarda publicação autorizada.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge
