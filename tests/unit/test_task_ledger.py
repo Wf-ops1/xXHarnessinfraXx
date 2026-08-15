@@ -1086,6 +1086,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "2b405fd" in source
         assert "31857239235" in source
     assert "31855627698" in f5_c1_dossier
+    assert "7c41c520e11825c74cc8e95e9dd79c20532bc359" in f5_c1_dossier
+    assert "7c41c520e11825c74cc8e95e9dd79c20532bc359" in panel
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

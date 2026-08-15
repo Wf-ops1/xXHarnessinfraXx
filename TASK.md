@@ -59,6 +59,7 @@
 | **Quality/distribuição F5.C1** | Ruff, mypy 106 arquivos, compileall, diff-check, wheel 0.1.0 e smoke oficial exato offline verdes |
 | **PR F5.C1** | [#67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67), head final `3158d3b`; CI [31855763587](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31855763587) 11/11 success |
 | **Merge F5.C1** | `2b405fdae5ea5560ce8e411297a0c11c4abc1bf9`; CI pós-merge [31857239235](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31857239235) 11/11 success |
+| **Reconciliação F5.C1** | `docs/promote-f5.c1`, commit local `7c41c520e11825c74cc8e95e9dd79c20532bc359`, sem upstream; gate documental `35 passed, 6 subtests passed` |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |
 | **Produto F5.6** | `7941dfee0384927acdb5d94cd9e626194b7b1432` |
 | **Problema F5.6** | JSON legado com 3 campos e subject imune a mudança de candidate reproduzidos por booleanos |
@@ -142,4 +143,4 @@ NÃO MESCLAR ESSE PR, REMOVER REFS, PUBLICAR TAGS NEM INICIAR F6 SEM NOVA AUTORI
 
 ---
 
-*Atualizado em: 2026-08-14T22:49:27-03:00 | Fonte: F5.C1 + PR #67 + merge `2b405fd` + CI pós-merge `31857239235`*
+*Atualizado em: 2026-08-14T22:49:27-03:00 | Fonte: F5.C1 + merge `2b405fd` + CI `31857239235` + reconciliação local `7c41c52`*
