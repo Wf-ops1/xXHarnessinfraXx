@@ -211,7 +211,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   wheel e smoke estão verdes. O produto e `checkpoint/f6.2-complete` apontam para `63e5091`. O head
   final `9fdd3cd` do [PR #71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no
   run `31899279536`, foi incorporado pelo merge `3f63428` e recebeu 11/11 na CI pós-merge
-  `31899659117` em 5m12s. A reconciliação administrativa está somente local.
+  `31899659117` em 5m12s. A reconciliação administrativa está no
+  [PR #72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72), com CI inicial `31901521807` em
+  andamento no head `674cd9a`; o merge administrativo não está autorizado.
   F6.3–F6.7 não foram declaradas entregues nem iniciadas.
 
 ## Dívidas técnicas críticas

@@ -24,8 +24,9 @@ Não há tarefa de implementação ativa. A [F6.2 — fortalecer o journal de
 auditoria](completed/F6.2.md) está `PROMOTED`: o head final `9fdd3cd` do
 [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run `31899279536`, foi
 incorporado pelo merge `3f63428` e recebeu 11/11 na CI pós-merge `31899659117` em 5m12s. A
-reconciliação `docs/promote-f6.2` está `LOCAL_READY / PUBLICATION_PENDING`, sem upstream; F6.3 não
-possui gate nem autorização.
+reconciliação `docs/promote-f6.2` está `ADMIN_PR_OPEN / CHECKS_PENDING`: o
+[#72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72) foi aberto no head inicial `674cd9a`, e a
+CI inicial `31901521807` começou com 10 jobs em andamento. Merge e F6.3 não estão autorizados.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2
