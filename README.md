@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1, F6.1 e F6.2 estão promovidas; F6.3 está `COMPLETED_LOCAL` com manifest canônico, terminalização evidence-aware e recovery idempotente certificados | A F6.3 ainda não foi commitada/promovida; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery/doctor F6 |
+| Configuração e governança | F5.1–F5.7, F5.C1, F6.1 e F6.2 estão promovidas; F6.3 está `COMPLETED_LOCAL` com manifest canônico, terminalização evidence-aware e recovery idempotente certificados | A F6.3 está commitada apenas localmente e ainda não foi promovida; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery/doctor F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -217,7 +217,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   pós-merge `31902119059` em 5m02s. Pela DEC-014, esse fechamento é terminal. A F6.3 está
   `COMPLETED_LOCAL / PROMOTION_PENDING` na branch `task/f6.3-evidence-manifest`: `7` testes dedicados,
   `253` focados e a full R2 com `965 passed, 5 skipped, 6 subtests passed`; wheel e smoke offline
-  estão verdes. As alterações ainda não foram commitadas ou promovidas. F6.4–F6.7 não foram iniciadas.
+  estão verdes. O produto está commitado localmente em `0bf3a59`, com o checkpoint
+  `checkpoint/f6.3-complete`; nenhuma alteração foi promovida. F6.4–F6.7 não foram iniciadas.
 
 ## Dívidas técnicas críticas
 

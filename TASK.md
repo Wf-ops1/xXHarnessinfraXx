@@ -41,7 +41,7 @@
 | **Fase ativa** | Fase 6 — evidence, recovery e operação |
 | **Tarefa ativa** | [F6.3 — gerar e validar o evidence manifest](docs/tasks/active/F6.3.md) |
 | **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Estado corrente** | implementação F6.3 e certificação local concluídas; working tree ainda não commitada |
+| **Estado corrente** | implementação F6.3 certificada e commitada localmente em `0bf3a59`; promoção remota pendente |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor autorizado do gate documental F6.3 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
@@ -52,7 +52,7 @@
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Checkpoint F6.2** | `checkpoint/f6.2-ready` → `fb9909d2d3b3941251a521a3595f3d62ee3d3c0d`; `checkpoint/f6.2-complete` → `63e5091fd5cb68a527003d632b82d2dc6ee87074`; ambos somente locais |
-| **Checkpoint F6.3** | `checkpoint/f6.3-ready` → `27a9f7057e05d6128ed21f7a5c5c463494749f04`, somente local; checkpoint COMPLETE ainda não criado |
+| **Checkpoint F6.3** | `checkpoint/f6.3-ready` → `27a9f7057e05d6128ed21f7a5c5c463494749f04`; `checkpoint/f6.3-complete` → `0bf3a5910a768fd199130ebea0377911f24e4e55`; ambos somente locais |
 | **Main sincronizada** | antes da branch F6.3, `main == origin/main == f5d2a3372a630d3ca1dabee1b02465fbde8da87d` |
 | **Problema F6.3** | dois caminhos saltam diretamente para `COMPLETED`; `GENERATING_EVIDENCE` não é usado e `evidence.json` não possui producer/validator |
 | **Baseline F6.3** | tentativa R0 inválida por diretório externo ausente; probe R1 válido `2 passed in 5.44s`; matriz confinada `127 passed in 34.85s` |
@@ -128,7 +128,7 @@
 | PR de produto | [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71), head final `9fdd3cd`, CI `31899279536`, 11/11 success |
 | Merge de produto | `3f63428fba6223b8cb4a96f35fae609fbfffaa7f`; CI de `push` `31899659117`, 11/11 success em 5m12s |
 | Reconciliação administrativa | PR [#72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72), head final `d9e4010`, CI `31901668046` 11/11; merge `f5d2a33`; CI pós-merge `31902119059` 11/11 em 5m02s; encerramento terminal |
-| Fronteira | produto e reconciliação F6.2 promovidos; F6.3 `COMPLETED_LOCAL / PROMOTION_PENDING`, sem commit de produto ou efeito remoto |
+| Fronteira | produto e reconciliação F6.2 promovidos; F6.3 `COMPLETED_LOCAL / PROMOTION_PENDING`, com produto/checkpoint locais e sem efeito remoto |
 | Promoção anterior | F6.1 — PR #69 / merge `7d6a0e1` / pós-merge `31887143905`; reconciliação PR #70 / merge `ac887b0` / pós-merge `31888960272` |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
 | Promoção anterior | F5.7 — cancelamento e rollback seguros: PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação PR #66 / merge `998a7ac` / pós-merge `31849767573` |
@@ -150,8 +150,9 @@ As autorizações de implementação, publicação, merge e reconciliação F6.2
 encerrou terminalmente no merge `f5d2a33`/CI `31902119059`. Em `2026-08-15T16:03:17-03:00`, o usuário
 autorizou revisar e preparar o gate F6.3. Em `2026-08-15T16:13:17-03:00`, autorizou também a
 implementação local no escopo congelado. Em `2026-08-15T17:12:55-03:00`, produto e certificação
-local foram concluídos. Commit de produto/checkpoint COMPLETE, push, PR, merge, tags remotas e
-remoção de refs continuam não autorizados.
+local foram concluídos. Em `2026-08-15T17:57:20-03:00`, a autorização seguinte foi consumida para
+criar o commit de produto `0bf3a59` e o checkpoint local `checkpoint/f6.3-complete`. Push, PR, merge,
+tags remotas e remoção de refs continuam não autorizados.
 
 ## 5. Tarefa ativa
 
@@ -162,16 +163,16 @@ permanece apenas como estado corretivo histórico da F5.C1. F6.4–F6.7 não for
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido na F6.3. O único próximo efeito é criar o commit local de produto e
-o checkpoint COMPLETE, mediante autorização explícita. Force-push, bypass, publicação, merge, tags
-remotas e remoção de refs continuam fora de escopo.
+Não há bloqueio técnico conhecido na F6.3. Produto e checkpoint COMPLETE já existem localmente; o
+próximo efeito possível é a promoção remota, mediante nova autorização explícita. Force-push, bypass,
+publicação, merge, tags remotas e remoção de refs continuam fora de escopo.
 
 ## 7. Próxima ação exata
 
 ```text
-OBTER AUTORIZAÇÃO EXPLÍCITA PARA CRIAR O COMMIT LOCAL F6.3 E O CHECKPOINT COMPLETE.
-NÃO ALTERAR O PRODUTO CERTIFICADO ANTES DISSO.
-NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS.
+OBTER AUTORIZAÇÃO EXPLÍCITA ANTES DE QUALQUER PROMOÇÃO REMOTA DA F6.3.
+PRESERVAR O PRODUTO CERTIFICADO `0bf3a59` E O CHECKPOINT `checkpoint/f6.3-complete`.
+NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS SEM ESSA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -186,9 +187,9 @@ NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS.
 7. Preserve PR #71/head `9fdd3cd`/CI `31899279536`/merge `3f63428`/pós-merge `31899659117`.
 8. Preserve PR #72/head `d9e4010`/CI `31901668046`/merge `f5d2a33`/pós-merge `31902119059` como
    encerramento terminal da F6.2.
-9. Confirme `checkpoint/f6.3-ready` em `27a9f70`, o diff F6.3 ainda não commitado e a certificação
-   R2 `7`/`35`/`253`/`965`; não crie commit ou checkpoint COMPLETE sem autorização explícita.
+9. Confirme `checkpoint/f6.3-ready` em `27a9f70`, produto/checkpoint COMPLETE em `0bf3a59` e a
+   certificação R2 `7`/`35`/`253`/`965`; não execute efeito remoto sem autorização explícita.
 
 ---
 
-*Atualizado em: 2026-08-15T17:29:10-03:00 | Fonte: F6.3 `COMPLETED_LOCAL / PROMOTION_PENDING` + recertificação R2 integral*
+*Atualizado em: 2026-08-15T17:57:20-03:00 | Fonte: F6.3 `COMPLETED_LOCAL / PROMOTION_PENDING` + produto/checkpoint locais*
