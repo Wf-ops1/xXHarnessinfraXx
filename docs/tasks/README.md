@@ -21,13 +21,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 ## Tarefa ativa
 
 O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6.2.md). Seu estado está
-`COMPLETED_LOCAL / PROMOTION_PENDING` na branch local `task/f6.2-harden-journal`, criada de
+`PR_OPEN / CHECKS_PENDING` na branch `task/f6.2-harden-journal`, criada de
 `main == origin/main == ac887b0`. O probe reproduziu writer paralelo, perda de `execution_id`,
 ausência de sequence e quebra de hash entre duas instâncias. O produto agora delega ao journal
 canônico, oferece erros tipados, checkpoint HMAC opcional, exports fail-closed e CLI com saída JSON
 íntegra. O focado passou `146 passed in 27.87s`; o full passou
 `954 passed, 5 skipped, 6 subtests passed in 471.73s`; quality, wheel e smoke oficial estão verdes.
-O produto/checkpoint COMPLETE é `63e5091`; push e PR permanecem não autorizados.
+O produto/checkpoint COMPLETE é `63e5091`. A branch foi publicada e o PR
+[#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) foi aberto contra `main`; a CI inicial
+`31899154429` começou com 10 jobs em andamento. Merge permanece não autorizado.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2
