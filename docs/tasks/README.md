@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F6.1 — schema único de eventos](active/F6.1.md) está `REPAIR_ACTIVE` na branch local
-`task/f6.1-unified-event-schema`. O produto `c9e41c4` unificou o journal, mas revisão posterior mostrou
-que `KnowledgeSyncEvent` e `KnowledgeUpdateEvent` ainda eram modelos independentes registrados. Essa
-evidência negativa prevalece sobre o focado `282` e o full `929`; a R1 reclassificará os contratos
-knowledge e repetirá integralmente o aceite antes de restaurar `COMPLETED_LOCAL`.
+A [F6.1 — schema único de eventos](active/F6.1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na
+branch local `task/f6.1-unified-event-schema`. Após a revisão do produto original `c9e41c4` reabrir
+os contratos knowledge, a R1 `c4aef27` tornou seus nomes legados identidade do único
+`ExecutionEvent`, reclassificou os dados como `Details` e preservou os aliases dos grafos. O probe
+estrutural ficou único; a matriz ampliada passou `320`, e o full passou `930`, com `5` skips e `6`
+subtests. Quality, wheel e smoke estão verdes.
 
 A [F5.C1](completed/F5.C1.md) permanece `PROMOTED`: a corretiva localizada fechou as duas lacunas de
 redaction, passou a recertificação integral e teve o head `3158d3b` incorporado pelo PR
@@ -43,7 +44,7 @@ passou `174` testes com `2` skips, segurança passou `68` e a regressão integra
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
 pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a pendência corrente é a
-correção R1 da F6.1, sem promoção ou próxima tarefa autorizada.
+promoção externa da F6.1 recertificada, sem próxima tarefa autorizada.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge

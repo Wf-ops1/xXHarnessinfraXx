@@ -991,6 +991,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     panel = _read(TASK_PANEL)
     dossier = _read(COMPLETED_ROOT / "F5.7.md")
     f5_c1_dossier = _read(COMPLETED_ROOT / "F5.C1.md")
+    f6_1_dossier = _read(ACTIVE_ROOT / "F6.1.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
 
@@ -1074,18 +1075,26 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / REPAIR_ACTIVE` |" in panel
+    assert "| **Gate** | `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert "docs/tasks/active/F6.1.md" in panel
     assert (ACTIVE_ROOT / "F6.1.md").is_file()
     assert "active/F6.1.md" in task_index
     assert "96" in task_index
     for source in (panel, task_index, readme):
         assert "c9e41c4" in source
-        assert "282" in source
-        assert "929" in source
-        assert "KnowledgeSyncEvent" in source
-        assert "KnowledgeUpdateEvent" in source
-    assert "REPAIR_ACTIVE" in task_index
+        assert "c4aef27" in source
+        assert "320" in source
+        assert "930" in source
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in f6_1_dossier
+    assert "c4aef27" in f6_1_dossier
+    assert "320" in f6_1_dossier
+    assert "930" in f6_1_dossier
+    assert "KnowledgeSyncEvent" in f6_1_dossier
+    assert "KnowledgeUpdateEvent" in f6_1_dossier
+    assert "registered_event_models ['ExecutionEvent']" in f6_1_dossier
+    for historical_evidence in ("282 passed", "929 passed", "REPAIR_ACTIVE", "evidência negativa"):
+        assert historical_evidence in f6_1_dossier
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
         assert "3158d3b" in source
