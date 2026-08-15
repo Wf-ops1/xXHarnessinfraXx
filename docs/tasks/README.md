@@ -21,12 +21,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 ## Tarefa ativa
 
 O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6.2.md). Seu estado está
-`IMPLEMENTED_LOCAL / CERTIFICATION_ACTIVE` na branch local `task/f6.2-harden-journal`, criada de
+`COMPLETED_LOCAL / PROMOTION_PENDING` na branch local `task/f6.2-harden-journal`, criada de
 `main == origin/main == ac887b0`. O probe reproduziu writer paralelo, perda de `execution_id`,
 ausência de sequence e quebra de hash entre duas instâncias. O produto agora delega ao journal
 canônico, oferece erros tipados, checkpoint HMAC opcional, exports fail-closed e CLI com saída JSON
-íntegra; a matriz focada final passou `145 passed in 65.06s`. Full/quality/build estão em curso;
-push e PR permanecem não autorizados. O checkpoint local `checkpoint/f6.2-ready` aponta para `fb9909d`.
+íntegra. O focado passou `146 passed in 27.87s`; o full passou
+`954 passed, 5 skipped, 6 subtests passed in 471.73s`; quality, wheel e smoke oficial estão verdes.
+O produto/checkpoint COMPLETE é `63e5091`; push e PR permanecem não autorizados.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2
@@ -59,7 +60,7 @@ passou `174` testes com `2` skips, segurança passou `68` e a regressão integra
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
 pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a F6.1 e sua
-reconciliação foram promovidas, e a fronteira corrente é o gate pré-implementação da F6.2.
+reconciliação foram promovidas, e a F6.2 aguarda autorização de promoção após certificação local.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge
