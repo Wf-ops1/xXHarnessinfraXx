@@ -195,7 +195,7 @@ def test_linear_three_node_graph_uses_compiled_edges(tmp_path: Path) -> None:
     assert record.current_state == ExecutionState.COMPLETED
     events = _journal(tmp_path, execution_id)
     assert [
-        event["payload"].get("next_id")
+        event["details"].get("next_id")
         for event in events
         if event["event_type"] == "NODE_COMPLETED"
     ] == [
@@ -249,6 +249,6 @@ def test_failure_branch_reaches_only_explicit_failure_terminal(tmp_path: Path) -
     assert record.current_state == ExecutionState.FAILED
     events = _journal(tmp_path, execution_id)
     assert events[-2]["event_type"] == "NODE_FAILED"
-    assert events[-2]["payload"]["next_id"] == "failed"
+    assert events[-2]["details"]["next_id"] == "failed"
     assert events[-1]["event_type"] == "STATE_TRANSITIONED"
-    assert events[-1]["payload"]["to_state"] == "FAILED"
+    assert events[-1]["details"]["to_state"] == "FAILED"

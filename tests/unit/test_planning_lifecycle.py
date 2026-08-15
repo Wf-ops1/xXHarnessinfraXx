@@ -493,8 +493,13 @@ def test_duplicate_generated_event_on_resume_blocks_without_second_provider(
             ExecutionEvent(
                 event_id="duplicate-plan-generated",
                 execution_id="exec-plan-duplicate",
+                sequence_number=0,
                 event_type=PLAN_GENERATED,
                 timestamp=generated.timestamp + timedelta(seconds=1),
+                graph_name=generated.graph_name,
+                node_id=generated.node_id,
+                attempt=generated.attempt,
+                actor="planning_lifecycle_test",
                 payload=dict(generated.payload),
             ),
             lock=lock,

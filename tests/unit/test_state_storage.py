@@ -116,8 +116,13 @@ def _event(event_id: str, execution_id: str = "exec-f2-2", **overrides: object) 
         "event_schema_version": EXECUTION_EVENT_SCHEMA_VERSION,
         "event_id": event_id,
         "execution_id": execution_id,
+        "sequence_number": 0,
         "event_type": "NODE_STARTED",
         "timestamp": _UPDATED_AT,
+        "graph_name": "new-feature",
+        "node_id": "analyze_requirements",
+        "attempt": 1,
+        "actor": "state_storage_test",
         "payload": {"node_id": "analyze_requirements", "attempt": 1},
         "previous_hash": None,
         "current_hash": None,
@@ -415,7 +420,11 @@ def test_append_event_is_canonical_and_hash_chained(tmp_path: Path) -> None:
     first = provider.append_event("exec-f2-2", _event("evt-1"))
     second = provider.append_event(
         "exec-f2-2",
-        _event("evt-2", event_type="NODE_COMPLETED", payload={"ok": True}),
+        _event(
+            "evt-2",
+            event_type="NODE_COMPLETED",
+            payload={"ok": True, "password": "controlled-journal-secret"},
+        ),
     )
     raw = _journal_path(tmp_path, "exec-f2-2").read_bytes()
     lines = raw.splitlines()
@@ -423,9 +432,27 @@ def test_append_event_is_canonical_and_hash_chained(tmp_path: Path) -> None:
     assert len(lines) == 2
     assert raw.endswith(b"\n") and b"\r" not in raw
     assert first.previous_hash == "0" * 64
+    assert first.sequence_number == 1
+    assert second.sequence_number == 2
     assert second.previous_hash == first.current_hash
+    assert b"controlled-journal-secret" not in raw
     for line in lines:
         document = json.loads(line)
+        assert {
+            "event_id",
+            "execution_id",
+            "sequence_number",
+            "event_type",
+            "timestamp",
+            "graph_name",
+            "node_id",
+            "attempt",
+            "actor",
+            "details",
+            "previous_hash",
+            "current_hash",
+        } <= document.keys()
+        assert "payload" not in document
         current_hash = document.pop("current_hash")
         canonical_without_hash = json.dumps(
             document,
@@ -475,7 +502,7 @@ def test_load_events_returns_detached_canonical_tuple_under_lock(
         provider.load_events("exec-missing")
 
 
-def test_duplicate_event_and_caller_hashes_preserve_journal(tmp_path: Path) -> None:
+def test_duplicate_event_and_caller_metadata_preserve_journal(tmp_path: Path) -> None:
     provider = AtomicFileStateStorage(tmp_path)
     provider.create_execution(_record())
     provider.append_event("exec-f2-2", _event("evt-duplicate"))
@@ -488,6 +515,16 @@ def test_duplicate_event_and_caller_hashes_preserve_journal(tmp_path: Path) -> N
         provider.append_event(
             "exec-f2-2",
             _event("evt-hashed", previous_hash="0" * 64),
+        )
+    with pytest.raises(JournalIntegrityError, match="caller-supplied"):
+        provider.append_event(
+            "exec-f2-2",
+            _event("evt-sequenced", sequence_number=2),
+        )
+    with pytest.raises(ExecutionIdentityMismatchError, match="graph_name"):
+        provider.append_event(
+            "exec-f2-2",
+            _event("evt-other-graph", graph_name="other-workflow"),
         )
     assert path.read_bytes() == previous
 
@@ -523,7 +560,7 @@ def test_journal_corruption_and_legacy_format_fail_closed(
 
 def test_execution_event_envelope_is_strict_canonical_and_compatible() -> None:
     event = _event("evt-envelope", payload={"z": [1, True, None], "a": 1.5})
-    assert event.event_schema_version == "1.0"
+    assert event.event_schema_version == "2.0"
     assert event.canonical_json().endswith("\n")
     assert "\n" not in event.canonical_json()[:-1]
     assert ExecutionEvent.model_validate_json(event.canonical_json()) == event
@@ -531,22 +568,27 @@ def test_execution_event_envelope_is_strict_canonical_and_compatible() -> None:
     compatible = ExecutionEvent(
         event_id="evt-compatible",
         execution_id="exec-compatible",
-        event_type="STEP_COMPLETED",
+        sequence_number=1,
+        event_type="NODE_COMPLETED",
         timestamp=_UPDATED_AT,
-        payload={},
+        graph_name="new-feature",
+        node_id="compatible",
+        attempt=1,
+        actor="state_storage_test",
+        details={},
         previous_hash="hash-1",
         current_hash="hash-2",
     )
-    assert compatible.event_schema_version == "1.0"
+    assert compatible.event_schema_version == "2.0"
 
 
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"event_schema_version": "2.0"},
+        {"event_schema_version": "1.0"},
         {"event_id": "../escape"},
         {"execution_id": "CON"},
-        {"event_type": "   "},
+        {"event_type": "UNKNOWN_EVENT"},
         {"timestamp": _UPDATED_AT.replace(tzinfo=None)},
         {"timestamp": _UPDATED_AT.astimezone(timezone(-timedelta(hours=3)))},
         {"payload": {"bad": float("nan")}},

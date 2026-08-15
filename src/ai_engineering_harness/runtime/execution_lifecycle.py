@@ -25,7 +25,7 @@ from ai_engineering_harness.contracts import (
     NodeSpec,
     ResolvedPolicySpec,
 )
-from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.events import EventType, ExecutionEvent
 from ai_engineering_harness.contracts.execution import (
     EXECUTION_RECORD_SCHEMA_VERSION,
     ApprovalStatus,
@@ -1463,9 +1463,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise PromotionLifecycleIntegrityError(
@@ -2070,6 +2078,10 @@ class ExecutionLifecycleService:
                 storage=self._storage,
                 lock=lock,
                 execution_id=execution_id,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
                 node_id=f"__verification__:{requirement.gate_id}",
                 attempt=attempt_number,
                 limits=verification_limits,
@@ -2834,9 +2846,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise VerificationLifecycleIntegrityError(
@@ -3196,9 +3216,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=CONTEXT_EVALUATED,
+                sequence_number=0,
+                event_type=EventType(CONTEXT_EVALUATED),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise ContextLifecycleIntegrityError(
@@ -3276,6 +3304,10 @@ class ExecutionLifecycleService:
                     storage=self._storage,
                     lock=lock,
                     execution_id=execution_id,
+                    graph_name=self._storage.load_execution(
+                        execution_id,
+                        lock=lock,
+                    ).workflow_name,
                     node_id="__planning__",
                     attempt=1,
                     limits=BudgetLimits.from_effective_config(effective_configuration),
@@ -3561,9 +3593,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise PlanningLifecycleIntegrityError(
@@ -5513,9 +5553,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise ExecutionLifecycleError(
@@ -5555,9 +5603,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise ApprovalLifecycleIntegrityError(
@@ -5584,9 +5640,17 @@ class ExecutionLifecycleService:
             event = ExecutionEvent(
                 event_id=self._event_id_factory(),
                 execution_id=execution_id,
-                event_type=event_type,
+                sequence_number=0,
+                event_type=EventType(event_type),
                 timestamp=timestamp,
-                payload=payload,
+                graph_name=self._storage.load_execution(
+                    execution_id,
+                    lock=lock,
+                ).workflow_name,
+                node_id=self._event_node_id(payload),
+                attempt=self._event_attempt(payload),
+                actor="execution_lifecycle",
+                details=payload,
             )
         except (TypeError, ValueError, ValidationError) as exc:
             raise ApprovalLifecycleIntegrityError(
@@ -5594,6 +5658,22 @@ class ExecutionLifecycleService:
                 execution_id=execution_id,
             ) from exc
         return self._storage.append_event(execution_id, event, lock=lock)
+
+    @staticmethod
+    def _event_node_id(payload: Mapping[str, object]) -> str | None:
+        for key in ("node_id", "target_node_id", "origin_node_id"):
+            value = payload.get(key)
+            if type(value) is str and value.strip() and value == value.strip():
+                return value
+        return None
+
+    @staticmethod
+    def _event_attempt(payload: Mapping[str, object]) -> int:
+        for key in ("attempt", "repair_attempt", "verification_attempt"):
+            value = payload.get(key)
+            if type(value) is int and value >= 0:
+                return value
+        return 0
 
     def _state_machine(
         self,

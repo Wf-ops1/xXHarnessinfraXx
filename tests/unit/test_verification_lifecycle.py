@@ -340,8 +340,13 @@ def test_open_gate_write_ahead_blocks_automatic_reexecution(tmp_path: Path) -> N
         ExecutionEvent(
             event_id="verification-open-effect",
             execution_id=execution_id,
+            sequence_number=0,
             event_type=VERIFICATION_GATE_STARTED,
             timestamp=datetime.now(UTC),
+            graph_name=storage.load_execution(execution_id).workflow_name,
+            node_id=None,
+            attempt=0,
+            actor="verification_lifecycle_test",
             payload={},
         ),
     )

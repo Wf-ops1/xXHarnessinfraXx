@@ -163,8 +163,13 @@ def _append_transition(
         ExecutionEvent(
             event_id=event_id,
             execution_id=execution_id,
+            sequence_number=0,
             event_type="STATE_TRANSITIONED",
             timestamp=timestamp,
+            graph_name="state-machine-test",
+            node_id="start",
+            attempt=attempt if type(attempt) is int else 1,
+            actor="state_machine_test",
             payload=payload,
         ),
     )

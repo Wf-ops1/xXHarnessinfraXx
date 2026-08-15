@@ -157,6 +157,7 @@ def _boundary(
         storage=storage,  # type: ignore[arg-type]
         lock=_lock(),
         execution_id="exec-budget",
+        graph_name="budget-test",
         node_id="node-a",
         attempt=1,
         limits=limits,
@@ -306,7 +307,7 @@ def test_result_without_reservation_and_tampered_identity_fail_replay() -> None:
     boundary.reserve_model("local", "llama3", "abc")
     payload = dict(storage.events[0].payload)
     payload["operation_id"] = "forged"
-    storage.events[0] = storage.events[0].model_copy(update={"payload": payload})
+    storage.events[0] = storage.events[0].model_copy(update={"details": payload})
     with pytest.raises(BudgetIntegrityError):
         BudgetLedger.replay("exec-budget", limits, tuple(storage.events))
 
@@ -328,15 +329,25 @@ def test_historical_events_without_budget_evidence_remain_readable() -> None:
         ExecutionEvent(
             event_id="event-1",
             execution_id="exec-budget",
+            sequence_number=0,
             event_type="NODE_STARTED",
             timestamp=_BASE_TIME,
+            graph_name="budget-test",
+            node_id="node-a",
+            attempt=1,
+            actor="budget_test",
             payload={"node_id": "node-a", "attempt": 1},
         ),
         ExecutionEvent(
             event_id="event-2",
             execution_id="exec-budget",
+            sequence_number=0,
             event_type="NODE_COMPLETED",
             timestamp=_BASE_TIME.replace(microsecond=50_000),
+            graph_name="budget-test",
+            node_id="node-a",
+            attempt=1,
+            actor="budget_test",
             payload={
                 "node_id": "node-a",
                 "attempt": 1,
@@ -366,15 +377,25 @@ def test_historical_prefix_remains_charged_after_new_budget_events() -> None:
             ExecutionEvent(
                 event_id="historic-start",
                 execution_id="exec-budget",
+                sequence_number=0,
                 event_type="NODE_STARTED",
                 timestamp=_BASE_TIME,
+                graph_name="budget-test",
+                node_id="node-a",
+                attempt=1,
+                actor="budget_test",
                 payload={"node_id": "node-a", "attempt": 1},
             ),
             ExecutionEvent(
                 event_id="historic-complete",
                 execution_id="exec-budget",
+                sequence_number=0,
                 event_type="NODE_COMPLETED",
                 timestamp=_BASE_TIME.replace(microsecond=50_000),
+                graph_name="budget-test",
+                node_id="node-a",
+                attempt=1,
+                actor="budget_test",
                 payload={
                     "node_id": "node-a",
                     "attempt": 1,
@@ -410,7 +431,7 @@ def test_semantically_tampered_committed_cost_fails_closed() -> None:
     actual = dict(payload["actual"])
     actual["estimated_cost_usd"] = "0"
     payload["actual"] = actual
-    storage.events[1] = storage.events[1].model_copy(update={"payload": payload})
+    storage.events[1] = storage.events[1].model_copy(update={"details": payload})
 
     with pytest.raises(BudgetIntegrityError, match="semantically invalid"):
         BudgetLedger.replay("exec-budget", limits, tuple(storage.events))
@@ -425,8 +446,13 @@ def test_tool_outcome_must_match_its_preceding_budget_commit() -> None:
         ExecutionEvent(
             event_id="tool-called",
             execution_id="exec-budget",
+            sequence_number=0,
             event_type="TOOL_CALLED",
             timestamp=_BASE_TIME.replace(microsecond=1),
+            graph_name="budget-test",
+            node_id="node-a",
+            attempt=1,
+            actor="budget_test",
             payload={
                 "node_id": "node-a",
                 "attempt": 1,
@@ -440,8 +466,13 @@ def test_tool_outcome_must_match_its_preceding_budget_commit() -> None:
         ExecutionEvent(
             event_id="tool-completed",
             execution_id="exec-budget",
+            sequence_number=0,
             event_type="TOOL_COMPLETED",
             timestamp=_BASE_TIME.replace(microsecond=3),
+            graph_name="budget-test",
+            node_id="node-a",
+            attempt=1,
+            actor="budget_test",
             payload={
                 "node_id": "node-a",
                 "attempt": 1,
@@ -456,7 +487,7 @@ def test_tool_outcome_must_match_its_preceding_budget_commit() -> None:
 
     payload = dict(storage.events[-1].payload)
     payload["duration_ms"] = 999
-    storage.events[-1] = storage.events[-1].model_copy(update={"payload": payload})
+    storage.events[-1] = storage.events[-1].model_copy(update={"details": payload})
     with pytest.raises(BudgetIntegrityError, match="committed budget result"):
         BudgetLedger.replay("exec-budget", limits, tuple(storage.events))
 
@@ -467,8 +498,13 @@ def test_attempt_limit_uses_existing_node_start_evidence() -> None:
         ExecutionEvent(
             event_id=f"event-{attempt}",
             execution_id="exec-budget",
+            sequence_number=0,
             event_type="NODE_STARTED",
             timestamp=_BASE_TIME.replace(microsecond=attempt),
+            graph_name="budget-test",
+            node_id="node-a",
+            attempt=attempt,
+            actor="budget_test",
             payload={"node_id": "node-a", "attempt": attempt},
         )
         for attempt in range(1, 4)
