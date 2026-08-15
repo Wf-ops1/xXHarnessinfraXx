@@ -29,8 +29,8 @@ sem resolução. A recertificação passou `325` focados e `935 passed, 5 skippe
 o checkpoint local `checkpoint/f6.1-r2-complete` aponta para `4785c22`. O head final `4c57a33` do
 [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69) passou 11/11 no run `31868906875`, foi
 incorporado pelo merge `7d6a0e1` e recebeu 11/11 na CI pós-merge `31887143905` em 5m58s. A
-reconciliação `docs/promote-f6.1` está `LOCAL_READY / PUBLICATION_PENDING`; F6.2 aguarda sua
-incorporação e CI final.
+reconciliação `docs/promote-f6.1` está `LOCAL_READY / PUBLICATION_PENDING` no commit-base `45b7f03`;
+F6.2 aguarda sua incorporação e CI final.
 
 A [F5.C1](completed/F5.C1.md) permanece `PROMOTED`: a corretiva localizada fechou as duas lacunas de
 redaction, passou a recertificação integral e teve o head `3158d3b` incorporado pelo PR
@@ -139,7 +139,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.6 | [Aprovação vinculada ao conteúdo](completed/F5.6.md) | PR #63 / merge `0488380` / pós-merge `31814250746`; administrativo #64 / merge `a449bd1` / CI final `31817497094` |
 | F5 | F5.7 | [Cancelamento e rollback seguros](completed/F5.7.md) | PR #65 / merge `e8470ec` / pós-merge `31846634851`; administrativo #66 / merge `998a7ac` / pós-merge `31849767573` |
 | F5 | F5.C1 | [Hardening de redaction e realinhamento da Fase 5](completed/F5.C1.md) | PR #67 / merge `2b405fd` / pós-merge `31857239235`; administrativo #68 / merge `29e8a975` / CI final `31859624571` |
-| F6 | F6.1 | [Schema único de eventos](completed/F6.1.md) | PR #69 / head `4c57a33` / merge `7d6a0e1` / pós-merge `31887143905`; administrativo local pendente de publicação |
+| F6 | F6.1 | [Schema único de eventos](completed/F6.1.md) | PR #69 / head `4c57a33` / merge `7d6a0e1` / pós-merge `31887143905`; administrativo `45b7f03` local pendente de publicação |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

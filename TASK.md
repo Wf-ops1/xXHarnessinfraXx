@@ -56,7 +56,7 @@
 | **Validação F6.1 R2** | probes `5 passed`; matriz ampliada `325 passed`; full `935 passed, 5 skipped, 6 subtests passed`; Ruff, mypy 107 arquivos, compileall, diff-check, wheel e smoke verdes |
 | **PR F6.1** | [#69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69), head final `4c57a33e2df6ade006dffc184a5640298ae3a45a`; CI [31868906875](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31868906875) 11/11 success |
 | **Merge F6.1** | `7d6a0e179f30008a7a67275da94878a179f0aba9`; CI pós-merge [31887143905](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31887143905) 11/11 success em 5m58s |
-| **Reconciliação F6.1** | `docs/promote-f6.1`, concluída localmente e pendente de commit/publicação no PR administrativo autorizado |
+| **Reconciliação F6.1** | commit-base `45b7f033d0fdb5f73cb8e5bd82b718da07d5b4ce` em `docs/promote-f6.1`; publicação no PR administrativo autorizada |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
@@ -109,7 +109,7 @@
 | Produto | `c9e41c4`; correções R1 `c4aef27` e R2 `aa471d1`/`c9c5c83`; focado `325`; full `935 passed, 5 skipped, 6 subtests passed` |
 | PR de produto | [#69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69), head final `4c57a33`, CI `31868906875`, 11/11 success |
 | Merge de produto | `7d6a0e179f30008a7a67275da94878a179f0aba9`; CI de `push` `31887143905`, 11/11 success em 5m58s |
-| Reconciliação administrativa | `docs/promote-f6.1`, concluída localmente e pendente de publicação autorizada |
+| Reconciliação administrativa | commit-base `45b7f03` em `docs/promote-f6.1`, pendente de publicação autorizada |
 | Fronteira | nenhuma implementação ativa; F6.2 bloqueada até o PR administrativo e sua CI pós-merge ficarem verdes |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
 | Promoção anterior | F5.7 — cancelamento e rollback seguros: PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação PR #66 / merge `998a7ac` / pós-merge `31849767573` |
@@ -164,4 +164,4 @@ NÃO MESCLAR O PR ADMINISTRATIVO, INICIAR F6.2, REMOVER REFS NEM PUBLICAR TAGS S
 
 ---
 
-*Atualizado em: 2026-08-15T10:37:30-03:00 | Fonte: PR #69 + head `4c57a33` + CI `31868906875` + merge `7d6a0e1` + CI pós-merge `31887143905`*
+*Atualizado em: 2026-08-15T10:47:11-03:00 | Fonte: PR #69 + merge `7d6a0e1` + CI `31887143905` + commit administrativo `45b7f03`*

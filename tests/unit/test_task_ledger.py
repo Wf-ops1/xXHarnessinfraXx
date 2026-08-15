@@ -1135,6 +1135,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f6_1_dossier
     assert "docs/promote-f6.1" in panel
     assert "docs/promote-f6.1" in task_index
+    for source in (panel, task_index, f6_1_dossier, readme):
+        assert "45b7f03" in source
     assert "11/11" in f6_1_dossier
     assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):

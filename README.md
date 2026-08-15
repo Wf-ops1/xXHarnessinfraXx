@@ -200,8 +200,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69) recebeu `11/11` checks verdes no run
   `31868906875`, foi incorporado pelo merge commit `7d6a0e1` e recebeu `11/11` na CI de `push`
   pós-merge `31887143905` em `5m58s`. A F6.1 está `PROMOTED`; sua reconciliação administrativa
-  `docs/promote-f6.1` está pronta localmente e pendente de publicação no PR autorizado. F6.2–F6.7 não
-  foram declaradas entregues nem iniciadas.
+  `docs/promote-f6.1` está pronta no commit-base `45b7f03` e pendente de publicação no PR autorizado.
+  F6.2–F6.7 não foram declaradas entregues nem iniciadas.
 
 ## Dívidas técnicas críticas
 
