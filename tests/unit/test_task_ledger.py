@@ -1074,11 +1074,18 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |" in panel
+    assert "| **Gate** | `READY / REPAIR_ACTIVE` |" in panel
     assert "docs/tasks/active/F6.1.md" in panel
     assert (ACTIVE_ROOT / "F6.1.md").is_file()
     assert "active/F6.1.md" in task_index
     assert "96" in task_index
+    for source in (panel, task_index, readme):
+        assert "c9e41c4" in source
+        assert "282" in source
+        assert "929" in source
+        assert "KnowledgeSyncEvent" in source
+        assert "KnowledgeUpdateEvent" in source
+    assert "REPAIR_ACTIVE" in task_index
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
         assert "3158d3b" in source

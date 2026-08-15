@@ -5,8 +5,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F6.1](docs/tasks/active/F6.1.md): gate congelado para o schema único de eventos; implementação
-   ainda não iniciada.
+2. [F6.1](docs/tasks/active/F6.1.md): schema único de eventos reaberto após evidência negativa em
+   contratos knowledge registrados; correção R1 autorizada.
 3. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
    CI pós-merge `31857239235` 11/11 verde; reconciliação administrativa #68 incorporada em `29e8a975`,
    com CI pós-merge `31859624571` 11/11 verde.
@@ -36,18 +36,21 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1 promovidas no produto |
 | **Fase ativa** | Fase 6 — observabilidade, auditoria, doctor e recovery |
 | **Tarefa ativa** | F6.1 — schema único de eventos; dossiê `docs/tasks/active/F6.1.md` |
-| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |
-| **Estado corrente** | F5.C1 encerrada administrativamente; F6.1 congelada, com produto ainda intocado |
+| **Gate** | `READY / REPAIR_ACTIVE` |
+| **Estado corrente** | F5.C1 encerrada administrativamente; F6.1 reaberta por envelopes knowledge independentes, sem efeitos remotos |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da F6.1 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f6.1-unified-event-schema`, local e sem upstream; criada de `main == origin/main == 29e8a975` |
-| **Checkpoint F6.1** | `checkpoint/f6.1-ready` local no commit do gate, antes do primeiro arquivo de produto |
+| **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; `checkpoint/f6.1-r1-ready` a criar antes da correção; somente locais |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Main sincronizada** | antes da branch F6.1, `main == origin/main == 29e8a9751c2cc1bf4e45fa530d971e969f22342f` |
-| **Problema F6.1** | `ExecutionEvent` carece de 6 campos obrigatórios; `HarnessTraceEvent` carece de 5 e forma um segundo schema independente |
+| **Problema F6.1** | `ExecutionEvent`/trace foram unificados, mas `KnowledgeSyncEvent` e `KnowledgeUpdateEvent` continuam modelos independentes registrados |
 | **Baseline F6.1** | R0 inválido por temp bloqueado; R1 confinado `96 passed em 9.10s`; probe negativo reproduzível |
+| **Produto F6.1** | `c9e41c4` — envelope único 2.0, `EventType` fechado, sequence sob lock, hash completo e metadados reais |
+| **Validação F6.1** | `282` focados e `929` full permanecem históricos, mas foram invalidados como certificação final pela lacuna knowledge |
+| **Quality/distribuição F6.1** | quality/build anteriores verdes; repetição integral obrigatória após R1 |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
@@ -122,9 +125,10 @@ reconciliação antes de restaurar estado positivo.
 
 ## 5. Tarefa ativa
 
-A F6.1 está ativa com gate `READY / IMPLEMENTATION_NOT_STARTED`. O problema, baseline, dependências,
-escopo, aceite, condições de falha, rollback, executor e runtime estão congelados no dossiê ativo. A
-F5.C1 permanece `PROMOTED`; seu estado anterior `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` é histórico.
+A F6.1 está `REPAIR_ACTIVE`. A revisão encontrou contratos knowledge nominais fora do envelope 2.0;
+essa evidência negativa prevalece sobre a certificação anterior. A correção R1 foi autorizada e deve
+ser checkpointed antes do código. F6.2–F6.7 não foram absorvidas. A F5.C1 permanece `PROMOTED`.
+Seu estado anterior `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece histórico.
 
 ## 6. Bloqueios e fronteiras externas
 
@@ -135,19 +139,20 @@ autorizados.
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL checkpoint/f6.1-ready NO COMMIT DOCUMENTAL DO GATE.
-DEPOIS, IMPLEMENTAR SOMENTE O ENVELOPE/TAXONOMIA F6.1 CONGELADOS E EXECUTAR O ACEITE.
+CRIAR O CHECKPOINT LOCAL checkpoint/f6.1-r1-ready NO COMMIT DE REABERTURA.
+RECLASSIFICAR OS CONTRATOS KNOWLEDGE E REPETIR TODO O ACEITE F6.1.
 NÃO FAZER PUSH, ABRIR/MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇÃO EXPLÍCITA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.1.md` e a Fase 6 do plano.
-2. Confirme branch `task/f6.1-unified-event-schema`, checkpoint local e baseline `29e8a975`.
+2. Confirme branch `task/f6.1-unified-event-schema`, produto `c9e41c4`, estado `REPAIR_ACTIVE` e baseline `29e8a975`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
-4. Preserve o baseline válido F6.1 `96 passed`; R0 é inválido somente por temp bloqueado.
-5. Não amplie o escopo para F6.2–F6.7 nem faça efeitos remotos sem autorização explícita.
+4. Preserve `282` focados / `929` full somente como histórico; a evidência knowledge exige R1 e nova
+   recertificação integral.
+5. Não amplie para F6.2–F6.7 nem faça efeitos remotos sem autorização.
 
 ---
 
-*Atualizado em: 2026-08-15T00:18:48-03:00 | Fonte: F6.1 + PR #68 / merge `29e8a975` / CI `31859624571` + baseline focado `96 passed`*
+*Atualizado em: 2026-08-15T01:22:15-03:00 | Fonte: revisão F6.1 + probe negativo dos contratos knowledge + correção R1 autorizada*
