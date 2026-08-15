@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7 estão promovidas. Configuração efetiva, policy default-deny, trust boundary, budget, redaction, aprovações ligadas ao conteúdo, cancelamento e rollback seguro controlam as fronteiras | A reconciliação documental da F5.7 está no PR #66 com checks pendentes; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7 estão promovidas. Configuração efetiva, policy default-deny, trust boundary, budget, redaction, aprovações ligadas ao conteúdo, cancelamento e rollback seguro controlam as fronteiras | A corretiva pós-promoção F5.C1 endurece duas formas de redaction descobertas depois do merge administrativo #66; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -121,7 +121,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   wheel. A reconciliação administrativa foi incorporada pela PR #52 no merge `846c59e`; o workflow
   `CI` `31616226652` passou nesse SHA exato. A composição permanece opt-in e nenhuma tag remota F3.7
   existe.
-- **Fase 5 ativa:** a F5.1 foi promovida pelo [PR #53](https://github.com/Wf-ops1/Harnessinfra/pull/53).
+- **Fase 5 promovida, com corretiva F5.C1 ativa:** a F5.1 foi promovida pelo [PR #53](https://github.com/Wf-ops1/Harnessinfra/pull/53).
   O head final `f42af27` recebeu 11/11 checks no run `31629604755`, foi incorporado pelo merge
   `c46910e` e recebeu 11/11 na CI de `push` pós-merge `31630446370`. A certificação local passou
   `792 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke externo da wheel. A
@@ -176,8 +176,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   wheel 0.1.0 e smoke oficial offline ficaram verdes. O head final `b1cca81` passou 11/11 checks no
   run `31845896973` do [PR #65](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65), foi incorporado
   pelo merge `e8470ec` e recebeu 11/11 na CI pós-merge `31846634851`. A F5.7 está `PROMOTED`; sua
-  reconciliação administrativa está `ADMIN_PR_OPEN / CHECKS_PENDING` no PR #66, com CI inicial
-  `31848981895`; os checkpoints permanecem exclusivamente locais.
+  reconciliação administrativa foi incorporada pelo PR #66 no merge `998a7ac`, e a CI pós-merge
+  `31849767573` concluiu 11/11 verde. A revisão posterior abriu a F5.C1 sem reescrever esse histórico:
+  normalização de chaves sensíveis camel/Pascal/acrônimo e atribuições citadas com whitespace precisam
+  ser recertificadas antes de restaurar o estado positivo corrente e iniciar F6.
 
 ## Dívidas técnicas críticas
 

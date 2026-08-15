@@ -35,6 +35,7 @@
 | **Tarefa ativa** | F5.C1 — hardening de redaction e realinhamento da Fase 5 |
 | **Gate** | `READY / ACTIVE / POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` |
 | **Estado corrente** | F5.1–F5.7 historicamente `PROMOTED`; dois vazamentos reproduzidos bloqueiam o estado positivo corrente e F6 |
+| **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor autorizado em `2026-08-14T20:51:52-03:00` |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f5.c1-redaction-alignment`, local e sem upstream |
@@ -50,7 +51,7 @@
 | **Quality/distribuição F5.7** | mypy 106 arquivos, Ruff, compileall, diff-check, wheel 0.1.0 e smoke oficial offline com uv 0.12.3 verdes |
 | **PR F5.7** | [#65](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65), head final `b1cca81`, CI [31845896973](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31845896973) 11/11 success em 5m47s |
 | **Merge F5.7** | `e8470ece8bdb7e98ddfe9817270d0b17032404d4`; CI pós-merge [31846634851](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31846634851) 11/11 success em 5m30s |
-| **Reconciliação F5.7** | PR [#66](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66), merge `998a7acaca46dc7f751798be4e2be9266d8028d1`; CI pós-merge [31849767573](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31849767573), 11/11 success |
+| **Reconciliação F5.7** | branch `docs/promote-f5.7`; PR [#66](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/66), head inicial `bb8d32e`, CI inicial `31848981895`, merge `998a7acaca46dc7f751798be4e2be9266d8028d1`; CI pós-merge [31849767573](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31849767573), 11/11 success |
 | **Problema F5.C1** | `apiKey`/`deployToken`/`privateKey` atravessam config redaction; `password="valor com espaço"` atravessa `redact_text`; documentos descrevem estados anteriores |
 | **Baseline F5.C1** | focado `263 passed, 2 skipped`; full `910 passed, 5 skipped, 6 subtests passed`; Ruff/mypy/diff verdes, mas evidência negativa posterior prevalece |
 | **Checkpoints F5.6** | `checkpoint/f5.6-ready` em `161e1c2`; `checkpoint/f5.6-complete` em `6717f55`; somente locais |

@@ -1039,7 +1039,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "174 passed, 2 skipped" in panel
     assert "910 passed, 5 skipped, 6 subtests passed" in panel
-    assert "ADMIN_PR_OPEN / CHECKS_PENDING" in task_index
+    assert "998a7ac" in panel
+    assert "998a7ac" in task_index
+    assert "31849767573" in panel
+    assert "31849767573" in task_index
+    assert "F5.C1" in panel
+    assert "active/F5.C1.md" in task_index
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65" in dossier
     assert "31845896973" in dossier
     assert "e8470ece8bdb7e98ddfe9817270d0b17032404d4" in dossier
@@ -1051,7 +1056,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "bb8d32ef7edc59006bf2b7ae1df6a0fa30639450" in dossier
     assert "31848981895" in dossier
     assert "PR #66" in readme
-    assert "31848981895" in task_index
+    assert "31849767573" in task_index
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:
