@@ -216,7 +216,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "PROMOTED / ADMIN_LOCAL / PUBLICATION_PENDING" in panel
+    assert "PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70" in panel
+    assert "aae1aea7120d68aec1ccf3861b609f1a3880590b" in panel
+    assert "31888260797" in panel
     assert "31817497094" in panel
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "docs/tasks/completed/F5.5.md" in panel

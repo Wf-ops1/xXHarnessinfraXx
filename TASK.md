@@ -6,7 +6,7 @@
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
 2. [F6.1](docs/tasks/completed/F6.1.md): schema único de eventos promovido pelo PR #69 no merge
-   `7d6a0e1`, com CI pós-merge `31887143905` 11/11 verde; reconciliação administrativa local.
+   `7d6a0e1`, com CI pós-merge `31887143905` 11/11 verde; reconciliação administrativa no PR #70.
 3. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
    CI pós-merge `31857239235` 11/11 verde; reconciliação administrativa #68 incorporada em `29e8a975`,
    com CI pós-merge `31859624571` 11/11 verde.
@@ -34,14 +34,14 @@
 | Campo | Estado observado |
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1 promovidas no produto |
-| **Fase ativa** | nenhuma fase de implementação; reconciliação administrativa F6.1 local |
-| **Tarefa ativa** | nenhuma tarefa ativa; dossiê F6.1 arquivado em `docs/tasks/completed/F6.1.md` |
-| **Gate** | `PROMOTED / ADMIN_LOCAL / PUBLICATION_PENDING` |
-| **Estado corrente** | F6.1 `PROMOTED`; PR #69 incorporado e CI pós-merge verde; F6.2 aguarda a reconciliação administrativa |
+| **Fase ativa** | nenhuma fase de implementação; reconciliação administrativa F6.1 em CI remota |
+| **Tarefa ativa** | nenhuma tarefa ativa de implementação; PR administrativo #70 aberto |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
+| **Estado corrente** | F6.1 `PROMOTED`; PR #70 aberto, checks do head final pendentes; F6.2 aguarda merge administrativo e CI pós-merge |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | nenhuma implementação ativa; `Codex` prepara somente a reconciliação documental |
+| **Executor ativo** | nenhuma implementação ativa; `Codex` acompanha somente a reconciliação documental |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f6.1`, local e sem upstream; criada de `main == origin/main == 7d6a0e1` |
+| **Branch** | `docs/promote-f6.1`, publicada e rastreando `origin/docs/promote-f6.1`; criada de `main == origin/main == 7d6a0e1` |
 | **Branch de produto F6.1** | `task/f6.1-unified-event-schema`, remota e preservada após o merge |
 | **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; R1 READY `eea6baa`; `checkpoint/f6.1-complete` histórico → `016f4ca`; `checkpoint/f6.1-r2-ready` → `3cb2a4b`; `checkpoint/f6.1-r2-complete` → `4785c22`; somente locais |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
@@ -56,7 +56,7 @@
 | **Validação F6.1 R2** | probes `5 passed`; matriz ampliada `325 passed`; full `935 passed, 5 skipped, 6 subtests passed`; Ruff, mypy 107 arquivos, compileall, diff-check, wheel e smoke verdes |
 | **PR F6.1** | [#69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69), head final `4c57a33e2df6ade006dffc184a5640298ae3a45a`; CI [31868906875](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31868906875) 11/11 success |
 | **Merge F6.1** | `7d6a0e179f30008a7a67275da94878a179f0aba9`; CI pós-merge [31887143905](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31887143905) 11/11 success em 5m58s |
-| **Reconciliação F6.1** | commit-base `45b7f033d0fdb5f73cb8e5bd82b718da07d5b4ce` em `docs/promote-f6.1`; publicação no PR administrativo autorizada |
+| **Reconciliação F6.1** | commit-base `45b7f033d0fdb5f73cb8e5bd82b718da07d5b4ce`; PR [#70](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70), head inicial `aae1aea7120d68aec1ccf3861b609f1a3880590b`, CI inicial [31888260797](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31888260797) pendente |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
@@ -109,7 +109,7 @@
 | Produto | `c9e41c4`; correções R1 `c4aef27` e R2 `aa471d1`/`c9c5c83`; focado `325`; full `935 passed, 5 skipped, 6 subtests passed` |
 | PR de produto | [#69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69), head final `4c57a33`, CI `31868906875`, 11/11 success |
 | Merge de produto | `7d6a0e179f30008a7a67275da94878a179f0aba9`; CI de `push` `31887143905`, 11/11 success em 5m58s |
-| Reconciliação administrativa | commit-base `45b7f03` em `docs/promote-f6.1`, pendente de publicação autorizada |
+| Reconciliação administrativa | commit-base `45b7f03`; PR [#70](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70), head inicial `aae1aea`, CI inicial `31888260797`, estado `ADMIN_PR_OPEN / CHECKS_PENDING` |
 | Fronteira | nenhuma implementação ativa; F6.2 bloqueada até o PR administrativo e sua CI pós-merge ficarem verdes |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
 | Promoção anterior | F5.7 — cancelamento e rollback seguros: PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação PR #66 / merge `998a7ac` / pós-merge `31849767573` |
@@ -127,41 +127,43 @@ reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Não há executor de implementação ativo. O usuário autorizou criar `docs/promote-f6.1`, atualizar a
-documentação, fazer commit, push e abrir o PR administrativo. `Codex` é o único escritor dessa
-reconciliação; seu merge não está autorizado.
+Não há executor de implementação ativo. O usuário autorizou criar e publicar `docs/promote-f6.1`,
+atualizar a documentação, fazer commit, push e abrir o PR administrativo #70. O run inicial
+`31888260797` foi identificado; `Codex` é o único escritor dessa reconciliação e seu merge não está
+autorizado.
 
 ## 5. Tarefa ativa
 
 Nenhuma tarefa de implementação está ativa. A F6.1 está `PROMOTED`; o estado histórico
 `REPAIR_ACTIVE / PROMOTION_BLOCKED` permanece auditável e foi encerrado pela correção R2,
 recertificação, PR #69, merge `7d6a0e1` e CI pós-merge `31887143905`. A reconciliação administrativa
-está pronta localmente. A F5.C1 permanece `PROMOTED`; `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE`
+está aberta no PR #70, com checks do head final pendentes. A F5.C1 permanece `PROMOTED`;
+`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE`
 permanece como estado corretivo histórico daquela tarefa. F6.2–F6.7 não foram absorvidas nem iniciadas.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. Publicar `docs/promote-f6.1` e abrir seu PR estão autorizados;
-mesclar esse PR, iniciar F6.2, remover refs, publicar tags, usar force-push ou bypass continuam não
-autorizados.
+Não há bloqueio técnico conhecido. A branch foi publicada e o PR #70 foi aberto; mesclar esse PR,
+iniciar F6.2, remover refs, publicar tags, usar force-push ou bypass continuam não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR E PUBLICAR A RECONCILIAÇÃO docs/promote-f6.1 E ABRIR O PR ADMINISTRATIVO AUTORIZADO.
-ACOMPANHAR A CI DO HEAD FINAL; APÓS 11/11 VERDES, PAUSAR PARA AUTORIZAÇÃO EXPLÍCITA DE MERGE.
+PUBLICAR O REGISTRO DO PR #70 E ACOMPANHAR A CI DO NOVO HEAD FINAL.
+APÓS 11/11 VERDES, PAUSAR PARA AUTORIZAÇÃO EXPLÍCITA DE MERGE COMMIT DO PR ADMINISTRATIVO.
 NÃO MESCLAR O PR ADMINISTRATIVO, INICIAR F6.2, REMOVER REFS NEM PUBLICAR TAGS SEM NOVA AUTORIZAÇÃO.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F6.1.md` e a Fase 6 do plano.
-2. Confirme branch administrativa `docs/promote-f6.1`, base `7d6a0e1` e ausência de upstream antes da publicação.
+2. Confirme branch administrativa `docs/promote-f6.1`, upstream `origin/docs/promote-f6.1` e PR #70 aberto.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
-6. Não mescle o PR administrativo, amplie para F6.2–F6.7, remova refs ou publique tags sem autorização.
+6. Preserve o head inicial `aae1aea` e a CI inicial `31888260797` do PR #70; valide a CI do head final.
+7. Não mescle o PR administrativo, amplie para F6.2–F6.7, remova refs ou publique tags sem autorização.
 
 ---
 
-*Atualizado em: 2026-08-15T10:47:11-03:00 | Fonte: PR #69 + merge `7d6a0e1` + CI `31887143905` + commit administrativo `45b7f03`*
+*Atualizado em: 2026-08-15T10:50:16-03:00 | Fonte: PR #69 + merge `7d6a0e1` + CI `31887143905` + PR administrativo #70 + CI inicial `31888260797`*

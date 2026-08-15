@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_LOCAL / PUBLICATION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
     assert "docs/tasks/completed/F6.1.md" in panel
     assert not (ACTIVE_ROOT / "F6.1.md").exists()
     assert (COMPLETED_ROOT / "F6.1.md").is_file()
@@ -1132,11 +1132,14 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "1f63e1a" in f6_1_dossier
     assert "31868522308" in f6_1_dossier
     assert "PR_OPEN / CHECKS_PENDING" in f6_1_dossier
-    assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f6_1_dossier
+    assert "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`" in f6_1_dossier
     assert "docs/promote-f6.1" in panel
     assert "docs/promote-f6.1" in task_index
     for source in (panel, task_index, f6_1_dossier, readme):
         assert "45b7f03" in source
+        assert "PR #70" in source or "pull/70" in source
+        assert "aae1aea" in source
+        assert "31888260797" in source
     assert "11/11" in f6_1_dossier
     assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):
