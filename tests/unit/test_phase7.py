@@ -1,16 +1,72 @@
 """Testes unitários para a Fase 7 (Knowledge Transaction, Audit Trail e Rollback)."""
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from ai_engineering_harness.artifacts.generator import ArtifactGenerator
 from ai_engineering_harness.cli.commands.rollback import RollbackManager
+from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.execution import (
+    EXECUTION_RECORD_SCHEMA_VERSION,
+    ApprovalStatus,
+    ExecutionRecord,
+    ExecutionState,
+)
 from ai_engineering_harness.knowledge.transaction import KnowledgeTransactionManager, TransactionState
-from ai_engineering_harness.observability.audit import AuditTrailManager
+from ai_engineering_harness.observability.audit import AuditIntegrityError, AuditTrailManager
+from ai_engineering_harness.persistence import AtomicFileStateStorage
 from ai_engineering_harness.runtime import RollbackPrerequisiteError
 from ai_engineering_harness.security import TrustAuthorization, TrustBoundaryEvaluator
+
+_AUDIT_TIME = datetime(2026, 8, 15, 12, 0, tzinfo=UTC)
+
+
+def _audit_manager(project_root: Path, execution_id: str) -> AuditTrailManager:
+    AtomicFileStateStorage(project_root).create_execution(
+        ExecutionRecord(
+            record_schema_version=EXECUTION_RECORD_SCHEMA_VERSION,
+            revision=0,
+            execution_id=execution_id,
+            workflow_name="phase7-audit",
+            artifact_digest=f"sha256:{'a' * 64}",
+            base_commit_sha="b" * 40,
+            original_branch="main",
+            worktree_path=None,
+            current_node_id="audit",
+            current_state=ExecutionState.INITIATED,
+            attempt_by_node={"audit": 0},
+            created_at=_AUDIT_TIME,
+            updated_at=_AUDIT_TIME,
+            configuration_digest=f"sha256:{'c' * 64}",
+            approval_status=ApprovalStatus.NOT_REQUIRED,
+            candidate_commit_sha=None,
+            promotion_commit_sha=None,
+            failure=None,
+        )
+    )
+    return AuditTrailManager(project_root=project_root, execution_id=execution_id)
+
+
+def _audit_event(event_id: str, execution_id: str, event_type: str) -> ExecutionEvent:
+    return ExecutionEvent.model_validate(
+        {
+            "event_id": event_id,
+            "execution_id": execution_id,
+            "sequence_number": 0,
+            "event_type": event_type,
+            "timestamp": _AUDIT_TIME,
+            "graph_name": "phase7-audit",
+            "node_id": None,
+            "attempt": 0,
+            "actor": "phase7-test",
+            "details": {"action": event_id},
+            "previous_hash": None,
+            "current_hash": None,
+        }
+    )
 
 
 def test_knowledge_transaction_5_steps(tmp_path: Path):
@@ -24,29 +80,30 @@ def test_knowledge_transaction_5_steps(tmp_path: Path):
     assert data["current_tx_id"] == "tx-123"
 
 def test_audit_trail_linear_hash_chain(tmp_path: Path):
-    audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-hash-1")
-    audit.log_event("STEP_1", {"action": "create"})
-    audit.log_event("STEP_2", {"action": "update"})
+    execution_id = "exec-hash-1"
+    audit = _audit_manager(tmp_path, execution_id)
+    audit.log_event(_audit_event("phase7-event-1", execution_id, "EXECUTION_CREATED"))
+    audit.log_event(_audit_event("phase7-event-2", execution_id, "EXECUTION_COMPLETED"))
 
     is_valid, msg = audit.verify_integrity()
     assert is_valid is True
-    assert "100% verificada" in msg
+    assert "Journal canônico verificado" in msg
 
 def test_audit_trail_tamper_detection(tmp_path: Path):
-    audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-hash-2")
-    audit.log_event("STEP_1", {"action": "create"})
-    audit.log_event("STEP_2", {"action": "update"})
+    execution_id = "exec-hash-2"
+    audit = _audit_manager(tmp_path, execution_id)
+    audit.log_event(_audit_event("phase7-create", execution_id, "EXECUTION_CREATED"))
+    audit.log_event(_audit_event("phase7-update", execution_id, "EXECUTION_COMPLETED"))
 
     # Adulterar arquivo manualmente
     journal_file = tmp_path / ".harness" / "state" / "executions" / "exec-hash-2" / "event-journal.jsonl"
     text = journal_file.read_text(encoding="utf-8")
-    tampered_text = text.replace("create", "hack_create")
-    journal_file.write_text(tampered_text, encoding="utf-8")
+    tampered_text = text.replace("phase7-create", "phase7-hacked")
+    journal_file.write_bytes(tampered_text.encode("utf-8"))
 
     # Audit deve detectar a alteração!
-    is_valid, msg = audit.verify_integrity()
-    assert is_valid is False
-    assert "Adulteração detectada" in msg or "Quebra de corrente" in msg
+    with pytest.raises(AuditIntegrityError, match="hash chain is invalid at line 1"):
+        audit.verify_integrity()
 
 def test_destructive_rollback_requires_approval(tmp_path: Path):
     harness_dir = tmp_path / ".harness"

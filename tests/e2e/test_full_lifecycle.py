@@ -247,7 +247,7 @@ on_failure: route_to_failure_classifier
     assert tx_status == "COMMITTED"
 
     # 8. Audit Trail & Hash Chain Verification
-    audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-e2e-audit")
-    audit.log_event("WORKFLOW_COMPLETED", {"status": "SUCCESS"})
+    audit = AuditTrailManager(project_root=tmp_path, execution_id=execution_id)
+    assert audit.load_events()
     is_valid, _ = audit.verify_integrity()
     assert is_valid is True

@@ -17,7 +17,7 @@ from ai_engineering_harness.core import ConfigResolver
 from ai_engineering_harness.doctor.checker import DoctorChecker
 from ai_engineering_harness.doctor.report import DoctorReport
 from ai_engineering_harness.indexer import PythonAstIndexer, StructuralIndexError
-from ai_engineering_harness.observability.audit import AuditTrailManager
+from ai_engineering_harness.observability.audit import AuditTrailError, AuditTrailManager
 from ai_engineering_harness.persistence import AtomicFileStateStorage, StateStorageError
 from ai_engineering_harness.runtime import (
     ExecutionLifecycleError,
@@ -443,25 +443,29 @@ def verify(execution_id: str, project_id: str) -> None:
         f"{result.passed_gates}/{result.total_gates}[/green]"
     )
 
-@main.command(help="Valida a integridade da Hash Chain dos logs de auditoria.")
+@main.command(help="Valida o journal canônico tamper-evident local de uma execução.")
 @click.argument("execution_id")
 @click.option("--export", type=click.Choice(["sarif", "json"], case_sensitive=False), help="Exporta os logs de auditoria no formato selecionado.")
-def audit(execution_id, export):
-    audit_mgr = AuditTrailManager(project_root=Path.cwd(), execution_id=execution_id)
-    is_valid, msg = audit_mgr.verify_integrity()
-
-    if export:
-        if export.lower() == "sarif":
-            out = audit_mgr.export_sarif()
-        else:
-            out = audit_mgr.export_json()
-        console.print(out)
-        return
-
-    if is_valid:
-        console.print(f"[green]{_get_symbol(True)}[/green][bold]AUDIT SUCCESS:[/bold] {msg}")
-    else:
-        console.print(f"[red]{_get_symbol(False)}[/red][bold]AUDIT FAILURE:[/bold] {msg}")
+def audit(execution_id: str, export: str | None) -> None:
+    try:
+        audit_mgr = AuditTrailManager(
+            project_root=Path.cwd(),
+            execution_id=execution_id,
+        )
+        if export:
+            out = (
+                audit_mgr.export_sarif()
+                if export.lower() == "sarif"
+                else audit_mgr.export_json()
+            )
+            click.echo(out)
+            return
+        _, message = audit_mgr.verify_integrity()
+    except AuditTrailError as exc:
+        raise click.ClickException(str(exc)) from exc
+    console.print(
+        f"[green]{_get_symbol(True)}[/green][bold]AUDIT SUCCESS:[/bold] {message}"
+    )
 
 @main.command(help="Reverte o commit de promoção canônico vinculado à execução.")
 @click.argument("execution_id")

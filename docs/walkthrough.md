@@ -132,7 +132,9 @@ worktree/provider/tools permanece pendente.
 > `31857239235`. Sua reconciliação administrativa foi publicada no PR #68; o run inicial
 > `31858431821` permanece com checks pendentes.
 
-O diário append-only e sua hash chain são implementações locais testadas. Na F5.7 local, o
+O journal canônico é tamper-evident local: lock, sequência e hash chain são testados, e a F6.2 local
+adiciona verificação legível, checkpoint HMAC opcional e exports fail-closed; sem chave externa isso
+não é imutabilidade nem não repúdio. Na F5.7 local, o
 cancelamento publica uma decisão durável antes do pedido/sinal, interrompe e reapera somente a árvore
 de processo pertencente à execução e reconcilia o journal sob o lock canônico depois da quiescência.
 O tool loop persiste falha redigida, nunca sucesso pós-cancelamento. Cleanup é uma ação separada,

@@ -1,5 +1,19 @@
-"""Módulo Observability: Tracing, Métricas e Tamper-Evident Audit Trail."""
+"""Observability primitives for canonical, locally tamper-evident audit."""
 
-from .audit import AuditTrailManager
+from .audit import (
+    AuditCheckpoint,
+    AuditConfigurationError,
+    AuditIntegrityError,
+    AuditTrailError,
+    AuditTrailManager,
+    AuditWriteError,
+)
 
-__all__ = ["AuditTrailManager"]
+__all__ = [
+    "AuditCheckpoint",
+    "AuditConfigurationError",
+    "AuditIntegrityError",
+    "AuditTrailError",
+    "AuditTrailManager",
+    "AuditWriteError",
+]

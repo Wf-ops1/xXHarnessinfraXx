@@ -1075,7 +1075,31 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PR_OPEN / CHECKS_PENDING` |" in panel
+    assert (ACTIVE_ROOT / "F6.2.md").is_file()
+    assert "docs/tasks/active/F6.2.md" in panel
+    f6_2_dossier = _read(ACTIVE_ROOT / "F6.2.md")
+    assert "> **Gate:** `COMPLETED_LOCAL`" in f6_2_dossier
+    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f6_2_dossier
+    for evidence in (
+        "task/f6.2-harden-journal",
+        "ac887b055959d9d2c0c43b9b57df33e0d1eb9378",
+        "execution_id_attr False",
+        "second_previous_is_genesis True",
+        "127 passed in 19.84s",
+        "tamper-evident local",
+        "checkpoint/f6.2-ready",
+        "fb9909d2d3b3941251a521a3595f3d62ee3d3c0d",
+        "31888960272",
+        "146 passed in 27.87s",
+        "954 passed, 5 skipped, 6 subtests passed in 471.73s",
+        "checkpoint/f6.2-complete",
+        "63e5091fd5cb68a527003d632b82d2dc6ee87074",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71",
+        "9271314b6692efc6cc6b641d0afc33b085cd5595",
+        "31899154429",
+    ):
+        assert evidence in f6_2_dossier
     assert "docs/tasks/completed/F6.1.md" in panel
     assert not (ACTIVE_ROOT / "F6.1.md").exists()
     assert (COMPLETED_ROOT / "F6.1.md").is_file()
