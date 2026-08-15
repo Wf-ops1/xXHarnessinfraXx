@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from ai_engineering_harness.contracts import CompiledGraphArtifact
 from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.evidence import EvidenceManifest
 from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     validate_execution_id,
@@ -24,6 +25,9 @@ from ai_engineering_harness.contracts.execution import (
 
 from .base import (
     DuplicateEventError,
+    EvidenceManifestIntegrityError,
+    EvidenceManifestNotFoundError,
+    EvidenceManifestWriteError,
     ExecutionAlreadyExistsError,
     ExecutionBundle,
     ExecutionBundleAlreadyExistsError,
@@ -45,6 +49,7 @@ from .locks import CrossProcessLockManager
 
 _EXECUTION_RECORD_NAME: Final = "execution.json"
 _EVENT_JOURNAL_NAME: Final = "event-journal.jsonl"
+_EVIDENCE_MANIFEST_NAME: Final = "evidence.json"
 _BUNDLE_MANIFEST_NAME: Final = "bundle.json"
 _BUNDLE_ARTIFACT_NAME: Final = "artifact.json"
 _BUNDLE_CONFIGURATION_NAME: Final = "configuration.json"
@@ -507,6 +512,61 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
             self._load_bundle_locked(validated_id)
             return self._load_payload_locked(validated_id, digest)
 
+    def publish_evidence_manifest(
+        self,
+        manifest: EvidenceManifest,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> EvidenceManifest:
+        """Publish immutable canonical evidence without divergent overwrite."""
+
+        if not isinstance(manifest, EvidenceManifest):
+            raise EvidenceManifestIntegrityError(
+                "manifest must be an EvidenceManifest"
+            )
+        execution_id = self._validate_execution_id(manifest.execution_id)
+        desired = manifest.canonical_json().encode("utf-8")
+        with self._execution_guard(execution_id, lock):
+            if self._recover_record(execution_id) is None:
+                raise ExecutionNotFoundError(
+                    f"execution {execution_id!r} does not exist",
+                    execution_id=execution_id,
+                )
+            destination = self._evidence_path(execution_id)
+            if destination.exists() or self._known_temp_paths(destination):
+                existing = self._recover_evidence_locked(execution_id)
+                if existing.canonical_json().encode("utf-8") != desired:
+                    raise EvidenceManifestIntegrityError(
+                        "existing evidence manifest diverges from terminal evidence",
+                        execution_id=execution_id,
+                    )
+                return existing
+            try:
+                _atomic_replace_bytes(destination, desired)
+            except OSError as exc:
+                raise EvidenceManifestWriteError(
+                    "cannot publish evidence manifest",
+                    execution_id=execution_id,
+                ) from exc
+            return manifest
+
+    def load_evidence_manifest(
+        self,
+        execution_id: str,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> EvidenceManifest:
+        """Recover and validate immutable canonical evidence under the execution lock."""
+
+        validated_id = self._validate_execution_id(execution_id)
+        with self._execution_guard(validated_id, lock):
+            if self._recover_record(validated_id) is None:
+                raise ExecutionNotFoundError(
+                    f"execution {validated_id!r} does not exist",
+                    execution_id=validated_id,
+                )
+            return self._recover_evidence_locked(validated_id)
+
     def list_executions(self) -> tuple[ExecutionRecord, ...]:
         """Return managed records sorted by ID under the catalog hierarchy."""
         catalog_lock = self._locks.acquire_catalog(
@@ -874,6 +934,57 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
             digest=digest,
         )
 
+    def _recover_evidence_locked(self, execution_id: str) -> EvidenceManifest:
+        destination = self._evidence_path(execution_id)
+        candidates = self._known_temp_paths(destination)
+        if destination.exists():
+            manifest = self._load_evidence_path(destination, execution_id)
+            self._remove_known_temps(candidates, execution_id=execution_id)
+            return manifest
+        if len(candidates) > 1:
+            raise EvidenceManifestIntegrityError(
+                "multiple abandoned evidence manifest candidates exist",
+                execution_id=execution_id,
+            )
+        if not candidates:
+            raise EvidenceManifestNotFoundError(
+                "evidence manifest does not exist",
+                execution_id=execution_id,
+            )
+        candidate = candidates[0]
+        manifest = self._load_evidence_path(candidate, execution_id)
+        try:
+            os.replace(candidate, destination)
+            _fsync_directory(destination.parent)
+        except OSError as exc:
+            raise EvidenceManifestWriteError(
+                "cannot recover evidence manifest",
+                execution_id=execution_id,
+            ) from exc
+        return manifest
+
+    @staticmethod
+    def _load_evidence_path(path: Path, execution_id: str) -> EvidenceManifest:
+        try:
+            text = path.read_bytes().decode("utf-8")
+            manifest = EvidenceManifest.model_validate_json(text)
+        except (OSError, UnicodeError, TypeError, ValueError, ValidationError) as exc:
+            raise EvidenceManifestIntegrityError(
+                "evidence manifest is invalid",
+                execution_id=execution_id,
+            ) from exc
+        if manifest.execution_id != execution_id:
+            raise EvidenceManifestIntegrityError(
+                "evidence manifest belongs to another execution",
+                execution_id=execution_id,
+            )
+        if text != manifest.canonical_json():
+            raise EvidenceManifestIntegrityError(
+                "evidence manifest is not canonical JSON",
+                execution_id=execution_id,
+            )
+        return manifest
+
     def _recover_bundle_component(
         self,
         destination: Path,
@@ -1109,6 +1220,11 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
 
     def _journal_path(self, execution_id: str) -> Path:
         path = self._record_path(execution_id).with_name(_EVENT_JOURNAL_NAME)
+        self._require_confined(path, execution_id=execution_id)
+        return path
+
+    def _evidence_path(self, execution_id: str) -> Path:
+        path = self._record_path(execution_id).with_name(_EVIDENCE_MANIFEST_NAME)
         self._require_confined(path, execution_id=execution_id)
         return path
 

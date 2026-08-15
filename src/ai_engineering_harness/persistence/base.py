@@ -11,6 +11,7 @@ from typing import Annotated, Literal, Protocol, runtime_checkable
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.evidence import EvidenceManifest
 from ai_engineering_harness.contracts.execution import ExecutionId, ExecutionRecord
 
 _DIGEST_PATTERN = r"^sha256:[0-9a-f]{64}$"
@@ -103,6 +104,22 @@ class ExecutionBundleIntegrityError(ExecutionBundleError):
 
 class ExecutionBundleWriteError(ExecutionBundleError):
     """A resume bundle could not be published durably."""
+
+
+class EvidenceManifestStorageError(StateStorageError):
+    """Base class for canonical evidence manifest persistence failures."""
+
+
+class EvidenceManifestNotFoundError(EvidenceManifestStorageError):
+    """No canonical evidence manifest exists for the execution."""
+
+
+class EvidenceManifestIntegrityError(EvidenceManifestStorageError):
+    """Evidence bytes are malformed, noncanonical, divergent, or misbound."""
+
+
+class EvidenceManifestWriteError(EvidenceManifestStorageError):
+    """Canonical evidence could not be published atomically."""
 
 
 class ExecutionBundle(BaseModel):
@@ -270,10 +287,30 @@ class ResumeStateStorageProvider(EventJournalStateStorageProvider, Protocol):
     ) -> dict[str, object]:
         """Load a canonical payload blob after verifying its digest."""
 
+    def publish_evidence_manifest(
+        self,
+        manifest: EvidenceManifest,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> EvidenceManifest:
+        """Publish one immutable canonical evidence manifest idempotently."""
+
+    def load_evidence_manifest(
+        self,
+        execution_id: str,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> EvidenceManifest:
+        """Load and validate the canonical evidence manifest."""
+
 
 __all__ = [
     "DuplicateEventError",
     "EventJournalStateStorageProvider",
+    "EvidenceManifestIntegrityError",
+    "EvidenceManifestNotFoundError",
+    "EvidenceManifestStorageError",
+    "EvidenceManifestWriteError",
     "ExecutionAlreadyExistsError",
     "ExecutionBundle",
     "ExecutionBundleAlreadyExistsError",

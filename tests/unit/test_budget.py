@@ -86,6 +86,12 @@ class _MemoryStorage:
     def load_payload(self, *args: Any, **kwargs: Any):  # pragma: no cover
         raise NotImplementedError
 
+    def publish_evidence_manifest(self, *args: Any, **kwargs: Any):  # pragma: no cover
+        raise NotImplementedError
+
+    def load_evidence_manifest(self, *args: Any, **kwargs: Any):  # pragma: no cover
+        raise NotImplementedError
+
 
 class _Ticks:
     def __init__(self, *values: float) -> None:

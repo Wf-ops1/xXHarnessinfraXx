@@ -61,6 +61,10 @@ from ai_engineering_harness.models.router import (
     ModelRouter,
     ModelRoutingConfigurationError,
 )
+from ai_engineering_harness.observability import (
+    EvidenceError,
+    EvidenceManifestManager,
+)
 from ai_engineering_harness.persistence import (
     ExecutionBundle,
     ExecutionLock,
@@ -329,6 +333,10 @@ class VerificationRetryExhaustedError(ExecutionLifecycleError):
     classification = "retry_exhausted"
 
 
+class EvidenceLifecycleIntegrityError(ExecutionLifecycleError):
+    """Terminal evidence could not be generated or validated fail-closed."""
+
+
 class PromotionLifecycleError(ExecutionLifecycleError):
     """Base class for candidate and promotion lifecycle failures."""
 
@@ -547,6 +555,7 @@ class ExecutionLifecycleService:
             )
         )
         self._approval_manager = ApprovalManager(self.project_root)
+        self._evidence_manager = EvidenceManifestManager(self.project_root, storage)
         self._graph_executor = GraphExecutor(
             storage,
             executors,
@@ -1157,10 +1166,9 @@ class ExecutionLifecycleService:
                     "promotion snapshot diverges from the proven Git effect",
                     execution_id=execution_id,
                 )
-            return machine.transition_to(
-                ExecutionState.COMPLETED,
+            return self._complete_with_evidence(
+                machine,
                 node_id=record.current_node_id,
-                attempt=0,
                 reason="promotion_completed",
                 lock=lock,
             )
@@ -1875,10 +1883,9 @@ class ExecutionLifecycleService:
                             execution_id=execution_id,
                         )
                     if self._promotion_manager is None:
-                        machine.transition_to(
-                            ExecutionState.COMPLETED,
+                        self._complete_with_evidence(
+                            machine,
                             node_id=record.current_node_id,
-                            attempt=0,
                             reason="verification_passed",
                             lock=lock,
                         )
@@ -2264,10 +2271,9 @@ class ExecutionLifecycleService:
             and self._promotion_manager is None
         ):
             current = machine.recover(lock=lock)
-            machine.transition_to(
-                ExecutionState.COMPLETED,
+            self._complete_with_evidence(
+                machine,
                 node_id=current.current_node_id,
-                attempt=0,
                 reason="verification_passed",
                 lock=lock,
             )
@@ -5687,8 +5693,73 @@ class ExecutionLifecycleService:
             clock=self._clock,
             event_id_factory=self._event_id_factory,
             owner_id_factory=self._owner_id_factory,
+            completed_transition_handler=self._handle_completed_transition,
+            completed_recovery_handler=self._handle_completed_recovery,
             lock=lock,
         )
+
+    def _complete_with_evidence(
+        self,
+        machine: EventSourcedStateMachine,
+        *,
+        node_id: str,
+        reason: str,
+        lock: ExecutionLock,
+    ) -> ExecutionRecord:
+        current = machine.recover(lock=lock)
+        if current.current_state is ExecutionState.COMPLETED:
+            return current
+        if current.current_state is not ExecutionState.GENERATING_EVIDENCE:
+            current = machine.transition_to(
+                ExecutionState.GENERATING_EVIDENCE,
+                node_id=node_id,
+                attempt=0,
+                reason="evidence_generation_started",
+                lock=lock,
+            )
+        return machine.transition_to(
+            ExecutionState.COMPLETED,
+            node_id=current.current_node_id,
+            attempt=0,
+            reason=reason,
+            lock=lock,
+        )
+
+    def _handle_completed_transition(
+        self,
+        final_record: ExecutionRecord,
+        terminal_event: ExecutionEvent,
+        lock: ExecutionLock,
+    ) -> None:
+        try:
+            self._evidence_manager.ensure_terminal_manifest(
+                final_record,
+                terminal_event,
+                lock,
+            )
+        except (EvidenceError, StateStorageError, TypeError, ValueError) as exc:
+            raise EvidenceLifecycleIntegrityError(
+                "terminal evidence could not be generated or validated",
+                execution_id=final_record.execution_id,
+            ) from exc
+
+    def _handle_completed_recovery(
+        self,
+        final_record: ExecutionRecord,
+        terminal_event: ExecutionEvent,
+        lock: ExecutionLock,
+    ) -> None:
+        try:
+            self._evidence_manager.verify_terminal_manifest(
+                final_record,
+                terminal_event,
+                lock,
+            )
+        except (EvidenceError, StateStorageError, TypeError, ValueError) as exc:
+            raise EvidenceLifecycleIntegrityError(
+                "terminal evidence could not be verified during recovery",
+                execution_id=final_record.execution_id,
+            ) from exc
 
     def _acquire(self, execution_id: str) -> ExecutionLock:
         return self._storage.acquire_execution_lock(

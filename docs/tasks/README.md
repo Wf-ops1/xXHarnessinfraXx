@@ -20,12 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F6.3 — gerar e validar o evidence manifest](active/F6.3.md) está `READY /
-IMPLEMENTATION_NOT_STARTED` na branch local `task/f6.3-evidence-manifest`, derivada de
-`main == origin/main == f5d2a33`. O probe válido passou `2 passed in 5.44s` e comprovou que o E2E
-entra em `COMPLETED` exigindo a ausência de `evidence.json`; a matriz focada passou
-`127 passed in 34.85s`. O checkpoint `checkpoint/f6.3-ready` será criado no commit documental e
-permanecerá local. Implementação, push e PR não estão autorizados.
+A [F6.3 — gerar e validar o evidence manifest](active/F6.3.md) está `COMPLETED_LOCAL /
+PROMOTION_PENDING` na branch local `task/f6.3-evidence-manifest`, derivada de
+`main == origin/main == f5d2a33`. O checkpoint READY local aponta para `27a9f70`; o contrato,
+storage atômico, terminalização e recovery passaram `7` testes dedicados, `253` focados e a full R2
+com `965 passed, 5 skipped, 6 subtests passed`. Wheel e smoke oficial offline estão verdes.
+As alterações ainda não foram commitadas; commit/checkpoint COMPLETE, push e PR não estão autorizados.
 
 A [F6.2 — fortalecer o journal de auditoria](completed/F6.2.md) está terminalmente `PROMOTED`: o
 head final `9fdd3cd` do [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run

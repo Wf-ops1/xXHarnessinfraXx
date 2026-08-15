@@ -238,8 +238,10 @@ def test_interface_has_exact_operations_and_public_exports(tmp_path: Path) -> No
     assert journal_operations == {"load_events"}
     assert resume_operations == {
         "create_execution_bundle",
+        "load_evidence_manifest",
         "load_execution_bundle",
         "load_payload",
+        "publish_evidence_manifest",
         "store_payload",
     }
     assert isinstance(provider, StateStorageProvider)

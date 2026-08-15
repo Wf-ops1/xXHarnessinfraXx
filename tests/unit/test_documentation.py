@@ -216,7 +216,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "READY / IMPLEMENTATION_NOT_STARTED" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "docs/tasks/completed/F6.2.md" in panel
     assert "task/f6.2-harden-journal" in panel
     assert "ac887b055959d9d2c0c43b9b57df33e0d1eb9378" in panel
@@ -235,7 +235,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "f5d2a3372a630d3ca1dabee1b02465fbde8da87d" in panel
     assert "31902119059" in panel
     assert "docs/tasks/active/F6.3.md" in panel
-    assert "READY / IMPLEMENTATION_NOT_STARTED" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "tamper-evident local" in readme
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70" in panel
     assert "aae1aea7120d68aec1ccf3861b609f1a3880590b" in panel

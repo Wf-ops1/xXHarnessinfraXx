@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_engineering_harness.compiler.compiler import GraphCompiler
+from ai_engineering_harness.contracts.evidence import EvidenceApplicability
 from ai_engineering_harness.contracts.execution import ExecutionState
 from ai_engineering_harness.core.detector import StackDetector
 from ai_engineering_harness.doctor.checker import DoctorChecker
 from ai_engineering_harness.indexer import CodebaseMemoryAdapter, PythonAstIndexer
 from ai_engineering_harness.knowledge.synchronizer import KnowledgeSynchronizer
 from ai_engineering_harness.observability.audit import AuditTrailManager
+from ai_engineering_harness.observability.evidence import EvidenceManifestManager
 from ai_engineering_harness.persistence import AtomicFileStateStorage
 from ai_engineering_harness.runtime import (
     DeterministicNodeExecutor,
@@ -224,10 +226,22 @@ on_failure: route_to_failure_classifier
         final_record = storage.load_execution(execution_id)
         assert final_record.current_node_id == "completed"
         assert final_record.current_state == ExecutionState.COMPLETED
-        assert final_record.revision == 4
+        assert final_record.revision == 5
         assert engine.status_execution().current_state == ExecutionState.COMPLETED
-        assert engine.inspect_execution().event_count == 8
+        assert engine.inspect_execution().event_count == 9
         assert storage.load_execution_bundle(execution_id).execution_id == execution_id
+        manifest = EvidenceManifestManager(tmp_path, storage).load_and_verify(execution_id)
+        assert manifest.execution_id == execution_id
+        assert manifest.final_result == "VERIFIED"
+        assert manifest.base_commit_sha == commit_sha
+        assert manifest.promotion.status is EvidenceApplicability.NOT_APPLICABLE
+        assert manifest.plan.status is EvidenceApplicability.NOT_APPLICABLE
+        assert manifest.context.status is EvidenceApplicability.NOT_APPLICABLE
+        assert manifest.diff.status is EvidenceApplicability.NOT_APPLICABLE
+        assert manifest.approval.status.value == "NOT_REQUIRED"
+        assert manifest.gates[0].status == "PASSED"
+        assert manifest.journal_final_sequence == 9
+        assert manifest.journal_final_hash == storage.load_events(execution_id)[-1].current_hash
     finally:
         for cache in tuple(worktree.worktree_path.rglob("__pycache__")):
             shutil.rmtree(cache)
@@ -239,7 +253,7 @@ on_failure: route_to_failure_classifier
     assert (exec_dir / "event-journal.jsonl").is_file()
     assert len(tuple((bundle_dir / "payloads").glob("*.json"))) == 4
     assert not (exec_dir / "workflow-state.json").exists()
-    assert not (exec_dir / "evidence.json").exists()
+    assert (exec_dir / "evidence.json").is_file()
 
     # 7. Re-index & Knowledge Sync
     knw_sync = KnowledgeSynchronizer(project_root=tmp_path)

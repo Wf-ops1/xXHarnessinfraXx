@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1107,8 +1107,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     ):
         assert evidence in f6_2_dossier
     f6_3_dossier = _read(ACTIVE_ROOT / "F6.3.md")
-    assert "> **Gate:** `READY`" in f6_3_dossier
-    assert "> **Lifecycle:** `ACTIVE / IMPLEMENTATION_NOT_STARTED`" in f6_3_dossier
+    assert "> **Gate:** `COMPLETED_LOCAL`" in f6_3_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f6_3_dossier
     assert "docs/tasks/active/F6.3.md" in panel
     assert "active/F6.3.md" in task_index
     for evidence in (
