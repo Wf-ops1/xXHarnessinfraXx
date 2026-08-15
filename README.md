@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7 e a corretiva F5.C1 estão promovidas; a F6.1 concluiu localmente a R2 com integridade, redaction e compatibilidade recertificadas | A promoção externa da F6.1 depende de autorização; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1 estão promovidas; a F6.1 encerrou R2, PR #69, merge e CI pós-merge verdes | A reconciliação administrativa F6.1 está local e pendente de publicação; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -186,7 +186,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   merge `2b405fd` e recebeu 11/11 na CI pós-merge `31857239235`. A reconciliação administrativa
   [PR #68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68) encerrou no head `5b8e558`, foi
   incorporada pelo merge `29e8a975` e recebeu 11/11 na CI final `31859624571`. Pela DEC-014, esse PR
-  termina a cadeia sem reconciliação recursiva. A F6.1 permanece na branch local
+  termina a cadeia sem reconciliação recursiva. A F6.1 foi desenvolvida na branch
   `task/f6.1-unified-event-schema`: a revisão posterior a `c9e41c4` encontrou contratos knowledge ainda
   independentes, e a R1 `c4aef27` os reclassificou como `Details`, mantendo os nomes legados como
   identidade do único `ExecutionEvent`. Embora a R1 tenha passado `320` testes focados e `930` no
@@ -196,10 +196,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   do hash, redige qualquer tipo sob chave semanticamente secreta, preserva somente contadores
   operacionais numéricos explicitamente enumerados e restaura as quatro refs. A recertificação passou
   `325` testes focados e `935 passed, 5 skipped, 6 subtests passed` no full, além de quality, wheel e
-  smoke offline. A branch foi publicada no [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69);
-  o head inicial `1f63e1a` recebeu `11/11` checks verdes no run `31868522308`. O registro documental
-  final permanece `CHECKS_PENDING`, e o estado da tarefa continua
-  `COMPLETED_LOCAL / PROMOTION_PENDING`. F6.2–F6.7 não foram declaradas entregues.
+  smoke offline. O head final `4c57a33` do
+  [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69) recebeu `11/11` checks verdes no run
+  `31868906875`, foi incorporado pelo merge commit `7d6a0e1` e recebeu `11/11` na CI de `push`
+  pós-merge `31887143905` em `5m58s`. A F6.1 está `PROMOTED`; sua reconciliação administrativa
+  `docs/promote-f6.1` está pronta localmente e pendente de publicação no PR autorizado. F6.2–F6.7 não
+  foram declaradas entregues nem iniciadas.
 
 ## Dívidas técnicas críticas
 

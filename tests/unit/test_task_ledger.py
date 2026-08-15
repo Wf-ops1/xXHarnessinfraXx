@@ -991,7 +991,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     panel = _read(TASK_PANEL)
     dossier = _read(COMPLETED_ROOT / "F5.7.md")
     f5_c1_dossier = _read(COMPLETED_ROOT / "F5.C1.md")
-    f6_1_dossier = _read(ACTIVE_ROOT / "F6.1.md")
+    f6_1_dossier = _read(COMPLETED_ROOT / "F6.1.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
 
@@ -1075,17 +1075,19 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
-    assert "docs/tasks/active/F6.1.md" in panel
-    assert (ACTIVE_ROOT / "F6.1.md").is_file()
-    assert "active/F6.1.md" in task_index
+    assert "| **Gate** | `PROMOTED / ADMIN_LOCAL / PUBLICATION_PENDING` |" in panel
+    assert "docs/tasks/completed/F6.1.md" in panel
+    assert not (ACTIVE_ROOT / "F6.1.md").exists()
+    assert (COMPLETED_ROOT / "F6.1.md").is_file()
+    assert "completed/F6.1.md" in task_index
     assert "96" in task_index
     for source in (panel, task_index, readme):
         assert "c9e41c4" in source
         assert "c4aef27" in source
         assert "320" in source
         assert "930" in source
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
+    assert "PROMOTED" in task_index
+    assert "> **Lifecycle:** `PROMOTED`" in f6_1_dossier
     assert "COMPLETED_LOCAL / PROMOTION_PENDING" in f6_1_dossier
     assert "c4aef27" in f6_1_dossier
     assert "320" in f6_1_dossier
@@ -1118,14 +1120,21 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "c9c5c83" in source
         assert "325" in source
         assert "935" in source
-        assert "COMPLETED_LOCAL / PROMOTION_PENDING" in source
+        assert "PROMOTED" in source
     assert "113 failed, 211 passed" in f6_1_dossier
     assert "18 contratos canônicos; 15 aliases legados" in f6_1_dossier
     for source in (panel, task_index, f6_1_dossier, readme):
         assert "PR #69" in source or "pull/69" in source
-        assert "1f63e1a" in source
-        assert "31868522308" in source
+        assert "4c57a33" in source
+        assert "31868906875" in source
+        assert "7d6a0e1" in source
+        assert "31887143905" in source
+    assert "1f63e1a" in f6_1_dossier
+    assert "31868522308" in f6_1_dossier
     assert "PR_OPEN / CHECKS_PENDING" in f6_1_dossier
+    assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f6_1_dossier
+    assert "docs/promote-f6.1" in panel
+    assert "docs/promote-f6.1" in task_index
     assert "11/11" in f6_1_dossier
     assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):
