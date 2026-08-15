@@ -25,7 +25,8 @@ branch local `task/f6.1-unified-event-schema`. O produto `c9e41c4`, a R1 `c4aef2
 `930` no full, e o estado histórico R2 `REPAIR_ACTIVE / PROMOTION_BLOCKED` permanecem auditáveis. As correções `aa471d1`/`c9c5c83`
 eliminaram hash divergente após mutação de `details`, vazamento não textual e quatro refs knowledge
 sem resolução. A recertificação passou `325` focados e `935 passed, 5 skipped, 6 subtests passed`;
-promoção externa continua sem autorização.
+o checkpoint local `checkpoint/f6.1-r2-complete` aponta para `4785c22`. Promoção externa continua sem
+autorização.
 
 A [F5.C1](completed/F5.C1.md) permanece `PROMOTED`: a corretiva localizada fechou as duas lacunas de
 redaction, passou a recertificação integral e teve o head `3158d3b` incorporado pelo PR

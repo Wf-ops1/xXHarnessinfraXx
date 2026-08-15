@@ -1110,6 +1110,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert r2_evidence in f6_1_dossier
     assert "checkpoint/f6.1-r2-ready" in panel
     assert "3cb2a4b" in panel
+    for source in (panel, task_index, f6_1_dossier):
+        assert "checkpoint/f6.1-r2-complete" in source
+        assert "4785c22" in source
     for source in (panel, task_index, f6_1_dossier, readme):
         assert "aa471d1" in source
         assert "c9c5c83" in source
