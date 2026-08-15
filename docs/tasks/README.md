@@ -20,8 +20,14 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Nenhuma tarefa de implementação está ativa. A
-[F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
+O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6.2.md). Seu gate está
+`READY / IMPLEMENTATION_NOT_STARTED` na branch local `task/f6.2-harden-journal`, criada de
+`main == origin/main == ac887b0`. O probe reproduziu writer paralelo, perda de `execution_id`,
+ausência de sequence e quebra de hash entre duas instâncias; a matriz confinada passou
+`127 passed in 19.84s`. Escopo, aceite e rollback estão congelados; produto, push e PR permanecem
+não iniciados/não autorizados.
+
+A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2
 `REPAIR_ACTIVE / PROMOTION_BLOCKED` permanecem auditáveis. As correções `aa471d1`/`c9c5c83`
 eliminaram hash divergente após mutação de `details`, vazamento não textual e quatro refs knowledge
@@ -29,9 +35,11 @@ sem resolução. A recertificação passou `325` focados e `935 passed, 5 skippe
 o checkpoint local `checkpoint/f6.1-r2-complete` aponta para `4785c22`. O head final `4c57a33` do
 [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69) passou 11/11 no run `31868906875`, foi
 incorporado pelo merge `7d6a0e1` e recebeu 11/11 na CI pós-merge `31887143905` em 5m58s. A
-reconciliação `docs/promote-f6.1`, cujo commit-base é `45b7f03`, está `ADMIN_PR_OPEN / CHECKS_PENDING` no
-[PR #70](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70); o head inicial `aae1aea` abriu a CI
-`31888260797`. F6.2 aguarda sua incorporação e CI final.
+reconciliação `docs/promote-f6.1`, cujo commit-base é `45b7f03`, foi incorporada pelo
+[PR #70](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70). O head inicial `aae1aea` abriu a CI
+`31888260797`; o head final `9a346bd7` passou 11/11 no run `31888564163`, foi incorporado pelo merge
+`ac887b0` e recebeu 11/11 na CI pós-merge `31888960272` em 5m29s. Pela DEC-014, esse fechamento é
+terminal e não cria reconciliação recursiva.
 
 A [F5.C1](completed/F5.C1.md) permanece `PROMOTED`: a corretiva localizada fechou as duas lacunas de
 redaction, passou a recertificação integral e teve o head `3158d3b` incorporado pelo PR
@@ -49,8 +57,8 @@ foi incorporado pelo merge `e8470ec` e recebeu 11/11 na CI pós-merge `318466348
 passou `174` testes com `2` skips, segurança passou `68` e a regressão integral isolada passou `910`
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
-pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a F6.1 foi promovida e a
-pendência corrente é exclusivamente sua reconciliação administrativa, sem próxima tarefa autorizada.
+pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a F6.1 e sua
+reconciliação foram promovidas, e a fronteira corrente é o gate pré-implementação da F6.2.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge
@@ -140,7 +148,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.6 | [Aprovação vinculada ao conteúdo](completed/F5.6.md) | PR #63 / merge `0488380` / pós-merge `31814250746`; administrativo #64 / merge `a449bd1` / CI final `31817497094` |
 | F5 | F5.7 | [Cancelamento e rollback seguros](completed/F5.7.md) | PR #65 / merge `e8470ec` / pós-merge `31846634851`; administrativo #66 / merge `998a7ac` / pós-merge `31849767573` |
 | F5 | F5.C1 | [Hardening de redaction e realinhamento da Fase 5](completed/F5.C1.md) | PR #67 / merge `2b405fd` / pós-merge `31857239235`; administrativo #68 / merge `29e8a975` / CI final `31859624571` |
-| F6 | F6.1 | [Schema único de eventos](completed/F6.1.md) | PR #69 / head `4c57a33` / merge `7d6a0e1` / pós-merge `31887143905`; administrativo #70 / head inicial `aae1aea` / CI inicial `31888260797` pendente |
+| F6 | F6.1 | [Schema único de eventos](completed/F6.1.md) | PR #69 / head `4c57a33` / merge `7d6a0e1` / pós-merge `31887143905`; administrativo #70 / inicial `aae1aea` / `31888260797`; final `9a346bd7` / `31888564163`; merge `ac887b0` / pós-merge `31888960272` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

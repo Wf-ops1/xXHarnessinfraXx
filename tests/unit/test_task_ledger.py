@@ -1075,7 +1075,23 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |" in panel
+    assert (ACTIVE_ROOT / "F6.2.md").is_file()
+    assert "docs/tasks/active/F6.2.md" in panel
+    f6_2_dossier = _read(ACTIVE_ROOT / "F6.2.md")
+    assert "> **Gate:** `READY`" in f6_2_dossier
+    assert "> **Lifecycle:** `ACTIVE / IMPLEMENTATION_NOT_STARTED`" in f6_2_dossier
+    for evidence in (
+        "task/f6.2-harden-journal",
+        "ac887b055959d9d2c0c43b9b57df33e0d1eb9378",
+        "execution_id_attr False",
+        "second_previous_is_genesis True",
+        "127 passed in 19.84s",
+        "tamper-evident local",
+        "checkpoint/f6.2-ready",
+        "31888960272",
+    ):
+        assert evidence in f6_2_dossier
     assert "docs/tasks/completed/F6.1.md" in panel
     assert not (ACTIVE_ROOT / "F6.1.md").exists()
     assert (COMPLETED_ROOT / "F6.1.md").is_file()
