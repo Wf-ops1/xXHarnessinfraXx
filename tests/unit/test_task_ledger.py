@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_LOCAL_READY / PUBLICATION_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1106,11 +1106,14 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "31901521807",
     ):
         assert evidence in f6_2_dossier
-    f6_3_dossier = _read(ACTIVE_ROOT / "F6.3.md")
+    assert not (ACTIVE_ROOT / "F6.3.md").exists()
+    assert (COMPLETED_ROOT / "F6.3.md").is_file()
+    f6_3_dossier = _read(COMPLETED_ROOT / "F6.3.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_3_dossier
-    assert "> **Lifecycle:** `PR_OPEN / CHECKS_PENDING`" in f6_3_dossier
-    assert "docs/tasks/active/F6.3.md" in panel
-    assert "active/F6.3.md" in task_index
+    assert "> **Lifecycle:** `PROMOTED`" in f6_3_dossier
+    assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f6_3_dossier
+    assert "docs/tasks/completed/F6.3.md" in panel
+    assert "completed/F6.3.md" in task_index
     for evidence in (
         "task/f6.3-evidence-manifest",
         "f5d2a3372a630d3ca1dabee1b02465fbde8da87d",
@@ -1122,8 +1125,10 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "NOT_APPLICABLE",
         "tamper-evident local",
         "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73",
-        "7c6e47502a863524700cbccbe45fe8c8c36359a4",
-        "31913270722",
+        "ed1f0e0ab025255a4249db1f0929d4c9e3e7fc23",
+        "31913438082",
+        "1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3",
+        "31913877551",
     ):
         assert evidence in f6_3_dossier
     for source in (panel, task_index, readme):
