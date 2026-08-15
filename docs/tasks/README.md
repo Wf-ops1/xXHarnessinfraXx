@@ -24,8 +24,9 @@ Nenhuma tarefa de implementação está ativa. A [F5.C1](completed/F5.C1.md) est
 corretiva localizada fechou as duas lacunas de redaction, passou a recertificação integral e teve o
 head `3158d3b` incorporado pelo PR [#67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67) no
 merge `2b405fd`. A CI do PR `31855763587` e a CI pós-merge `31857239235` concluíram 11/11 verdes.
-A reconciliação `docs/promote-f5.c1` está `LOCAL_READY / PUBLICATION_PENDING`; F6 aguarda sua
-incorporação e CI final.
+A reconciliação `docs/promote-f5.c1` está `ADMIN_PR_OPEN / CHECKS_PENDING` no PR
+[#68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68), com run inicial `31858431821`; F6 aguarda
+sua incorporação e CI pós-merge final.
 
 A [F5.7](completed/F5.7.md) permanece historicamente `PROMOTED`: o produto
 R3 `26bb04d`, sobre o anterior `d787ce5`, persiste decisão/pedido de cancelamento, interrompe e reapera
@@ -36,7 +37,7 @@ passou `174` testes com `2` skips, segurança passou `68` e a regressão integra
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
 pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a pendência corrente é
-exclusivamente a publicação da reconciliação administrativa F5.C1.
+exclusivamente a CI, o merge autorizado separadamente e a CI pós-merge da reconciliação F5.C1.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge
@@ -125,7 +126,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.5 | [Secrets e redaction no caminho crítico](completed/F5.5.md) | PR #61 / merge `2227b73` / pós-merge `31769631054`; administrativo #62 / merge `daec37d` / pós-merge `31771169636` |
 | F5 | F5.6 | [Aprovação vinculada ao conteúdo](completed/F5.6.md) | PR #63 / merge `0488380` / pós-merge `31814250746`; administrativo #64 / merge `a449bd1` / CI final `31817497094` |
 | F5 | F5.7 | [Cancelamento e rollback seguros](completed/F5.7.md) | PR #65 / merge `e8470ec` / pós-merge `31846634851`; administrativo #66 / merge `998a7ac` / pós-merge `31849767573` |
-| F5 | F5.C1 | [Hardening de redaction e realinhamento da Fase 5](completed/F5.C1.md) | PR #67 / merge `2b405fd` / pós-merge `31857239235`; administrativo local pendente de publicação |
+| F5 | F5.C1 | [Hardening de redaction e realinhamento da Fase 5](completed/F5.C1.md) | PR #67 / merge `2b405fd` / pós-merge `31857239235`; administrativo #68 / CI inicial `31858431821` pendente |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

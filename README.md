@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7 e a corretiva F5.C1 estão promovidas; duas formas adicionais de redaction foram recertificadas | A reconciliação administrativa F5.C1 está local e pendente de publicação; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7 e a corretiva F5.C1 estão promovidas; duas formas adicionais de redaction foram recertificadas | A reconciliação administrativa F5.C1 está no PR #68 com checks pendentes; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -121,7 +121,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   wheel. A reconciliação administrativa foi incorporada pela PR #52 no merge `846c59e`; o workflow
   `CI` `31616226652` passou nesse SHA exato. A composição permanece opt-in e nenhuma tag remota F3.7
   existe.
-- **Fase 5 e corretiva F5.C1 promovidas; reconciliação administrativa local:** a F5.1 foi promovida pelo [PR #53](https://github.com/Wf-ops1/Harnessinfra/pull/53).
+- **Fase 5 e corretiva F5.C1 promovidas; reconciliação administrativa publicada:** a F5.1 foi promovida pelo [PR #53](https://github.com/Wf-ops1/Harnessinfra/pull/53).
   O head final `f42af27` recebeu 11/11 checks no run `31629604755`, foi incorporado pelo merge
   `c46910e` e recebeu 11/11 na CI de `push` pós-merge `31630446370`. A certificação local passou
   `792 passed, 5 skipped, 6 subtests passed`, qualidade, build e smoke externo da wheel. A
@@ -183,8 +183,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `914 passed, 5 skipped, 6 subtests passed` no full, além de quality, wheel e smoke offline. O estado
   anterior `POST_PROMOTION_BLOCKED` foi reparado. O head final `3158d3b` passou 11/11 na CI
   `31855763587` do [PR #67](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/67), foi incorporado pelo
-  merge `2b405fd` e recebeu 11/11 na CI pós-merge `31857239235`. A reconciliação administrativa
-  `docs/promote-f5.c1` está pronta localmente; F6 aguarda sua incorporação e CI final.
+  merge `2b405fd` e recebeu 11/11 na CI pós-merge `31857239235`. A reconciliação administrativa foi
+  publicada no [PR #68](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/68); o run inicial
+  `31858431821` permanece com checks pendentes. F6 aguarda sua incorporação e CI pós-merge final.
 
 ## Dívidas técnicas críticas
 
