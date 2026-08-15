@@ -1089,6 +1089,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "127 passed in 19.84s",
         "tamper-evident local",
         "checkpoint/f6.2-ready",
+        "fb9909d2d3b3941251a521a3595f3d62ee3d3c0d",
         "31888960272",
     ):
         assert evidence in f6_2_dossier

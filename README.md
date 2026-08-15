@@ -206,7 +206,8 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   pelo merge `ac887b0` e recebeu 11/11 na CI pós-merge `31888960272` em 5m29s. Pela DEC-014, esse
   encerramento é terminal. A F6.2 possui gate `READY / IMPLEMENTATION_NOT_STARTED` na branch local
   `task/f6.2-harden-journal`: o probe comprovou o writer paralelo e a matriz confinada passou
-  `127 passed in 19.84s`. F6.3–F6.7 não foram declaradas entregues nem iniciadas.
+  `127 passed in 19.84s`; o checkpoint local `checkpoint/f6.2-ready` aponta para `fb9909d`.
+  F6.3–F6.7 não foram declaradas entregues nem iniciadas.
 
 ## Dívidas técnicas críticas
 

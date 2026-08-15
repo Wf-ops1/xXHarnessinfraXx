@@ -25,7 +25,7 @@ O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6
 `main == origin/main == ac887b0`. O probe reproduziu writer paralelo, perda de `execution_id`,
 ausência de sequence e quebra de hash entre duas instâncias; a matriz confinada passou
 `127 passed in 19.84s`. Escopo, aceite e rollback estão congelados; produto, push e PR permanecem
-não iniciados/não autorizados.
+não iniciados/não autorizados. O checkpoint local `checkpoint/f6.2-ready` aponta para `fb9909d`.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2

@@ -48,7 +48,7 @@
 | **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; R1 READY `eea6baa`; `checkpoint/f6.1-complete` histórico → `016f4ca`; `checkpoint/f6.1-r2-ready` → `3cb2a4b`; `checkpoint/f6.1-r2-complete` → `4785c22`; somente locais |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
-| **Checkpoint F6.2** | `checkpoint/f6.2-ready` será criado no commit documental deste gate; somente local |
+| **Checkpoint F6.2** | `checkpoint/f6.2-ready` → `fb9909d2d3b3941251a521a3595f3d62ee3d3c0d`; somente local |
 | **Main sincronizada** | antes da branch F6.2, `main == origin/main == ac887b055959d9d2c0c43b9b57df33e0d1eb9378` |
 | **Problema F6.2** | manager legado e storage canônico escrevem schemas distintos no mesmo journal; `execution_id` ausente, append sem lock e corrupção gera erro cru |
 | **Baseline F6.2** | probe determinístico reproduziu quebra entre duas instâncias; matriz confinada `127 passed in 19.84s` |
@@ -152,7 +152,6 @@ fora da autorização.
 ## 7. Próxima ação exata
 
 ```text
-CONCLUIR E VALIDAR O CHECKPOINT LOCAL READY DA F6.2.
 PAUSAR ANTES DO PRIMEIRO ARQUIVO DE PRODUTO E PEDIR AUTORIZAÇÃO EXPLÍCITA PARA IMPLEMENTAR.
 NÃO FAZER PUSH, ABRIR PR, MESCLAR, PUBLICAR TAGS OU AMPLIAR PARA F6.3–F6.7 SEM NOVA AUTORIZAÇÃO.
 ```
