@@ -216,11 +216,13 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "READY / IMPLEMENTATION_NOT_STARTED" in panel
+    assert "READY / CERTIFICATION_ACTIVE" in panel
     assert "docs/tasks/active/F6.2.md" in panel
     assert "task/f6.2-harden-journal" in panel
     assert "ac887b055959d9d2c0c43b9b57df33e0d1eb9378" in panel
     assert "31888960272" in panel
+    assert "145 passed in 65.06s" in panel
+    assert "tamper-evident local" in readme
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70" in panel
     assert "aae1aea7120d68aec1ccf3861b609f1a3880590b" in panel
     assert "31888260797" in panel

@@ -38,10 +38,10 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1 promovidas no produto |
 | **Fase ativa** | Fase 6; gate documental F6.2 congelado antes da implementação |
 | **Tarefa ativa** | F6.2 — fortalecer o journal de auditoria |
-| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |
-| **Estado corrente** | F6.1 e reconciliação promovidas; F6.2 provada, delimitada e pronta, sem edição de produto |
+| **Gate** | `READY / CERTIFICATION_ACTIVE` |
+| **Estado corrente** | F6.1 e reconciliação promovidas; produto F6.2 implementado localmente e matriz focada verde; certificação integral em curso |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, somente no gate documental; implementação ainda não autorizada |
+| **Executor ativo** | `Codex`, único escritor da implementação/certificação local F6.2 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f6.2-harden-journal`, local, sem upstream; criada de `main == origin/main == ac887b0` |
 | **Branch de produto F6.1** | `task/f6.1-unified-event-schema`, remota e preservada após o merge |
@@ -52,6 +52,8 @@
 | **Main sincronizada** | antes da branch F6.2, `main == origin/main == ac887b055959d9d2c0c43b9b57df33e0d1eb9378` |
 | **Problema F6.2** | manager legado e storage canônico escrevem schemas distintos no mesmo journal; `execution_id` ausente, append sem lock e corrupção gera erro cru |
 | **Baseline F6.2** | probe determinístico reproduziu quebra entre duas instâncias; matriz confinada `127 passed in 19.84s` |
+| **Implementação F6.2** | manager delega append/read ao storage canônico; erros audit tipados; checkpoint local/HMAC-SHA256 opcional; JSON/SARIF fail-closed; CLI preserva export sem reflow |
+| **Validação F6.2** | dedicado `16 passed`; corrida concorrente `20/20`; matriz focada final `145 passed in 65.06s`; full/quality/build ainda pendentes |
 | **Problema F6.1** | lacuna knowledge corrigida: aliases `*Event` são o único `ExecutionEvent`; dados registrados usam modelos `*Details` |
 | **Baseline F6.1** | R0 inválido por temp bloqueado; R1 confinado `96 passed em 9.10s`; probe negativo reproduzível |
 | **Produto F6.1** | `c9e41c4` — envelope único 2.0, `EventType` fechado, sequence sob lock, hash completo e metadados reais |
@@ -115,7 +117,7 @@
 | PR de produto | [#69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69), head final `4c57a33`, CI `31868906875`, 11/11 success |
 | Merge de produto | `7d6a0e179f30008a7a67275da94878a179f0aba9`; CI de `push` `31887143905`, 11/11 success em 5m58s |
 | Reconciliação administrativa | commit-base `45b7f03`; PR [#70](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70), head inicial `aae1aea`, CI inicial `31888260797`; head final `9a346bd7`, CI `31888564163` 11/11; merge `ac887b0`, pós-merge `31888960272` 11/11 |
-| Fronteira | encerramento administrativo terminal; F6.2 possui gate READY, mas implementação ainda não foi autorizada |
+| Fronteira | encerramento administrativo terminal; F6.2 implementada localmente, ainda sem certificação integral, push ou PR |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
 | Promoção anterior | F5.7 — cancelamento e rollback seguros: PR #65 / merge `e8470ec` / pós-merge `31846634851`; reconciliação PR #66 / merge `998a7ac` / pós-merge `31849767573` |
 | Promoção anterior | F5.6 — PR [#63](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/63), merge `0488380`, pós-merge `31814250746`; reconciliação [#64](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/64), merge/CI final `a449bd1` / `31817497094` |
@@ -132,27 +134,28 @@ reconciliação antes de restaurar estado positivo.
 
 ## 4. Coordenação
 
-Não há executor de implementação ativo. O usuário autorizou somente preparar, revisar e congelar o
-gate F6.2. `Codex` é o único escritor do gate na branch local `task/f6.2-harden-journal`. Push, PR,
-implementação de produto, merge, publicação de tags e remoção de refs não estão autorizados.
+O usuário autorizou a implementação F6.2 dentro do escopo congelado. `Codex` é o único escritor na
+branch local `task/f6.2-harden-journal`. Push, PR, merge, publicação de tags e remoção de refs não
+estão autorizados.
 
 ## 5. Tarefa ativa
 
-A [F6.2](docs/tasks/active/F6.2.md) é a única tarefa ativa. O gate está `READY`: problema e baseline
-foram comprovados, contrato/allowlist/aceite/rollback foram congelados e o produto permanece
-intocado. A F6.1 e sua reconciliação estão `PROMOTED`; `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE`
-permanece como estado corretivo histórico da F5.C1. F6.3–F6.7 não foram absorvidas nem iniciadas.
+A [F6.2](docs/tasks/active/F6.2.md) é a única tarefa ativa. O produto local consolidou audit sobre o
+`ExecutionEvent` canônico e passou `145` testes focados; a certificação integral ainda está ativa.
+A F6.1 e sua reconciliação estão `PROMOTED`; `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece como
+estado corretivo histórico da F5.C1. F6.3–F6.7 não foram absorvidas nem iniciadas.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido para o escopo congelado. Iniciar a implementação F6.2 depende de
-autorização explícita. Push, PR, merge, tags remotas, remoção de refs, force-push e bypass permanecem
-fora da autorização.
+Não há bloqueio técnico conhecido para o escopo congelado. A conclusão local depende de full,
+quality, build e smoke verdes. Push, PR, merge, tags remotas, remoção de refs, force-push e bypass
+permanecem fora da autorização.
 
 ## 7. Próxima ação exata
 
 ```text
-PAUSAR ANTES DO PRIMEIRO ARQUIVO DE PRODUTO E PEDIR AUTORIZAÇÃO EXPLÍCITA PARA IMPLEMENTAR.
+EXECUTAR FULL, QUALITY, COMPILEALL, DIFF-CHECK, WHEEL E SMOKE OFICIAL DA F6.2.
+SE TUDO FICAR VERDE, REGISTRAR COMPLETED_LOCAL E PAUSAR PARA AUTORIZAÇÃO DE PUSH/PR.
 NÃO FAZER PUSH, ABRIR PR, MESCLAR, PUBLICAR TAGS OU AMPLIAR PARA F6.3–F6.7 SEM NOVA AUTORIZAÇÃO.
 ```
 
@@ -165,8 +168,9 @@ NÃO FAZER PUSH, ABRIR PR, MESCLAR, PUBLICAR TAGS OU AMPLIAR PARA F6.3–F6.7 SE
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
 6. Preserve PR #70: inicial `aae1aea`/`31888260797`; final `9a346bd7`/`31888564163`; merge
    `ac887b0`; pós-merge `31888960272`.
-7. Confirme checkpoint `checkpoint/f6.2-ready`; não edite produto sem autorização explícita.
+7. Confirme checkpoint `checkpoint/f6.2-ready`, matriz focada `145 passed` e prossiga somente na
+   certificação local; não faça efeitos remotos sem autorização explícita.
 
 ---
 
-*Atualizado em: 2026-08-15T11:43:01-03:00 | Fonte: merge administrativo `ac887b0` + CI `31888960272` + probe/baseline do gate F6.2 (`127 passed`)*
+*Atualizado em: 2026-08-15T12:20:17-03:00 | Fonte: gate/checkpoint F6.2 + implementação canônica + matriz focada `145 passed in 65.06s`*

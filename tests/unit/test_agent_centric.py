@@ -17,7 +17,6 @@ from ai_engineering_harness.contracts.structural_index import StructuralSymbol
 from ai_engineering_harness.indexer import SnapshotManager
 from ai_engineering_harness.models.registry import ProviderConfiguration, ProviderRegistry
 from ai_engineering_harness.models.router import ModelRouter, ModelRoutingConfigurationError
-from ai_engineering_harness.observability.audit import AuditTrailManager
 from ai_engineering_harness.persistence import canonical_json_digest, canonical_json_object
 from ai_engineering_harness.runtime.agent_executor import AgentExecutor
 from ai_engineering_harness.runtime.context_assembler import (
@@ -295,14 +294,21 @@ def test_runtime_no_longer_runs_fixed_post_verification_sequence(tmp_path: Path)
 
 
 def test_legacy_nonpromoted_rollback_path_cannot_claim_success(tmp_path: Path):
-    audit = AuditTrailManager(project_root=tmp_path, execution_id="exec-rollback-audit")
-    audit.log_event("STEP_1", {"data": "ok"})
-    
-    initial_content = audit.journal_file.read_text(encoding="utf-8")
+    journal_file = (
+        tmp_path
+        / ".harness"
+        / "state"
+        / "executions"
+        / "exec-rollback-audit"
+        / "event-journal.jsonl"
+    )
+    journal_file.parent.mkdir(parents=True)
+    journal_file.write_text("existing-canonical-journal-sentinel\n", encoding="utf-8")
+    initial_content = journal_file.read_text(encoding="utf-8")
 
     rb_mgr = RollbackManager(project_root=tmp_path)
     assert not hasattr(rb_mgr, "execute_rollback")
-    assert audit.journal_file.read_text(encoding="utf-8") == initial_content
+    assert journal_file.read_text(encoding="utf-8") == initial_content
 
 
 def test_rollback_manager_does_not_create_a_parallel_audit_journal(tmp_path: Path):

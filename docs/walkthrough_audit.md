@@ -71,7 +71,7 @@ no commit local, mas ainda não foi publicada nem promovida.
 | `harness approve` | Sim | Persiste decisão | Parcial; não retoma o fluxo |
 | `harness resume` | Sim | Retoma do bundle canônico | Implementado como contrato injetável |
 | `harness verify` | Sim | Carrega worktree validado, resolve configuração/argv e executa gates selecionados | Experimental; persistência e decisão final ainda faltam |
-| `harness audit` | Sim | Valida hash chain local | Implementado como mecanismo local |
+| `harness audit` | Sim | Valida o `ExecutionEvent` canônico, falha fechado e exporta JSON/SARIF com identidade exata | F6.2 implementada localmente; tamper-evident local, com HMAC opcional por API |
 | `harness rollback` | Sim | Eventos locais e Git opcional | Experimental/inseguro |
 
 ## 5. Riscos prioritários

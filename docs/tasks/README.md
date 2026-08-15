@@ -20,12 +20,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6.2.md). Seu gate está
-`READY / IMPLEMENTATION_NOT_STARTED` na branch local `task/f6.2-harden-journal`, criada de
+O único dossiê ativo é [F6.2 — fortalecer o journal de auditoria](active/F6.2.md). Seu estado está
+`IMPLEMENTED_LOCAL / CERTIFICATION_ACTIVE` na branch local `task/f6.2-harden-journal`, criada de
 `main == origin/main == ac887b0`. O probe reproduziu writer paralelo, perda de `execution_id`,
-ausência de sequence e quebra de hash entre duas instâncias; a matriz confinada passou
-`127 passed in 19.84s`. Escopo, aceite e rollback estão congelados; produto, push e PR permanecem
-não iniciados/não autorizados. O checkpoint local `checkpoint/f6.2-ready` aponta para `fb9909d`.
+ausência de sequence e quebra de hash entre duas instâncias. O produto agora delega ao journal
+canônico, oferece erros tipados, checkpoint HMAC opcional, exports fail-closed e CLI com saída JSON
+íntegra; a matriz focada final passou `145 passed in 65.06s`. Full/quality/build estão em curso;
+push e PR permanecem não autorizados. O checkpoint local `checkpoint/f6.2-ready` aponta para `fb9909d`.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2

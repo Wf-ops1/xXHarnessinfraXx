@@ -1,5 +1,6 @@
 """Testes unitários para verificação do CLI Runtime, FSM State, Visualizer e Audit Export."""
 
+import json
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -10,8 +11,15 @@ from click.testing import CliRunner
 import ai_engineering_harness.cli.main as CLI_MODULE
 from ai_engineering_harness.cli.main import main
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
-from ai_engineering_harness.contracts.execution import ApprovalStatus, ExecutionState
+from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.execution import (
+    EXECUTION_RECORD_SCHEMA_VERSION,
+    ApprovalStatus,
+    ExecutionRecord,
+    ExecutionState,
+)
 from ai_engineering_harness.indexer import SnapshotManager
+from ai_engineering_harness.persistence import AtomicFileStateStorage
 from ai_engineering_harness.runtime import (
     ExecutionInspection,
     ExecutionStatusView,
@@ -105,6 +113,60 @@ class _FakeLifecycle:
     def verify(self, execution_id: str):
         self.calls.append(("verify", execution_id))
         return self.verification_result
+
+
+def _create_cli_audit_execution(project_root: Path, execution_id: str) -> Path:
+    timestamp = datetime(2026, 8, 15, 12, 0, tzinfo=UTC)
+    storage = AtomicFileStateStorage(project_root)
+    storage.create_execution(
+        ExecutionRecord(
+            record_schema_version=EXECUTION_RECORD_SCHEMA_VERSION,
+            revision=0,
+            execution_id=execution_id,
+            workflow_name="cli-audit",
+            artifact_digest=f"sha256:{'a' * 64}",
+            base_commit_sha="b" * 40,
+            original_branch="main",
+            worktree_path=None,
+            current_node_id="audit",
+            current_state=ExecutionState.INITIATED,
+            attempt_by_node={"audit": 0},
+            created_at=timestamp,
+            updated_at=timestamp,
+            configuration_digest=f"sha256:{'c' * 64}",
+            approval_status=ApprovalStatus.NOT_REQUIRED,
+            candidate_commit_sha=None,
+            promotion_commit_sha=None,
+            failure=None,
+        )
+    )
+    storage.append_event(
+        execution_id,
+        ExecutionEvent.model_validate(
+            {
+                "event_id": f"{execution_id}-event-1",
+                "execution_id": execution_id,
+                "sequence_number": 0,
+                "event_type": "EXECUTION_CREATED",
+                "timestamp": timestamp,
+                "graph_name": "cli-audit",
+                "node_id": None,
+                "attempt": 0,
+                "actor": "cli-test",
+                "details": {"status": "created"},
+                "previous_hash": None,
+                "current_hash": None,
+            }
+        ),
+    )
+    return (
+        project_root
+        / ".harness"
+        / "state"
+        / "executions"
+        / execution_id
+        / "event-journal.jsonl"
+    )
 
 
 def test_graph_visualizer(tmp_path: Path):
@@ -453,6 +515,43 @@ def test_cli_verify_uses_lifecycle_and_returns_nonzero_when_blocked(
         ("verify", "exec-cli-runtime"),
         ("verify", "exec-cli-runtime"),
     ]
+
+
+def test_cli_audit_validates_and_exports_exact_execution_identity(
+    tmp_path: Path,
+) -> None:
+    runner = CliRunner()
+    execution_id = "exec-cli-audit"
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        _create_cli_audit_execution(Path.cwd(), execution_id)
+        verified = runner.invoke(main, ["audit", execution_id])
+        json_result = runner.invoke(main, ["audit", execution_id, "--export", "json"])
+        sarif_result = runner.invoke(main, ["audit", execution_id, "--export", "sarif"])
+
+    assert verified.exit_code == 0
+    assert "AUDIT SUCCESS" in verified.output
+    assert "tamper-evident local" in verified.output
+    assert json_result.exit_code == 0
+    assert json.loads(json_result.output)["execution_id"] == execution_id
+    assert sarif_result.exit_code == 0
+    assert json.loads(sarif_result.output)["runs"][0]["automationDetails"]["id"] == execution_id
+
+
+def test_cli_audit_missing_or_corrupt_journal_fails_closed(tmp_path: Path) -> None:
+    runner = CliRunner()
+    execution_id = "exec-cli-audit-corrupt"
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        missing = runner.invoke(main, ["audit", "exec-cli-audit-missing"])
+        journal = _create_cli_audit_execution(Path.cwd(), execution_id)
+        journal.write_bytes(b"{broken\n")
+        corrupt = runner.invoke(main, ["audit", execution_id, "--export", "json"])
+
+    assert missing.exit_code != 0
+    assert "exec-cli-audit-missing" in missing.output
+    assert corrupt.exit_code != 0
+    assert execution_id in corrupt.output
+    assert "line 1 is invalid" in corrupt.output
+    assert "audit_schema_version" not in corrupt.output
 
 
 def _initialize_cli_git_repository(project_root: Path) -> str:
