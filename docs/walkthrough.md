@@ -127,8 +127,10 @@ worktree/provider/tools permanece pendente.
 
 > A F5.7 R3 está `PROMOTED`: PR #65, merge `e8470ec` e CI pós-merge `31846634851` verdes. A
 > reconciliação administrativa foi incorporada pelo PR #66 no merge `998a7ac`, com CI pós-merge
-> `31849767573` 11/11 verde. A corretiva F5.C1 preserva esse histórico e reabre somente os dois
-> critérios de redaction reproduzidos na revisão posterior.
+> `31849767573` 11/11 verde. A corretiva F5.C1 preservou esse histórico, fechou os dois critérios de
+> redaction reabertos, foi incorporada pelo PR #67 no merge `2b405fd` e recebeu 11/11 na CI pós-merge
+> `31857239235`. Sua reconciliação administrativa foi publicada no PR #68; o run inicial
+> `31858431821` permanece com checks pendentes.
 
 O diário append-only e sua hash chain são implementações locais testadas. Na F5.7 local, o
 cancelamento publica uma decisão durável antes do pedido/sinal, interrompe e reapera somente a árvore
