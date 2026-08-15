@@ -37,11 +37,11 @@
 | **Fase ativa** | Fase 6 — observabilidade, auditoria, doctor e recovery |
 | **Tarefa ativa** | F6.1 — schema único de eventos; dossiê `docs/tasks/active/F6.1.md` |
 | **Gate** | `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Estado corrente** | F6.1 R2 corrigida e recertificada localmente; nenhum efeito remoto autorizado |
+| **Estado corrente** | F6.1 R2 no PR #69; head inicial `1f63e1a` com 11/11 checks, registro documental final `CHECKS_PENDING` |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da F6.1 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f6.1-unified-event-schema`, local e sem upstream; criada de `main == origin/main == 29e8a975` |
+| **Branch** | `task/f6.1-unified-event-schema`, publicada e acompanhando `origin/task/f6.1-unified-event-schema`; criada de `main == origin/main == 29e8a975` |
 | **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; R1 READY `eea6baa`; `checkpoint/f6.1-complete` histórico → `016f4ca`; `checkpoint/f6.1-r2-ready` → `3cb2a4b`; `checkpoint/f6.1-r2-complete` → `4785c22`; somente locais |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
@@ -53,6 +53,7 @@
 | **Evidência F6.1 R2** | append aceitou draft mutado e o reload falhou por hash; `password: 1234`/`apiKey: false` ficaram visíveis; quatro refs canônicas históricas retornaram `ContractNotFoundError` |
 | **Correção F6.1 R2** | `aa471d1` + `c9c5c83` — snapshot revalidado antes do hash, redaction fechada por semântica e quatro aliases qualificados restaurados |
 | **Validação F6.1 R2** | probes `5 passed`; matriz ampliada `325 passed`; full `935 passed, 5 skipped, 6 subtests passed`; Ruff, mypy 107 arquivos, compileall, diff-check, wheel e smoke verdes |
+| **PR F6.1** | [#69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69), head inicial `1f63e1a`; CI [31868522308](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31868522308) 11/11 verde; head documental final ainda exige checks |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
@@ -131,29 +132,31 @@ A F6.1 está `COMPLETED_LOCAL / PROMOTION_PENDING`. O estado R2 histórico
 `REPAIR_ACTIVE / PROMOTION_BLOCKED` prevaleceu sobre `320`/`930` até as lacunas de integridade,
 redaction e compatibilidade do registry serem corrigidas em `aa471d1`/`c9c5c83` e o aceite integral
 passar com `325`/`935`. F6.2–F6.7 não foram absorvidas. A F5.C1 permanece `PROMOTED`;
-`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece como estado corretivo histórico daquela tarefa.
+`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece como estado corretivo histórico daquela tarefa. A
+branch F6.1 está publicada no PR #69; promoção continua pendente até CI do head final e autorização de
+merge.
 
 ## 6. Bloqueios e fronteiras externas
 
 Não há bloqueio técnico conhecido. O pytest deve usar temp/basetemp em raiz gravável no sandbox atual.
-Push, abertura de PR, merge, tags remotas, remoção de refs, force-push e bypass continuam não
-autorizados.
+Merge, tags remotas, remoção de refs, force-push e bypass continuam não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUSH E ABERTURA DE PR DA F6.1.
-NÃO FAZER PUSH, ABRIR/MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇÃO EXPLÍCITA.
+AGUARDAR A CI DO HEAD DOCUMENTAL FINAL DO PR #69.
+APÓS 11/11 VERDES, PAUSAR PARA AUTORIZAÇÃO EXPLÍCITA DE MERGE.
+NÃO MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇÃO EXPLÍCITA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.1.md` e a Fase 6 do plano.
-2. Confirme branch `task/f6.1-unified-event-schema`, estado R2 `COMPLETED_LOCAL / PROMOTION_PENDING`, correções `aa471d1`/`c9c5c83`, checkpoints e baseline `29e8a975`.
+2. Confirme branch publicada `task/f6.1-unified-event-schema`, PR #69, estado `COMPLETED_LOCAL / PROMOTION_PENDING`, correções `aa471d1`/`c9c5c83`, checkpoints e baseline `29e8a975`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Não amplie para F6.2–F6.7 nem faça efeitos remotos sem autorização.
 
 ---
 
-*Atualizado em: 2026-08-15T02:42:57-03:00 | Fonte: correções F6.1 R2 `aa471d1`/`c9c5c83` + checkpoint local `4785c22`*
+*Atualizado em: 2026-08-15T03:11:39-03:00 | Fonte: PR #69 + CI inicial `31868522308` 11/11 + registro documental final pendente de checks*

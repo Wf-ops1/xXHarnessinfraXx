@@ -1121,6 +1121,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "COMPLETED_LOCAL / PROMOTION_PENDING" in source
     assert "113 failed, 211 passed" in f6_1_dossier
     assert "18 contratos canônicos; 15 aliases legados" in f6_1_dossier
+    for source in (panel, task_index, f6_1_dossier, readme):
+        assert "PR #69" in source or "pull/69" in source
+        assert "1f63e1a" in source
+        assert "31868522308" in source
+    assert "PR_OPEN / CHECKS_PENDING" in f6_1_dossier
+    assert "11/11" in f6_1_dossier
     assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source

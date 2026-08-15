@@ -196,8 +196,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   do hash, redige qualquer tipo sob chave semanticamente secreta, preserva somente contadores
   operacionais numéricos explicitamente enumerados e restaura as quatro refs. A recertificação passou
   `325` testes focados e `935 passed, 5 skipped, 6 subtests passed` no full, além de quality, wheel e
-  smoke offline; o estado atual é `COMPLETED_LOCAL / PROMOTION_PENDING`. F6.2–F6.7 não foram
-  declaradas entregues.
+  smoke offline. A branch foi publicada no [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69);
+  o head inicial `1f63e1a` recebeu `11/11` checks verdes no run `31868522308`. O registro documental
+  final permanece `CHECKS_PENDING`, e o estado da tarefa continua
+  `COMPLETED_LOCAL / PROMOTION_PENDING`. F6.2–F6.7 não foram declaradas entregues.
 
 ## Dívidas técnicas críticas
 

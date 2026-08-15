@@ -26,7 +26,9 @@ branch local `task/f6.1-unified-event-schema`. O produto `c9e41c4`, a R1 `c4aef2
 eliminaram hash divergente após mutação de `details`, vazamento não textual e quatro refs knowledge
 sem resolução. A recertificação passou `325` focados e `935 passed, 5 skipped, 6 subtests passed`;
 o checkpoint local `checkpoint/f6.1-r2-complete` aponta para `4785c22`. Promoção externa continua sem
-autorização.
+conclusão: o [PR #69](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/69) foi aberto, e o head inicial
+`1f63e1a` passou 11/11 no run `31868522308`; o registro documental final está `CHECKS_PENDING` e merge
+continua sem autorização.
 
 A [F5.C1](completed/F5.C1.md) permanece `PROMOTED`: a corretiva localizada fechou as duas lacunas de
 redaction, passou a recertificação integral e teve o head `3158d3b` incorporado pelo PR
