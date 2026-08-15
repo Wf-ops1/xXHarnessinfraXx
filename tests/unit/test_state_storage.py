@@ -471,6 +471,32 @@ def test_append_event_is_canonical_and_hash_chained(tmp_path: Path) -> None:
         ).encode("utf-8")
 
 
+def test_append_revalidates_mutated_details_before_hashing(tmp_path: Path) -> None:
+    provider = AtomicFileStateStorage(tmp_path)
+    provider.create_execution(_record())
+    draft = _event("evt-mutated-details")
+    draft.details["password"] = 1234
+
+    persisted = provider.append_event("exec-f2-2", draft)
+    loaded = provider.load_events("exec-f2-2")
+
+    assert persisted.details["password"] == "[REDACTED_SECRET]"
+    assert loaded == (persisted,)
+    assert b'"password":1234' not in _journal_path(tmp_path, "exec-f2-2").read_bytes()
+
+
+def test_append_rejects_mutated_non_json_details_before_write(tmp_path: Path) -> None:
+    provider = AtomicFileStateStorage(tmp_path)
+    provider.create_execution(_record())
+    draft = _event("evt-mutated-non-json")
+    draft.details["invalid"] = (1, 2)
+
+    with pytest.raises(JournalIntegrityError, match="event envelope is invalid"):
+        provider.append_event("exec-f2-2", draft)
+
+    assert not _journal_path(tmp_path, "exec-f2-2").exists()
+
+
 def test_load_events_returns_detached_canonical_tuple_under_lock(
     tmp_path: Path,
 ) -> None:

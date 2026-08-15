@@ -149,6 +149,10 @@ _INTERNAL_MODELS: tuple[ContractModel, ...] = (
 )
 
 _LEGACY_ALIAS_MODELS: dict[str, ContractModel] = {
+    "ai_engineering_harness.contracts.events.execution_event.KnowledgeSyncEvent": ExecutionEvent,
+    "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeUpdateEvent": ExecutionEvent,
+    "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeSyncCompleted": KnowledgeSyncCompletedDetails,
+    "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeSyncFailed": KnowledgeSyncFailedDetails,
     "contracts/events/knowledge_sync.py#KnowledgeSyncCompleted": KnowledgeSyncCompletedDetails,
     "contracts/events/knowledge_sync.py#KnowledgeSyncFailed": KnowledgeSyncFailedDetails,
     "contracts/nodes/architecture_analysis.py#ArchitectureAnalysisInput": ArchitectureAnalysisInput,

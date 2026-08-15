@@ -264,6 +264,13 @@ class AtomicFileStateStorage(ResumeStateStorageProvider):
                 "event must be an ExecutionEvent",
                 execution_id=validated_id,
             )
+        try:
+            event = ExecutionEvent.model_validate(event.model_dump(mode="python"))
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise JournalIntegrityError(
+                "event envelope is invalid",
+                execution_id=validated_id,
+            ) from exc
         if event.execution_id != validated_id:
             raise ExecutionIdentityMismatchError(
                 "event execution_id does not match the requested execution",

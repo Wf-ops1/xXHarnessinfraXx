@@ -110,7 +110,7 @@ def test_internal_catalog_uses_qualified_names_and_exact_legacy_aliases() -> Non
     registry = ContractRegistry()
 
     assert len(registry.available_contracts) == 18
-    assert len(registry.legacy_aliases) == 11
+    assert len(registry.legacy_aliases) == 15
     assert all(name.startswith("ai_engineering_harness.contracts.") for name in registry.available_contracts)
     assert (
         "ai_engineering_harness.contracts.nodes.context_sufficiency.ContextSufficiencyReport"
@@ -149,7 +149,29 @@ def test_legacy_aliases_exactly_cover_references_used_by_default_graphs() -> Non
     registry = ContractRegistry()
 
     assert len(references) == 24
-    assert set(references) == set(registry.legacy_aliases)
+    historical_names = {
+        "ai_engineering_harness.contracts.events.execution_event.KnowledgeSyncEvent",
+        "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeUpdateEvent",
+        "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeSyncCompleted",
+        "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeSyncFailed",
+    }
+    assert set(references) < set(registry.legacy_aliases)
+    assert set(registry.legacy_aliases) - set(references) == historical_names
+
+
+def test_historical_knowledge_contract_names_resolve_to_canonical_models() -> None:
+    registry = ContractRegistry()
+    expected_suffixes = {
+        "ai_engineering_harness.contracts.events.execution_event.KnowledgeSyncEvent": ".ExecutionEvent",
+        "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeUpdateEvent": ".ExecutionEvent",
+        "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeSyncCompleted": ".KnowledgeSyncCompletedDetails",
+        "ai_engineering_harness.contracts.events.knowledge_sync.KnowledgeSyncFailed": ".KnowledgeSyncFailedDetails",
+    }
+
+    for reference, suffix in expected_suffixes.items():
+        resolved = registry.resolve(reference)
+        assert resolved.requested_reference == reference
+        assert resolved.canonical_name.endswith(suffix)
 
 
 def test_unknown_short_name_and_arbitrary_file_alias_fail_closed() -> None:

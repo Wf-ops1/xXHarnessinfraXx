@@ -148,6 +148,27 @@ def test_details_are_detached_json_native_and_redacted() -> None:
     assert "another controlled value" not in event.canonical_json()
 
 
+def test_every_value_under_a_sensitive_key_is_redacted() -> None:
+    event = _event(
+        details={
+            "password": 1234,
+            "apiKey": False,
+            "privateKey": None,
+            "deployToken": 1.5,
+        }
+    )
+
+    assert event.details == {
+        "password": "[REDACTED_SECRET]",
+        "apiKey": "[REDACTED_SECRET]",
+        "privateKey": "[REDACTED_SECRET]",
+        "deployToken": "[REDACTED_SECRET]",
+    }
+    serialized = event.canonical_json()
+    assert '"password":1234' not in serialized
+    assert '"apiKey":false' not in serialized
+
+
 @pytest.mark.parametrize(
     "overrides",
     [

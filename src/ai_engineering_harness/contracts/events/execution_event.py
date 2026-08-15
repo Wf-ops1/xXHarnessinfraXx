@@ -163,7 +163,7 @@ def _redact_event_json(value: object) -> object:
             safe_key = Redactor.redact_text(key)
             probe = Redactor.redact_json({key: "event-redaction-probe"})
             sensitive_key = isinstance(probe, dict) and probe.get(safe_key) != "event-redaction-probe"
-            if sensitive_key and type(item) in {str, list, dict}:
+            if sensitive_key:
                 redacted[safe_key] = "[REDACTED_SECRET]"
             else:
                 redacted[safe_key] = _redact_event_json(item)
