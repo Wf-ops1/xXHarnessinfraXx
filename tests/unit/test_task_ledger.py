@@ -1105,8 +1105,11 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "historical_canonical_refs_unresolved 4",
         "ContractNotFoundError",
         "checkpoint/f6.1-r2-ready",
+        "3cb2a4b6969073414c9d3f64f8440d37414d61d1",
     ):
         assert r2_evidence in f6_1_dossier
+    assert "checkpoint/f6.1-r2-ready" in panel
+    assert "3cb2a4b" in panel
     assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
