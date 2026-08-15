@@ -20,11 +20,12 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F6.1 — schema único de eventos](active/F6.1.md) está `REPAIR_ACTIVE / PROMOTION_BLOCKED` na branch
-local `task/f6.1-unified-event-schema`. O produto `c9e41c4` e a R1 `c4aef27` permanecem históricos;
-apesar de `320` focados e `930` no full, a revisão R2 reproduziu hash divergente após mutação de
-`details`, valores sensíveis não textuais visíveis e quatro refs canônicas knowledge sem resolução.
-A correção R2 foi autorizada e deve ser checkpointed antes do primeiro arquivo de produto.
+A [F6.1 — schema único de eventos](active/F6.1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na
+branch local `task/f6.1-unified-event-schema`. O produto `c9e41c4`, a R1 `c4aef27` com `320` focados e
+`930` no full, e o estado histórico R2 `REPAIR_ACTIVE / PROMOTION_BLOCKED` permanecem auditáveis. As correções `aa471d1`/`c9c5c83`
+eliminaram hash divergente após mutação de `details`, vazamento não textual e quatro refs knowledge
+sem resolução. A recertificação passou `325` focados e `935 passed, 5 skipped, 6 subtests passed`;
+promoção externa continua sem autorização.
 
 A [F5.C1](completed/F5.C1.md) permanece `PROMOTED`: a corretiva localizada fechou as duas lacunas de
 redaction, passou a recertificação integral e teve o head `3158d3b` incorporado pelo PR
@@ -43,7 +44,7 @@ passou `174` testes com `2` skips, segurança passou `68` e a regressão integra
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
 pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; a pendência corrente é a
-correção R2 da F6.1, sem promoção ou próxima tarefa autorizada.
+autorização de promoção da F6.1, sem próxima tarefa autorizada.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge

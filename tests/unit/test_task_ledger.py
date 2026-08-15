@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / REPAIR_ACTIVE / PROMOTION_BLOCKED` |" in panel
+    assert "| **Gate** | `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert "docs/tasks/active/F6.1.md" in panel
     assert (ACTIVE_ROOT / "F6.1.md").is_file()
     assert "active/F6.1.md" in task_index
@@ -1085,8 +1085,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "c4aef27" in source
         assert "320" in source
         assert "930" in source
-    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in task_index
-    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in f6_1_dossier
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in f6_1_dossier
     assert "c4aef27" in f6_1_dossier
     assert "320" in f6_1_dossier
     assert "930" in f6_1_dossier
@@ -1110,6 +1110,14 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert r2_evidence in f6_1_dossier
     assert "checkpoint/f6.1-r2-ready" in panel
     assert "3cb2a4b" in panel
+    for source in (panel, task_index, f6_1_dossier, readme):
+        assert "aa471d1" in source
+        assert "c9c5c83" in source
+        assert "325" in source
+        assert "935" in source
+        assert "COMPLETED_LOCAL / PROMOTION_PENDING" in source
+    assert "113 failed, 211 passed" in f6_1_dossier
+    assert "18 contratos canônicos; 15 aliases legados" in f6_1_dossier
     assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
