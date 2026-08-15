@@ -26,6 +26,28 @@ EXECUTION_EVENT_SCHEMA_VERSION = "2.0"
 
 _NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
+_NUMERIC_CONTROL_METADATA_KEYS = frozenset(
+    {
+        "completion_tokens",
+        "consumed_tokens",
+        "fencing_token",
+        "input_tokens",
+        "max_completion_tokens",
+        "max_completion_tokens_per_call",
+        "max_prompt_tokens",
+        "max_tokens",
+        "max_total_tokens",
+        "model_completion_tokens",
+        "model_prompt_tokens",
+        "model_total_tokens",
+        "output_tokens",
+        "prompt_tokens",
+        "remaining_tokens",
+        "token_count",
+        "total_tokens",
+    }
+)
+
 
 class ExecutionEvent(BaseModel):
     """Strict, redacted envelope used by every canonical execution event."""
@@ -163,12 +185,18 @@ def _redact_event_json(value: object) -> object:
             safe_key = Redactor.redact_text(key)
             probe = Redactor.redact_json({key: "event-redaction-probe"})
             sensitive_key = isinstance(probe, dict) and probe.get(safe_key) != "event-redaction-probe"
-            if sensitive_key:
+            if sensitive_key and not _is_numeric_control_metadata(key, item):
                 redacted[safe_key] = "[REDACTED_SECRET]"
             else:
                 redacted[safe_key] = _redact_event_json(item)
         return redacted
     return value
+
+
+def _is_numeric_control_metadata(key: str, value: object) -> bool:
+    """Identify non-secret counters that happen to contain the word ``token``."""
+
+    return type(value) in {int, float} and key in _NUMERIC_CONTROL_METADATA_KEYS
 
 # Backward-compatible import name. It is intentionally the canonical envelope,
 # never a second Pydantic event schema.

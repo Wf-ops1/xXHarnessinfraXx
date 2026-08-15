@@ -155,6 +155,7 @@ def test_every_value_under_a_sensitive_key_is_redacted() -> None:
             "apiKey": False,
             "privateKey": None,
             "deployToken": 1.5,
+            "secret_tokens": 2,
         }
     )
 
@@ -163,10 +164,31 @@ def test_every_value_under_a_sensitive_key_is_redacted() -> None:
         "apiKey": "[REDACTED_SECRET]",
         "privateKey": "[REDACTED_SECRET]",
         "deployToken": "[REDACTED_SECRET]",
+        "secret_tokens": "[REDACTED_SECRET]",
     }
     serialized = event.canonical_json()
     assert '"password":1234' not in serialized
     assert '"apiKey":false' not in serialized
+
+
+def test_numeric_control_metadata_is_not_mistaken_for_a_secret() -> None:
+    event = _event(
+        details={
+            "fencing_token": 7,
+            "remaining_tokens": 900,
+            "model_total_tokens": 100,
+            "token_count": 3,
+            "deployToken": 42,
+        }
+    )
+
+    assert event.details == {
+        "fencing_token": 7,
+        "remaining_tokens": 900,
+        "model_total_tokens": 100,
+        "token_count": 3,
+        "deployToken": "[REDACTED_SECRET]",
+    }
 
 
 @pytest.mark.parametrize(
