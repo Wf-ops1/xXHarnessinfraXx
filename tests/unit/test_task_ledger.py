@@ -990,7 +990,7 @@ def test_f5_6_promoted_gate_binds_approval_to_the_exact_promotion_content() -> N
 def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> None:
     panel = _read(TASK_PANEL)
     dossier = _read(COMPLETED_ROOT / "F5.7.md")
-    f5_c1_dossier = _read(ACTIVE_ROOT / "F5.C1.md")
+    f5_c1_dossier = _read(COMPLETED_ROOT / "F5.C1.md")
     task_index = _read(TASKS_INDEX)
     readme = _read(ROOT / "README.md")
 
@@ -1045,7 +1045,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31849767573" in panel
     assert "31849767573" in task_index
     assert "F5.C1" in panel
-    assert "active/F5.C1.md" in task_index
+    assert not (ACTIVE_ROOT / "F5.C1.md").exists()
+    assert (COMPLETED_ROOT / "F5.C1.md").is_file()
+    assert "completed/F5.C1.md" in task_index
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/65" in dossier
     assert "31845896973" in dossier
     assert "e8470ece8bdb7e98ddfe9817270d0b17032404d4" in dossier
@@ -1058,8 +1060,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31848981895" in dossier
     assert "PR #66" in readme
     assert "31849767573" in task_index
-    assert "> **Gate:** `COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING`" in f5_c1_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f5_c1_dossier
+    assert "> **Gate:** `READY`" in f5_c1_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f5_c1_dossier
+    assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f5_c1_dossier
     assert "checkpoint/f5.c1-ready" in f5_c1_dossier
     assert "checkpoint/f5.c1-complete" in f5_c1_dossier
     assert "ec8aa96" in f5_c1_dossier
@@ -1071,16 +1074,18 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert (
-        "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING / PR_OPEN / CHECKS_PENDING` |"
-        in panel
-    )
+    assert "| **Gate** | `PROMOTED / ADMIN_LOCAL / PUBLICATION_PENDING` |" in panel
     assert "nenhuma implementação ativa" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
+    assert "nenhuma tarefa ativa" in panel.casefold()
+    assert "LOCAL_READY / PUBLICATION_PENDING" in task_index
     assert "F6 aguarda" in task_index
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
-        assert "31855627698" in source
+        assert "3158d3b" in source
+        assert "31855763587" in source
+        assert "2b405fd" in source
+        assert "31857239235" in source
+    assert "31855627698" in f5_c1_dossier
 
 
 def test_negative_evidence_precedes_positive_state_until_recertification() -> None:

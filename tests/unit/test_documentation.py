@@ -202,6 +202,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31849767573" in panel
     assert "F5.C1" in panel
     assert "POST_PROMOTION_BLOCKED" in panel
+    assert "docs/tasks/completed/F5.C1.md" in panel
+    assert "2b405fdae5ea5560ce8e411297a0c11c4abc1bf9" in panel
+    assert "31857239235" in panel
     assert "31817497094" in panel
     assert "a449bd19b5f6535402535bc2815527a9689095dc" in panel
     assert "docs/tasks/completed/F5.5.md" in panel

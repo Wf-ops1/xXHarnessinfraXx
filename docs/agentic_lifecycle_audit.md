@@ -1,6 +1,6 @@
 # Auditoria do Ciclo de Vida Agentic — Desejado vs. Implementado
 
-> **Status da auditoria: Protótipo / Em desenvolvimento — atualizado após a promoção F5.7 e a abertura da corretiva F5.C1**
+> **Status da auditoria: Protótipo / Em desenvolvimento — atualizado após a promoção da corretiva F5.C1**
 
 A matriz abaixo classifica efeitos observáveis no código atual. “Experimental” significa que existe
 estrutura executável ou teste, mas a etapa ainda depende de simulação, sequência fixa ou garantia
