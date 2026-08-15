@@ -155,6 +155,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
             ExecutionState.EXECUTING,
             ExecutionState.PAUSED_AWAITING_APPROVAL,
             ExecutionState.PROMOTING,
+            ExecutionState.GENERATING_EVIDENCE,
             ExecutionState.DRY_RUN_COMPLETED,
             ExecutionState.COMPLETED,
             ExecutionState.BLOCKED_PREREQUISITE,
@@ -183,6 +184,7 @@ _TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
     ExecutionState.PROMOTING: frozenset(
         {
             ExecutionState.REINDEXING,
+            ExecutionState.GENERATING_EVIDENCE,
             ExecutionState.BLOCKED_BASE_CHANGED,
             ExecutionState.ROLLBACK_IN_PROGRESS,
             ExecutionState.COMPLETED,
@@ -267,6 +269,14 @@ class EventSourcedStateMachine:
         clock: Callable[[], datetime] | None = None,
         event_id_factory: Callable[[], str] | None = None,
         owner_id_factory: Callable[[], str] | None = None,
+        completed_transition_handler: Callable[
+            [ExecutionRecord, ExecutionEvent, ExecutionLock], None
+        ]
+        | None = None,
+        completed_recovery_handler: Callable[
+            [ExecutionRecord, ExecutionEvent, ExecutionLock], None
+        ]
+        | None = None,
         lock: ExecutionLock | None = None,
     ) -> None:
         if not isinstance(storage, EventJournalStateStorageProvider):
@@ -290,6 +300,16 @@ class EventSourcedStateMachine:
         self._owner_id_factory = owner_id_factory or (
             lambda: f"state-machine-{uuid.uuid4().hex}"
         )
+        if completed_transition_handler is not None and not callable(
+            completed_transition_handler
+        ):
+            raise TypeError("completed_transition_handler must be callable")
+        self._completed_transition_handler = completed_transition_handler
+        if completed_recovery_handler is not None and not callable(
+            completed_recovery_handler
+        ):
+            raise TypeError("completed_recovery_handler must be callable")
+        self._completed_recovery_handler = completed_recovery_handler
         self._current_state = ExecutionState.INITIATED
         result = self.replay(lock=lock)
         self._current_state = result.current_state
@@ -364,7 +384,7 @@ class EventSourcedStateMachine:
                     "cannot construct a canonical state transition event",
                     execution_id=self.execution_id,
                 ) from exc
-            self._storage.append_event(
+            persisted_event = self._storage.append_event(
                 self.execution_id,
                 event,
                 lock=active_lock,
@@ -374,6 +394,13 @@ class EventSourcedStateMachine:
                 to_state=to_state,
                 revision=target_revision,
                 updated_at=timestamp,
+            )
+            self._handle_completed_transition(
+                record,
+                replacement,
+                persisted_event,
+                active_lock,
+                recovering=False,
             )
             persisted = self._storage.compare_and_set_execution(
                 self.execution_id,
@@ -529,12 +556,44 @@ class EventSourcedStateMachine:
             revision=pending.record_revision,
             updated_at=pending.event.timestamp,
         )
+        self._handle_completed_transition(
+            analysis.snapshot,
+            replacement,
+            pending.event,
+            lock,
+            recovering=True,
+        )
         return self._storage.compare_and_set_execution(
             self.execution_id,
             analysis.snapshot.revision,
             replacement,
             lock=lock,
         )
+
+    def _handle_completed_transition(
+        self,
+        source: ExecutionRecord,
+        replacement: ExecutionRecord,
+        event: ExecutionEvent,
+        lock: ExecutionLock,
+        *,
+        recovering: bool,
+    ) -> None:
+        if replacement.current_state is not ExecutionState.COMPLETED:
+            return
+        if source.current_state is not ExecutionState.GENERATING_EVIDENCE:
+            return
+        handler = (
+            self._completed_recovery_handler
+            if recovering
+            else self._completed_transition_handler
+        )
+        if handler is None:
+            raise StateTransitionIntegrityError(
+                "GENERATING_EVIDENCE completion requires the matching evidence handler",
+                execution_id=self.execution_id,
+            )
+        handler(replacement, event, lock)
 
     def _parse_transition(self, event: ExecutionEvent) -> _Transition:
         payload = event.payload

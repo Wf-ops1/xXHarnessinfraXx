@@ -10,14 +10,19 @@ from pathlib import Path
 import pytest
 
 from ai_engineering_harness.compiler import GraphCompiler
-from ai_engineering_harness.contracts import ExecutionState
+from ai_engineering_harness.contracts import ExecutionRecord, ExecutionState
 from ai_engineering_harness.contracts.events import ExecutionEvent
-from ai_engineering_harness.persistence import AtomicFileStateStorage
+from ai_engineering_harness.persistence import (
+    AtomicFileStateStorage,
+    ExecutionLock,
+    StateWriteError,
+)
 from ai_engineering_harness.runtime import (
     VERIFICATION_GATE_RECORDED,
     VERIFICATION_GATE_STARTED,
     VERIFICATION_SUITE_RECORDED,
     DeterministicNodeExecutor,
+    EvidenceLifecycleIntegrityError,
     ExecutionBudgetExceededError,
     ExecutionLifecycleService,
     NodeExecutionContext,
@@ -52,6 +57,36 @@ class _Fixture:
     artifact: Path
     commit_sha: str
     branch: str
+
+
+class _FailCompletedCasStorage(AtomicFileStateStorage):
+    def __init__(self, project_root: Path) -> None:
+        super().__init__(project_root)
+        self.fail_completed_once = False
+
+    def compare_and_set_execution(
+        self,
+        execution_id: str,
+        expected_revision: int,
+        replacement: ExecutionRecord,
+        *,
+        lock: ExecutionLock | None = None,
+    ) -> ExecutionRecord:
+        if (
+            self.fail_completed_once
+            and replacement.current_state is ExecutionState.COMPLETED
+        ):
+            self.fail_completed_once = False
+            raise StateWriteError(
+                "controlled completed CAS failure",
+                execution_id=execution_id,
+            )
+        return super().compare_and_set_execution(
+            execution_id,
+            expected_revision,
+            replacement,
+            lock=lock,
+        )
 
 
 def _write_fixture(project_root: Path, *, passing: bool) -> _Fixture:
@@ -260,10 +295,11 @@ def test_policy_enabled_lifecycle_persists_gate_and_guards_completed(
     assert storage.load_execution(execution_id).current_state == ExecutionState.COMPLETED
 
     event_types = tuple(event.event_type for event in storage.load_events(execution_id))
-    assert event_types[-4:] == (
+    assert event_types[-5:] == (
         VERIFICATION_GATE_STARTED,
         VERIFICATION_GATE_RECORDED,
         VERIFICATION_SUITE_RECORDED,
+        "STATE_TRANSITIONED",
         "STATE_TRANSITIONED",
     )
     with pytest.raises(
@@ -271,6 +307,138 @@ def test_policy_enabled_lifecycle_persists_gate_and_guards_completed(
         match="cannot run verification again",
     ):
         service.verify(execution_id)
+
+
+def test_terminal_cas_recovery_reuses_exact_manifest_without_false_success(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_fixture(tmp_path, passing=True)
+    storage = _FailCompletedCasStorage(tmp_path)
+    execution_id = "exec-f63-recover"
+    service = _service(tmp_path, storage, execution_id, fixture)
+    service.start(
+        fixture.artifact,
+        execution_id=execution_id,
+        initial_input={},
+        configuration={},
+    )
+    storage.fail_completed_once = True
+
+    with pytest.raises(VerificationLifecycleIntegrityError, match="could not be persisted"):
+        service.verify(execution_id)
+
+    pending = storage.load_execution(execution_id)
+    evidence_path = (
+        tmp_path
+        / ".harness"
+        / "state"
+        / "executions"
+        / execution_id
+        / "evidence.json"
+    )
+    before = evidence_path.read_bytes()
+    assert pending.current_state is ExecutionState.GENERATING_EVIDENCE
+    assert sum(
+        event.event_type == "STATE_TRANSITIONED"
+        and event.payload.get("to_state") == "COMPLETED"
+        for event in storage.load_events(execution_id)
+    ) == 1
+
+    restarted = _service(tmp_path, storage, execution_id, fixture)
+    with pytest.raises(VerificationLifecycleIntegrityError, match="cannot run verification again"):
+        restarted.verify(execution_id)
+
+    assert storage.load_execution(execution_id).current_state is ExecutionState.COMPLETED
+    assert evidence_path.read_bytes() == before
+    assert sum(
+        event.event_type == "STATE_TRANSITIONED"
+        and event.payload.get("to_state") == "COMPLETED"
+        for event in storage.load_events(execution_id)
+    ) == 1
+
+
+def test_terminal_recovery_rejects_tampered_manifest_and_stays_nonterminal(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_fixture(tmp_path, passing=True)
+    storage = _FailCompletedCasStorage(tmp_path)
+    execution_id = "exec-f63-tampered-recovery"
+    service = _service(tmp_path, storage, execution_id, fixture)
+    service.start(
+        fixture.artifact,
+        execution_id=execution_id,
+        initial_input={},
+        configuration={},
+    )
+    storage.fail_completed_once = True
+    with pytest.raises(VerificationLifecycleIntegrityError):
+        service.verify(execution_id)
+
+    evidence_path = (
+        tmp_path
+        / ".harness"
+        / "state"
+        / "executions"
+        / execution_id
+        / "evidence.json"
+    )
+    evidence_path.write_text(
+        evidence_path.read_text(encoding="utf-8") + "\n",
+        encoding="utf-8",
+    )
+    restarted = _service(tmp_path, storage, execution_id, fixture)
+    with pytest.raises(EvidenceLifecycleIntegrityError, match="during recovery"):
+        restarted.verify(execution_id)
+
+    assert (
+        storage.load_execution(execution_id).current_state
+        is ExecutionState.GENERATING_EVIDENCE
+    )
+
+
+@pytest.mark.parametrize("manifest_state", ["missing", "temporary"])
+def test_terminal_recovery_requires_a_canonical_published_manifest(
+    tmp_path: Path,
+    manifest_state: str,
+) -> None:
+    fixture = _write_fixture(tmp_path, passing=True)
+    storage = _FailCompletedCasStorage(tmp_path)
+    execution_id = f"exec-f63-{manifest_state}-recovery"
+    service = _service(tmp_path, storage, execution_id, fixture)
+    service.start(
+        fixture.artifact,
+        execution_id=execution_id,
+        initial_input={},
+        configuration={},
+    )
+    storage.fail_completed_once = True
+    with pytest.raises(VerificationLifecycleIntegrityError):
+        service.verify(execution_id)
+
+    evidence_path = (
+        tmp_path
+        / ".harness"
+        / "state"
+        / "executions"
+        / execution_id
+        / "evidence.json"
+    )
+    temporary_path = evidence_path.with_name(".evidence.json.interrupted.tmp")
+    if manifest_state == "temporary":
+        evidence_path.replace(temporary_path)
+    else:
+        evidence_path.unlink()
+
+    restarted = _service(tmp_path, storage, execution_id, fixture)
+    with pytest.raises(EvidenceLifecycleIntegrityError, match="during recovery"):
+        restarted.verify(execution_id)
+
+    assert (
+        storage.load_execution(execution_id).current_state
+        is ExecutionState.GENERATING_EVIDENCE
+    )
+    assert not evidence_path.exists()
+    assert temporary_path.exists() is (manifest_state == "temporary")
 
 
 def test_failed_suite_stays_verifying_and_is_recovered_without_rerun(

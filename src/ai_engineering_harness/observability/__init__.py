@@ -8,6 +8,7 @@ from .audit import (
     AuditTrailManager,
     AuditWriteError,
 )
+from .evidence import EvidenceError, EvidenceIntegrityError, EvidenceManifestManager
 
 __all__ = [
     "AuditCheckpoint",
@@ -16,4 +17,7 @@ __all__ = [
     "AuditTrailError",
     "AuditTrailManager",
     "AuditWriteError",
+    "EvidenceError",
+    "EvidenceIntegrityError",
+    "EvidenceManifestManager",
 ]
