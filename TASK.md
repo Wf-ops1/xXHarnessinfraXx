@@ -10,22 +10,22 @@
 3. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
    CI pós-merge `31857239235` 11/11 verde; reconciliação administrativa #68 incorporada em `29e8a975`,
    com CI pós-merge `31859624571` 11/11 verde.
-3. [F5.7](docs/tasks/completed/F5.7.md): produto promovido no PR #65; reconciliação administrativa
+4. [F5.7](docs/tasks/completed/F5.7.md): produto promovido no PR #65; reconciliação administrativa
    incorporada pelo PR #66 no merge `998a7ac`, com CI pós-merge `31849767573` 11/11 verde.
-4. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
+5. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
    incorporado por `docs/promote-f5.6` é complementado pela evidência externa posterior abaixo.
-5. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
-6. [F5.4](docs/tasks/completed/F5.4.md): orçamento promovido; reconciliação administrativa incorporada.
-7. [F5.3](docs/tasks/completed/F5.3.md): trust boundary promovido e reconciliação incorporada.
-8. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
+6. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
+7. [F5.4](docs/tasks/completed/F5.4.md): orçamento promovido; reconciliação administrativa incorporada.
+8. [F5.3](docs/tasks/completed/F5.3.md): trust boundary promovido e reconciliação incorporada.
+9. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
    checkpoint `checkpoint/f5.2-ready` somente local.
-9. [F5.1 — resolver configuração no início da execução](docs/tasks/completed/F5.1.md): promoção
+10. [F5.1 — resolver configuração no início da execução](docs/tasks/completed/F5.1.md): promoção
    anterior; checkpoints `checkpoint/f5.1-ready` e `checkpoint/f5.1-complete` somente locais.
-10. [F4.8](docs/tasks/completed/F4.8.md) e
+11. [F4.8](docs/tasks/completed/F4.8.md) e
    [F3.7 — promoção Git segura](docs/tasks/completed/F3.7.md): entregas anteriores; a F3.7 recebeu
    CI pós-merge `31568908128`.
-11. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 5.
-12. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md),
+12. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 6.
+13. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md),
     [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md) e
     [regras dos agentes](.agents/AGENTS.md).
 
@@ -36,13 +36,13 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1 promovidas no produto |
 | **Fase ativa** | Fase 6 — observabilidade, auditoria, doctor e recovery |
 | **Tarefa ativa** | F6.1 — schema único de eventos; dossiê `docs/tasks/active/F6.1.md` |
-| **Gate** | `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Estado corrente** | F5.C1 encerrada administrativamente; F6.1 R1 concluída/recertificada localmente, sem efeitos remotos |
+| **Gate** | `READY / REPAIR_ACTIVE / PROMOTION_BLOCKED` |
+| **Estado corrente** | F6.1 reaberta para R2: mutação pós-validação pode corromper hash, valores sensíveis não textuais vazam e quatro refs canônicas legadas não resolvem |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da F6.1 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f6.1-unified-event-schema`, local e sem upstream; criada de `main == origin/main == 29e8a975` |
-| **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; `checkpoint/f6.1-r1-ready` → `eea6baa`; `checkpoint/f6.1-complete` → `016f4ca`; somente locais |
+| **Checkpoint F6.1** | `checkpoint/f6.1-ready` → `e149fb3`; `checkpoint/f6.1-r1-ready` → `eea6baa`; `checkpoint/f6.1-complete` histórico → `016f4ca`; R2 READY a criar; somente locais |
 | **Checkpoint F5.C1** | `checkpoint/f5.c1-ready` antes da implementação; `checkpoint/f5.c1-complete` após a recertificação; ambos locais |
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Main sincronizada** | antes da branch F6.1, `main == origin/main == 29e8a9751c2cc1bf4e45fa530d971e969f22342f` |
@@ -50,8 +50,8 @@
 | **Baseline F6.1** | R0 inválido por temp bloqueado; R1 confinado `96 passed em 9.10s`; probe negativo reproduzível |
 | **Produto F6.1** | `c9e41c4` — envelope único 2.0, `EventType` fechado, sequence sob lock, hash completo e metadados reais |
 | **Correção F6.1 R1** | `c4aef27` — contratos knowledge reclassificados, aliases legados preservados e regressão estrutural ampliada |
-| **Validação F6.1** | probe único; matriz ampliada `320 passed`; full `930 passed, 5 skipped, 6 subtests` |
-| **Quality/distribuição F6.1** | Ruff, mypy 107 arquivos, compileall, diff-check, wheel 0.1.0 e smoke oficial offline verdes |
+| **Evidência F6.1 R2** | append aceitou draft mutado e o reload falhou por hash; `password: 1234`/`apiKey: false` ficaram visíveis; quatro refs canônicas históricas retornaram `ContractNotFoundError` |
+| **Validação F6.1 anterior** | R1 `320`/`930` e quality/build permanecem históricos, mas não certificam os casos R2 |
 | **Baseline focado F5.7** | R0 inválido por sandbox; R1 válido `90 passed, 2 skipped em 169.17s` |
 | **Problema F5.7** | cancel só muda estado; terminal não recebe token; rollback promovido chama API legada desabilitada; `COMPLETED` não alcança rollback |
 | **Produto F5.7** | R3 `26bb04d534dc8be5aae884f400d971ad66b6a9c1`; produto anterior `d787ce5f61f2e79415c76c06d928f030c026a4d8` preservado no histórico |
@@ -126,10 +126,11 @@ reconciliação antes de restaurar estado positivo.
 
 ## 5. Tarefa ativa
 
-A F6.1 está `COMPLETED_LOCAL / PROMOTION_PENDING` após a R1 `c4aef27`. A evidência knowledge foi
-corrigida sem enfraquecer critérios, e todo o aceite aplicável foi repetido. F6.2–F6.7 não foram
-absorvidas. A F5.C1 permanece `PROMOTED`.
-Seu estado anterior `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece histórico.
+A F6.1 está `REPAIR_ACTIVE / PROMOTION_BLOCKED`. A revisão posterior à R1 encontrou três lacunas
+reproduzíveis em integridade, redaction e compatibilidade do registry; essa evidência prevalece sobre
+`320`/`930`. A correção R2 foi autorizada e deve receber checkpoint antes do produto. F6.2–F6.7 não
+foram absorvidas. A F5.C1 permanece `PROMOTED`; `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece
+como estado corretivo histórico daquela tarefa.
 
 ## 6. Bloqueios e fronteiras externas
 
@@ -140,18 +141,19 @@ autorizados.
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR AUTORIZAÇÃO EXPLÍCITA PARA PUSH E ABERTURA DE PR DA F6.1.
+CRIAR O CHECKPOINT LOCAL checkpoint/f6.1-r2-ready ANTES DO PRIMEIRO ARQUIVO DE PRODUTO R2.
+CORRIGIR AS TRÊS LACUNAS R2 E REPETIR TODO O ACEITE APLICÁVEL.
 NÃO FAZER PUSH, ABRIR/MESCLAR PR, REMOVER REFS NEM PUBLICAR TAGS SEM AUTORIZAÇÃO EXPLÍCITA.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.1.md` e a Fase 6 do plano.
-2. Confirme branch `task/f6.1-unified-event-schema`, produto R1 `c4aef27`, checkpoints e baseline `29e8a975`.
+2. Confirme branch `task/f6.1-unified-event-schema`, estado R2 `REPAIR_ACTIVE`, produto R1 `c4aef27`, checkpoints e baseline `29e8a975`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
-4. Preserve `282`/`929` como certificação anterior invalidada e `320`/`930` como recertificação R1.
+4. Preserve `282`/`929` e `320`/`930` como históricos; os probes R2 prevalecem até nova recertificação.
 5. Não amplie para F6.2–F6.7 nem faça efeitos remotos sem autorização.
 
 ---
 
-*Atualizado em: 2026-08-15T01:50:04-03:00 | Fonte: F6.1 R1 `c4aef27` + certificação `016f4ca` + checkpoint COMPLETE local + aceite integral*
+*Atualizado em: 2026-08-15T02:01:58-03:00 | Fonte: revisão F6.1 R2 + probes negativos de hash/redaction/registry + correção autorizada*

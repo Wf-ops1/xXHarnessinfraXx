@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `READY / REPAIR_ACTIVE / PROMOTION_BLOCKED` |" in panel
     assert "docs/tasks/active/F6.1.md" in panel
     assert (ACTIVE_ROOT / "F6.1.md").is_file()
     assert "active/F6.1.md" in task_index
@@ -1085,8 +1085,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "c4aef27" in source
         assert "320" in source
         assert "930" in source
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in task_index
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in f6_1_dossier
+    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in task_index
+    assert "REPAIR_ACTIVE / PROMOTION_BLOCKED" in f6_1_dossier
     assert "c4aef27" in f6_1_dossier
     assert "320" in f6_1_dossier
     assert "930" in f6_1_dossier
@@ -1098,6 +1098,16 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "016f4ca" in source
     for historical_evidence in ("282 passed", "929 passed", "REPAIR_ACTIVE", "evidência negativa"):
         assert historical_evidence in f6_1_dossier
+    for r2_evidence in (
+        "stored_hash_matches_persisted_envelope False",
+        "password:1234",
+        "apiKey:false",
+        "historical_canonical_refs_unresolved 4",
+        "ContractNotFoundError",
+        "checkpoint/f6.1-r2-ready",
+    ):
+        assert r2_evidence in f6_1_dossier
+    assert "Fase 6" in panel
     for source in (panel, task_index, f5_c1_dossier, readme):
         assert "PR #67" in source or "pull/67" in source
         assert "3158d3b" in source
