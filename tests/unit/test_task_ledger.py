@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `READY / IMPLEMENTATION_NOT_STARTED` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1106,6 +1106,28 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "31901521807",
     ):
         assert evidence in f6_2_dossier
+    f6_3_dossier = _read(ACTIVE_ROOT / "F6.3.md")
+    assert "> **Gate:** `READY`" in f6_3_dossier
+    assert "> **Lifecycle:** `ACTIVE / IMPLEMENTATION_NOT_STARTED`" in f6_3_dossier
+    assert "docs/tasks/active/F6.3.md" in panel
+    assert "active/F6.3.md" in task_index
+    for evidence in (
+        "task/f6.3-evidence-manifest",
+        "f5d2a3372a630d3ca1dabee1b02465fbde8da87d",
+        "2 passed in 5.44s",
+        "127 passed in 34.85s",
+        "GENERATING_EVIDENCE",
+        "evidence.json",
+        "checkpoint/f6.3-ready",
+        "NOT_APPLICABLE",
+        "tamper-evident local",
+    ):
+        assert evidence in f6_3_dossier
+    for source in (panel, task_index, readme):
+        assert "d9e4010" in source
+        assert "31901668046" in source
+        assert "f5d2a33" in source
+        assert "31902119059" in source
     assert "docs/tasks/completed/F6.1.md" in panel
     assert not (ACTIVE_ROOT / "F6.1.md").exists()
     assert (COMPLETED_ROOT / "F6.1.md").is_file()

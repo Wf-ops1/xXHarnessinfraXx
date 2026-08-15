@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1, F6.1 e F6.2 estão promovidas; F6.2 encerrou no PR #71/merge `3f63428`/CI pós-merge `31899659117` 11/11 | A reconciliação administrativa F6.2 está somente local; F6.3 não foi iniciada e o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
+| Configuração e governança | F5.1–F5.7, F5.C1, F6.1 e F6.2 estão promovidas; a reconciliação F6.2 encerrou no PR #72/merge `f5d2a33`/CI pós-merge `31902119059` 11/11 | F6.3 possui gate local `READY`, mas a implementação não foi iniciada; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e evidência/recovery F6 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -211,10 +211,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   wheel e smoke estão verdes. O produto e `checkpoint/f6.2-complete` apontam para `63e5091`. O head
   final `9fdd3cd` do [PR #71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no
   run `31899279536`, foi incorporado pelo merge `3f63428` e recebeu 11/11 na CI pós-merge
-  `31899659117` em 5m12s. A reconciliação administrativa está no
-  [PR #72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72), com CI inicial `31901521807` em
-  andamento no head `674cd9a`; o merge administrativo não está autorizado.
-  F6.3–F6.7 não foram declaradas entregues nem iniciadas.
+  `31899659117` em 5m12s. A reconciliação administrativa
+  [PR #72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72) encerrou no head final `d9e4010`,
+  passou 11/11 no run `31901668046`, foi incorporada pelo merge `f5d2a33` e recebeu 11/11 na CI
+  pós-merge `31902119059` em 5m02s. Pela DEC-014, esse fechamento é terminal. A F6.3 possui gate
+  local `READY` na branch `task/f6.3-evidence-manifest`; a implementação não foi iniciada nem
+  autorizada. F6.4–F6.7 não foram declaradas entregues nem iniciadas.
 
 ## Dívidas técnicas críticas
 

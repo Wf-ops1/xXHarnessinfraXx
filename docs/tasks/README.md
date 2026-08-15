@@ -20,13 +20,19 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há tarefa de implementação ativa. A [F6.2 — fortalecer o journal de
-auditoria](completed/F6.2.md) está `PROMOTED`: o head final `9fdd3cd` do
-[#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run `31899279536`, foi
-incorporado pelo merge `3f63428` e recebeu 11/11 na CI pós-merge `31899659117` em 5m12s. A
-reconciliação `docs/promote-f6.2` está `ADMIN_PR_OPEN / CHECKS_PENDING`: o
-[#72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72) foi aberto no head inicial `674cd9a`, e a
-CI inicial `31901521807` começou com 10 jobs em andamento. Merge e F6.3 não estão autorizados.
+A [F6.3 — gerar e validar o evidence manifest](active/F6.3.md) está `READY /
+IMPLEMENTATION_NOT_STARTED` na branch local `task/f6.3-evidence-manifest`, derivada de
+`main == origin/main == f5d2a33`. O probe válido passou `2 passed in 5.44s` e comprovou que o E2E
+entra em `COMPLETED` exigindo a ausência de `evidence.json`; a matriz focada passou
+`127 passed in 34.85s`. O checkpoint `checkpoint/f6.3-ready` será criado no commit documental e
+permanecerá local. Implementação, push e PR não estão autorizados.
+
+A [F6.2 — fortalecer o journal de auditoria](completed/F6.2.md) está terminalmente `PROMOTED`: o
+head final `9fdd3cd` do [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run
+`31899279536`, foi incorporado pelo merge `3f63428` e recebeu 11/11 na CI pós-merge `31899659117`
+em 5m12s. A reconciliação [#72](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/72) encerrou no head
+`d9e4010`, passou 11/11 no run `31901668046`, foi incorporada pelo merge `f5d2a33` e recebeu 11/11
+na CI pós-merge `31902119059` em 5m02s. Pela DEC-014, esse fechamento é terminal.
 
 A [F6.1 — schema único de eventos](completed/F6.1.md) está `PROMOTED`. O produto `c9e41c4`, a R1
 `c4aef27` com `320` focados e `930` no full, e o estado histórico R2
@@ -59,7 +65,7 @@ passou `174` testes com `2` skips, segurança passou `68` e a regressão integra
 com `5` skips e `6` subtests; mypy, Ruff, compileall, diff-check, wheel e smoke oficial também ficaram
 verdes. A reconciliação `docs/promote-f5.7` foi incorporada pelo PR #66 no merge `998a7ac`, e a CI
 pós-merge `31849767573` concluiu 11/11 verde. Checkpoints permanecem locais; F6.1 e F6.2 foram
-promovidas, e a reconciliação administrativa F6.2 aguarda publicação autorizada.
+promovidas, e a reconciliação administrativa F6.2 encerrou terminalmente no merge `f5d2a33`.
 
 A [F5.6](completed/F5.6.md) está `PROMOTED`: o PR #63 encerrou no head `6717f55`, passou 11/11 no
 run `31813471013`, foi incorporado pelo merge `0488380` e recebeu 11/11 na CI pós-merge
