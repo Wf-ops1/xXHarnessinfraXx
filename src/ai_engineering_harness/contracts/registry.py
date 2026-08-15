@@ -15,8 +15,13 @@ from jsonschema.exceptions import SchemaError
 from jsonschema.validators import validator_for
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .events.execution_event import ExecutionEvent, KnowledgeSyncEvent
-from .events.knowledge_sync import KnowledgeSyncCompleted, KnowledgeSyncFailed, KnowledgeUpdateEvent
+from .events.execution_event import ExecutionEvent
+from .events.knowledge_sync import (
+    KnowledgeSyncCompletedDetails,
+    KnowledgeSyncDetails,
+    KnowledgeSyncFailedDetails,
+    KnowledgeUpdateDetails,
+)
 from .nodes.architecture_analysis import ArchitectureAnalysisInput, ArchitectureAnalysisOutput
 from .nodes.code_generation import CodeGenerationInput, CodeGenerationOutput
 from .nodes.context_sufficiency import ContextSufficiencyReport, RetrievalRequest
@@ -134,18 +139,18 @@ _INTERNAL_MODELS: tuple[ContractModel, ...] = (
     TestGenerationInput,
     TestGenerationOutput,
     ExecutionEvent,
-    KnowledgeSyncEvent,
-    KnowledgeUpdateEvent,
-    KnowledgeSyncCompleted,
-    KnowledgeSyncFailed,
+    KnowledgeSyncDetails,
+    KnowledgeUpdateDetails,
+    KnowledgeSyncCompletedDetails,
+    KnowledgeSyncFailedDetails,
     ArtifactVersionItem,
     KnowledgeTransaction,
     JournalState,
 )
 
 _LEGACY_ALIAS_MODELS: dict[str, ContractModel] = {
-    "contracts/events/knowledge_sync.py#KnowledgeSyncCompleted": KnowledgeSyncCompleted,
-    "contracts/events/knowledge_sync.py#KnowledgeSyncFailed": KnowledgeSyncFailed,
+    "contracts/events/knowledge_sync.py#KnowledgeSyncCompleted": KnowledgeSyncCompletedDetails,
+    "contracts/events/knowledge_sync.py#KnowledgeSyncFailed": KnowledgeSyncFailedDetails,
     "contracts/nodes/architecture_analysis.py#ArchitectureAnalysisInput": ArchitectureAnalysisInput,
     "contracts/nodes/architecture_analysis.py#ArchitectureAnalysisOutput": ArchitectureAnalysisOutput,
     "contracts/nodes/code_generation.py#CodeGenerationInput": CodeGenerationInput,

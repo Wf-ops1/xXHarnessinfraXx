@@ -8,12 +8,15 @@ from datetime import UTC, datetime, timedelta, timezone
 import pytest
 from pydantic import ValidationError
 
+from ai_engineering_harness.contracts import registry as contract_registry
 from ai_engineering_harness.contracts.events import (
     CANONICAL_EVENT_TYPES,
     EXECUTION_EVENT_SCHEMA_VERSION,
     MINIMUM_EVENT_TYPES,
     EventType,
     ExecutionEvent,
+    KnowledgeSyncEvent,
+    KnowledgeUpdateEvent,
 )
 from ai_engineering_harness.observability.event_schema import HarnessTraceEvent
 
@@ -90,6 +93,8 @@ def _event(**overrides: object) -> ExecutionEvent:
 
 def test_single_schema_has_versioned_f6_envelope_and_legacy_identity() -> None:
     assert HarnessTraceEvent is ExecutionEvent
+    assert KnowledgeSyncEvent is ExecutionEvent
+    assert KnowledgeUpdateEvent is ExecutionEvent
     assert EXECUTION_EVENT_SCHEMA_VERSION == "2.0"
     assert _REQUIRED_FIELDS <= set(ExecutionEvent.model_fields)
 
@@ -99,6 +104,26 @@ def test_single_schema_has_versioned_f6_envelope_and_legacy_identity() -> None:
     assert document["details"] == {"attempt": 1, "node_id": "implementation"}
     assert "payload" not in document
     assert event.payload == event.details
+
+
+def test_registry_contains_no_independent_operational_event_model() -> None:
+    event_models = {
+        model
+        for model in contract_registry._INTERNAL_MODELS
+        if model.__name__.endswith("Event")
+    }
+    assert event_models == {ExecutionEvent}
+
+    registry = contract_registry.ContractRegistry()
+    assert not any(
+        name.endswith(("KnowledgeSyncEvent", "KnowledgeUpdateEvent"))
+        for name in registry.available_contracts
+    )
+    for alias in (
+        "contracts/events/knowledge_sync.py#KnowledgeSyncCompleted",
+        "contracts/events/knowledge_sync.py#KnowledgeSyncFailed",
+    ):
+        assert registry.resolve(alias).canonical_name.endswith("Details")
 
 
 def test_minimum_taxonomy_is_closed_and_contains_every_planned_event() -> None:

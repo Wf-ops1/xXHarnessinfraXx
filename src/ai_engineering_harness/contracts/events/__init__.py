@@ -5,6 +5,13 @@ from .execution_event import (
     ExecutionEvent,
     KnowledgeSyncEvent,
 )
+from .knowledge_sync import (
+    KnowledgeSyncCompletedDetails,
+    KnowledgeSyncDetails,
+    KnowledgeSyncFailedDetails,
+    KnowledgeUpdateDetails,
+    KnowledgeUpdateEvent,
+)
 
 __all__ = [
     "CANONICAL_EVENT_TYPES",
@@ -12,5 +19,10 @@ __all__ = [
     "MINIMUM_EVENT_TYPES",
     "EventType",
     "ExecutionEvent",
+    "KnowledgeSyncCompletedDetails",
+    "KnowledgeSyncDetails",
     "KnowledgeSyncEvent",
+    "KnowledgeSyncFailedDetails",
+    "KnowledgeUpdateDetails",
+    "KnowledgeUpdateEvent",
 ]

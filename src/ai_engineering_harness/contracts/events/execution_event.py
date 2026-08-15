@@ -170,10 +170,6 @@ def _redact_event_json(value: object) -> object:
         return redacted
     return value
 
-class KnowledgeSyncEvent(BaseModel):
-    model_config = ConfigDict(strict=True, frozen=True)
-
-    tx_id: str = Field(description="ID da transação de conhecimento")
-    status: str = Field(description="Status da transação (STAGING, PREPARED, COMMITTED)")
-    synced_at: datetime = Field(description="Timestamp do sync")
-    ki_count: int = Field(description="Quantidade de KIs sincronizadas")
+# Backward-compatible import name. It is intentionally the canonical envelope,
+# never a second Pydantic event schema.
+KnowledgeSyncEvent = ExecutionEvent
