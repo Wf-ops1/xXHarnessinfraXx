@@ -24,8 +24,9 @@ Não há tarefa de implementação ativa. A [F6.3 — gerar e validar o evidence
 manifest](completed/F6.3.md) está `PROMOTED`: o head final `ed1f0e0` do
 [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73) passou 11/11 no run `31913438082`, foi
 incorporado pelo merge `1bd095a` e recebeu 11/11 na CI pós-merge `31913877551` em 5m39s. A
-reconciliação `docs/promote-f6.3` está `LOCAL_READY / PUBLICATION_PENDING`, sem upstream; F6.4 não
-possui gate nem autorização.
+reconciliação `docs/promote-f6.3` está `ADMIN_PR_OPEN / CHECKS_PENDING` no
+[#74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74); o run inicial `31916819934` foi disparado
+e o head final ainda aguarda certificação. F6.4 não possui gate nem autorização.
 
 A [F6.2 — fortalecer o journal de auditoria](completed/F6.2.md) está terminalmente `PROMOTED`: o
 head final `9fdd3cd` do [#71](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/71) passou 11/11 no run
@@ -157,7 +158,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F5 | F5.C1 | [Hardening de redaction e realinhamento da Fase 5](completed/F5.C1.md) | PR #67 / merge `2b405fd` / pós-merge `31857239235`; administrativo #68 / merge `29e8a975` / CI final `31859624571` |
 | F6 | F6.1 | [Schema único de eventos](completed/F6.1.md) | PR #69 / head `4c57a33` / merge `7d6a0e1` / pós-merge `31887143905`; administrativo #70 / inicial `aae1aea` / `31888260797`; final `9a346bd7` / `31888564163`; merge `ac887b0` / pós-merge `31888960272` |
 | F6 | F6.2 | [Journal de auditoria fortalecido](completed/F6.2.md) | PR #71 / head `9fdd3cd` / merge `3f63428` / pós-merge `31899659117`; administrativo #72 / head `d9e4010` / merge `f5d2a33` / pós-merge `31902119059` |
-| F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo local pendente |
+| F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo #74 / head inicial `c925971` / CI inicial `31916819934` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
