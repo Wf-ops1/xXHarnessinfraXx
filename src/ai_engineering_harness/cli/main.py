@@ -159,12 +159,22 @@ def init():
 
     console.print(f"[green]{_get_symbol(True)}[/green]Estrutura [bold].harness/[/bold] inicializada com sucesso.")
 
-@main.command(help="Executa os probes de diagnóstico de saúde em 6 estágios.")
-def doctor():
-    console.print("[bold blue]harness doctor[/bold blue] - Executando Probes Seguros de Saúde...")
-    checker = DoctorChecker(config={})
-    results = checker.check_all()
-    DoctorReport.render(results)
+@main.command(help="Executa probes reais e somente leitura em 6 estágios.")
+@click.option("--json", "json_output", is_flag=True, help="Emite o relatório tipado em JSON.")
+@click.option("--workflow", default=None, help="Resolve os gates requeridos pelo workflow sem executá-los.")
+def doctor(json_output: bool, workflow: str | None) -> None:
+    checker = DoctorChecker(
+        project_root=Path.cwd(),
+        workflow=workflow,
+    )
+    report = checker.check()
+    if json_output:
+        click.echo(DoctorReport.to_json(report))
+    else:
+        console.print("[bold blue]harness doctor[/bold blue] - read-only health probes")
+        DoctorReport.render(report)
+    if not report.is_healthy:
+        raise click.exceptions.Exit(1)
 
 @main.command(help="Compila um grafo YAML no artefato tipado canônico.")
 @click.argument("graph_spec_path", type=click.Path(exists=True, path_type=Path))

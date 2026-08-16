@@ -1075,7 +1075,10 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert (
+        "| **Gate** | `COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED` |"
+        in panel
+    )
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1108,6 +1111,29 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert evidence in f6_2_dossier
     assert not (ACTIVE_ROOT / "F6.3.md").exists()
     assert (COMPLETED_ROOT / "F6.3.md").is_file()
+    assert (ACTIVE_ROOT / "F6.4.md").is_file()
+    f6_4_dossier = _read(ACTIVE_ROOT / "F6.4.md")
+    assert "> **Gate:** `COMPLETED_LOCAL`" in f6_4_dossier
+    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in f6_4_dossier
+    assert "checkpoint/f6.4-ready" in f6_4_dossier
+    assert "checkpoint/f6.4-complete" in f6_4_dossier
+    assert "pendente de autorização para o commit local" not in f6_4_dossier
+    assert "261f0977f9d0ed16ac51ce569b631a43ae7e49ff" in f6_4_dossier
+    assert "9 passed in 18.78s" in f6_4_dossier
+    assert "23 passed" in f6_4_dossier
+    assert "282 passed, 2 skipped, 6 subtests passed in 173.70s" in f6_4_dossier
+    assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in f6_4_dossier
+    assert "0088b3149f559b77a9a0336cd73d4f2a3b7adccb" in f6_4_dossier
+    assert "31923378762" in f6_4_dossier
+    assert "PYTHON_IMPORT_SMOKE_FAILED" in f6_4_dossier
+    assert "24 passed in 2.13s" in f6_4_dossier
+    assert "991 passed, 5 skipped, 6 subtests passed in 371.40s" in f6_4_dossier
+    assert "FAIL:GIT_NOT_INSTALLED" in f6_4_dossier
+    assert "Wheel R2" in f6_4_dossier
+    assert "doctor --json" in f6_4_dossier
+    assert "doctor --workflow new-feature" in f6_4_dossier
+    assert "5b10b2d453768de62e9f64ae6d0095cfcd95cd03" in f6_4_dossier
+    assert "31918043022" in f6_4_dossier
     f6_3_dossier = _read(COMPLETED_ROOT / "F6.3.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_3_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f6_3_dossier

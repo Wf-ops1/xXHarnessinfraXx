@@ -5,31 +5,33 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F6.3](docs/tasks/completed/F6.3.md): evidence manifest promovido pelo PR #73 no merge
-   `1bd095a`, com CI pós-merge `31913877551` 11/11 verde; reconciliação administrativa no PR #74.
-3. [F6.2](docs/tasks/completed/F6.2.md): hardening do journal promovido pelo PR #71 no merge
+2. [F6.4](docs/tasks/active/F6.4.md): PR #75 em reparo após a CI inicial revelar portabilidade Linux;
+   R1 corrigida e certificada localmente, publicação autorizada.
+3. [F6.3](docs/tasks/completed/F6.3.md): evidence manifest promovido pelo PR #73 no merge
+   `1bd095a`; reconciliação #74 incorporada em `5b10b2d`, com CI pós-merge `31918043022` 11/11.
+4. [F6.2](docs/tasks/completed/F6.2.md): hardening do journal promovido pelo PR #71 no merge
    `3f63428`; reconciliação PR #72 incorporada em `f5d2a33`, com CI pós-merge `31902119059` 11/11.
-4. [F6.1](docs/tasks/completed/F6.1.md): schema único promovido; reconciliação PR #70 incorporada em
+5. [F6.1](docs/tasks/completed/F6.1.md): schema único promovido; reconciliação PR #70 incorporada em
    `ac887b0`, com CI pós-merge `31888960272` 11/11 verde e encerramento terminal pela DEC-014.
-5. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
+6. [F5.C1](docs/tasks/completed/F5.C1.md): corretiva promovida pelo PR #67 no merge `2b405fd`, com
    CI pós-merge `31857239235` 11/11 verde; reconciliação administrativa #68 incorporada em `29e8a975`,
    com CI pós-merge `31859624571` 11/11 verde.
-6. [F5.7](docs/tasks/completed/F5.7.md): produto promovido no PR #65; reconciliação administrativa
+7. [F5.7](docs/tasks/completed/F5.7.md): produto promovido no PR #65; reconciliação administrativa
    incorporada pelo PR #66 no merge `998a7ac`, com CI pós-merge `31849767573` 11/11 verde.
-7. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
+8. [F5.6](docs/tasks/completed/F5.6.md): produto promovido no PR #63; o snapshot administrativo
    incorporado por `docs/promote-f5.6` é complementado pela evidência externa posterior abaixo.
-8. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
-9. [F5.4](docs/tasks/completed/F5.4.md): orçamento promovido; reconciliação administrativa incorporada.
-10. [F5.3](docs/tasks/completed/F5.3.md): trust boundary promovido e reconciliação incorporada.
-11. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
+9. [F5.5](docs/tasks/completed/F5.5.md): promoção no PR #61 e reconciliação administrativa incorporada.
+10. [F5.4](docs/tasks/completed/F5.4.md): orçamento promovido; reconciliação administrativa incorporada.
+11. [F5.3](docs/tasks/completed/F5.3.md): trust boundary promovido e reconciliação incorporada.
+12. [F5.2](docs/tasks/completed/F5.2.md): política unificada e promoção anterior comprovadas;
    checkpoint `checkpoint/f5.2-ready` somente local.
-12. [F5.1 — resolver configuração no início da execução](docs/tasks/completed/F5.1.md): promoção
+13. [F5.1 — resolver configuração no início da execução](docs/tasks/completed/F5.1.md): promoção
    anterior; checkpoints `checkpoint/f5.1-ready` e `checkpoint/f5.1-complete` somente locais.
-13. [F4.8](docs/tasks/completed/F4.8.md) e
+14. [F4.8](docs/tasks/completed/F4.8.md) e
    [F3.7 — promoção Git segura](docs/tasks/completed/F3.7.md): entregas anteriores; a F3.7 recebeu
    CI pós-merge `31568908128`.
-14. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 6.
-15. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md),
+15. [Plano principal](docs/plano_implementacao_harness_operacional.md): seções 1.1–1.2 e Fase 6.
+16. [DEC-014](docs/decisions/DEC-014-reconciliacao-pos-merge.md),
     [DEC-015](docs/decisions/DEC-015-composicao-canonica-fase4.md) e
     [regras dos agentes](.agents/AGENTS.md).
 
@@ -38,14 +40,14 @@
 | Campo | Estado observado |
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1–F6.3 promovidas no produto |
-| **Fase ativa** | Fase 6; pausa DEC-014 para reconciliação administrativa F6.3 |
-| **Tarefa ativa** | nenhuma implementação ativa; F6.4 ainda não possui gate nem autorização |
-| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Estado corrente** | PR administrativo #74 aberto no head inicial `c925971`; CI inicial `31916819934` disparada com 10 checks; este registro move o head e exige nova CI |
+| **Fase ativa** | Fase 6; F6.4 — implementar um doctor real |
+| **Tarefa ativa** | [F6.4](docs/tasks/active/F6.4.md); R1 Linux localmente verde, commit/push corretivos pendentes |
+| **Gate** | `COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED` |
+| **Estado corrente** | PR #75 aberto; CI inicial falhou nos dois Tests Ubuntu; correção preserva launcher da virtualenv e está recertificada |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor do snapshot; GitHub Actions certificará o head final do PR #74 |
+| **Executor ativo** | `Codex`, único escritor autorizado da implementação local F6.4 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f6.3`, publicada e rastreando `origin/docs/promote-f6.3`; criada de `main == origin/main == 1bd095a` |
+| **Branch** | `task/f6.4-real-doctor`, com upstream `origin/task/f6.4-real-doctor`; criada de `main == origin/main == 5b10b2d` |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
 | **Branch de produto F6.2** | `task/f6.2-harden-journal`, remota e preservada após o merge |
 | **Branch de produto F6.1** | `task/f6.1-unified-event-schema`, remota e preservada após o merge |
@@ -54,7 +56,17 @@
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Checkpoint F6.2** | `checkpoint/f6.2-ready` → `fb9909d2d3b3941251a521a3595f3d62ee3d3c0d`; `checkpoint/f6.2-complete` → `63e5091fd5cb68a527003d632b82d2dc6ee87074`; ambos somente locais |
 | **Checkpoint F6.3** | `checkpoint/f6.3-ready` → `27a9f7057e05d6128ed21f7a5c5c463494749f04`; `checkpoint/f6.3-complete` → `0bf3a5910a768fd199130ebea0377911f24e4e55`; ambos somente locais |
-| **Main sincronizada** | antes da branch administrativa, `main == origin/main == 1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3` |
+| **Checkpoint F6.4** | `checkpoint/f6.4-ready` → `261f0977f9d0ed16ac51ce569b631a43ae7e49ff`; `checkpoint/f6.4-complete` → `0088b3149f559b77a9a0336cd73d4f2a3b7adccb`; ambos somente locais e imutáveis |
+| **Main sincronizada** | antes da branch F6.4, `main == origin/main == 5b10b2d453768de62e9f64ae6d0095cfcd95cd03` |
+| **Problema F6.4** | `HealthProbe` fabrica seis `OK`; doctor retorna zero com Git fora do `PATH`; `--json` e `--workflow` não existem |
+| **Baseline F6.4** | probe negativo `doctor=0`, `--json=2`, `--workflow=2`; matriz vigente `9 passed in 18.78s` |
+| **Implementação F6.4** | seis estágios estritos sobre Git, Python, provider, MCP, storage, worktree e gates; config canônica, transporte read-only, redaction, JSON determinístico, `--workflow` e exit code não zero quando unhealthy |
+| **Validação F6.4** | dedicado `23 passed in 1.69s`; documentos `31 passed in 3.58s`; focado R2 `282 passed, 2 skipped, 6 subtests passed in 173.70s`; full R2 `990 passed, 5 skipped, 6 subtests passed in 937.00s`; Ruff, mypy 110 arquivos, compileall, diff-check, wheel R2 e smoke offline verdes |
+| **PR F6.4** | [#75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75), head inicial `0088b3149f559b77a9a0336cd73d4f2a3b7adccb`, mergeável |
+| **CI inicial F6.4** | run [31923378762](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31923378762): 8/10 jobs obrigatórios verdes; Tests Ubuntu 3.11/3.14 falharam em `PYTHON_IMPORT_SMOKE_FAILED`; `CI required` bloqueou corretamente |
+| **Correção F6.4 R1** | preserva `.venv/bin/python` para execução e usa o alvo resolvido somente para validação; regressão determinística cobre launcher/alvo distintos |
+| **Validação F6.4 R1** | dedicado `24 passed in 2.13s`; full `991 passed, 5 skipped, 6 subtests passed in 371.40s`; Ruff, mypy 110 arquivos, compileall e diff-check verdes |
+| **Gate F6.4** | `COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED`; R1 local verde, promoção depende da CI do head corretivo |
 | **Problema F6.3** | dois caminhos saltam diretamente para `COMPLETED`; `GENERATING_EVIDENCE` não é usado e `evidence.json` não possui producer/validator |
 | **Baseline F6.3** | tentativa R0 inválida por diretório externo ausente; probe R1 válido `2 passed in 5.44s`; matriz confinada `127 passed in 34.85s` |
 | **Implementação F6.3** | contrato estrito/canônico; publicação imutável e atômica; agregação redigida; `VERIFYING`/`PROMOTING` → `GENERATING_EVIDENCE` → `COMPLETED`; recovery terminal idempotente e fail-closed |
@@ -62,7 +74,7 @@
 | **Recertificação de promoção F6.3** | focado atual `205 passed in 59.59s`; full atual `965 passed, 5 skipped in 794.91s`; Ruff, mypy 109 arquivos, compileall e diff-check verdes |
 | **PR F6.3** | [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73), head final `ed1f0e0ab025255a4249db1f0929d4c9e3e7fc23`; CI [31913438082](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31913438082) 11/11 success em 6m57s |
 | **Merge F6.3** | `1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3`; CI pós-merge [31913877551](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31913877551) 11/11 success em 5m39s |
-| **Reconciliação F6.3** | PR [#74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74), head inicial `c92597111f0c9ad11c01360f0348357c2fe379b2`; CI inicial [31916819934](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31916819934), 0/10 checks na observação de abertura |
+| **Reconciliação F6.3** | PR [#74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74), head inicial `c92597111f0c9ad11c01360f0348357c2fe379b2`; head final `e557d46c2d3f9848ab39c289f9ace4f3c959b11c`; CI `31916987572` 11/11; merge `5b10b2d453768de62e9f64ae6d0095cfcd95cd03`; CI pós-merge `31918043022` 11/11; encerramento terminal |
 | **Problema F6.2** | manager legado e storage canônico escrevem schemas distintos no mesmo journal; `execution_id` ausente, append sem lock e corrupção gera erro cru |
 | **Baseline F6.2** | probe determinístico reproduziu quebra entre duas instâncias; matriz confinada `127 passed in 19.84s` |
 | **Implementação F6.2** | manager delega append/read ao storage canônico; erros audit tipados; checkpoint local/HMAC-SHA256 opcional; JSON/SARIF fail-closed; CLI preserva export sem reflow |
@@ -132,8 +144,8 @@
 | Produto | `0bf3a59`; dedicado `7`; recovery `35`; focado `253`; full `965 passed, 5 skipped, 6 subtests passed`; quality, wheel e smoke verdes |
 | PR de produto | [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73), head final `ed1f0e0`, CI `31913438082`, 11/11 success em 6m57s |
 | Merge de produto | `1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3`; CI de `push` `31913877551`, 11/11 success em 5m39s |
-| Reconciliação administrativa | PR [#74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74), head inicial `c925971`, CI inicial `31916819934`; `ADMIN_PR_OPEN / CHECKS_PENDING` |
-| Fronteira | produto promovido; PR administrativo ainda aguarda CI/merge/pós-merge verdes; F6.4 não iniciada |
+| Reconciliação administrativa | PR [#74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74), head final `e557d46`, CI `31916987572` 11/11; merge `5b10b2d`; pós-merge `31918043022` 11/11 |
+| Fronteira | cadeia F6.3 terminal; PR #75 bloqueado pela CI inicial, R1 local pronta para publicação autorizada |
 | Promoção anterior | F6.2 — PR #71 / merge `3f63428` / pós-merge `31899659117`; reconciliação PR #72 / merge `f5d2a33` / pós-merge `31902119059` |
 | Promoção anterior | F6.1 — PR #69 / merge `7d6a0e1` / pós-merge `31887143905`; reconciliação PR #70 / merge `ac887b0` / pós-merge `31888960272` |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
@@ -163,35 +175,44 @@ na abertura do PR #73 contra `main`. Em `2026-08-15T20:06:32-03:00`, a autoriza�
 foi consumida no merge commit `1bd095a`; a CI pós-merge `31913877551` passou 11/11 em 5m39s. Em
 `2026-08-15T21:17:21-03:00`, as autorizações nominais de publicação e confirmação final foram
 consumidas no push sem force e na abertura do PR administrativo #74 contra `main`. O head inicial é
-`c925971` e a CI inicial `31916819934` disparou 10 checks. Merge administrativo, tags remotas e
-remoção de refs não estão autorizados.
+`c925971` e a CI inicial `31916819934` disparou 10 checks. Autorizações posteriores foram consumidas
+no head final `e557d46`, CI `31916987572` 11/11, merge `5b10b2d` e CI pós-merge `31918043022` 11/11.
+Em `2026-08-15T22:15:52-03:00`, o usuário autorizou preparar o gate F6.4. Autorizações explícitas
+posteriores nesta tarefa foram consumidas somente para a implementação local no escopo congelado. Em
+`2026-08-15T23:31:55-03:00`, produto e certificação R2 foram concluídos. Em
+`2026-08-15T23:45:41-03:00`, a autorização seguinte foi consumida somente para criar o commit local e
+`checkpoint/f6.4-complete`; publicação, PR, merge, tags remotas e remoção de refs não estão
+autorizados. Autorizações nominais posteriores foram consumidas no push sem force e na abertura do
+PR #75 no head inicial `0088b31`. O run `31923378762` falhou nos dois Tests Ubuntu e reabriu o gate.
+Em `2026-08-16T01:58:36-03:00`, o usuário autorizou a correção R1, recertificação, commit e atualização
+sem force do mesmo PR; merge, tags remotas e remoção de refs permanecem não autorizados.
 
 ## 5. Tarefa ativa
 
-Não existe nenhuma tarefa ativa de implementação. A [F6.3](docs/tasks/completed/F6.3.md) está
-`PROMOTED`; sua reconciliação administrativa está `ADMIN_PR_OPEN / CHECKS_PENDING`.
-`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` permanece apenas como estado corretivo histórico da F5.C1.
-F6.4–F6.7 não foram iniciadas.
+A [F6.4](docs/tasks/active/F6.4.md) está `COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED`: a CI
+inicial do PR #75 revelou a perda do launcher da virtualenv no Linux. A R1 foi corrigida e passou
+`24` dedicados e full `991 passed, 5 skipped, 6 subtests passed`; commit/push corretivos são a próxima
+ação. A F6.3 e sua reconciliação administrativa estão terminalmente promovidas. F6.5–F6.7 não foram iniciadas;
+`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` é apenas estado corretivo histórico da F5.C1.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. A pendência é administrativa: certificar o head final do PR #74 e
-obter autorização nominal antes de seu merge; depois, comprovar a CI pós-merge no SHA exato. F6.4
-permanece bloqueada até esse encerramento terminal. Force-push, bypass, tags remotas e remoção de refs
-continuam proibidos.
+Não há bloqueio técnico local conhecido. A promoção permanece bloqueada até o commit R1 ser publicado
+sem force e a CI do head exato ficar verde. Merge, force/bypass, tags remotas e remoção de refs
+continuam fora do escopo.
 
 ## 7. Próxima ação exata
 
 ```text
-AGUARDAR A CI DO HEAD FINAL DO PR ADMINISTRATIVO #74 E VALIDAR TODOS OS CHECKS.
-SE FICAR VERDE, PAUSAR E SOLICITAR AUTORIZAÇÃO EXPLÍCITA ANTES DO MERGE.
-NÃO INICIAR F6.4, MESCLAR, PUBLICAR TAGS OU REMOVER REFS SEM NOVA AUTORIZAÇÃO.
+CRIAR COMMIT CORRETIVO R1 E PUBLICAR SEM FORCE NO PR #75.
+ACOMPANHAR A CI DO HEAD EXATO ATÉ ESTADO TERMINAL; NÃO MESCLAR.
+NÃO MOVER/PUBLICAR TAGS, USAR FORCE/BYPASS OU REMOVER REFS.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F6.3.md` e a Fase 6 do plano.
-2. Confirme `docs/promote-f6.3` publicada com upstream, derivada de `1bd095a`.
+1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.4.md` e a Fase 6 do plano.
+2. Confirme `task/f6.4-real-doctor` com upstream homônimo e PR #75, derivada de `5b10b2d`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
@@ -200,10 +221,12 @@ NÃO INICIAR F6.4, MESCLAR, PUBLICAR TAGS OU REMOVER REFS SEM NOVA AUTORIZAÇÃO
 7. Preserve PR #71/head `9fdd3cd`/CI `31899279536`/merge `3f63428`/pós-merge `31899659117`.
 8. Preserve PR #72/head `d9e4010`/CI `31901668046`/merge `f5d2a33`/pós-merge `31902119059` como
    encerramento terminal da F6.2.
-9. Preserve PR #73/head `ed1f0e0`/CI `31913438082`/merge `1bd095a`/pós-merge `31913877551` e PR
-   administrativo #74/head inicial `c925971`/CI inicial `31916819934`; não mescle nem inicie F6.4
-   sem autorização explícita.
+9. Preserve PR #73/head `ed1f0e0`/CI `31913438082`/merge `1bd095a`/pós-merge `31913877551` e PR #74:
+   head final `e557d46`/CI `31916987572`/merge `5b10b2d`/pós-merge `31918043022`.
+10. Preserve `checkpoint/f6.4-complete` em `0088b31` e a evidência inicial R2 `282`/`990`.
+11. Preserve run `31923378762` como evidência negativa; a R1 vigente é dedicado `24` e full `991`.
+12. Publique somente o commit R1 sem force e não mescle sem autorização nominal posterior.
 
 ---
 
-*Atualizado em: 2026-08-15T21:17:21-03:00 | Fonte: promoção F6.3 + publicação DEC-014 no PR #74*
+*Atualizado em: 2026-08-16T02:10:35-03:00 | Fonte: CI inicial PR #75 + correção F6.4 R1 local*

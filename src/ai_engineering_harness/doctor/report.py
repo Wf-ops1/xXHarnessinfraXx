@@ -1,35 +1,73 @@
-"""Formatador gráfico do relatório do harness doctor."""
+"""Text and deterministic JSON renderers for doctor results."""
 
+from __future__ import annotations
+
+import json
 import sys
 
 from rich.console import Console
 from rich.table import Table
 
-from ai_engineering_harness.doctor.probes import ComponentProbeResult
+from ai_engineering_harness.doctor.probes import DoctorResult, ProbeStatus
 
 console = Console()
 
+
 class DoctorReport:
-    """Gera saída amigável no terminal para o harness doctor."""
+    """Render the same typed report for humans and automation."""
 
     @classmethod
-    def render(cls, results: list[ComponentProbeResult]) -> None:
-        table = Table(title="Diagnóstico do AI-Engineering-Harness (Probe de 6 Estágios)")
-        table.add_column("Componente", style="cyan", no_wrap=True)
-        table.add_column("Status", style="bold")
-        table.add_column("Estágios (6/6)", style="magenta")
+    def render(cls, report: DoctorResult) -> None:
+        table = Table(title="AI-Engineering-Harness doctor (6 read-only stages)")
+        table.add_column("Component", style="cyan", no_wrap=True)
+        table.add_column("Status", style="bold", no_wrap=True)
+        table.add_column("Stages", style="magenta")
 
         encoding = getattr(sys.stdout, "encoding", "") or ""
         supports_unicode = "utf" in encoding.lower()
 
-        for res in results:
-            if res.is_healthy:
+        for component in report.components:
+            if component.is_healthy:
                 symbol = "✔ " if supports_unicode else "[OK] "
-                status_str = f"[bold green]{symbol}HEALTHY[/bold green]"
+                status = f"[bold green]{symbol}HEALTHY[/bold green]"
             else:
                 symbol = "✖ " if supports_unicode else "[FAIL] "
-                status_str = f"[bold red]{symbol}UNHEALTHY[/bold red]"
-            table.add_row(res.component_name, status_str, "6/6 Aprovados")
+                status = f"[bold red]{symbol}UNHEALTHY[/bold red]"
+            stages = " ".join(
+                f"{stage.stage.value[0]}:{cls._status_token(stage.status)}"
+                for stage in component.stages
+            )
+            table.add_row(component.component_name, status, stages)
 
+        overall_symbol = (
+            "✔ " if supports_unicode else "[OK] "
+        ) if report.is_healthy else (
+            "✖ " if supports_unicode else "[FAIL] "
+        )
+        overall_style = "green" if report.is_healthy else "red"
         console.print(table)
+        console.print(
+            f"[{overall_style}]{overall_symbol}{report.status.value}[/{overall_style}]"
+        )
 
+    @staticmethod
+    def _status_token(status: ProbeStatus) -> str:
+        return {
+            ProbeStatus.PASS: "PASS",
+            ProbeStatus.FAIL: "FAIL",
+            ProbeStatus.SKIPPED: "SKIP",
+            ProbeStatus.NOT_APPLICABLE: "N/A",
+        }[status]
+
+    @staticmethod
+    def to_json(report: DoctorResult) -> str:
+        return json.dumps(
+            report.model_dump(mode="json"),
+            ensure_ascii=True,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+
+__all__ = ["DoctorReport"]

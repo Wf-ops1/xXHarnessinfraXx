@@ -18,6 +18,13 @@ from ai_engineering_harness.contracts.execution import (
     ExecutionRecord,
     ExecutionState,
 )
+from ai_engineering_harness.doctor.probes import (
+    ComponentProbeResult,
+    DoctorResult,
+    ProbeStage,
+    ProbeStageResult,
+    ProbeStatus,
+)
 from ai_engineering_harness.indexer import SnapshotManager
 from ai_engineering_harness.persistence import AtomicFileStateStorage
 from ai_engineering_harness.runtime import (
@@ -113,6 +120,39 @@ class _FakeLifecycle:
     def verify(self, execution_id: str):
         self.calls.append(("verify", execution_id))
         return self.verification_result
+
+
+def _doctor_result(*, healthy: bool, workflow: str | None = None) -> DoctorResult:
+    stages = tuple(
+        ProbeStageResult(
+            stage=stage,
+            status=(
+                ProbeStatus.FAIL
+                if not healthy and stage is ProbeStage.HEALTHY
+                else ProbeStatus.NOT_APPLICABLE
+                if stage is ProbeStage.AUTHENTICATED
+                else ProbeStatus.PASS
+            ),
+            code=(
+                "CLI_DOCTOR_FAILED"
+                if not healthy and stage is ProbeStage.HEALTHY
+                else "CLI_DOCTOR_NOT_APPLICABLE"
+                if stage is ProbeStage.AUTHENTICATED
+                else "CLI_DOCTOR_PASSED"
+            ),
+            message="Controlled CLI doctor result.",
+        )
+        for stage in ProbeStage
+    )
+    component = ComponentProbeResult(
+        component_id="cli-doctor",
+        component_name="CLI doctor",
+        mandatory=True,
+        is_healthy=healthy,
+        duration_ms=0,
+        stages=stages,
+    )
+    return DoctorResult.build((component,), workflow=workflow)
 
 
 def _create_cli_audit_execution(project_root: Path, execution_id: str) -> Path:
@@ -469,6 +509,42 @@ def test_cli_help_lists_resume_approve_cancel_status_and_inspect() -> None:
         "verify",
     ):
         assert command in result.output
+
+
+def test_cli_doctor_json_uses_typed_report_and_workflow(monkeypatch) -> None:
+    observed: dict[str, object] = {}
+
+    class FakeChecker:
+        def __init__(self, **kwargs) -> None:
+            observed.update(kwargs)
+
+        def check(self) -> DoctorResult:
+            return _doctor_result(healthy=True, workflow="new-feature")
+
+    monkeypatch.setattr(CLI_MODULE, "DoctorChecker", FakeChecker)
+    result = CliRunner().invoke(main, ["doctor", "--json", "--workflow", "new-feature"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["schema_version"] == "1.0"
+    assert payload["status"] == "HEALTHY"
+    assert payload["workflow"] == "new-feature"
+    assert observed["workflow"] == "new-feature"
+
+
+def test_cli_doctor_returns_nonzero_for_mandatory_failure(monkeypatch) -> None:
+    class FakeChecker:
+        def __init__(self, **kwargs) -> None:
+            del kwargs
+
+        def check(self) -> DoctorResult:
+            return _doctor_result(healthy=False)
+
+    monkeypatch.setattr(CLI_MODULE, "DoctorChecker", FakeChecker)
+    result = CliRunner().invoke(main, ["doctor"])
+
+    assert result.exit_code == 1
+    assert "UNHEALTHY" in result.output
 
 
 def test_cli_verify_requires_a_worktree_execution_id() -> None:
