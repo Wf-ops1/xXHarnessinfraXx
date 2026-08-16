@@ -3,21 +3,22 @@
 import pytest
 
 from ai_engineering_harness.doctor.checker import DoctorChecker
-from ai_engineering_harness.doctor.probes import HealthProbe
+from ai_engineering_harness.doctor.components import DisabledMcpProbe
+from ai_engineering_harness.doctor.probes import ProbeStatus
 from ai_engineering_harness.governance.evaluation import ContextSufficiencyEvaluator
 from ai_engineering_harness.governance.policy_engine import PolicyEngine
 
 
 def test_doctor_probe_6_stages():
-    res = HealthProbe.probe_component("Serena MCP", {})
+    res = DisabledMcpProbe().probe()
     assert res.is_healthy is True
     assert len(res.stages) == 6
-    assert res.stages["healthy"].status == "OK"
+    assert res.stages[-1].status is ProbeStatus.NOT_APPLICABLE
 
 def test_doctor_checker():
-    checker = DoctorChecker(config={})
+    checker = DoctorChecker(probes=(DisabledMcpProbe(),))
     results = checker.check_all()
-    assert len(results) == 4
+    assert len(results) == 1
     assert all(r.is_healthy for r in results)
 
 def test_policy_engine_budget_exceeded():

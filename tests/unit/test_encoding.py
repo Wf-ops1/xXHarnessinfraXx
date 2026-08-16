@@ -122,12 +122,13 @@ class RepositoryEncodingTests(unittest.TestCase):
                     stderr = result.stderr.decode(encoding, errors="strict")
                     combined_output = stdout + stderr
 
-                    self.assertEqual(result.returncode, 0, combined_output)
+                    expected_returncode = 1 if arguments == ("doctor",) else 0
+                    self.assertEqual(result.returncode, expected_returncode, combined_output)
                     self.assertNotIn("\ufffd", combined_output)
                     self.assertIsNone(MOJIBAKE_PATTERN.search(combined_output))
 
                     if arguments == ("doctor",):
-                        expected_status = "✔ HEALTHY" if encoding == "utf-8" else "[OK] HEALTHY"
+                        expected_status = "✖ UNHEALTHY" if encoding == "utf-8" else "[FAIL] UNHEALTHY"
                         self.assertIn(expected_status, stdout)
 
 

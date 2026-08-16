@@ -1,5 +1,6 @@
 """Suíte de Testes E2E do Ciclo de Vida do Harness (TASK-8.3)."""
 
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from ai_engineering_harness.contracts.evidence import EvidenceApplicability
 from ai_engineering_harness.contracts.execution import ExecutionState
 from ai_engineering_harness.core.detector import StackDetector
 from ai_engineering_harness.doctor.checker import DoctorChecker
+from ai_engineering_harness.doctor.components import PythonToolchainProbe
 from ai_engineering_harness.indexer import CodebaseMemoryAdapter, PythonAstIndexer
 from ai_engineering_harness.knowledge.synchronizer import KnowledgeSynchronizer
 from ai_engineering_harness.observability.audit import AuditTrailManager
@@ -145,7 +147,10 @@ on_failure: route_to_failure_classifier
     assert stack.language == "python"
 
     # 3. Doctor Probe
-    checker = DoctorChecker(config={})
+    checker = DoctorChecker(
+        project_root=tmp_path,
+        probes=(PythonToolchainProbe(tmp_path, environment=os.environ),),
+    )
     doctor_results = checker.check_all()
     assert all(r.is_healthy for r in doctor_results)
 

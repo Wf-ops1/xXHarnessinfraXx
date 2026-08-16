@@ -41,15 +41,15 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.3 estão promovidas; F6.3 e sua reconciliação #74 encerraram com CI pós-merge verde | A F6.4 possui gate defensável READY, mas a implementação não foi autorizada; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery/doctor F6 |
-| CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status` e `inspect` possuem contratos e testes; `run` transporta `--profile` e `--config-json` ao resolvedor canônico | Sem backends reais, `run` falha no preflight; doctor, audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
+| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.3 estão promovidas; F6.4 está concluída/certificada na branch local | A F6.4 ainda não possui commit de produto nem promoção; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery F6.5–F6.7 |
+| CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status`, `inspect` e o doctor local com `--json`/`--workflow` possuem contratos e testes | Sem backends reais, `run` falha no preflight; audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
 | Providers LLM | OpenAI Responses API e endpoint local Chat Completions executam HTTP real; registry/roteamento vêm da configuração efetiva; continuação nativa, JSON/usage estritos e evidência de todos os model turns foram corrigidos na F3.C1 | Integração live é opt-in; Anthropic falha como não implementado; nenhum backend agentic default torna o protótipo autônomo | Providers adicionais somente após contrato e testes equivalentes |
 | Tool loop | A F5.2 promovida unifica a autorização em um engine tipado default-deny por role, node, workflow, trust mode, tool, operação, path e aprovação; o lote é pré-autorizado e a regra aplicada precede o efeito no journal. A F5.3 promovida exige o mesmo snapshot no router e nos adapters antes do efeito | A composição automática das tools não foi adicionada; a aprovação de promoção F5.6 não transforma o booleano de policy em decisão humana de tool | Integração automática das tools e gates seguintes |
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
-| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`, e runner `0/0` falham antes de subprocessos; F4.6–F4.8 permanecem promovidas. F6.1/F6.2 fornecem journal canônico e audit fail-closed; a F6.3 promovida gera `evidence.json`, ancora o evento terminal, valida arquivos/digests e impede `COMPLETED` sem evidência íntegra | Proteção sem chave é somente “tamper-evident local”, não imutabilidade; composição automática e recovery amplo F6.4–F6.7 continuam pendentes | Matriz operacional integral com doctor, inspect e recovery ampliados |
-| Doctor | Relatório e modelo de probe existem | Todos os seis estágios retornam saudáveis sem testar componentes | Probes reais de configuração, alcance, autenticação e capacidade |
+| Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`, e runner `0/0` falham antes de subprocessos; F4.6–F4.8 permanecem promovidas. F6.1/F6.2 fornecem journal canônico e audit fail-closed; a F6.3 promovida gera `evidence.json`, ancora o evento terminal, valida arquivos/digests e impede `COMPLETED` sem evidência íntegra | Proteção sem chave é somente “tamper-evident local”, não imutabilidade; composição automática e recovery amplo F6.5–F6.7 continuam pendentes | Matriz operacional integral com inspect e recovery ampliados |
+| Doctor | Na branch local F6.4, sete componentes percorrem seis estágios reais; texto/JSON compartilham resultado tipado, `--workflow` resolve gates sem executá-los e ambiente unhealthy retorna não zero | Provider/MCP live continuam dependentes de configuração e serviços externos; adapters não suportados falham fechados | UX adicional e novos adapters somente após contrato/testes equivalentes |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo; F5.7 R3 promovida confina Git, liga aprovação destrutiva à tentativa e falha corretamente em rollback bloqueado | Rollback não reexecuta gates pós-reversão e a composição continua opt-in | Composição operacional padrão e recovery/evidence F6 |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
 
@@ -223,8 +223,10 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   em 5m39s. A reconciliação administrativa
   [PR #74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74) encerrou no head `e557d46`, passou
   11/11 no run `31916987572`, foi incorporada pelo merge `5b10b2d` e recebeu 11/11 na CI pós-merge
-  `31918043022`. A F6.4 possui gate `READY`, mas o doctor real ainda não foi implementado nem
-  autorizado; F6.5–F6.7 não foram iniciadas.
+  `31918043022`. A F6.4 está `COMPLETED_LOCAL / PROMOTION_PENDING`: `23` testes dedicados, `282`
+  focados e full R2 com `990 passed, 5 skipped, 6 subtests passed`; wheel/smoke offline estão verdes.
+  O commit/checkpoint COMPLETE são somente locais e a promoção não foi autorizada. F6.5–F6.7 não
+  foram iniciadas.
 
 ## Dívidas técnicas críticas
 
@@ -264,8 +266,9 @@ operacionais:
   a CI no PR #47 e no merge `4aa701a`; a F4.8 promovida liga essa reprovação ao `on_failure` compilado,
   persiste orçamento/deadline/contexto e exige targeted seguido da suíte completa, mas não integra
   automaticamente worktree/provider/tools ao lifecycle padrão;
-- [HealthProbe](src/ai_engineering_harness/doctor/probes.py) declara todos os estágios saudáveis sem
-  executar probes;
+- o [doctor](src/ai_engineering_harness/doctor/checker.py) local agora inspeciona sete componentes de
+  forma read-only e fail-closed; saúde live de provider/MCP depende de configuração, credenciais e
+  serviços externos, e nenhum probe instala ou inicia esses componentes;
 - [PromotionManager](src/ai_engineering_harness/runtime/promotion_manager.py) cria e promove SHAs Git
   reais com recovery exato; sua composição é opt-in e ainda não é construída pelo CLI/defaults;
 - [ExternalWorktreeManager](src/ai_engineering_harness/workspace/git_worktree.py) cria, valida e

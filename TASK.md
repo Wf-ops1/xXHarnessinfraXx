@@ -5,7 +5,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F6.4](docs/tasks/active/F6.4.md): gate defensável do doctor real, sem autorização de implementação.
+2. [F6.4](docs/tasks/active/F6.4.md): doctor real concluído e certificado; commit de produto e
+   checkpoint COMPLETE somente locais, sem promoção autorizada.
 3. [F6.3](docs/tasks/completed/F6.3.md): evidence manifest promovido pelo PR #73 no merge
    `1bd095a`; reconciliação #74 incorporada em `5b10b2d`, com CI pós-merge `31918043022` 11/11.
 4. [F6.2](docs/tasks/completed/F6.2.md): hardening do journal promovido pelo PR #71 no merge
@@ -40,11 +41,11 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1–F6.3 promovidas no produto |
 | **Fase ativa** | Fase 6; F6.4 — implementar um doctor real |
-| **Tarefa ativa** | [F6.4](docs/tasks/active/F6.4.md); gate preparado, implementação não iniciada |
-| **Gate** | `READY / IMPLEMENTATION_NOT_AUTHORIZED` |
-| **Estado corrente** | problema, baseline, contrato, allowlist, aceite e rollback congelados; nenhum arquivo de produto editado |
+| **Tarefa ativa** | [F6.4](docs/tasks/active/F6.4.md); implementação, certificação, commit e checkpoint COMPLETE locais concluídos |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | sete probes reais, JSON/workflow e exit code fail-closed entregues no commit/checkpoint local; nenhum efeito remoto |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor autorizado do gate local F6.4 |
+| **Executor ativo** | `Codex`, único escritor autorizado da implementação local F6.4 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f6.4-real-doctor`, local, sem upstream; criada de `main == origin/main == 5b10b2d` |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
@@ -55,10 +56,13 @@
 | **Checkpoint F5.7** | `checkpoint/f5.7-ready` em `527cb34`; `checkpoint/f5.7-r1-ready` em `c33b2f1`; `checkpoint/f5.7-complete` em `34fa3af`; `checkpoint/f5.7-r3-ready` em `d38311c`; somente locais |
 | **Checkpoint F6.2** | `checkpoint/f6.2-ready` → `fb9909d2d3b3941251a521a3595f3d62ee3d3c0d`; `checkpoint/f6.2-complete` → `63e5091fd5cb68a527003d632b82d2dc6ee87074`; ambos somente locais |
 | **Checkpoint F6.3** | `checkpoint/f6.3-ready` → `27a9f7057e05d6128ed21f7a5c5c463494749f04`; `checkpoint/f6.3-complete` → `0bf3a5910a768fd199130ebea0377911f24e4e55`; ambos somente locais |
+| **Checkpoint F6.4** | `checkpoint/f6.4-ready` → `261f0977f9d0ed16ac51ce569b631a43ae7e49ff`; `checkpoint/f6.4-complete` aponta para o commit deste snapshot; ambos somente locais |
 | **Main sincronizada** | antes da branch F6.4, `main == origin/main == 5b10b2d453768de62e9f64ae6d0095cfcd95cd03` |
 | **Problema F6.4** | `HealthProbe` fabrica seis `OK`; doctor retorna zero com Git fora do `PATH`; `--json` e `--workflow` não existem |
 | **Baseline F6.4** | probe negativo `doctor=0`, `--json=2`, `--workflow=2`; matriz vigente `9 passed in 18.78s` |
-| **Gate F6.4** | seis estágios e componentes mínimos, config canônica, fail-closed, allowlist, aceite e rollback congelados; produto não autorizado |
+| **Implementação F6.4** | seis estágios estritos sobre Git, Python, provider, MCP, storage, worktree e gates; config canônica, transporte read-only, redaction, JSON determinístico, `--workflow` e exit code não zero quando unhealthy |
+| **Validação F6.4** | dedicado `23 passed in 1.69s`; documentos `31 passed in 3.58s`; focado R2 `282 passed, 2 skipped, 6 subtests passed in 173.70s`; full R2 `990 passed, 5 skipped, 6 subtests passed in 937.00s`; Ruff, mypy 110 arquivos, compileall, diff-check, wheel R2 e smoke offline verdes |
+| **Gate F6.4** | `COMPLETED_LOCAL / PROMOTION_PENDING`; produto certificado e commit/checkpoint COMPLETE locais; toda promoção ainda não autorizada |
 | **Problema F6.3** | dois caminhos saltam diretamente para `COMPLETED`; `GENERATING_EVIDENCE` não é usado e `evidence.json` não possui producer/validator |
 | **Baseline F6.3** | tentativa R0 inválida por diretório externo ausente; probe R1 válido `2 passed in 5.44s`; matriz confinada `127 passed in 34.85s` |
 | **Implementação F6.3** | contrato estrito/canônico; publicação imutável e atômica; agregação redigida; `VERIFYING`/`PROMOTING` → `GENERATING_EVIDENCE` → `COMPLETED`; recovery terminal idempotente e fail-closed |
@@ -137,7 +141,7 @@
 | PR de produto | [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73), head final `ed1f0e0`, CI `31913438082`, 11/11 success em 6m57s |
 | Merge de produto | `1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3`; CI de `push` `31913877551`, 11/11 success em 5m39s |
 | Reconciliação administrativa | PR [#74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74), head final `e557d46`, CI `31916987572` 11/11; merge `5b10b2d`; pós-merge `31918043022` 11/11 |
-| Fronteira | cadeia F6.3 terminal; gate F6.4 READY, mas implementação ainda não autorizada |
+| Fronteira | cadeia F6.3 terminal; F6.4 concluída no commit/checkpoint local, sem promoção autorizada |
 | Promoção anterior | F6.2 — PR #71 / merge `3f63428` / pós-merge `31899659117`; reconciliação PR #72 / merge `f5d2a33` / pós-merge `31902119059` |
 | Promoção anterior | F6.1 — PR #69 / merge `7d6a0e1` / pós-merge `31887143905`; reconciliação PR #70 / merge `ac887b0` / pós-merge `31888960272` |
 | Promoção anterior | F5.C1 — PR #67 / merge `2b405fd` / pós-merge `31857239235`; reconciliação PR #68 / merge `29e8a975` / pós-merge `31859624571` |
@@ -169,27 +173,32 @@ foi consumida no merge commit `1bd095a`; a CI pós-merge `31913877551` passou 11
 consumidas no push sem force e na abertura do PR administrativo #74 contra `main`. O head inicial é
 `c925971` e a CI inicial `31916819934` disparou 10 checks. Autorizações posteriores foram consumidas
 no head final `e557d46`, CI `31916987572` 11/11, merge `5b10b2d` e CI pós-merge `31918043022` 11/11.
-Em `2026-08-15T22:15:52-03:00`, o usuário autorizou preparar o gate F6.4; implementação, publicação,
-merge, tags remotas e remoção de refs não estão autorizados.
+Em `2026-08-15T22:15:52-03:00`, o usuário autorizou preparar o gate F6.4. Autorizações explícitas
+posteriores nesta tarefa foram consumidas somente para a implementação local no escopo congelado. Em
+`2026-08-15T23:31:55-03:00`, produto e certificação R2 foram concluídos. Em
+`2026-08-15T23:45:41-03:00`, a autorização seguinte foi consumida somente para criar o commit local e
+`checkpoint/f6.4-complete`; publicação, PR, merge, tags remotas e remoção de refs não estão
+autorizados.
 
 ## 5. Tarefa ativa
 
-A [F6.4](docs/tasks/active/F6.4.md) possui gate `READY`, mas não há implementação ativa nem autorizada.
-A F6.3 e sua reconciliação administrativa estão terminalmente promovidas. F6.5–F6.7 não foram
-iniciadas; `POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` é apenas estado corretivo histórico da F5.C1.
+A [F6.4](docs/tasks/active/F6.4.md) está `COMPLETED_LOCAL / PROMOTION_PENDING`: implementação,
+certificação, commit e checkpoint COMPLETE locais foram concluídos. A F6.3 e sua reconciliação
+administrativa estão terminalmente promovidas. F6.5–F6.7 não foram iniciadas;
+`POST_PROMOTION_BLOCKED / REPAIR_ACTIVE` é apenas estado corretivo histórico da F5.C1.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico conhecido. O bloqueio operacional é de autoridade: nenhum arquivo de produto
-F6.4 pode ser editado antes de autorização explícita para implementar o escopo congelado. Push, PR,
-merge, force/bypass, tags remotas e remoção de refs continuam fora do escopo.
+Não há bloqueio técnico conhecido. O bloqueio operacional é de autoridade: push e abertura de PR
+exigem autorização nominal separada. Merge, force/bypass, tags remotas e remoção de refs continuam
+fora do escopo.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL READY DO GATE F6.4 E PAUSAR.
-SOLICITAR AUTORIZAÇÃO EXPLÍCITA PARA IMPLEMENTAR O ESCOPO CONGELADO.
-NÃO EDITAR SRC/, PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS.
+CONFIRMAR COMMIT LOCAL, CHECKPOINT/F6.4-COMPLETE E WORKING TREE LIMPA; PAUSAR.
+SOLICITAR AUTORIZAÇÃO NOMINAL SEPARADA ANTES DE PUSH E ABERTURA DE PR.
+NÃO MESCLAR, PUBLICAR TAGS REMOTAS, USAR FORCE/BYPASS OU REMOVER REFS.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -206,8 +215,10 @@ NÃO EDITAR SRC/, PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAGS OU REMOVER REFS.
    encerramento terminal da F6.2.
 9. Preserve PR #73/head `ed1f0e0`/CI `31913438082`/merge `1bd095a`/pós-merge `31913877551` e PR #74:
    head final `e557d46`/CI `31916987572`/merge `5b10b2d`/pós-merge `31918043022`.
-10. Preserve o doctor atual sem edição de produto até autorização explícita de implementação F6.4.
+10. Confirme `checkpoint/f6.4-complete` no mesmo SHA do commit local e preserve a certificação R2
+    `282`/`990`.
+11. Não publique a branch/PR nem execute outro efeito remoto sem autorização nominal.
 
 ---
 
-*Atualizado em: 2026-08-15T22:15:52-03:00 | Fonte: encerramento terminal F6.3 + gate defensável F6.4*
+*Atualizado em: 2026-08-15T23:45:41-03:00 | Fonte: F6.4 commit/checkpoint COMPLETE locais autorizados*
