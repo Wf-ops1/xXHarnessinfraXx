@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / ACTIVE_LOCAL` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1204,8 +1204,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "completed/F6.6.md" in task_index
     assert (ACTIVE_ROOT / "F6.7.md").is_file()
     f6_7_dossier = _read(ACTIVE_ROOT / "F6.7.md")
-    assert "> **Gate:** `READY`" in f6_7_dossier
-    assert "> **Lifecycle:** `ACTIVE`" in f6_7_dossier
+    assert "> **Gate:** `COMPLETED_LOCAL`" in f6_7_dossier
+    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f6_7_dossier
     for evidence in (
         "task/f6.7-knowledge-transaction",
         "1327f299c2a748fdb3efb759291b67b39bd2598b",
@@ -1216,6 +1216,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "7 passed in 1.03s",
         "checkpoint/f6.7-ready",
         "CrossProcessLockManager",
+        "e01d49d6b11b2a27585669280f153f1b474af0c2",
+        "3fd5565d2308eecb667d9782f81b17be74040bd6",
+        "24 passed in 10.78s",
+        "137 passed in 29.21s",
+        "1049 passed, 5 skipped, 6 subtests passed in 394.77s",
+        "checkpoint/f6.7-complete",
     ):
         assert evidence in f6_7_dossier
     assert "docs/tasks/active/F6.7.md" in panel

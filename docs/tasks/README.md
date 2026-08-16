@@ -20,9 +20,10 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F6.7 — corrigir knowledge transaction](active/F6.7.md) possui gate local congelado sobre
-`main == origin/main == 1327f299`. O falso `PREPARED → COMMITTED` sem staging/pointer foi reproduzido;
-produto permanece intocado até o checkpoint READY.
+A [F6.7 — corrigir knowledge transaction](active/F6.7.md) está
+`COMPLETED_LOCAL / PROMOTION_PENDING`. O checkpoint READY `e01d49d` precede o produto `3fd5565`;
+dedicado `24`, focado `137` e full `1049 passed, 5 skipped, 6 subtests passed` ficaram verdes, junto
+de quality, sdist/wheel e smoke oficial offline. Nenhum push, PR, merge ou tag remota foi executado.
 
 A [F6.6 — recovery e testes de falha](completed/F6.6.md) está terminalmente `PROMOTED`: o head
 `1ce953d` do PR #79 passou no run `31962221925`, foi incorporado pelo merge `8be6789` e recebeu CI
