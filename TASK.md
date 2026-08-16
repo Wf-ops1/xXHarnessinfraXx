@@ -6,7 +6,7 @@
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
 2. [F6.7](docs/tasks/completed/F6.7.md): produto promovido pelo PR #81 no merge `93f7bf20`, com CI
-   pós-merge `31977793119` verde; reconciliação administrativa em preparação.
+   pós-merge `31977793119` verde; reconciliação administrativa aberta no PR #82.
 3. [F6.6](docs/tasks/completed/F6.6.md): produto promovido pelo PR #79; reconciliação #80 encerrada
    no merge `1327f299`, com CI pós-merge `31968035375` verde.
 3. [F6.5](docs/tasks/completed/F6.5.md): produto promovido pelo PR #77; reconciliação #78 incorporada
@@ -48,12 +48,12 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1 reconciliadas; F6.1–F6.7 promovidas como produto |
 | **Fase ativa** | Fase 6 em reconciliação administrativa final; F7.1 não iniciada |
 | **Tarefa ativa** | Nenhuma tarefa ativa; somente `docs/promote-f6.7` sob a DEC-014 |
-| **Gate** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL` |
-| **Estado corrente** | PR #81 incorporado e CI pós-merge verde; reconciliação documental local ainda sem PR |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |
+| **Estado corrente** | PR #82 aberto, mergeable/CLEAN; head inicial e CI 11/11 certificados; checks do novo head pendentes após este registro |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da reconciliação administrativa F6.7 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f6.7`, sem upstream, criada de `main == origin/main == 93f7bf20e8721e293b872f887ff6ef837b820e39` |
+| **Branch** | `docs/promote-f6.7`, publicada sem force e rastreando `origin/docs/promote-f6.7`; base `main == 93f7bf20e8721e293b872f887ff6ef837b820e39` |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
 | **Branch de produto F6.4** | `task/f6.4-real-doctor`, remota e preservada após o merge |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
@@ -79,7 +79,7 @@
 | **Validação F6.7** | dedicado `24`; focado final `137`; full `1049 passed, 5 skipped, 6 subtests passed in 394.77s`; Ruff, mypy 110 arquivos, compileall, diff, sdist/wheel e smoke oficial offline verdes |
 | **PR F6.7** | [#81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81), head final `c4a864d15f5d2767fc7020200ba211e0c428843e`; CI [31977507679](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31977507679) 10/10 + `CI required` success |
 | **Merge F6.7** | `93f7bf20e8721e293b872f887ff6ef837b820e39`; CI pós-merge [31977793119](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31977793119) 10/10 + `CI required` success |
-| **Reconciliação F6.7** | branch `docs/promote-f6.7` criada da `main` certificada; commit/PR administrativo pendentes |
+| **Reconciliação F6.7** | [PR #82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82), head inicial `5ee3fcc9e56df92b86a83a7a24b6c7bd57d413ce`; CI inicial [31978357679](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31978357679) 10/10 + `CI required` success |
 | **Implementação F6.5** | status versionado com tentativa/duração/blocker/next action; catálogo ordenado; JSON/JSONL; follow sem duplicata; evidence pelo verificador canônico |
 | **Validação F6.5** | focado `172`; full `1023 passed, 5 skipped, 6 subtests passed`; Ruff/mypy/compileall/diff/docs/build/smoke verdes |
 | **PR F6.5** | [#77](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77), head final `7386638c76b3270ab9849337e6e429b8f29a9202`; CI [31936640635](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31936640635) 11/11 success |
@@ -172,7 +172,7 @@
 | Produto | `3fd5565`; dedicado `24`; focado `137`; full `1049 passed, 5 skipped, 6 subtests passed`; quality, build e smoke verdes |
 | PR de produto | [#81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81), head `c4a864d`, CI `31977507679`, 10/10 + `CI required` success |
 | Merge de produto | `93f7bf20e8721e293b872f887ff6ef837b820e39`; CI de `push` `31977793119`, 10/10 + `CI required` success |
-| Reconciliação administrativa | `docs/promote-f6.7` local; PR ainda pendente |
+| Reconciliação administrativa | PR [#82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82), head inicial `5ee3fcc`, CI inicial `31978357679` 10/10 + `CI required` success; head final ainda pendente |
 | Fronteira | Gate técnico da Fase 6 satisfeito; fechamento terminal aguarda reconciliação DEC-014; F7.1 não iniciada |
 | Promoção anterior | F6.6 — PR #79 / merge `8be6789` / pós-merge `31963338576`; reconciliação PR #80 / merge `1327f299` / pós-merge `31968035375` |
 | Promoção anterior | F6.5 — PR #77 / merge `c049125` / pós-merge `31953772121`; reconciliação PR #78 / merge `6386816` / pós-merge `31956649961` |
@@ -251,14 +251,14 @@ Não há nenhuma tarefa ativa de implementação. A F6.7 está `PROMOTED` no
 ## 6. Bloqueios e fronteiras externas
 
 Não há bloqueio técnico: PR #81, merge `93f7bf20` e CI pós-merge `31977793119` certificam o produto.
-A única fronteira é administrativa: publicar `docs/promote-f6.7`, abrir/validar/mesclar seu PR e
+A única fronteira é administrativa: publicar este registro no PR #82, validar/mesclar o novo head e
 observar a CI final de `main`. Nenhuma implementação F7 pode começar nesse intervalo.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR E COMMITAR SOMENTE A RECONCILIAÇÃO DOCUMENTAL docs/promote-f6.7.
-PUBLICAR, ABRIR O PR ADMINISTRATIVO, EXIGIR CI VERDE, MESCLAR E CERTIFICAR A CI PÓS-MERGE.
+VALIDAR E COMMITAR SOMENTE O REGISTRO DOCUMENTAL DO PR #82 E DA CI INICIAL 31978357679.
+PUBLICAR SEM FORCE, EXIGIR CI VERDE NO NOVO HEAD, MESCLAR E CERTIFICAR A CI PÓS-MERGE.
 ENCERRAR TERMINALMENTE A FASE 6 SEM INICIAR F7.1 E SEM REMOVER REFS.
 ```
 
@@ -288,7 +288,8 @@ ENCERRAR TERMINALMENTE A FASE 6 SEM INICIAR F7.1 E SEM REMOVER REFS.
     `31968035375` como encerramento terminal F6.6.
 17. Preserve F6.7: reprodução `1/1`, baseline `7/7`, produto `3fd5565`, focado `137`, full `1049`,
     PR #81/head `c4a864d`/CI `31977507679`/merge `93f7bf20`/pós-merge `31977793119`.
+18. Preserve PR #82: head inicial `5ee3fcc` e CI inicial `31978357679` 10/10 + `CI required`.
 
 ---
 
-*Atualizado em: 2026-08-16T20:05:41-03:00 | Fonte: F6.7 promovida + reconciliação DEC-014 local*
+*Atualizado em: 2026-08-16T20:17:16-03:00 | Fonte: F6.7 promovida + PR administrativo #82 em curso*

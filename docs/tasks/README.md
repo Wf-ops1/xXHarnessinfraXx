@@ -26,8 +26,9 @@ não foi iniciada.
 A [F6.7 — corrigir knowledge transaction](completed/F6.7.md) está `PROMOTED`: o head `c4a864d` do
 [PR #81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81) passou 10/10 + `CI required` no run
 `31977507679`, foi incorporado pelo merge `93f7bf20` e recebeu 10/10 + `CI required` na CI pós-merge
-`31977793119`. A reconciliação administrativa `docs/promote-f6.7` está em preparação; Fase 7 não
-começou.
+`31977793119`. A reconciliação [PR #82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82)
+abriu no head inicial `5ee3fcc`, certificado pela CI `31978357679`; seu novo head ainda aguarda checks.
+Fase 7 não começou.
 
 A [F6.6 — recovery e testes de falha](completed/F6.6.md) está terminalmente `PROMOTED`: o head
 `1ce953d` do PR #79 passou no run `31962221925`, foi incorporado pelo merge `8be6789` e recebeu CI

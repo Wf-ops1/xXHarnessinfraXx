@@ -259,7 +259,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "PROMOTED / ADMIN_RECONCILIATION_LOCAL" in panel
+    assert "PROMOTED / ADMIN_PR_OPEN" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
@@ -327,6 +327,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "1049 passed, 5 skipped, 6 subtests passed in 394.77s" in panel
     assert "93f7bf20e8721e293b872f887ff6ef837b820e39" in panel
     assert "31977793119" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82" in panel
+    assert "5ee3fcc9e56df92b86a83a7a24b6c7bd57d413ce" in panel
+    assert "31978357679" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73" in panel
     assert "31913438082" in panel
     assert "1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3" in panel

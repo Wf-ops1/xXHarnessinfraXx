@@ -244,7 +244,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   encerrou no head `43cb6ea`, certificado por `31967664405`, foi incorporada no merge `1327f299` e
   recebeu CI pós-merge `31968035375` 11/11. A F6.7 corrigiu knowledge no produto `3fd5565`; o head
   `c4a864d` do PR #81 passou no run `31977507679`, foi incorporado pelo merge `93f7bf20` e recebeu
-  CI pós-merge `31977793119` 10/10 + `CI required`. A reconciliação DEC-014 ainda está em curso.
+  CI pós-merge `31977793119` 10/10 + `CI required`. A reconciliação
+  [PR #82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82) abriu no head inicial `5ee3fcc`,
+  certificado 10/10 + `CI required` pela CI inicial `31978357679`; o head final ainda aguarda checks.
 
 ## Dívidas técnicas críticas
 
