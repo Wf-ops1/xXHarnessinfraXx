@@ -242,11 +242,15 @@ class PythonToolchainProbe(HealthProbe):
 
     def installed(self) -> ProbeStageResult:
         try:
-            self.executable = Path(self.executable_input).resolve(strict=True)
+            invocation_path = Path(self.executable_input).absolute()
+            resolved_path = invocation_path.resolve(strict=True)
         except (OSError, RuntimeError, ValueError):
             self.executable = None
-        if self.executable is None or not self.executable.is_file() or not os.access(self.executable, os.X_OK):
             return self.failed(ProbeStage.INSTALLED, "PYTHON_NOT_INSTALLED", "Python executable is unavailable.")
+        if not resolved_path.is_file() or not os.access(resolved_path, os.X_OK):
+            self.executable = None
+            return self.failed(ProbeStage.INSTALLED, "PYTHON_NOT_INSTALLED", "Python executable is unavailable.")
+        self.executable = invocation_path
         return self.passed(ProbeStage.INSTALLED, "PYTHON_INSTALLED", "Python executable was found.")
 
     def _python(self, *arguments: str) -> subprocess.CompletedProcess[str] | None:

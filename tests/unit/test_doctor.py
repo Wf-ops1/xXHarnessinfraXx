@@ -227,6 +227,49 @@ def test_python_probe_runs_real_read_only_smoke(tmp_path: Path) -> None:
     assert result.stages[-1].code == "PYTHON_HEALTHY"
 
 
+def test_python_probe_preserves_virtualenv_launcher_after_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launcher = tmp_path / "venv" / "bin" / "python"
+    resolved_target = Path(sys.executable).resolve(strict=True)
+    original_resolve = Path.resolve
+    invocations: list[tuple[str, ...]] = []
+
+    def resolve_launcher(path: Path, strict: bool = False) -> Path:
+        if path == launcher:
+            return resolved_target
+        return original_resolve(path, strict=strict)
+
+    def runner(
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        environment: Mapping[str, str],
+        timeout_seconds: float,
+    ) -> subprocess.CompletedProcess[str]:
+        assert cwd == tmp_path
+        assert timeout_seconds == 5.0
+        assert isinstance(environment, Mapping)
+        invocation = tuple(argv)
+        invocations.append(invocation)
+        stdout = f"Python {sys.version_info.major}.{sys.version_info.minor}\n" if invocation[1:] == ("--version",) else ""
+        return subprocess.CompletedProcess(invocation, 0, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(Path, "resolve", resolve_launcher)
+
+    result = PythonToolchainProbe(
+        tmp_path,
+        environment=os.environ,
+        runner=runner,
+        executable=os.fspath(launcher),
+    ).probe()
+
+    assert result.is_healthy is True
+    assert len(invocations) == 2
+    assert all(invocation[0] == os.fspath(launcher) for invocation in invocations)
+
+
 def test_provider_probe_observes_configured_model_via_read_only_discovery() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "GET"

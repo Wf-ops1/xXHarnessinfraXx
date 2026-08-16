@@ -21,10 +21,10 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 ## Tarefa ativa
 
 O único dossiê ativo é [F6.4 — implementar um doctor real](active/F6.4.md), com gate
-`COMPLETED_LOCAL / PROMOTION_PENDING`. Os sete componentes reais, seis estágios estritos, JSON,
-seleção de workflow e exit code fail-closed passaram `23` testes dedicados, `282` focados e a full
-R2 com `990 passed, 5 skipped, 6 subtests passed`; wheel e smoke offline estão verdes. O commit de
-produto e `checkpoint/f6.4-complete` são somente locais; nenhuma promoção foi autorizada.
+`COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED`. O PR #75 abriu no head `0088b31`; o run
+`31923378762` passou 8/10 jobs obrigatórios, mas Tests Ubuntu 3.11/3.14 perderam o launcher da
+virtualenv e `CI required` bloqueou a promoção. A R1 preserva o launcher, passou `24` testes dedicados
+e a full com `991 passed, 5 skipped, 6 subtests passed`; commit/push corretivos estão autorizados.
 
 A [F6.3 — gerar e validar o evidence manifest](completed/F6.3.md) está `PROMOTED`: o head final `ed1f0e0` do
 [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73) passou 11/11 no run `31913438082`, foi
