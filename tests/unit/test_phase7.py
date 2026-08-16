@@ -79,6 +79,26 @@ def test_knowledge_transaction_5_steps(tmp_path: Path):
     data = json.loads(current_file.read_text(encoding="utf-8"))
     assert data["current_tx_id"] == "tx-123"
 
+
+def test_f66_freezes_false_knowledge_recovery_for_f67(tmp_path: Path) -> None:
+    manager = KnowledgeTransactionManager(project_root=tmp_path)
+    tx_id = "tx-missing"
+    manager.journal_file.write_text(
+        json.dumps({"tx_id": tx_id, "state": TransactionState.PREPARED.value}) + "\n",
+        encoding="utf-8",
+    )
+
+    outcome = manager.recover_if_needed()
+
+    entries = [
+        json.loads(line)
+        for line in manager.journal_file.read_text(encoding="utf-8").splitlines()
+    ]
+    assert outcome == "RECOVERED_tx-missing"
+    assert [entry["state"] for entry in entries] == ["PREPARED", "COMMITTED"]
+    assert not manager.current_json.exists()
+    assert not (manager.staging_dir / tx_id / "data.json").exists()
+
 def test_audit_trail_linear_hash_chain(tmp_path: Path):
     execution_id = "exec-hash-1"
     audit = _audit_manager(tmp_path, execution_id)

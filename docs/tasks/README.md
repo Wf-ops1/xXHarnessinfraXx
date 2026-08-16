@@ -20,14 +20,15 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há tarefa de implementação ativa. A [F6.5 — status e inspeção operacionais](completed/F6.5.md)
-está `PROMOTED`: a projeção tipada e os cinco comandos passaram `172` focados, full final
-`1023 passed, 5 skipped, 6 subtests passed`, quality, build e smoke offline. O head final `7386638`
-do [PR #77](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77) passou 11/11 no run `31936640635`,
-foi incorporado pelo merge `c049125` e recebeu 11/11 na CI pós-merge `31953772121`. A reconciliação
-[PR #78](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/78) abriu no head `2dab988`, que passou
-11/11 no run `31954547026`; o registro final está pronto localmente para publicação no mesmo PR.
-F6.6 permanece bloqueada.
+Não há tarefa de implementação ativa. A [F6.6 — recovery e testes de falha](completed/F6.6.md) está
+`COMPLETED_LOCAL / PROMOTION_PENDING` no produto `1d54674`. Worktree passou `29`, a matriz dos nove
+checkpoints `24`, o focado `234` e a full R2 `1030 passed, 5 skipped, 6 subtests passed`. O guia
+documenta recovery/bloqueio/cleanup/evidência e preserva knowledge como `known_gap_f6_7` para F6.7.
+
+A [F6.5 — status e inspeção operacionais](completed/F6.5.md) está terminalmente `PROMOTED`: o PR
+#77 encerrou no merge `c049125`/pós-merge `31953772121`; a reconciliação
+[PR #78](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/78) encerrou no head final `fcc927e`, CI
+`31955779575`, merge `6386816` e CI pós-merge `31956649961`, sem remoção de refs.
 
 A [F6.4 — implementar um doctor real](completed/F6.4.md) está `PROMOTED`: o head final `6e6ebb8` do
 [PR #75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75) passou 11/11 no run `31928606331`, foi
@@ -176,7 +177,8 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F6 | F6.2 | [Journal de auditoria fortalecido](completed/F6.2.md) | PR #71 / head `9fdd3cd` / merge `3f63428` / pós-merge `31899659117`; administrativo #72 / head `d9e4010` / merge `f5d2a33` / pós-merge `31902119059` |
 | F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo #74 / head `e557d46` / CI `31916987572`; merge `5b10b2d` / pós-merge `31918043022` |
 | F6 | F6.4 | [Doctor real](completed/F6.4.md) | PR #75 / head final `6e6ebb8` / CI `31928606331`; merge `574df7a` / pós-merge `31929031317`; administrativo #76 / head final `3c1f4d2` / CI `31930869377`; merge `a42ec411` / pós-merge `31931649225` |
-| F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo #78 / inicial `2dab988` / `31954547026`; registro final local |
+| F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo #78 / final `fcc927e` / `31955779575`; merge `6386816` / pós-merge `31956649961` |
+| F6 | F6.6 | [Recovery e testes de falha](completed/F6.6.md) | `COMPLETED_LOCAL`; produto `1d54674`; worktree `29`; matriz `24`; focado `234`; full R2 `1030/5/6`; promoção pendente |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

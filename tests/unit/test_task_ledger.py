@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1170,6 +1170,28 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert evidence in f6_5_dossier
     assert "docs/tasks/completed/F6.5.md" in panel
     assert "completed/F6.5.md" in task_index
+    assert not (ACTIVE_ROOT / "F6.6.md").exists()
+    f6_6_dossier = _read(COMPLETED_ROOT / "F6.6.md")
+    assert "> **Gate:** `COMPLETED_LOCAL`" in f6_6_dossier
+    assert "> **Lifecycle:** `PROMOTION_PENDING`" in f6_6_dossier
+    for evidence in (
+        "task/f6.6-recovery-failures",
+        "638681638a341df9046f784b79140f4e40124032",
+        "31956649961",
+        "13 passed, 183 deselected in 43.84s",
+        "reference=CREATING path_exists=True retry=WorktreeCollisionError",
+        "outcome=RECOVERED_tx-missing current_exists=False staging_exists=False",
+        "checkpoint/f6.6-ready",
+        "known_gap_f6_7",
+        "1d5467457cf99c4ee34d69000630de1b1aa0900b",
+        "29 passed in 35.10s",
+        "24 passed in 56.83s",
+        "234 passed in 332.99s",
+        "1030 passed, 5 skipped, 6 subtests passed in 765.28s",
+        "checkpoint/f6.6-complete",
+    ):
+        assert evidence in f6_6_dossier
+    assert "completed/F6.6.md" in task_index
     for source in (panel, task_index, readme):
         assert "3c1f4d2" in source
         assert "31930869377" in source

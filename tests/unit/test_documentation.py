@@ -39,6 +39,38 @@ def test_readme_contains_frozen_capability_matrix() -> None:
     assert "git cherry-pick" in readme
 
 
+def test_f66_recovery_matrix_has_exactly_nine_checkpoint_contracts() -> None:
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+    checkpoints = (
+        "CP-01-worktree-created",
+        "CP-02-context-saved",
+        "CP-03-model-response",
+        "CP-04-tool-call",
+        "CP-05-candidate-commit",
+        "CP-06-journal-append",
+        "CP-07-approval",
+        "CP-08-promotion",
+        "CP-09-knowledge-transaction",
+    )
+
+    assert "## Matriz de recovery F6.6" in user_guide
+    assert user_guide.count("| `CP-") == 9
+    for checkpoint in checkpoints:
+        assert user_guide.count(checkpoint) == 1
+    for field in (
+        "Estado persistido",
+        "Operação idempotente",
+        "Comportamento de `resume`",
+        "Cleanup permitido",
+        "Evidência",
+    ):
+        assert field in user_guide
+    assert "`recovered`" in user_guide
+    assert "`blocked_requires_intervention`" in user_guide
+    assert "`known_gap_f6_7`" in user_guide
+    assert "PREPARED → COMMITTED` sem staging/pointer" in user_guide
+
+
 def test_documents_do_not_claim_current_operational_readiness() -> None:
     for document in CURRENT_CLAIM_FILES:
         content = _read(document)
@@ -216,7 +248,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
@@ -259,6 +291,13 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/78" in panel
     assert "2dab988d9c84d43e7f43f73c35b9011ff64e79ab" in panel
     assert "31954547026" in panel
+    assert "fcc927e9f70e2a00fe1b9973512401d22ad470a2" in panel
+    assert "31955779575" in panel
+    assert "638681638a341df9046f784b79140f4e40124032" in panel
+    assert "31956649961" in panel
+    assert "docs/tasks/completed/F6.6.md" in panel
+    assert "1d5467457cf99c4ee34d69000630de1b1aa0900b" in panel
+    assert "1030 passed, 5 skipped, 6 subtests passed in 765.28s" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73" in panel
     assert "31913438082" in panel
     assert "1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3" in panel
