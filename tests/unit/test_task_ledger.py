@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1137,10 +1137,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31930029057" in f6_4_dossier
     assert "docs/tasks/completed/F6.4.md" in panel
     assert "completed/F6.4.md" in task_index
-    assert (ACTIVE_ROOT / "F6.5.md").is_file()
-    f6_5_dossier = _read(ACTIVE_ROOT / "F6.5.md")
+    assert not (ACTIVE_ROOT / "F6.5.md").exists()
+    assert (COMPLETED_ROOT / "F6.5.md").is_file()
+    f6_5_dossier = _read(COMPLETED_ROOT / "F6.5.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_5_dossier
-    assert "> **Lifecycle:** `PROMOTION_PENDING`" in f6_5_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f6_5_dossier
+    assert "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`" in f6_5_dossier
     for evidence in (
         "task/f6.5-status-inspection",
         "a42ec411f1a1516336abc1c5b1de57461a03c64d",
@@ -1154,8 +1156,20 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "harness events <execution_id> --follow",
         "harness evidence <execution_id> --verify",
         "checkpoint/f6.5-ready",
+        "checkpoint/f6.5-complete",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77",
+        "7386638c76b3270ab9849337e6e429b8f29a9202",
+        "31936640635",
+        "c0491258ceab29785c97c2a4f1375d1f7d1f9645",
+        "31953772121",
+        "docs/promote-f6.5",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/78",
+        "2dab988d9c84d43e7f43f73c35b9011ff64e79ab",
+        "31954547026",
     ):
         assert evidence in f6_5_dossier
+    assert "docs/tasks/completed/F6.5.md" in panel
+    assert "completed/F6.5.md" in task_index
     for source in (panel, task_index, readme):
         assert "3c1f4d2" in source
         assert "31930869377" in source
