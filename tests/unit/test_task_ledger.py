@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1202,10 +1202,11 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     ):
         assert evidence in f6_6_dossier
     assert "completed/F6.6.md" in task_index
-    assert (ACTIVE_ROOT / "F6.7.md").is_file()
-    f6_7_dossier = _read(ACTIVE_ROOT / "F6.7.md")
+    assert not (ACTIVE_ROOT / "F6.7.md").exists()
+    f6_7_dossier = _read(COMPLETED_ROOT / "F6.7.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_7_dossier
-    assert "> **Lifecycle:** `COMPLETED_LOCAL / PROMOTION_PENDING`" in f6_7_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f6_7_dossier
+    assert "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`" in f6_7_dossier
     for evidence in (
         "task/f6.7-knowledge-transaction",
         "1327f299c2a748fdb3efb759291b67b39bd2598b",
@@ -1222,10 +1223,19 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "137 passed in 29.21s",
         "1049 passed, 5 skipped, 6 subtests passed in 394.77s",
         "checkpoint/f6.7-complete",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81",
+        "c4a864d15f5d2767fc7020200ba211e0c428843e",
+        "31977507679",
+        "93f7bf20e8721e293b872f887ff6ef837b820e39",
+        "31977793119",
+        "docs/promote-f6.7",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82",
+        "5ee3fcc9e56df92b86a83a7a24b6c7bd57d413ce",
+        "31978357679",
     ):
         assert evidence in f6_7_dossier
-    assert "docs/tasks/active/F6.7.md" in panel
-    assert "active/F6.7.md" in task_index
+    assert "docs/tasks/completed/F6.7.md" in panel
+    assert "completed/F6.7.md" in task_index
     for source in (panel, task_index, readme):
         assert "43cb6ea" in source
         assert "1327f299" in source
