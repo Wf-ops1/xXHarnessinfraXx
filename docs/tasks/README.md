@@ -20,11 +20,14 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-O único dossiê ativo é [F6.4 — implementar um doctor real](active/F6.4.md), com gate
-`COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED`. O PR #75 abriu no head `0088b31`; o run
-`31923378762` passou 8/10 jobs obrigatórios, mas Tests Ubuntu 3.11/3.14 perderam o launcher da
-virtualenv e `CI required` bloqueou a promoção. A R1 preserva o launcher, passou `24` testes dedicados
-e a full com `991 passed, 5 skipped, 6 subtests passed`; commit/push corretivos estão autorizados.
+Não há tarefa de implementação ativa. A [F6.4 — implementar um doctor real](completed/F6.4.md) está
+`PROMOTED`: a falha Linux inicial do run `31923378762` foi corrigida no head final `6e6ebb8`, que
+passou 11/11 no run `31928606331`. O [PR #75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75)
+foi incorporado pelo merge `574df7a` e recebeu 11/11 na CI pós-merge `31929031317` em 5m41s. A
+reconciliação `docs/promote-f6.4` está `ADMIN_PR_OPEN / CHECKS_PENDING` no
+[#76](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/76); o head inicial `8c6d2a8` disparou o run
+`31930029057`, e o registro da publicação permanece somente local. F6.5 não possui gate nem
+autorização.
 
 A [F6.3 — gerar e validar o evidence manifest](completed/F6.3.md) está `PROMOTED`: o head final `ed1f0e0` do
 [#73](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73) passou 11/11 no run `31913438082`, foi
@@ -165,6 +168,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F6 | F6.1 | [Schema único de eventos](completed/F6.1.md) | PR #69 / head `4c57a33` / merge `7d6a0e1` / pós-merge `31887143905`; administrativo #70 / inicial `aae1aea` / `31888260797`; final `9a346bd7` / `31888564163`; merge `ac887b0` / pós-merge `31888960272` |
 | F6 | F6.2 | [Journal de auditoria fortalecido](completed/F6.2.md) | PR #71 / head `9fdd3cd` / merge `3f63428` / pós-merge `31899659117`; administrativo #72 / head `d9e4010` / merge `f5d2a33` / pós-merge `31902119059` |
 | F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo #74 / head `e557d46` / CI `31916987572`; merge `5b10b2d` / pós-merge `31918043022` |
+| F6 | F6.4 | [Doctor real](completed/F6.4.md) | PR #75 / head final `6e6ebb8` / CI `31928606331`; merge `574df7a` / pós-merge `31929031317`; administrativo #76 / head inicial `8c6d2a8` / CI inicial `31930029057` |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

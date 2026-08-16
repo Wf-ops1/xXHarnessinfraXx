@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.3 estão promovidas; F6.4 possui produto no PR #75 e R1 local certificada | A CI inicial F6.4 revelou portabilidade Linux e bloqueou a promoção; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery F6.5–F6.7 |
+| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.4 estão promovidas; a R1 F6.4 restaurou a portabilidade Linux e foi certificada no PR e em `main` | A reconciliação administrativa F6.4 está no PR #76, com registro local ainda não publicado; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery F6.5–F6.7 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `status`, `inspect` e o doctor local com `--json`/`--workflow` possuem contratos e testes | Sem backends reais, `run` falha no preflight; audit e verify ainda cobrem componentes incompletos; comandos operacionais exigem estado/worktree injetados válidos | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -49,7 +49,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Tool loop | A F5.2 promovida unifica a autorização em um engine tipado default-deny por role, node, workflow, trust mode, tool, operação, path e aprovação; o lote é pré-autorizado e a regra aplicada precede o efeito no journal. A F5.3 promovida exige o mesmo snapshot no router e nos adapters antes do efeito | A composição automática das tools não foi adicionada; a aprovação de promoção F5.6 não transforma o booleano de policy em decisão humana de tool | Integração automática das tools e gates seguintes |
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`, e runner `0/0` falham antes de subprocessos; F4.6–F4.8 permanecem promovidas. F6.1/F6.2 fornecem journal canônico e audit fail-closed; a F6.3 promovida gera `evidence.json`, ancora o evento terminal, valida arquivos/digests e impede `COMPLETED` sem evidência íntegra | Proteção sem chave é somente “tamper-evident local”, não imutabilidade; composição automática e recovery amplo F6.5–F6.7 continuam pendentes | Matriz operacional integral com inspect e recovery ampliados |
-| Doctor | Na branch local F6.4, sete componentes percorrem seis estágios reais; texto/JSON compartilham resultado tipado, `--workflow` resolve gates sem executá-los e ambiente unhealthy retorna não zero | Provider/MCP live continuam dependentes de configuração e serviços externos; adapters não suportados falham fechados | UX adicional e novos adapters somente após contrato/testes equivalentes |
+| Doctor | A F6.4 promovida faz sete componentes percorrerem seis estágios reais; texto/JSON compartilham resultado tipado, `--workflow` resolve gates sem executá-los e ambiente unhealthy retorna não zero | Provider/MCP live continuam dependentes de configuração e serviços externos; adapters não suportados falham fechados | UX adicional e novos adapters somente após contrato/testes equivalentes |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo; F5.7 R3 promovida confina Git, liga aprovação destrutiva à tentativa e falha corretamente em rollback bloqueado | Rollback não reexecuta gates pós-reversão e a composição continua opt-in | Composição operacional padrão e recovery/evidence F6 |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
 
@@ -223,11 +223,15 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   em 5m39s. A reconciliação administrativa
   [PR #74](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/74) encerrou no head `e557d46`, passou
   11/11 no run `31916987572`, foi incorporada pelo merge `5b10b2d` e recebeu 11/11 na CI pós-merge
-  `31918043022`. A F6.4 abriu o [PR #75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75) no head
-  `0088b31`; o run `31923378762` passou 8/10 jobs obrigatórios, mas Tests Ubuntu 3.11/3.14 falharam
-  porque o launcher da virtualenv era resolvido para o Python-base. A R1 preserva o launcher e passou
-  `24` testes dedicados e full com `991 passed, 5 skipped, 6 subtests passed`; promoção segue
-  `REPAIR_ACTIVE / PROMOTION_BLOCKED` até CI verde no head corretivo. F6.5–F6.7 não foram iniciadas.
+  `31918043022`. A F6.4 preserva como evidência negativa o run `31923378762`, no qual Tests Ubuntu
+  3.11/3.14 falharam porque o launcher da virtualenv era resolvido para o Python-base. A R1 preservou
+  o launcher, passou `24` testes dedicados e full com `991 passed, 5 skipped, 6 subtests passed`; o
+  head final `6e6ebb8` do [PR #75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75) recebeu 11/11
+  no run `31928606331`, foi incorporado pelo merge `574df7a` e recebeu 11/11 na CI pós-merge
+  `31929031317` em 5m41s. A reconciliação administrativa está no
+  [PR #76](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/76), cujo head inicial `8c6d2a8` disparou
+  o run `31930029057`; o registro dessa publicação permanece somente local. F6.5–F6.7 não foram
+  iniciadas.
 
 ## Dívidas técnicas críticas
 
