@@ -5,8 +5,8 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F6.6](docs/tasks/active/F6.6.md): recovery e testes de falha em gate `READY`, com escopo local
-   congelado sobre a base certificada `6386816`.
+2. [F6.6](docs/tasks/completed/F6.6.md): recovery e testes de falha concluídos localmente no produto
+   `1d54674`, com full R2 `1030/5/6` verde; promoção ainda pendente.
 3. [F6.5](docs/tasks/completed/F6.5.md): produto promovido pelo PR #77; reconciliação #78 incorporada
    em `6386816`, com CI pós-merge `31956649961` verde.
 4. [F6.4](docs/tasks/completed/F6.4.md): doctor real promovido pelo PR #75; reconciliação #76
@@ -44,12 +44,12 @@
 | Campo | Estado observado |
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1–F6.5 promovidas no produto |
-| **Fase ativa** | Fase 6; F6.6 em execução local após encerramento terminal da F6.5 |
-| **Tarefa ativa** | [F6.6 — recovery e testes de falha](docs/tasks/active/F6.6.md) |
-| **Gate** | `READY / ACTIVE` |
-| **Estado corrente** | escopo congelado; baseline selecionada `13 passed, 183 deselected in 43.84s`; probes negativos de worktree e knowledge preservados |
+| **Fase ativa** | Fase 6; F6.6 concluída localmente, promoção pendente; F6.7 não iniciada |
+| **Tarefa ativa** | nenhuma tarefa ativa de implementação; [F6.6](docs/tasks/completed/F6.6.md) aguarda promoção |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | produto `1d5467457cf99c4ee34d69000630de1b1aa0900b`; worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed in 765.28s` |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor da F6.6 |
+| **Executor ativo** | `Codex`, único escritor do checkpoint local F6.6 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f6.6-recovery-failures`, sem upstream; criada de `main == origin/main == 638681638a341df9046f784b79140f4e40124032` |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
@@ -64,7 +64,7 @@
 | **Checkpoint F6.3** | `checkpoint/f6.3-ready` → `27a9f7057e05d6128ed21f7a5c5c463494749f04`; `checkpoint/f6.3-complete` → `0bf3a5910a768fd199130ebea0377911f24e4e55`; ambos somente locais |
 | **Checkpoint F6.4** | `checkpoint/f6.4-ready` → `261f0977f9d0ed16ac51ce569b631a43ae7e49ff`; `checkpoint/f6.4-complete` → `0088b3149f559b77a9a0336cd73d4f2a3b7adccb`; ambos somente locais e imutáveis |
 | **Checkpoint F6.5** | `checkpoint/f6.5-ready` → `90212ed54c190024c366c8f7cf69320345957907`; `checkpoint/f6.5-complete` → `7386638c76b3270ab9849337e6e429b8f29a9202`; ambos somente locais e imutáveis |
-| **Checkpoint F6.6** | `checkpoint/f6.6-ready`, somente local, apontará para o commit deste gate antes do produto |
+| **Checkpoint F6.6** | `checkpoint/f6.6-ready` → `2d01cca`; `checkpoint/f6.6-complete` apontará para o commit de certificação; ambos somente locais |
 | **Main sincronizada** | antes da branch F6.6, `main == origin/main == 638681638a341df9046f784b79140f4e40124032` |
 | **Implementação F6.5** | status versionado com tentativa/duração/blocker/next action; catálogo ordenado; JSON/JSONL; follow sem duplicata; evidence pelo verificador canônico |
 | **Validação F6.5** | focado `172`; full `1023 passed, 5 skipped, 6 subtests passed`; Ruff/mypy/compileall/diff/docs/build/smoke verdes |
@@ -159,7 +159,7 @@
 | PR de produto | [#77](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77), head final `7386638`, CI `31936640635`, 11/11 success |
 | Merge de produto | `c0491258ceab29785c97c2a4f1375d1f7d1f9645`; CI de `push` `31953772121`, 11/11 success |
 | Reconciliação administrativa | PR [#78](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/78), head final `fcc927e`, CI `31955779575`; merge `6386816`; pós-merge `31956649961`, 10/10 + `CI required` verdes |
-| Fronteira | F6.5 terminalmente encerrada; F6.6 ativa; correção da transação knowledge reservada à F6.7 |
+| Fronteira | F6.5 terminalmente encerrada; F6.6 concluída localmente e ainda não promovida; correção knowledge reservada à F6.7 |
 | Promoção anterior | F6.4 — PR #75 / merge `574df7a` / pós-merge `31929031317`; reconciliação PR #76 / merge `a42ec411` / pós-merge `31931649225` |
 | Promoção anterior | F6.3 — PR #73 / merge `1bd095a` / pós-merge `31913877551`; reconciliação PR #74 / merge `5b10b2d` / pós-merge `31918043022` |
 | Promoção anterior | F6.2 — PR #71 / merge `3f63428` / pós-merge `31899659117`; reconciliação PR #72 / merge `f5d2a33` / pós-merge `31902119059` |
@@ -222,29 +222,28 @@ iniciar sua implementação local na branch exclusiva; push, PR, merge e tags re
 
 ## 5. Tarefa ativa
 
-A [F6.6 — recovery e testes de falha](docs/tasks/active/F6.6.md) está `READY / ACTIVE`. O allowlist
-local cobre a recuperação idempotente da criação de worktree, testes dos nove checkpoints e a matriz
-operacional. A transação knowledge não será alterada: seu falso recovery conhecido é
-`known_gap_f6_7` e permanece evidência negativa obrigatória para a F6.7.
+A [F6.6 — recovery e testes de falha](docs/tasks/completed/F6.6.md) está
+`COMPLETED_LOCAL / PROMOTION_PENDING`. A criação de worktree recupera nenhum efeito ou efeito
+completo e bloqueia estado parcial/divergente. A matriz pública cobre nove checkpoints. Knowledge
+permanece `known_gap_f6_7` e evidência negativa obrigatória para a F6.7.
 `POST_PROMOTION_BLOCKED` permanece somente como estado corretivo histórico da F5.C1.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio para os oito contratos pertencentes à F6.6. O probe knowledge
+Não há bloqueio técnico para promover a F6.6; falta autorização explícita para efeitos remotos. O probe knowledge
 `outcome=RECOVERED_tx-missing current_exists=False staging_exists=False` bloqueia o gate de saída da
 Fase 6 até a F6.7, sem ampliar o escopo atual. Efeitos remotos e remoção de refs não estão autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O CHECKPOINT LOCAL READY ANTES DO PRODUTO.
-IMPLEMENTAR O RETRY IDEMPOTENTE DE WORKTREE E A MATRIZ DOS NOVE CHECKPOINTS NO ALLOWLIST.
-VALIDAR LOCALMENTE; NÃO FAZER PUSH, ABRIR PR, MESCLAR, PUBLICAR TAG OU REMOVER REF.
+AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUSH SEM FORCE E ABERTURA DO PR DE PRODUTO F6.6.
+NÃO INICIAR F6.7, MESCLAR, PUBLICAR TAG REMOTA OU REMOVER REF SEM AUTORIZAÇÃO POSTERIOR.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.6.md` e a Fase 6 do plano.
+1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F6.6.md` e a Fase 6 do plano.
 2. Confirme `task/f6.6-recovery-failures`, sem upstream, e base `638681638a341df9046f784b79140f4e40124032`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
@@ -263,9 +262,9 @@ VALIDAR LOCALMENTE; NÃO FAZER PUSH, ABRIR PR, MESCLAR, PUBLICAR TAG OU REMOVER 
 13. Preserve baseline `139`, focado `172`, full final `1023/5/6`, PR #77/head `7386638`/CI
     `31936640635`/merge `c049125`/pós-merge `31953772121`.
 14. Preserve PR #78/head final `fcc927e`/CI `31955779575`/merge `6386816`/pós-merge `31956649961`.
-15. Retome a F6.6 pela baseline `13 passed, 183 deselected in 43.84s` e pelos dois probes do dossiê;
-    não altere knowledge nem produza efeitos remotos.
+15. Retome a F6.6 pelo produto `1d54674`, checkpoint `checkpoint/f6.6-complete`, focado `234` e full
+    R2 `1030/5/6`; não altere knowledge nem produza efeitos remotos sem autorização.
 
 ---
 
-*Atualizado em: 2026-08-16T13:02:13-03:00 | Fonte: encerramento terminal F6.5 + gate READY F6.6*
+*Atualizado em: 2026-08-16T14:28:28-03:00 | Fonte: produto/certificação local F6.6 completos*

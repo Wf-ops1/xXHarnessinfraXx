@@ -20,11 +20,10 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F6.6 — recovery e testes de falha](active/F6.6.md) está `READY / ACTIVE` na branch
-`task/f6.6-recovery-failures`, criada da base certificada `6386816`. A baseline selecionada passou
-`13 passed, 183 deselected in 43.84s`; os probes preservam a criação de worktree não idempotente e o
-falso recovery knowledge como evidências negativas. O escopo local corrige somente worktree, congela
-a matriz dos nove checkpoints e reserva a semântica transacional knowledge para a F6.7.
+Não há tarefa de implementação ativa. A [F6.6 — recovery e testes de falha](completed/F6.6.md) está
+`COMPLETED_LOCAL / PROMOTION_PENDING` no produto `1d54674`. Worktree passou `29`, a matriz dos nove
+checkpoints `24`, o focado `234` e a full R2 `1030 passed, 5 skipped, 6 subtests passed`. O guia
+documenta recovery/bloqueio/cleanup/evidência e preserva knowledge como `known_gap_f6_7` para F6.7.
 
 A [F6.5 — status e inspeção operacionais](completed/F6.5.md) está terminalmente `PROMOTED`: o PR
 #77 encerrou no merge `c049125`/pós-merge `31953772121`; a reconciliação
@@ -179,6 +178,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo #74 / head `e557d46` / CI `31916987572`; merge `5b10b2d` / pós-merge `31918043022` |
 | F6 | F6.4 | [Doctor real](completed/F6.4.md) | PR #75 / head final `6e6ebb8` / CI `31928606331`; merge `574df7a` / pós-merge `31929031317`; administrativo #76 / head final `3c1f4d2` / CI `31930869377`; merge `a42ec411` / pós-merge `31931649225` |
 | F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo #78 / final `fcc927e` / `31955779575`; merge `6386816` / pós-merge `31956649961` |
+| F6 | F6.6 | [Recovery e testes de falha](completed/F6.6.md) | `COMPLETED_LOCAL`; produto `1d54674`; worktree `29`; matriz `24`; focado `234`; full R2 `1030/5/6`; promoção pendente |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
