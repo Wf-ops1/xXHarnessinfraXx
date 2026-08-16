@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_LOCAL_READY / PUBLICATION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1113,7 +1113,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     f6_4_dossier = _read(COMPLETED_ROOT / "F6.4.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_4_dossier
     assert "> **Lifecycle:** `PROMOTED`" in f6_4_dossier
-    assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f6_4_dossier
+    assert "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`" in f6_4_dossier
     assert "checkpoint/f6.4-ready" in f6_4_dossier
     assert "checkpoint/f6.4-complete" in f6_4_dossier
     assert "pendente de autorização para o commit local" not in f6_4_dossier
@@ -1132,6 +1132,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "574df7a538e9a69cce13ce9ab10883241ef0350f" in f6_4_dossier
     assert "31929031317" in f6_4_dossier
     assert "docs/promote-f6.4" in f6_4_dossier
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/76" in f6_4_dossier
+    assert "8c6d2a8467a94de1ca1dbc102cbfca49bce0e8c5" in f6_4_dossier
+    assert "31930029057" in f6_4_dossier
     assert "docs/tasks/completed/F6.4.md" in panel
     assert "completed/F6.4.md" in task_index
     assert "FAIL:GIT_NOT_INSTALLED" in f6_4_dossier
