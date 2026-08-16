@@ -25,7 +25,9 @@ está `PROMOTED`: a projeção tipada e os cinco comandos passaram `172` focados
 `1023 passed, 5 skipped, 6 subtests passed`, quality, build e smoke offline. O head final `7386638`
 do [PR #77](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77) passou 11/11 no run `31936640635`,
 foi incorporado pelo merge `c049125` e recebeu 11/11 na CI pós-merge `31953772121`. A reconciliação
-`docs/promote-f6.5` está `LOCAL_READY / PUBLICATION_PENDING`; F6.6 permanece bloqueada.
+[PR #78](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/78) abriu no head `2dab988`, que passou
+11/11 no run `31954547026`; o registro final está pronto localmente para publicação no mesmo PR.
+F6.6 permanece bloqueada.
 
 A [F6.4 — implementar um doctor real](completed/F6.4.md) está `PROMOTED`: o head final `6e6ebb8` do
 [PR #75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75) passou 11/11 no run `31928606331`, foi
@@ -174,7 +176,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F6 | F6.2 | [Journal de auditoria fortalecido](completed/F6.2.md) | PR #71 / head `9fdd3cd` / merge `3f63428` / pós-merge `31899659117`; administrativo #72 / head `d9e4010` / merge `f5d2a33` / pós-merge `31902119059` |
 | F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo #74 / head `e557d46` / CI `31916987572`; merge `5b10b2d` / pós-merge `31918043022` |
 | F6 | F6.4 | [Doctor real](completed/F6.4.md) | PR #75 / head final `6e6ebb8` / CI `31928606331`; merge `574df7a` / pós-merge `31929031317`; administrativo #76 / head final `3c1f4d2` / CI `31930869377`; merge `a42ec411` / pós-merge `31931649225` |
-| F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo local pendente |
+| F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo #78 / inicial `2dab988` / `31954547026`; registro final local |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
