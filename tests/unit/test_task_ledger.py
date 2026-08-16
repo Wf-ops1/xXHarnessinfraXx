@@ -1075,10 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert (
-        "| **Gate** | `COMPLETED_LOCAL / REPAIR_ACTIVE / PROMOTION_BLOCKED` |"
-        in panel
-    )
+    assert "| **Gate** | `PROMOTED / ADMIN_LOCAL_READY / PUBLICATION_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1111,10 +1108,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert evidence in f6_2_dossier
     assert not (ACTIVE_ROOT / "F6.3.md").exists()
     assert (COMPLETED_ROOT / "F6.3.md").is_file()
-    assert (ACTIVE_ROOT / "F6.4.md").is_file()
-    f6_4_dossier = _read(ACTIVE_ROOT / "F6.4.md")
+    assert not (ACTIVE_ROOT / "F6.4.md").exists()
+    assert (COMPLETED_ROOT / "F6.4.md").is_file()
+    f6_4_dossier = _read(COMPLETED_ROOT / "F6.4.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_4_dossier
-    assert "> **Lifecycle:** `REPAIR_ACTIVE / PROMOTION_BLOCKED`" in f6_4_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f6_4_dossier
+    assert "> **Reconciliação administrativa:** `LOCAL_READY / PUBLICATION_PENDING`" in f6_4_dossier
     assert "checkpoint/f6.4-ready" in f6_4_dossier
     assert "checkpoint/f6.4-complete" in f6_4_dossier
     assert "pendente de autorização para o commit local" not in f6_4_dossier
@@ -1128,6 +1127,13 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "PYTHON_IMPORT_SMOKE_FAILED" in f6_4_dossier
     assert "24 passed in 2.13s" in f6_4_dossier
     assert "991 passed, 5 skipped, 6 subtests passed in 371.40s" in f6_4_dossier
+    assert "6e6ebb8b0871b3dd7d1a0bb80ec27704a2f389d9" in f6_4_dossier
+    assert "31928606331" in f6_4_dossier
+    assert "574df7a538e9a69cce13ce9ab10883241ef0350f" in f6_4_dossier
+    assert "31929031317" in f6_4_dossier
+    assert "docs/promote-f6.4" in f6_4_dossier
+    assert "docs/tasks/completed/F6.4.md" in panel
+    assert "completed/F6.4.md" in task_index
     assert "FAIL:GIT_NOT_INSTALLED" in f6_4_dossier
     assert "Wheel R2" in f6_4_dossier
     assert "doctor --json" in f6_4_dossier
