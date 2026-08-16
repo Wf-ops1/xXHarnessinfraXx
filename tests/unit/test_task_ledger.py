@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1173,7 +1173,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert not (ACTIVE_ROOT / "F6.6.md").exists()
     f6_6_dossier = _read(COMPLETED_ROOT / "F6.6.md")
     assert "> **Gate:** `COMPLETED_LOCAL`" in f6_6_dossier
-    assert "> **Lifecycle:** `PROMOTION_PENDING`" in f6_6_dossier
+    assert "> **Lifecycle:** `PROMOTED`" in f6_6_dossier
+    assert "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`" in f6_6_dossier
     for evidence in (
         "task/f6.6-recovery-failures",
         "638681638a341df9046f784b79140f4e40124032",
@@ -1189,6 +1190,15 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "234 passed in 332.99s",
         "1030 passed, 5 skipped, 6 subtests passed in 765.28s",
         "checkpoint/f6.6-complete",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79",
+        "1ce953df5ad3db3764f44fc063cb617c18546d3c",
+        "31962221925",
+        "8be678946dc57244974caf5b485c33425a7466c3",
+        "31963338576",
+        "docs/promote-f6.6",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80",
+        "06abef0637a8f6db91c5788c8e28148d81a765be",
+        "31967211097",
     ):
         assert evidence in f6_6_dossier
     assert "completed/F6.6.md" in task_index
@@ -1198,6 +1208,11 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "a42ec411" in source
         assert "31931649225" in source
         assert "F6.5" in source
+        assert "1ce953d" in source
+        assert "31962221925" in source
+        assert "8be6789" in source
+        assert "31963338576" in source
+        assert "docs/promote-f6.6" in source
     assert "FAIL:GIT_NOT_INSTALLED" in f6_4_dossier
     assert "Wheel R2" in f6_4_dossier
     assert "doctor --json" in f6_4_dossier

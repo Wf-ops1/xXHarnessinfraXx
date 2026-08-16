@@ -21,9 +21,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 ## Tarefa ativa
 
 Não há tarefa de implementação ativa. A [F6.6 — recovery e testes de falha](completed/F6.6.md) está
-`COMPLETED_LOCAL / PROMOTION_PENDING` no produto `1d54674`. Worktree passou `29`, a matriz dos nove
-checkpoints `24`, o focado `234` e a full R2 `1030 passed, 5 skipped, 6 subtests passed`. O guia
-documenta recovery/bloqueio/cleanup/evidência e preserva knowledge como `known_gap_f6_7` para F6.7.
+`PROMOTED`: o head `1ce953d` do PR #79 passou no run `31962221925`, foi incorporado pelo merge
+`8be6789` e recebeu CI pós-merge verde no run `31963338576`. A reconciliação
+[PR #80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80) abriu no head `06abef0`, certificado
+pelo run `31967211097`; o registro final está pronto localmente para publicação. Knowledge permanece
+`known_gap_f6_7`; a F6.7 não foi iniciada.
 
 A [F6.5 — status e inspeção operacionais](completed/F6.5.md) está terminalmente `PROMOTED`: o PR
 #77 encerrou no merge `c049125`/pós-merge `31953772121`; a reconciliação
@@ -178,7 +180,7 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F6 | F6.3 | [Evidence manifest](completed/F6.3.md) | PR #73 / head `ed1f0e0` / CI `31913438082`; merge `1bd095a` / pós-merge `31913877551`; administrativo #74 / head `e557d46` / CI `31916987572`; merge `5b10b2d` / pós-merge `31918043022` |
 | F6 | F6.4 | [Doctor real](completed/F6.4.md) | PR #75 / head final `6e6ebb8` / CI `31928606331`; merge `574df7a` / pós-merge `31929031317`; administrativo #76 / head final `3c1f4d2` / CI `31930869377`; merge `a42ec411` / pós-merge `31931649225` |
 | F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo #78 / final `fcc927e` / `31955779575`; merge `6386816` / pós-merge `31956649961` |
-| F6 | F6.6 | [Recovery e testes de falha](completed/F6.6.md) | `COMPLETED_LOCAL`; produto `1d54674`; worktree `29`; matriz `24`; focado `234`; full R2 `1030/5/6`; promoção pendente |
+| F6 | F6.6 | [Recovery e testes de falha](completed/F6.6.md) | PR #79 / head `1ce953d` / CI `31962221925`; merge `8be6789` / pós-merge `31963338576`; `docs/promote-f6.6` no administrativo #80 / inicial `06abef0` / `31967211097`; registro final local |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.
