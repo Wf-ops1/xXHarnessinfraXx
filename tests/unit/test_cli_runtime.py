@@ -11,7 +11,7 @@ from click.testing import CliRunner
 import ai_engineering_harness.cli.main as CLI_MODULE
 from ai_engineering_harness.cli.main import main
 from ai_engineering_harness.compiler.visualizer import GraphVisualizer
-from ai_engineering_harness.contracts.events import ExecutionEvent
+from ai_engineering_harness.contracts.events import EventType, ExecutionEvent
 from ai_engineering_harness.contracts.execution import (
     EXECUTION_RECORD_SCHEMA_VERSION,
     ApprovalStatus,
@@ -26,9 +26,10 @@ from ai_engineering_harness.doctor.probes import (
     ProbeStatus,
 )
 from ai_engineering_harness.indexer import SnapshotManager
-from ai_engineering_harness.persistence import AtomicFileStateStorage
+from ai_engineering_harness.persistence import AtomicFileStateStorage, StateStorageError
 from ai_engineering_harness.runtime import (
     ExecutionInspection,
+    ExecutionNextAction,
     ExecutionStatusView,
     GraphExecutionResult,
 )
@@ -53,9 +54,39 @@ class _FakeLifecycle:
             current_node_id="completed",
             current_state=ExecutionState.COMPLETED,
             approval_status=ApprovalStatus.NOT_REQUIRED,
+            created_at=datetime(2026, 8, 7, 11, 59, tzinfo=UTC),
             revision=3,
             updated_at=datetime(2026, 8, 7, 12, 0, tzinfo=UTC),
+            current_attempt=0,
+            duration_ms=60_000,
+            next_action=ExecutionNextAction.NONE,
         )
+        self.journal = (
+            ExecutionEvent.model_validate(
+                {
+                    "event_id": "exec-cli-runtime-event-1",
+                    "execution_id": "exec-cli-runtime",
+                    "sequence_number": 1,
+                    "event_type": "EXECUTION_COMPLETED",
+                    "timestamp": datetime(2026, 8, 7, 12, 0, tzinfo=UTC),
+                    "graph_name": "new-feature",
+                    "node_id": None,
+                    "attempt": 0,
+                    "actor": "cli-test",
+                    "details": {"status": "completed"},
+                    "previous_hash": None,
+                    "current_hash": "a" * 64,
+                }
+            ),
+        )
+        self.evidence_manifest = SimpleNamespace(
+            execution_id="exec-cli-runtime",
+            final_result="VERIFIED",
+            journal_final_sequence=1,
+            journal_final_hash="a" * 64,
+            files=(SimpleNamespace(path="summary.json"),),
+        )
+        self.catalog = (self.status_view,)
         self.verification_result = SimpleNamespace(
             all_passed=True,
             passed_gates=1,
@@ -106,6 +137,10 @@ class _FakeLifecycle:
         self.calls.append(("status", execution_id))
         return self.status_view
 
+    def list_executions(self) -> tuple[ExecutionStatusView, ...]:
+        self.calls.append(("list_executions", None))
+        return self.catalog
+
     def inspect(self, execution_id: str) -> ExecutionInspection:
         self.calls.append(("inspect", execution_id))
         return ExecutionInspection(
@@ -116,6 +151,14 @@ class _FakeLifecycle:
             event_count=3,
             event_types=("STATE_TRANSITIONED", "NODE_COMPLETED"),
         )
+
+    def events(self, execution_id: str) -> tuple[ExecutionEvent, ...]:
+        self.calls.append(("events", execution_id))
+        return self.journal
+
+    def verify_evidence(self, execution_id: str):
+        self.calls.append(("verify_evidence", execution_id))
+        return self.evidence_manifest
 
     def verify(self, execution_id: str):
         self.calls.append(("verify", execution_id))
@@ -471,6 +514,207 @@ def test_cli_resume_approve_cancel_status_and_inspect_are_canonical_and_redacted
     assert ("rollback", "exec-cli-runtime") in fake.calls
 
 
+def test_cli_operational_list_status_json_events_and_evidence_are_canonical(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        catalog = runner.invoke(main, ["list"])
+        status_json = runner.invoke(
+            main,
+            ["status", "exec-cli-runtime", "--json"],
+        )
+        journal = runner.invoke(main, ["events", "exec-cli-runtime"])
+        evidence_missing_verify = runner.invoke(
+            main,
+            ["evidence", "exec-cli-runtime"],
+        )
+        evidence = runner.invoke(
+            main,
+            ["evidence", "exec-cli-runtime", "--verify"],
+        )
+
+    assert catalog.exit_code == 0
+    assert "exec-cli-runtime" in catalog.output
+    payload = json.loads(status_json.output)
+    assert payload == fake.status_view.model_dump(mode="json")
+    assert payload["status_schema_version"] == "1.0"
+    assert payload["duration_ms"] == 60_000
+    journal_lines = journal.output.splitlines()
+    assert len(journal_lines) == 1
+    assert json.loads(journal_lines[0])["sequence_number"] == 1
+    assert evidence_missing_verify.exit_code != 0
+    assert "--verify is required" in evidence_missing_verify.output
+    assert evidence.exit_code == 0
+    assert "VERIFIED" in evidence.output
+    combined_output = (
+        f"{catalog.output}{status_json.output}{journal.output}{evidence.output}"
+    )
+    assert "legacy-state-secret" not in combined_output
+
+
+def test_cli_events_follow_emits_each_sequence_once_and_stops_at_terminal(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    first = fake.journal[0].model_copy(
+        update={
+            "event_id": "exec-cli-runtime-event-created",
+            "event_type": EventType.EXECUTION_CREATED,
+            "details": {"status": "created"},
+        }
+    )
+    second = fake.journal[0].model_copy(
+        update={
+            "event_id": "exec-cli-runtime-event-completed",
+            "sequence_number": 2,
+            "previous_hash": "a" * 64,
+            "current_hash": "b" * 64,
+        }
+    )
+    event_reads = 0
+    status_reads = 0
+
+    def read_events(execution_id: str) -> tuple[ExecutionEvent, ...]:
+        nonlocal event_reads
+        fake.calls.append(("events", execution_id))
+        event_reads += 1
+        return (first,) if event_reads == 1 else (first, second)
+
+    def read_status(execution_id: str) -> ExecutionStatusView:
+        nonlocal status_reads
+        fake.calls.append(("status", execution_id))
+        status_reads += 1
+        if status_reads == 1:
+            return fake.status_view.model_copy(
+                update={
+                    "current_state": ExecutionState.EXECUTING,
+                    "next_action": ExecutionNextAction.RESUME,
+                }
+            )
+        return fake.status_view
+
+    fake.events = read_events  # type: ignore[method-assign]
+    fake.status = read_status  # type: ignore[method-assign]
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
+    monkeypatch.setattr(CLI_MODULE.time, "sleep", lambda _: None)
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        result = runner.invoke(
+            main,
+            ["events", "exec-cli-runtime", "--follow"],
+        )
+
+    assert result.exit_code == 0
+    lines = [json.loads(line) for line in result.output.splitlines()]
+    assert [line["sequence_number"] for line in lines] == [1, 2]
+    assert event_reads == 3
+    assert status_reads == 2
+
+
+def test_cli_list_preserves_canonical_order_and_handles_empty_catalog(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    first = fake.status_view.model_copy(
+        update={"execution_id": "exec-a", "workflow_name": "alpha"}
+    )
+    second = fake.status_view.model_copy(
+        update={"execution_id": "exec-z", "workflow_name": "zeta"}
+    )
+    fake.catalog = (first, second)
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        ordered = runner.invoke(main, ["list"])
+        fake.catalog = ()
+        empty = runner.invoke(main, ["list"])
+
+    assert ordered.exit_code == 0
+    assert ordered.output.index("exec-a") < ordered.output.index("exec-z")
+    assert empty.exit_code == 0
+    assert "Nenhuma execução encontrada" in empty.output
+
+
+def test_cli_operational_errors_are_nonzero_redacted_and_without_traceback(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    raw_secret = "sk-" + "x" * 40
+
+    def fail(*args, **kwargs):
+        del args, kwargs
+        raise StateStorageError(f"execution is unavailable; api_key={raw_secret}")
+
+    fake.list_executions = fail  # type: ignore[method-assign]
+    fake.status = fail  # type: ignore[method-assign]
+    fake.inspect = fail  # type: ignore[method-assign]
+    fake.events = fail  # type: ignore[method-assign]
+    fake.verify_evidence = fail  # type: ignore[method-assign]
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
+
+    commands = (
+        ["list"],
+        ["status", "exec-missing", "--json"],
+        ["inspect", "exec-missing"],
+        ["events", "exec-missing"],
+        ["evidence", "exec-missing", "--verify"],
+    )
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        results = tuple(runner.invoke(main, command) for command in commands)
+
+    for result in results:
+        assert result.exit_code != 0
+        assert raw_secret not in result.output
+        assert "[REDACTED_SECRET]" in result.output
+        assert "Traceback" not in result.output
+
+
+def test_cli_events_follow_fails_closed_if_journal_regresses(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    fake = _FakeLifecycle()
+    reads = 0
+
+    def regressing_events(execution_id: str) -> tuple[ExecutionEvent, ...]:
+        nonlocal reads
+        fake.calls.append(("events", execution_id))
+        reads += 1
+        return fake.journal if reads == 1 else ()
+
+    fake.events = regressing_events  # type: ignore[method-assign]
+    fake.status = lambda execution_id: fake.status_view.model_copy(  # type: ignore[method-assign]
+        update={
+            "current_state": ExecutionState.EXECUTING,
+            "next_action": ExecutionNextAction.RESUME,
+        }
+    )
+    monkeypatch.setattr(CLI_MODULE, "_lifecycle_service", lambda root, **_: fake)
+    monkeypatch.setattr(CLI_MODULE.time, "sleep", lambda _: None)
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        result = runner.invoke(
+            main,
+            ["events", "exec-cli-runtime", "--follow"],
+        )
+
+    assert result.exit_code != 0
+    assert "canonical journal sequence regressed" in result.output
+    assert reads == 2
+
+
 def test_cli_rollback_returns_nonzero_when_compensation_is_blocked(
     tmp_path: Path,
     monkeypatch,
@@ -493,7 +737,7 @@ def test_cli_rollback_returns_nonzero_when_compensation_is_blocked(
     assert fake.calls == [("rollback", "exec-cli-runtime")]
 
 
-def test_cli_help_lists_resume_approve_cancel_status_and_inspect() -> None:
+def test_cli_help_lists_runtime_and_operational_inspection_commands() -> None:
     result = CliRunner().invoke(main, ["--help"])
 
     assert result.exit_code == 0
@@ -504,8 +748,11 @@ def test_cli_help_lists_resume_approve_cancel_status_and_inspect() -> None:
         "cancel",
         "cleanup-worktree",
         "rollback",
+        "list",
         "status",
         "inspect",
+        "events",
+        "evidence",
         "verify",
     ):
         assert command in result.output

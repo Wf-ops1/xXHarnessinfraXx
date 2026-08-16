@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1137,6 +1137,31 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     assert "31930029057" in f6_4_dossier
     assert "docs/tasks/completed/F6.4.md" in panel
     assert "completed/F6.4.md" in task_index
+    assert (ACTIVE_ROOT / "F6.5.md").is_file()
+    f6_5_dossier = _read(ACTIVE_ROOT / "F6.5.md")
+    assert "> **Gate:** `COMPLETED_LOCAL`" in f6_5_dossier
+    assert "> **Lifecycle:** `PROMOTION_PENDING`" in f6_5_dossier
+    for evidence in (
+        "task/f6.5-status-inspection",
+        "a42ec411f1a1516336abc1c5b1de57461a03c64d",
+        "3c1f4d2862a8704d78397da8ebbbc7b31659b95a",
+        "31930869377",
+        "31931649225",
+        "139 passed in 28.52s",
+        "172 passed in 32.92s",
+        "1023 passed, 5 skipped, 6 subtests passed in 393.52s",
+        "harness status <execution_id> --json",
+        "harness events <execution_id> --follow",
+        "harness evidence <execution_id> --verify",
+        "checkpoint/f6.5-ready",
+    ):
+        assert evidence in f6_5_dossier
+    for source in (panel, task_index, readme):
+        assert "3c1f4d2" in source
+        assert "31930869377" in source
+        assert "a42ec411" in source
+        assert "31931649225" in source
+        assert "F6.5" in source
     assert "FAIL:GIT_NOT_INSTALLED" in f6_4_dossier
     assert "Wheel R2" in f6_4_dossier
     assert "doctor --json" in f6_4_dossier

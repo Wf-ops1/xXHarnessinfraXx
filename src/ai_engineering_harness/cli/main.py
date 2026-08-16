@@ -3,6 +3,7 @@
 import json
 import shutil
 import sys
+import time
 from pathlib import Path
 
 import click
@@ -17,11 +18,13 @@ from ai_engineering_harness.core import ConfigResolver
 from ai_engineering_harness.doctor.checker import DoctorChecker
 from ai_engineering_harness.doctor.report import DoctorReport
 from ai_engineering_harness.indexer import PythonAstIndexer, StructuralIndexError
+from ai_engineering_harness.observability import EvidenceError
 from ai_engineering_harness.observability.audit import AuditTrailError, AuditTrailManager
 from ai_engineering_harness.persistence import AtomicFileStateStorage, StateStorageError
 from ai_engineering_harness.runtime import (
     ExecutionLifecycleError,
     ExecutionLifecycleService,
+    ExecutionNextAction,
     GraphExecutionError,
     GraphExecutionPausedResult,
     NodeExecutorError,
@@ -31,6 +34,7 @@ from ai_engineering_harness.runtime import (
 )
 from ai_engineering_harness.runtime.maf_adapter import ArtifactValidationError
 from ai_engineering_harness.security import (
+    Redactor,
     SecretGrant,
     TrustAuthorization,
     TrustBoundaryEvaluator,
@@ -39,6 +43,19 @@ from ai_engineering_harness.security import (
 from ai_engineering_harness.workspace import ExternalWorktreeManager
 
 console = Console()
+
+_FOLLOW_TERMINAL_STATES = frozenset(
+    {
+        ExecutionState.BLOCKED_ROLLBACK,
+        ExecutionState.COMPENSATED,
+        ExecutionState.DRY_RUN_COMPLETED,
+        ExecutionState.COMPLETED,
+        ExecutionState.CANCELLED,
+        ExecutionState.FAILED,
+        ExecutionState.FAILED_BUDGET_EXCEEDED,
+        ExecutionState.FAILED_RETRY_EXHAUSTED,
+    }
+)
 
 
 def _lifecycle_service(
@@ -110,7 +127,53 @@ def _parse_json_object(raw: str, *, option_name: str = "--input-json") -> dict[s
 
 
 def _raise_lifecycle_click_error(exc: Exception) -> None:
-    raise click.ClickException(str(exc)) from exc
+    raise click.ClickException(Redactor.redact_text(str(exc))) from exc
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        allow_nan=False,
+        indent=2,
+        sort_keys=True,
+    )
+
+
+def _next_action_text(execution_id: str, action: ExecutionNextAction) -> str:
+    actions = {
+        ExecutionNextAction.NONE: "none",
+        ExecutionNextAction.RESUME: f"harness resume {execution_id}",
+        ExecutionNextAction.VERIFY: f"harness verify {execution_id}",
+        ExecutionNextAction.APPROVE: (
+            f"harness approve {execution_id} --approver <identifier>"
+        ),
+        ExecutionNextAction.INSPECT: f"harness inspect {execution_id}",
+        ExecutionNextAction.MANUAL_INTERVENTION: "manual intervention required",
+    }
+    return actions[action]
+
+
+def _add_status_rows(table: Table, view) -> None:
+    table.add_row("Schema", view.status_schema_version)
+    table.add_row("Execution ID", view.execution_id)
+    table.add_row("Workflow", view.workflow_name)
+    table.add_row("Current node", view.current_node_id)
+    table.add_row("FSM State", view.current_state.value)
+    table.add_row("Approval", view.approval_status.value)
+    table.add_row("Created", view.created_at.isoformat())
+    table.add_row("Revision", str(view.revision))
+    table.add_row("Updated", view.updated_at.isoformat())
+    table.add_row("Current attempt", str(view.current_attempt))
+    table.add_row("Persisted duration (ms)", str(view.duration_ms))
+    if view.blocker is None:
+        table.add_row("Blocker", "none")
+    else:
+        table.add_row("Blocker", f"{view.blocker.code}: {view.blocker.message}")
+    table.add_row(
+        "Next action",
+        _next_action_text(view.execution_id, view.next_action),
+    )
 
 def _get_symbol(success: bool) -> str:
     encoding = getattr(sys.stdout, "encoding", "") or ""
@@ -300,9 +363,39 @@ def run(workflow_name, approval_required, input_json, profile_name, config_json)
         f"outcome: [bold]{result.outcome}[/bold]."
     )
 
-@main.command(help="Consulta o status em tempo real de uma execução.")
+@main.command(name="list", help="Lista o catálogo canônico de execuções locais.")
+def list_executions():
+    try:
+        views = _lifecycle_service(Path.cwd()).list_executions()
+    except (
+        ExecutionLifecycleError,
+        StateMachineError,
+        StateStorageError,
+    ) as exc:
+        _raise_lifecycle_click_error(exc)
+    if not views:
+        console.print("Nenhuma execução encontrada.")
+        return
+    click.echo("execution_id\tworkflow\tstate\tcurrent_node\tattempt\tupdated_at")
+    for view in views:
+        click.echo(
+            "\t".join(
+                (
+                    view.execution_id,
+                    view.workflow_name,
+                    view.current_state.value,
+                    view.current_node_id,
+                    str(view.current_attempt),
+                    view.updated_at.isoformat(),
+                )
+            )
+        )
+
+
+@main.command(help="Consulta o status canônico de uma execução.")
 @click.argument("execution_id")
-def status(execution_id):
+@click.option("--json", "as_json", is_flag=True, help="Emite a projeção tipada em JSON.")
+def status(execution_id, as_json):
     try:
         view = _lifecycle_service(Path.cwd()).status(execution_id)
     except (
@@ -311,16 +404,13 @@ def status(execution_id):
         StateStorageError,
     ) as exc:
         _raise_lifecycle_click_error(exc)
+    if as_json:
+        click.echo(_canonical_json(view.model_dump(mode="json")))
+        return
     table = Table(title=f"Status da Execução {execution_id}")
     table.add_column("Campo", style="cyan")
     table.add_column("Valor", style="bold green")
-    table.add_row("Execution ID", view.execution_id)
-    table.add_row("Workflow", view.workflow_name)
-    table.add_row("Current node", view.current_node_id)
-    table.add_row("FSM State", view.current_state.value)
-    table.add_row("Approval", view.approval_status.value)
-    table.add_row("Revision", str(view.revision))
-    table.add_row("Última Atualização", view.updated_at.isoformat())
+    _add_status_rows(table, view)
     console.print(table)
 
 @main.command(help="Inspeciona os detalhes e o histórico de uma execução.")
@@ -335,14 +425,98 @@ def inspect(execution_id):
     ) as exc:
         _raise_lifecycle_click_error(exc)
     console.print(f"[bold cyan]Inspeção da Execução {execution_id}:[/bold cyan]")
+    console.print(
+        f"  - [bold]Status schema:[/bold] {view.status.status_schema_version}"
+    )
     console.print(f"  - [bold]Estado FSM:[/bold] {view.status.current_state.value}")
     console.print(f"  - [bold]Node atual:[/bold] {view.status.current_node_id}")
     console.print(f"  - [bold]Aprovação:[/bold] {view.status.approval_status.value}")
+    console.print(f"  - [bold]Criada em:[/bold] {view.status.created_at.isoformat()}")
+    console.print(f"  - [bold]Atualizada em:[/bold] {view.status.updated_at.isoformat()}")
+    console.print(f"  - [bold]Tentativa atual:[/bold] {view.status.current_attempt}")
+    console.print(f"  - [bold]Duração persistida (ms):[/bold] {view.status.duration_ms}")
+    blocker = (
+        "none"
+        if view.status.blocker is None
+        else f"{view.status.blocker.code}: {view.status.blocker.message}"
+    )
+    console.print(f"  - [bold]Bloqueador:[/bold] {blocker}")
+    console.print(
+        "  - [bold]Próxima ação:[/bold] "
+        f"{_next_action_text(view.status.execution_id, view.status.next_action)}"
+    )
     console.print(f"  - [bold]Artifact digest:[/bold] {view.artifact_digest}")
     console.print(f"  - [bold]Configuration digest:[/bold] {view.configuration_digest}")
     console.print(f"  - [bold]Initial input digest:[/bold] {view.initial_input_digest}")
     console.print(f"  - [bold]Eventos:[/bold] {view.event_count}")
     console.print(f"  - [bold]Tipos de evento:[/bold] {', '.join(view.event_types)}")
+
+
+@main.command(help="Emite o journal canônico validado de uma execução em JSONL.")
+@click.argument("execution_id")
+@click.option(
+    "--follow",
+    is_flag=True,
+    help="Emite somente novas sequências até a execução alcançar estado terminal.",
+)
+def events(execution_id, follow):
+    emitted_count = 0
+    try:
+        service = _lifecycle_service(Path.cwd())
+        while True:
+            journal = service.events(execution_id)
+            if len(journal) < emitted_count:
+                raise click.ClickException("canonical journal sequence regressed")
+            for event in journal[emitted_count:]:
+                click.echo(event.canonical_json(), nl=False)
+            emitted_count = len(journal)
+            if not follow:
+                return
+            view = service.status(execution_id)
+            if view.current_state in _FOLLOW_TERMINAL_STATES:
+                final_journal = service.events(execution_id)
+                if len(final_journal) < emitted_count:
+                    raise click.ClickException("canonical journal sequence regressed")
+                for event in final_journal[emitted_count:]:
+                    click.echo(event.canonical_json(), nl=False)
+                return
+            time.sleep(1.0)
+    except (
+        ExecutionLifecycleError,
+        StateMachineError,
+        StateStorageError,
+    ) as exc:
+        _raise_lifecycle_click_error(exc)
+
+
+@main.command(help="Verifica integralmente o manifesto de evidência terminal.")
+@click.argument("execution_id")
+@click.option(
+    "--verify",
+    is_flag=True,
+    help="Exige record terminal, journal, manifesto, arquivos e digests íntegros.",
+)
+def evidence(execution_id, verify):
+    if not verify:
+        raise click.ClickException("--verify is required for evidence inspection")
+    try:
+        manifest = _lifecycle_service(Path.cwd()).verify_evidence(execution_id)
+    except (
+        EvidenceError,
+        ExecutionLifecycleError,
+        StateMachineError,
+        StateStorageError,
+    ) as exc:
+        _raise_lifecycle_click_error(exc)
+    table = Table(title=f"Evidência verificada {execution_id}")
+    table.add_column("Campo", style="cyan")
+    table.add_column("Valor", style="bold green")
+    table.add_row("Execution ID", manifest.execution_id)
+    table.add_row("Result", manifest.final_result)
+    table.add_row("Journal sequence", str(manifest.journal_final_sequence))
+    table.add_row("Journal hash", manifest.journal_final_hash)
+    table.add_row("Verified files", str(len(manifest.files)))
+    console.print(table)
 
 @main.command(help="Aprova manualmente a promoção de alterações em estado AWAITING_APPROVAL.")
 @click.argument("execution_id")

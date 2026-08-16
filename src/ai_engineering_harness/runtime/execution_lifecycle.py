@@ -13,6 +13,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_CEILING, Decimal
+from enum import StrEnum
 from pathlib import Path
 from typing import Literal
 
@@ -21,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from ai_engineering_harness.contracts import (
     CompiledGraphArtifact,
     DeterministicNodeSpec,
+    EvidenceManifest,
     HumanApprovalNodeSpec,
     NodeSpec,
     ResolvedPolicySpec,
@@ -382,16 +384,48 @@ class _StrictFrozenModel(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
 
+EXECUTION_STATUS_SCHEMA_VERSION: Literal["1.0"] = "1.0"
+
+
+class ExecutionNextAction(StrEnum):
+    """Closed, deterministic operational action projected from durable state."""
+
+    NONE = "NONE"
+    RESUME = "RESUME"
+    VERIFY = "VERIFY"
+    APPROVE = "APPROVE"
+    INSPECT = "INSPECT"
+    MANUAL_INTERVENTION = "MANUAL_INTERVENTION"
+
+
+class ExecutionBlocker(_StrictFrozenModel):
+    """Redaction-safe reason why an execution cannot advance automatically."""
+
+    code: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+
+    @field_validator("code", "message")
+    @classmethod
+    def redact_public_text(cls, value: str) -> str:
+        return Redactor.redact_text(value)
+
+
 class ExecutionStatusView(_StrictFrozenModel):
     """Redaction-safe canonical status derived from durable state."""
 
+    status_schema_version: Literal["1.0"] = EXECUTION_STATUS_SCHEMA_VERSION
     execution_id: ExecutionId
     workflow_name: str = Field(min_length=1)
     current_node_id: str = Field(min_length=1)
     current_state: ExecutionState
     approval_status: ApprovalStatus
+    created_at: datetime
     revision: int = Field(ge=0)
     updated_at: datetime
+    current_attempt: int = Field(ge=0)
+    duration_ms: int = Field(ge=0)
+    blocker: ExecutionBlocker | None = None
+    next_action: ExecutionNextAction
     budget: BudgetSnapshot | None = None
 
 
@@ -409,6 +443,77 @@ class ExecutionInspection(_StrictFrozenModel):
     @classmethod
     def freeze_event_types(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
+
+
+_NEXT_ACTION_BY_STATE: Mapping[ExecutionState, ExecutionNextAction] = {
+    ExecutionState.INITIATED: ExecutionNextAction.RESUME,
+    ExecutionState.PREPARING_WORKSPACE: ExecutionNextAction.RESUME,
+    ExecutionState.CONTEXT_ASSEMBLING: ExecutionNextAction.RESUME,
+    ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT: ExecutionNextAction.INSPECT,
+    ExecutionState.BLOCKED_PREREQUISITE: ExecutionNextAction.INSPECT,
+    ExecutionState.BLOCKED_BASE_CHANGED: ExecutionNextAction.INSPECT,
+    ExecutionState.PLANNING: ExecutionNextAction.RESUME,
+    ExecutionState.GENERATING_PLAN: ExecutionNextAction.RESUME,
+    ExecutionState.EXECUTING: ExecutionNextAction.RESUME,
+    ExecutionState.VERIFYING: ExecutionNextAction.VERIFY,
+    ExecutionState.AWAITING_APPROVAL: ExecutionNextAction.APPROVE,
+    ExecutionState.PAUSED_AWAITING_APPROVAL: ExecutionNextAction.APPROVE,
+    ExecutionState.PROMOTING: ExecutionNextAction.RESUME,
+    ExecutionState.REINDEXING: ExecutionNextAction.RESUME,
+    ExecutionState.KNOWLEDGE_SYNC: ExecutionNextAction.RESUME,
+    ExecutionState.GENERATING_EVIDENCE: ExecutionNextAction.RESUME,
+    ExecutionState.ROLLBACK_IN_PROGRESS: ExecutionNextAction.RESUME,
+    ExecutionState.BLOCKED_ROLLBACK: ExecutionNextAction.MANUAL_INTERVENTION,
+    ExecutionState.COMPENSATED: ExecutionNextAction.NONE,
+    ExecutionState.DRY_RUN_COMPLETED: ExecutionNextAction.NONE,
+    ExecutionState.COMPLETED: ExecutionNextAction.NONE,
+    ExecutionState.CANCELLED: ExecutionNextAction.NONE,
+    ExecutionState.FAILED: ExecutionNextAction.INSPECT,
+    ExecutionState.FAILED_BUDGET_EXCEEDED: ExecutionNextAction.INSPECT,
+    ExecutionState.FAILED_RETRY_EXHAUSTED: ExecutionNextAction.INSPECT,
+}
+
+_BLOCKER_BY_STATE: Mapping[ExecutionState, tuple[str, str]] = {
+    ExecutionState.BLOCKED_INSUFFICIENT_CONTEXT: (
+        "INSUFFICIENT_CONTEXT",
+        "The persisted context is insufficient for execution.",
+    ),
+    ExecutionState.BLOCKED_PREREQUISITE: (
+        "PREREQUISITE_BLOCKED",
+        "A required persisted prerequisite is unavailable.",
+    ),
+    ExecutionState.BLOCKED_BASE_CHANGED: (
+        "BASE_CHANGED",
+        "The immutable Git base changed before promotion.",
+    ),
+    ExecutionState.AWAITING_APPROVAL: (
+        "APPROVAL_REQUIRED",
+        "Explicit approval is required before promotion.",
+    ),
+    ExecutionState.PAUSED_AWAITING_APPROVAL: (
+        "APPROVAL_REQUIRED",
+        "Explicit approval is required before execution can resume.",
+    ),
+    ExecutionState.BLOCKED_ROLLBACK: (
+        "ROLLBACK_BLOCKED",
+        "Rollback requires manual intervention.",
+    ),
+    ExecutionState.FAILED: (
+        "EXECUTION_FAILED",
+        "The execution failed; inspect canonical evidence for details.",
+    ),
+    ExecutionState.FAILED_BUDGET_EXCEEDED: (
+        "BUDGET_EXCEEDED",
+        "The durable execution budget was exceeded.",
+    ),
+    ExecutionState.FAILED_RETRY_EXHAUSTED: (
+        "RETRY_EXHAUSTED",
+        "The durable retry allowance was exhausted.",
+    ),
+}
+
+if frozenset(_NEXT_ACTION_BY_STATE) != frozenset(ExecutionState):
+    raise RuntimeError("operational next-action mapping must cover every execution state")
 
 
 class _ContextExecutionEnvelope(_StrictFrozenModel):
@@ -4817,6 +4922,11 @@ class ExecutionLifecycleService:
         finally:
             self._storage.release_execution_lock(lock)
 
+    def list_executions(self) -> tuple[ExecutionStatusView, ...]:
+        """Return the canonical status catalog ordered by execution identity."""
+        records = self._storage.list_executions()
+        return tuple(self.status(record.execution_id) for record in records)
+
     def inspect(self, execution_id: str) -> ExecutionInspection:
         """Return canonical identity and event metadata without payload content."""
         lock = self._acquire(execution_id)
@@ -4834,6 +4944,23 @@ class ExecutionLifecycleService:
                 event_count=len(events),
                 event_types=tuple(event.event_type for event in events),
             )
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def events(self, execution_id: str) -> tuple[ExecutionEvent, ...]:
+        """Return the fully validated canonical journal without raw payload reads."""
+        lock = self._acquire(execution_id)
+        try:
+            self._storage.load_execution(execution_id, lock=lock)
+            return self._storage.load_events(execution_id, lock=lock)
+        finally:
+            self._storage.release_execution_lock(lock)
+
+    def verify_evidence(self, execution_id: str) -> EvidenceManifest:
+        """Load and verify terminal evidence through the canonical manager only."""
+        lock = self._acquire(execution_id)
+        try:
+            return self._evidence_manager.load_and_verify(execution_id, lock=lock)
         finally:
             self._storage.release_execution_lock(lock)
 
@@ -5836,14 +5963,34 @@ class ExecutionLifecycleService:
         *,
         budget: BudgetSnapshot | None = None,
     ) -> ExecutionStatusView:
+        elapsed = record.updated_at - record.created_at
+        duration_ms = (
+            elapsed.days * 86_400_000
+            + elapsed.seconds * 1_000
+            + elapsed.microseconds // 1_000
+        )
+        blocker: ExecutionBlocker | None = None
+        if record.failure is not None:
+            blocker = ExecutionBlocker(
+                code=Redactor.redact_text(record.failure.code),
+                message=Redactor.redact_text(record.failure.message),
+            )
+        elif record.current_state in _BLOCKER_BY_STATE:
+            code, message = _BLOCKER_BY_STATE[record.current_state]
+            blocker = ExecutionBlocker(code=code, message=message)
         return ExecutionStatusView(
             execution_id=record.execution_id,
             workflow_name=record.workflow_name,
             current_node_id=record.current_node_id,
             current_state=record.current_state,
             approval_status=record.approval_status,
+            created_at=record.created_at,
             revision=record.revision,
             updated_at=record.updated_at,
+            current_attempt=record.attempt_by_node.get(record.current_node_id, 0),
+            duration_ms=duration_ms,
+            blocker=blocker,
+            next_action=_NEXT_ACTION_BY_STATE[record.current_state],
             budget=budget,
         )
 
@@ -5953,6 +6100,7 @@ __all__ = [
     "CANDIDATE_COMMIT_RECORDED",
     "CANDIDATE_COMMIT_STARTED",
     "EXECUTION_APPROVED",
+    "EXECUTION_STATUS_SCHEMA_VERSION",
     "PROMOTION_APPROVAL_EXPIRED",
     "PROMOTION_APPROVAL_INVALIDATED",
     "PROMOTION_APPROVAL_REQUESTED",
@@ -5973,6 +6121,7 @@ __all__ = [
     "ApprovalLifecycleIntegrityError",
     "ApprovalSubjectMismatchError",
     "ExecutionApprovalRequiredError",
+    "ExecutionBlocker",
     "ExecutionBudgetExceededError",
     "ExecutionCancellationError",
     "ExecutionConfigurationError",
@@ -5980,6 +6129,7 @@ __all__ = [
     "ExecutionInspection",
     "ExecutionLifecycleError",
     "ExecutionLifecycleService",
+    "ExecutionNextAction",
     "ExecutionStatusView",
     "PromotionApprovalRequiredError",
     "PromotionLifecycleBaseChangedError",
