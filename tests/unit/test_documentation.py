@@ -71,6 +71,17 @@ def test_f66_recovery_matrix_has_exactly_nine_checkpoint_contracts() -> None:
     assert "PREPARED → COMMITTED` sem staging/pointer" in user_guide
 
 
+def test_f67_knowledge_recovery_contract_replaces_false_commit() -> None:
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+
+    assert "### Protocolo knowledge corrigido na F6.7" in user_guide
+    assert "Um registro legado sem SHA, digest ou staging termina" in user_guide
+    assert "`ABORTED`; ele nunca cria `current.json`" in user_guide
+    assert "lock cross-processo e fencing token crescente" in user_guide
+    assert "cleanup_retained_snapshots()" in user_guide
+    assert "pointer/snapshot idênticos" in user_guide
+
+
 def test_documents_do_not_claim_current_operational_readiness() -> None:
     for document in CURRENT_CLAIM_FILES:
         content = _read(document)

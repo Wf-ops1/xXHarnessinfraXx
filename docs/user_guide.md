@@ -285,6 +285,47 @@ A F6.6 altera somente o recovery da criação de worktree. Os checkpoints 2–8 
 promovidas; o checkpoint 9 congela o defeito que a F6.7 deve substituir por transação realmente
 atômica, com lock/fencing, staging validado, pointer swap e recovery verificável.
 
+### Protocolo knowledge corrigido na F6.7
+
+A linha `CP-09` acima permanece como baseline histórico da F6.6. Na implementação local F6.7,
+`PREPARED` deixou de significar que o efeito foi concluído: o recovery precisa provar o snapshot e o
+pointer antes de publicar `COMMITTED`. Um registro legado sem SHA, digest ou staging termina
+`ABORTED`; ele nunca cria `current.json`.
+
+O protocolo usa esta ordem durável:
+
+1. validar `tx_id`, KI JSON finita e SHA completo existente no Git;
+2. compor um índice canônico que preserva todos os KIs do snapshot corrente;
+3. persistir staging e recalcular seu digest SHA-256;
+4. sob lock cross-processo e fencing token crescente, publicar `PREPARED` atomicamente;
+5. promover o staging para snapshot imutável e revalidar SHA/digest;
+6. trocar `current.json` somente se o predecessor ainda for o esperado;
+7. publicar `COMMITTED` com a mesma identidade. Retenção ocorre em chamada explícita posterior.
+
+As janelas de crash têm resultado fechado:
+
+| Janela | Recovery permitido |
+|---|---|
+| staging completo, antes de `PREPARED` | retry com o mesmo `tx_id`, SHA e conteúdo revalida e reutiliza o staging |
+| `PREPARED`, antes do snapshot | staging íntegro é promovido; ausente ou corrompido produz `ABORTED` sem pointer |
+| snapshot publicado, antes do pointer | snapshot íntegro e predecessor exato permitem um único pointer swap |
+| pointer publicado, antes de `COMMITTED` | pointer/snapshot idênticos permitem somente completar o journal, sem reescrever o pointer |
+| pointer ou snapshot visível divergente | `blocked_requires_intervention`; bytes são preservados e nenhum cleanup é tentado |
+
+Uso direto exige o commit ao qual o índice pertence:
+
+```python
+status = manager.execute_transaction(
+    "tx-knowledge-123",
+    {"id": "ki-auth", "content": "ADR Auth"},
+    commit_sha="<sha Git completo>",
+)
+```
+
+`KnowledgeSynchronizer.sync_ki()` resolve e verifica o HEAD do repositório antes de delegar. A
+retenção é explícita por `cleanup_retained_snapshots()` e remove somente snapshots antigos com
+`COMMITTED` comprovado; o snapshot corrente e staging abortado/ambíguo são preservados.
+
 ## Teste controlado de `init`
 
 Crie um repositório descartável e execute o binário instalado pelo ambiente do clone. Confirme os

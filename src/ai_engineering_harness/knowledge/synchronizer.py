@@ -13,6 +13,5 @@ class KnowledgeSynchronizer:
         self.tx_mgr = KnowledgeTransactionManager(project_root)
 
     def sync_ki(self, tx_id: str, ki_data: dict[str, Any]) -> str:
-        # Tentar recuperar pendências antes
-        self.tx_mgr.recover_if_needed()
-        return self.tx_mgr.execute_transaction(tx_id, ki_data)
+        commit_sha = self.tx_mgr.resolve_repository_head()
+        return self.tx_mgr.execute_transaction(tx_id, ki_data, commit_sha=commit_sha)
