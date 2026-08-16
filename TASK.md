@@ -44,14 +44,14 @@
 | Campo | Estado observado |
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1–F6.6 promovidas no produto |
-| **Fase ativa** | Fase 6; F6.6 promovida, reconciliação administrativa local pendente; F6.7 não iniciada |
+| **Fase ativa** | Fase 6; F6.6 promovida, reconciliação administrativa no PR #80; F6.7 não iniciada |
 | **Tarefa ativa** | nenhuma tarefa ativa de implementação; [F6.6](docs/tasks/completed/F6.6.md) está em reconciliação administrativa |
-| **Gate** | `PROMOTED / ADMIN_LOCAL_READY` |
-| **Estado corrente** | produto `1ce953df5ad3db3764f44fc063cb617c18546d3c`; merge `8be678946dc57244974caf5b485c33425a7466c3`; pós-merge `31963338576` verde |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
+| **Estado corrente** | PR #80 aberto; head inicial `06abef0637a8f6db91c5788c8e28148d81a765be` certificado por `31967211097`; registro final local |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da reconciliação administrativa F6.6 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f6.6`, sem upstream; criada de `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3` |
+| **Branch** | `docs/promote-f6.6`, com upstream `origin/docs/promote-f6.6`; criada de `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3` |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
 | **Branch de produto F6.4** | `task/f6.4-real-doctor`, remota e preservada após o merge |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
@@ -70,7 +70,7 @@
 | **Validação F6.6** | worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed in 765.28s`; quality, build e smoke verdes |
 | **PR F6.6** | [#79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79), head final `1ce953df5ad3db3764f44fc063cb617c18546d3c`; CI [31962221925](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31962221925) 11/11 success |
 | **Merge F6.6** | `8be678946dc57244974caf5b485c33425a7466c3`; CI pós-merge [31963338576](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31963338576) 11/11 success |
-| **Reconciliação F6.6** | `docs/promote-f6.6`, `LOCAL_READY / PUBLICATION_PENDING`; somente documentação/testes, sem mudança de produto |
+| **Reconciliação F6.6** | PR [#80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80), head inicial `06abef0637a8f6db91c5788c8e28148d81a765be`; CI [31967211097](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31967211097) 11/11 success; registro final local |
 | **Implementação F6.5** | status versionado com tentativa/duração/blocker/next action; catálogo ordenado; JSON/JSONL; follow sem duplicata; evidence pelo verificador canônico |
 | **Validação F6.5** | focado `172`; full `1023 passed, 5 skipped, 6 subtests passed`; Ruff/mypy/compileall/diff/docs/build/smoke verdes |
 | **PR F6.5** | [#77](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77), head final `7386638c76b3270ab9849337e6e429b8f29a9202`; CI [31936640635](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31936640635) 11/11 success |
@@ -163,7 +163,7 @@
 | Produto | `1ce953d`; worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed`; quality, build e smoke verdes |
 | PR de produto | [#79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79), head final `1ce953d`, CI `31962221925`, 11/11 success |
 | Merge de produto | `8be678946dc57244974caf5b485c33425a7466c3`; CI de `push` `31963338576`, 11/11 success |
-| Reconciliação administrativa | `docs/promote-f6.6`, preparada localmente e pendente de publicação/PR/checks/merge |
+| Reconciliação administrativa | PR [#80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80), head inicial `06abef0`, CI `31967211097` 11/11; registro final local autorizado |
 | Fronteira | F6.6 promovida; F6.7 e o gate de saída da fase permanecem bloqueados pela reconciliação e por `known_gap_f6_7` |
 | Promoção anterior | F6.5 — PR #77 / merge `c049125` / pós-merge `31953772121`; reconciliação PR #78 / merge `6386816` / pós-merge `31956649961` |
 | Promoção anterior | F6.4 — PR #75 / merge `574df7a` / pós-merge `31929031317`; reconciliação PR #76 / merge `a42ec411` / pós-merge `31931649225` |
@@ -227,34 +227,36 @@ sem remover refs. Em `2026-08-16T13:02:13-03:00`, o usuário autorizou revisar o
 iniciar sua implementação local na branch exclusiva. O produto foi promovido pelo PR #79 no merge
 `8be6789`; a CI pós-merge `31963338576` passou 11/11 no SHA exato. Em
 `2026-08-16T16:10:13-03:00`, `autorizo continuar` foi consumido para sincronizar `main`, criar
-`docs/promote-f6.6` e preparar a reconciliação local; publicação, PR, merge e F6.7 aguardam confirmação.
+`docs/promote-f6.6` e preparar a reconciliação local. A autorização posterior `AUTORIZO` cobriu o
+fechamento integral da F6.6, com parada obrigatória antes da F6.7. A branch foi publicada sem force,
+o PR #80 aberto e o head inicial `06abef0` certificado 11/11 pelo run `31967211097`.
 
 ## 5. Tarefa ativa
 
 A [F6.6 — recovery e testes de falha](docs/tasks/completed/F6.6.md) está `PROMOTED`; sua
-reconciliação está `LOCAL_READY / PUBLICATION_PENDING`. A matriz pública cobre nove checkpoints.
+reconciliação está `ADMIN_PR_OPEN / CHECKS_PENDING`. A matriz pública cobre nove checkpoints.
 Knowledge permanece `known_gap_f6_7` e evidência negativa obrigatória para a F6.7.
 `POST_PROMOTION_BLOCKED` permanece somente como estado corretivo histórico da F5.C1.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico no produto F6.6. A publicação/PR/CI/merge da reconciliação administrativa
-continua pendente. O probe knowledge `outcome=RECOVERED_tx-missing current_exists=False
+Não há bloqueio técnico no produto F6.6. O registro final/CI/merge da reconciliação administrativa
+continua pendente no PR #80. O probe knowledge `outcome=RECOVERED_tx-missing current_exists=False
 staging_exists=False` bloqueia a F6.7 e o gate de saída da Fase 6. Efeitos remotos e remoção de refs
 não estão autorizados por esta etapa local.
 
 ## 7. Próxima ação exata
 
 ```text
-CHECKPOINT DOCUMENTAL LOCAL MATERIALIZADO EM DOCS/PROMOTE-F6.6.
-AGUARDAR AUTORIZAÇÃO NOMINAL PARA PUSH SEM FORCE E ABERTURA DO PR ADMINISTRATIVO.
-NÃO INICIAR F6.7, MESCLAR, PUBLICAR TAG REMOTA OU REMOVER REF SEM AUTORIZAÇÃO POSTERIOR.
+VALIDAR, CRIAR COMMIT E PUBLICAR SEM FORCE O REGISTRO FINAL NO PR #80.
+ACOMPANHAR A CI DO HEAD EXATO; MESCLAR E CERTIFICAR O PÓS-MERGE QUANDO VERDE.
+NÃO INICIAR F6.7, PUBLICAR TAG REMOTA OU REMOVER REF.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F6.6.md` e a DEC-014.
-2. Confirme `docs/promote-f6.6`, sem upstream, e base `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3`.
+2. Confirme `docs/promote-f6.6` com upstream homônimo, PR #80 e base `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3`.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
@@ -273,9 +275,9 @@ NÃO INICIAR F6.7, MESCLAR, PUBLICAR TAG REMOTA OU REMOVER REF SEM AUTORIZAÇÃO
     `31936640635`/merge `c049125`/pós-merge `31953772121`.
 14. Preserve PR #78/head final `fcc927e`/CI `31955779575`/merge `6386816`/pós-merge `31956649961`.
 15. Preserve PR #79/head `1ce953d`/CI `31962221925`/merge `8be6789`/pós-merge `31963338576`.
-16. Retome a reconciliação F6.6 em `docs/promote-f6.6`; não altere knowledge, inicie F6.7 ou produza
-    efeitos remotos sem autorização nominal.
+16. Preserve PR #80/head inicial `06abef0`/CI `31967211097`; publique somente o registro final,
+    conclua a cadeia autorizada e pare antes da implementação F6.7.
 
 ---
 
-*Atualizado em: 2026-08-16T16:15:33-03:00 | Fonte: promoção F6.6 comprovada; reconciliação local pronta*
+*Atualizado em: 2026-08-16T16:27:16-03:00 | Fonte: PR administrativo #80 + CI inicial verde + registro final validado*

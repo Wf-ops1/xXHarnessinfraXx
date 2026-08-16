@@ -41,7 +41,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.6 estão promovidas; a reconciliação F6.6 está `LOCAL_READY / PUBLICATION_PENDING` em `docs/promote-f6.6` | A transação knowledge permanece `known_gap_f6_7`; o protótipo não compõe automaticamente todos os backends | Governança operacional integral e recovery F6.7 |
+| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.6 estão promovidas; `docs/promote-f6.6` está no PR #80 com head inicial verde | O registro final administrativo aguarda publicação e checks; knowledge permanece `known_gap_f6_7` | Governança operacional integral e recovery F6.7 |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `list`, `status`, `inspect`, `events`, `evidence` e doctor possuem contratos/testes | Sem backends reais, `run` falha no preflight; os comandos F6.5 são inspeção local fail-closed e estado/worktree válidos continuam necessários | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -240,8 +240,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `31956649961`. A F6.6 concluiu no head `1ce953d`, com focado `234` e full R2
   `1030 passed, 5 skipped, 6 subtests`; o [PR #79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79)
   passou no run `31962221925`, foi incorporado pelo merge `8be6789` e recebeu CI pós-merge verde no
-  run `31963338576`. Sua reconciliação está `LOCAL_READY / PUBLICATION_PENDING`; a correção knowledge
-  permanece reservada à F6.7.
+  run `31963338576`. A reconciliação [PR #80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80)
+  abriu no head `06abef0`, certificado pelo run `31967211097`; o registro final está pronto
+  localmente para publicação no mesmo PR. A correção knowledge permanece reservada à F6.7.
 
 ## Dívidas técnicas críticas
 
