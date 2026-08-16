@@ -5,8 +5,10 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F6.6](docs/tasks/completed/F6.6.md): recovery e testes de falha promovidos pelo PR #79 no merge
-   `8be6789`, com CI pós-merge `31963338576` verde; reconciliação administrativa local pendente.
+2. [F6.7](docs/tasks/active/F6.7.md): corrigir knowledge transaction; gate local congelado sobre a
+   `main` terminal da F6.6, sem produto alterado antes do checkpoint READY.
+3. [F6.6](docs/tasks/completed/F6.6.md): produto promovido pelo PR #79; reconciliação #80 encerrada
+   no merge `1327f299`, com CI pós-merge `31968035375` verde.
 3. [F6.5](docs/tasks/completed/F6.5.md): produto promovido pelo PR #77; reconciliação #78 incorporada
    em `6386816`, com CI pós-merge `31956649961` verde.
 4. [F6.4](docs/tasks/completed/F6.4.md): doctor real promovido pelo PR #75; reconciliação #76
@@ -43,15 +45,15 @@
 
 | Campo | Estado observado |
 |---|---|
-| **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1–F6.6 promovidas no produto |
-| **Fase ativa** | Fase 6; F6.6 promovida, reconciliação administrativa no PR #80; F6.7 não iniciada |
-| **Tarefa ativa** | nenhuma tarefa ativa de implementação; [F6.6](docs/tasks/completed/F6.6.md) está em reconciliação administrativa |
-| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |
-| **Estado corrente** | PR #80 aberto; head inicial `06abef0637a8f6db91c5788c8e28148d81a765be` certificado por `31967211097`; registro final local |
+| **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7, F5.C1 e F6.1–F6.6 promovidas e reconciliadas |
+| **Fase ativa** | Fase 6; F6.7 em gate local; gate de saída ainda não satisfeito |
+| **Tarefa ativa** | [F6.7](docs/tasks/active/F6.7.md) — corrigir knowledge transaction |
+| **Gate** | `READY / ACTIVE_LOCAL` |
+| **Estado corrente** | problema reproduzido, escopo/aceite/rollback congelados; checkpoint READY pendente antes do produto |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor da reconciliação administrativa F6.6 |
+| **Executor ativo** | `Codex`, único escritor da F6.7 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f6.6`, com upstream `origin/docs/promote-f6.6`; criada de `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3` |
+| **Branch** | `task/f6.7-knowledge-transaction`, sem upstream, criada de `main == origin/main == 1327f299c2a748fdb3efb759291b67b39bd2598b` |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
 | **Branch de produto F6.4** | `task/f6.4-real-doctor`, remota e preservada após o merge |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
@@ -65,12 +67,13 @@
 | **Checkpoint F6.4** | `checkpoint/f6.4-ready` → `261f0977f9d0ed16ac51ce569b631a43ae7e49ff`; `checkpoint/f6.4-complete` → `0088b3149f559b77a9a0336cd73d4f2a3b7adccb`; ambos somente locais e imutáveis |
 | **Checkpoint F6.5** | `checkpoint/f6.5-ready` → `90212ed54c190024c366c8f7cf69320345957907`; `checkpoint/f6.5-complete` → `7386638c76b3270ab9849337e6e429b8f29a9202`; ambos somente locais e imutáveis |
 | **Checkpoint F6.6** | `checkpoint/f6.6-ready` → `2d01cca3bc14a5077a5cacc35fb2982e896ee12f`; `checkpoint/f6.6-complete` → `1ce953df5ad3db3764f44fc063cb617c18546d3c`; ambos somente locais e imutáveis |
-| **Main sincronizada** | antes da branch administrativa, `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3` |
+| **Main sincronizada** | antes da F6.7, `main == origin/main == 1327f299c2a748fdb3efb759291b67b39bd2598b` |
 | **Implementação F6.6** | produto `1d5467457cf99c4ee34d69000630de1b1aa0900b`; retry de worktree idempotente/fail-closed; nove checkpoints públicos; knowledge preservada como `known_gap_f6_7` |
 | **Validação F6.6** | worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed in 765.28s`; quality, build e smoke verdes |
 | **PR F6.6** | [#79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79), head final `1ce953df5ad3db3764f44fc063cb617c18546d3c`; CI [31962221925](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31962221925) 11/11 success |
 | **Merge F6.6** | `8be678946dc57244974caf5b485c33425a7466c3`; CI pós-merge [31963338576](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31963338576) 11/11 success |
-| **Reconciliação F6.6** | PR [#80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80), head inicial `06abef0637a8f6db91c5788c8e28148d81a765be`; CI [31967211097](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31967211097) 11/11 success; registro final local |
+| **Reconciliação F6.6** | PR [#80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80), inicial `06abef0637a8f6db91c5788c8e28148d81a765be`/`31967211097`; final `43cb6ea48a2ee0148a9c9d63ec545d6d3e927ee5`/`31967664405` 11/11; merge `1327f299`; pós-merge [31968035375](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31968035375) 11/11 |
+| **Baseline F6.7** | falso recovery reproduzido `1 passed in 1.17s`; suíte `test_phase7.py` `7 passed in 1.03s`; produto ainda intocado |
 | **Implementação F6.5** | status versionado com tentativa/duração/blocker/next action; catálogo ordenado; JSON/JSONL; follow sem duplicata; evidence pelo verificador canônico |
 | **Validação F6.5** | focado `172`; full `1023 passed, 5 skipped, 6 subtests passed`; Ruff/mypy/compileall/diff/docs/build/smoke verdes |
 | **PR F6.5** | [#77](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/77), head final `7386638c76b3270ab9849337e6e429b8f29a9202`; CI [31936640635](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31936640635) 11/11 success |
@@ -163,8 +166,8 @@
 | Produto | `1ce953d`; worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed`; quality, build e smoke verdes |
 | PR de produto | [#79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79), head final `1ce953d`, CI `31962221925`, 11/11 success |
 | Merge de produto | `8be678946dc57244974caf5b485c33425a7466c3`; CI de `push` `31963338576`, 11/11 success |
-| Reconciliação administrativa | PR [#80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80), head inicial `06abef0`, CI `31967211097` 11/11; registro final local autorizado |
-| Fronteira | F6.6 promovida; F6.7 e o gate de saída da fase permanecem bloqueados pela reconciliação e por `known_gap_f6_7` |
+| Reconciliação administrativa | PR [#80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80), head final `43cb6ea`, CI `31967664405` 11/11; merge `1327f299`; pós-merge `31968035375` 11/11 |
+| Fronteira | F6.6 terminalmente encerrada; F6.7 possui gate local e deve substituir `known_gap_f6_7` antes da saída da fase |
 | Promoção anterior | F6.5 — PR #77 / merge `c049125` / pós-merge `31953772121`; reconciliação PR #78 / merge `6386816` / pós-merge `31956649961` |
 | Promoção anterior | F6.4 — PR #75 / merge `574df7a` / pós-merge `31929031317`; reconciliação PR #76 / merge `a42ec411` / pós-merge `31931649225` |
 | Promoção anterior | F6.3 — PR #73 / merge `1bd095a` / pós-merge `31913877551`; reconciliação PR #74 / merge `5b10b2d` / pós-merge `31918043022` |
@@ -233,30 +236,29 @@ o PR #80 aberto e o head inicial `06abef0` certificado 11/11 pelo run `319672110
 
 ## 5. Tarefa ativa
 
-A [F6.6 — recovery e testes de falha](docs/tasks/completed/F6.6.md) está `PROMOTED`; sua
-reconciliação está `ADMIN_PR_OPEN / CHECKS_PENDING`. A matriz pública cobre nove checkpoints.
-Knowledge permanece `known_gap_f6_7` e evidência negativa obrigatória para a F6.7.
-`POST_PROMOTION_BLOCKED` permanece somente como estado corretivo histórico da F5.C1.
+A [F6.7 — corrigir knowledge transaction](docs/tasks/active/F6.7.md) está com contrato, escopo,
+aceite e rollback congelados. O falso `PREPARED → COMMITTED` foi reproduzido; nenhum produto pode ser
+alterado antes do commit e checkpoint READY. `POST_PROMOTION_BLOCKED` permanece somente histórico.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico no produto F6.6. O registro final/CI/merge da reconciliação administrativa
-continua pendente no PR #80. O probe knowledge `outcome=RECOVERED_tx-missing current_exists=False
-staging_exists=False` bloqueia a F6.7 e o gate de saída da Fase 6. Efeitos remotos e remoção de refs
-não estão autorizados por esta etapa local.
+Não há bloqueio administrativo anterior: PR #80 e CI pós-merge encerraram a F6.6. O defeito knowledge
+`outcome=RECOVERED_tx-missing current_exists=False staging_exists=False` é o alvo congelado da F6.7
+e continua bloqueando o gate de saída até correção e recertificação. Efeitos remotos não estão
+autorizados por esta etapa local.
 
 ## 7. Próxima ação exata
 
 ```text
-VALIDAR, CRIAR COMMIT E PUBLICAR SEM FORCE O REGISTRO FINAL NO PR #80.
-ACOMPANHAR A CI DO HEAD EXATO; MESCLAR E CERTIFICAR O PÓS-MERGE QUANDO VERDE.
-NÃO INICIAR F6.7, PUBLICAR TAG REMOTA OU REMOVER REF.
+VALIDAR E CRIAR O COMMIT/CHECKPOINT READY DA F6.7.
+IMPLEMENTAR LOCALMENTE SOMENTE O ESCOPO CONGELADO E RECERTIFICAR INTEGRALMENTE.
+NÃO PUBLICAR, ABRIR PR, MESCLAR, PUBLICAR TAG REMOTA OU REMOVER REF.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F6.6.md` e a DEC-014.
-2. Confirme `docs/promote-f6.6` com upstream homônimo, PR #80 e base `main == origin/main == 8be678946dc57244974caf5b485c33425a7466c3`.
+1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F6.7.md`, F6.6 e a DEC-014.
+2. Confirme `task/f6.7-knowledge-transaction` sem upstream e base `1327f299`; nenhum produto antes do checkpoint READY.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
@@ -275,9 +277,10 @@ NÃO INICIAR F6.7, PUBLICAR TAG REMOTA OU REMOVER REF.
     `31936640635`/merge `c049125`/pós-merge `31953772121`.
 14. Preserve PR #78/head final `fcc927e`/CI `31955779575`/merge `6386816`/pós-merge `31956649961`.
 15. Preserve PR #79/head `1ce953d`/CI `31962221925`/merge `8be6789`/pós-merge `31963338576`.
-16. Preserve PR #80/head inicial `06abef0`/CI `31967211097`; publique somente o registro final,
-    conclua a cadeia autorizada e pare antes da implementação F6.7.
+16. Preserve PR #80/head final `43cb6ea`/CI `31967664405`/merge `1327f299`/pós-merge
+    `31968035375` como encerramento terminal F6.6.
+17. Preserve a reprodução F6.7 `1/1`, baseline `7/7` e o allowlist do dossiê ativo.
 
 ---
 
-*Atualizado em: 2026-08-16T16:27:16-03:00 | Fonte: PR administrativo #80 + CI inicial verde + registro final validado*
+*Atualizado em: 2026-08-16T19:02:54-03:00 | Fonte: encerramento terminal F6.6 + gate local F6.7*

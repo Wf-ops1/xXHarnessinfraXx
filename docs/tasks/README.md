@@ -20,12 +20,14 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há tarefa de implementação ativa. A [F6.6 — recovery e testes de falha](completed/F6.6.md) está
-`PROMOTED`: o head `1ce953d` do PR #79 passou no run `31962221925`, foi incorporado pelo merge
-`8be6789` e recebeu CI pós-merge verde no run `31963338576`. A reconciliação
-[PR #80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80) abriu no head `06abef0`, certificado
-pelo run `31967211097`; o registro final está pronto localmente para publicação. Knowledge permanece
-`known_gap_f6_7`; a F6.7 não foi iniciada.
+A [F6.7 — corrigir knowledge transaction](active/F6.7.md) possui gate local congelado sobre
+`main == origin/main == 1327f299`. O falso `PREPARED → COMMITTED` sem staging/pointer foi reproduzido;
+produto permanece intocado até o checkpoint READY.
+
+A [F6.6 — recovery e testes de falha](completed/F6.6.md) está terminalmente `PROMOTED`: o head
+`1ce953d` do PR #79 passou no run `31962221925`, foi incorporado pelo merge `8be6789` e recebeu CI
+pós-merge `31963338576`. A reconciliação [PR #80](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/80)
+encerrou no head `43cb6ea`, CI `31967664405`, merge `1327f299` e pós-merge `31968035375` 11/11.
 
 A [F6.5 — status e inspeção operacionais](completed/F6.5.md) está terminalmente `PROMOTED`: o PR
 #77 encerrou no merge `c049125`/pós-merge `31953772121`; a reconciliação

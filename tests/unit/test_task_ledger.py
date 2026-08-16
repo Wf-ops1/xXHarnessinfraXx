@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN / CHECKS_PENDING` |" in panel
+    assert "| **Gate** | `READY / ACTIVE_LOCAL` |" in panel
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")
@@ -1202,6 +1202,28 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     ):
         assert evidence in f6_6_dossier
     assert "completed/F6.6.md" in task_index
+    assert (ACTIVE_ROOT / "F6.7.md").is_file()
+    f6_7_dossier = _read(ACTIVE_ROOT / "F6.7.md")
+    assert "> **Gate:** `READY`" in f6_7_dossier
+    assert "> **Lifecycle:** `ACTIVE`" in f6_7_dossier
+    for evidence in (
+        "task/f6.7-knowledge-transaction",
+        "1327f299c2a748fdb3efb759291b67b39bd2598b",
+        "43cb6ea48a2ee0148a9c9d63ec545d6d3e927ee5",
+        "31967664405",
+        "31968035375",
+        "1 passed in 1.17s",
+        "7 passed in 1.03s",
+        "checkpoint/f6.7-ready",
+        "CrossProcessLockManager",
+    ):
+        assert evidence in f6_7_dossier
+    assert "docs/tasks/active/F6.7.md" in panel
+    assert "active/F6.7.md" in task_index
+    for source in (panel, task_index, readme):
+        assert "43cb6ea" in source
+        assert "1327f299" in source
+        assert "31968035375" in source
     for source in (panel, task_index, readme):
         assert "3c1f4d2" in source
         assert "31930869377" in source
@@ -1212,6 +1234,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert "31962221925" in source
         assert "8be6789" in source
         assert "31963338576" in source
+    for source in (panel, task_index):
         assert "docs/promote-f6.6" in source
     assert "FAIL:GIT_NOT_INSTALLED" in f6_4_dossier
     assert "Wheel R2" in f6_4_dossier
