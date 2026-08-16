@@ -1,6 +1,7 @@
 """Testes unitários para a Fase 7 (Knowledge Transaction, Audit Trail e Rollback)."""
 
 import json
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -70,8 +71,42 @@ def _audit_event(event_id: str, execution_id: str, event_type: str) -> Execution
 
 
 def test_knowledge_transaction_5_steps(tmp_path: Path):
+    subprocess.run(["git", "init", "--quiet"], cwd=tmp_path, check=True, shell=False)
+    subprocess.run(
+        ["git", "config", "user.name", "Phase7 Test"],
+        cwd=tmp_path,
+        check=True,
+        shell=False,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "phase7@example.invalid"],
+        cwd=tmp_path,
+        check=True,
+        shell=False,
+    )
+    (tmp_path / "tracked.txt").write_text("base\n", encoding="utf-8")
+    subprocess.run(["git", "add", "--", "tracked.txt"], cwd=tmp_path, check=True, shell=False)
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "baseline"],
+        cwd=tmp_path,
+        check=True,
+        shell=False,
+    )
+    commit_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=tmp_path,
+        check=True,
+        shell=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
     mgr = KnowledgeTransactionManager(project_root=tmp_path)
-    state = mgr.execute_transaction("tx-123", {"id": "ki-auth", "content": "ADR Auth"})
+    state = mgr.execute_transaction(
+        "tx-123",
+        {"id": "ki-auth", "content": "ADR Auth"},
+        commit_sha=commit_sha,
+    )
     assert state == TransactionState.COMMITTED.value
 
     current_file = tmp_path / ".harness" / "knowledge" / "current.json"
@@ -94,8 +129,8 @@ def test_f66_freezes_false_knowledge_recovery_for_f67(tmp_path: Path) -> None:
         json.loads(line)
         for line in manager.journal_file.read_text(encoding="utf-8").splitlines()
     ]
-    assert outcome == "RECOVERED_tx-missing"
-    assert [entry["state"] for entry in entries] == ["PREPARED", "COMMITTED"]
+    assert outcome == "ABORTED_tx-missing"
+    assert [entry["state"] for entry in entries] == ["PREPARED", "ABORTED"]
     assert not manager.current_json.exists()
     assert not (manager.staging_dir / tx_id / "data.json").exists()
 
