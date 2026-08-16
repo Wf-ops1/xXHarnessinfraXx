@@ -1075,7 +1075,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
+    assert "| **Gate** | `READY / IMPLEMENTATION_AUTHORIZED` |" in panel
+    assert "docs/tasks/active/F7.1.md" in panel
+    assert (ACTIVE_ROOT / "F7.1.md").is_file()
     assert not (ACTIVE_ROOT / "F6.2.md").exists()
     assert "docs/tasks/completed/F6.2.md" in panel
     f6_2_dossier = _read(COMPLETED_ROOT / "F6.2.md")

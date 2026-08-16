@@ -20,15 +20,17 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há tarefa ativa de implementação durante a reconciliação DEC-014. F7.1 permanece planejada e
-não foi iniciada.
+A [F7.1 — E2E em repositório Git temporário real](active/F7.1.md) está `READY` na branch
+`task/f7.1-external-repo-e2e`, criada da base certificada `38849ed`. O escopo inicial permite somente
+a prova vertical em wheel/repositório externo e sua documentação; F7.2 não foi iniciada.
 
 A [F6.7 — corrigir knowledge transaction](completed/F6.7.md) está `PROMOTED`: o head `c4a864d` do
 [PR #81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81) passou 10/10 + `CI required` no run
 `31977507679`, foi incorporado pelo merge `93f7bf20` e recebeu 10/10 + `CI required` na CI pós-merge
 `31977793119`. A reconciliação [PR #82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82)
-abriu no head inicial `5ee3fcc`, certificado pela CI `31978357679`; seu novo head ainda aguarda checks.
-Fase 7 não começou.
+abriu no head inicial `5ee3fcc`, certificado pela CI `31978357679`, e encerrou no head final
+`cfd97c6`, CI `31978820506`, merge `38849ed` e CI pós-merge `31979153948` 11/11. A Fase 6 está
+terminalmente encerrada pela DEC-014, sem reconciliação recursiva.
 
 A [F6.6 — recovery e testes de falha](completed/F6.6.md) está terminalmente `PROMOTED`: o head
 `1ce953d` do PR #79 passou no run `31962221925`, foi incorporado pelo merge `8be6789` e recebeu CI
