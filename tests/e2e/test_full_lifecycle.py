@@ -236,6 +236,7 @@ on_failure: route_to_failure_classifier
         assert engine.inspect_execution().event_count == 9
         assert storage.load_execution_bundle(execution_id).execution_id == execution_id
         manifest = EvidenceManifestManager(tmp_path, storage).load_and_verify(execution_id)
+        assert lifecycle.verify_evidence(execution_id) == manifest
         assert manifest.execution_id == execution_id
         assert manifest.final_result == "VERIFIED"
         assert manifest.base_commit_sha == commit_sha

@@ -35,6 +35,7 @@ from ai_engineering_harness.runtime import (
     ExecutionConfigurationError,
     ExecutionGitIdentityError,
     ExecutionLifecycleService,
+    ExecutionNextAction,
     GraphExecutionPausedResult,
     GraphExecutionResult,
     NodeExecutionContext,
@@ -258,11 +259,20 @@ def test_start_bundle_payload_status_inspect_and_public_views(tmp_path: Path) ->
     inspection = service.inspect("exec-start-public")
     assert status.current_state == ExecutionState.VERIFYING
     assert status.approval_status == ApprovalStatus.NOT_REQUIRED
+    assert status.created_at == record.created_at
+    assert status.duration_ms >= 0
+    assert status.current_attempt == 0
+    assert status.blocker is None
+    assert status.next_action is ExecutionNextAction.VERIFY
     assert status.budget is not None
     assert status.budget.usage.attempts == 1
     assert status.budget.nodes["execute"].usage.attempts == 1
     assert inspection.status == status
     assert inspection.event_count == len(storage.load_events("exec-start-public"))
+    assert service.list_executions() == (status,)
+    assert service.events("exec-start-public") == storage.load_events(
+        "exec-start-public"
+    )
     rendered = inspection.model_dump_json()
     assert "deliver" not in rendered
     assert "isolated" not in rendered

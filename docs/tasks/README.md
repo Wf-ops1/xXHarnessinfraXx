@@ -21,9 +21,9 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 ## Tarefa ativa
 
 A [F6.5 — status e inspeção operacionais](active/F6.5.md) é a única tarefa ativa. Seu gate está
-`READY / IMPLEMENTATION_NOT_AUTHORIZED`: os cinco comandos, a projeção operacional, o escopo, o
-aceite e o rollback estão congelados; `src/` permanece intocado. O baseline confinado passou
-`139 passed in 28.52s`.
+`COMPLETED_LOCAL / PROMOTION_PENDING`: a projeção tipada e os cinco comandos passaram `172` focados,
+full final `1023 passed, 5 skipped, 6 subtests passed`, quality, build e smoke offline. Nenhum efeito
+remoto está autorizado.
 
 A [F6.4 — implementar um doctor real](completed/F6.4.md) está `PROMOTED`: o head final `6e6ebb8` do
 [PR #75](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/75) passou 11/11 no run `31928606331`, foi

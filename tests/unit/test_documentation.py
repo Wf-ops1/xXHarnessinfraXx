@@ -216,7 +216,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "READY / IMPLEMENTATION_NOT_AUTHORIZED" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
