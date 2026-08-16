@@ -292,7 +292,12 @@ class ExternalWorktreeManager:
         *,
         expected_base_commit_sha: str | None = None,
     ) -> ProvisionedWorktree:
-        """Provision a new ``harness/<execution_id>`` worktree from the clean HEAD."""
+        """Provision or recover one ``harness/<execution_id>`` worktree.
+
+        A retry only reuses a durable reference whose full identity still matches the clean
+        original checkout. A ``CREATING`` reference is resumable before the Git effect, or after
+        the complete and pristine effect; partial effects fail closed without cleanup.
+        """
 
         safe_execution_id = self._validate_identifier("execution_id", execution_id)
         snapshot = self._inspect_repository(require_clean=True)
@@ -302,33 +307,59 @@ class ExternalWorktreeManager:
 
         worktree_branch = f"harness/{safe_execution_id}"
         self._run_git(("check-ref-format", "--branch", worktree_branch), cwd=snapshot.root)
-        self._ensure_branch_absent(worktree_branch)
 
         external_base = self._external_base_dir()
         worktree_path = (external_base / safe_execution_id).resolve(strict=False)
-        if worktree_path.exists():
-            raise WorktreeCollisionError("external worktree path already exists")
-
         reference_path = self._reference_path(safe_execution_id)
         if reference_path.exists():
-            raise WorktreeCollisionError("durable worktree reference already exists")
+            try:
+                preparing = self._read_reference(safe_execution_id)
+            except WorktreeReferenceError as exc:
+                raise WorktreeCollisionError(
+                    "durable worktree reference already exists but is invalid"
+                ) from exc
+            self._validate_create_reference_identity(
+                preparing,
+                snapshot=snapshot,
+                worktree_path=worktree_path,
+                worktree_branch=worktree_branch,
+            )
+            if preparing.status is WorktreeStatus.ACTIVE:
+                return self.load_worktree(safe_execution_id)
+            if preparing.status is not WorktreeStatus.CREATING:
+                raise WorktreeCollisionError(
+                    f"durable worktree reference is {preparing.status.value}, not resumable"
+                )
 
-        now = self._now()
-        preparing = WorktreeReference(
-            execution_id=safe_execution_id,
-            project_id=self.project_id,
-            project_root=snapshot.root,
-            worktree_path=worktree_path,
-            base_commit_sha=snapshot.head_sha,
-            original_branch=snapshot.branch,
-            worktree_branch=worktree_branch,
-            worktree_head_sha=None,
-            status=WorktreeStatus.CREATING,
-            failure_code=None,
-            created_at=now,
-            updated_at=now,
-        )
-        self._write_reference(preparing)
+            branch_exists = self._branch_exists(worktree_branch)
+            path_exists = worktree_path.exists()
+            if branch_exists != path_exists:
+                raise WorktreeValidationError(
+                    "CREATING worktree has a partial Git effect; explicit intervention is required"
+                )
+            if branch_exists:
+                return self._activate_created_worktree(preparing)
+        else:
+            now = self._now()
+            preparing = WorktreeReference(
+                execution_id=safe_execution_id,
+                project_id=self.project_id,
+                project_root=snapshot.root,
+                worktree_path=worktree_path,
+                base_commit_sha=snapshot.head_sha,
+                original_branch=snapshot.branch,
+                worktree_branch=worktree_branch,
+                worktree_head_sha=None,
+                status=WorktreeStatus.CREATING,
+                failure_code=None,
+                created_at=now,
+                updated_at=now,
+            )
+            self._write_reference(preparing)
+
+        self._ensure_branch_absent(worktree_branch)
+        if worktree_path.exists():
+            raise WorktreeCollisionError("external worktree path already exists")
 
         try:
             self._run_git(
@@ -348,15 +379,7 @@ class ExternalWorktreeManager:
             self._record_controlled_failure(preparing, failure_code="UNEXPECTED_VALIDATION_FAILURE")
             raise WorktreeValidationError("worktree validation failed unexpectedly") from exc
 
-        active = replace(
-            preparing,
-            worktree_path=worktree_path.resolve(strict=True),
-            worktree_head_sha=validated_head,
-            status=WorktreeStatus.ACTIVE,
-            updated_at=self._now(),
-        )
-        self._write_reference(active)
-        return self._provisioned_worktree(active, guard)
+        return self._publish_active_worktree(preparing, validated_head=validated_head, guard=guard)
 
     def load_worktree(self, execution_id: str) -> ProvisionedWorktree:
         """Reopen an ACTIVE reference only after revalidating its Git identity."""
@@ -376,6 +399,70 @@ class ExternalWorktreeManager:
         )
         guard = PathGuard(reference.worktree_path)
         return self._provisioned_worktree(reference, guard)
+
+    def _validate_create_reference_identity(
+        self,
+        reference: WorktreeReference,
+        *,
+        snapshot: _RepositorySnapshot,
+        worktree_path: Path,
+        worktree_branch: str,
+    ) -> None:
+        self._validate_reference_owner(reference)
+        if (
+            reference.project_root != snapshot.root
+            or reference.worktree_path.resolve(strict=False) != worktree_path
+            or reference.worktree_branch != worktree_branch
+            or reference.base_commit_sha != snapshot.head_sha
+            or reference.original_branch != snapshot.branch
+        ):
+            raise WorktreeValidationError(
+                "durable worktree identity no longer matches the original checkout"
+            )
+        if reference.status is WorktreeStatus.CREATING and (
+            reference.worktree_head_sha is not None or reference.failure_code is not None
+        ):
+            raise WorktreeValidationError("CREATING worktree reference contains terminal fields")
+
+    def _activate_created_worktree(
+        self,
+        reference: WorktreeReference,
+    ) -> ProvisionedWorktree:
+        validated_head = self._validate_worktree(
+            reference.worktree_path,
+            expected_branch=reference.worktree_branch,
+            expected_head=reference.base_commit_sha,
+        )
+        dirty = self._run_git(
+            ("status", "--porcelain=v1", "--untracked-files=all"),
+            cwd=reference.worktree_path,
+        ).stdout
+        if dirty.strip():
+            raise WorktreeValidationError(
+                "CREATING worktree is not pristine; explicit intervention is required"
+            )
+        return self._publish_active_worktree(
+            reference,
+            validated_head=validated_head,
+            guard=PathGuard(reference.worktree_path),
+        )
+
+    def _publish_active_worktree(
+        self,
+        reference: WorktreeReference,
+        *,
+        validated_head: str,
+        guard: PathGuard,
+    ) -> ProvisionedWorktree:
+        active = replace(
+            reference,
+            worktree_path=reference.worktree_path.resolve(strict=True),
+            worktree_head_sha=validated_head,
+            status=WorktreeStatus.ACTIVE,
+            updated_at=self._now(),
+        )
+        self._write_reference(active)
+        return self._provisioned_worktree(active, guard)
 
     def create_candidate_commit(
         self,
@@ -614,6 +701,10 @@ class ExternalWorktreeManager:
             raise WorktreeValidationError("external Git root cannot be resolved") from exc
         if git_root != canonical_path:
             raise WorktreeValidationError("external path is not the exact Git worktree root")
+        if self._git_common_dir(canonical_path) != self._git_common_dir(self.project_root):
+            raise WorktreeValidationError(
+                "external worktree belongs to a different Git repository"
+            )
 
         branch_result = self._run_git(
             ("symbolic-ref", "--quiet", "--short", "HEAD"),
@@ -630,14 +721,29 @@ class ExternalWorktreeManager:
             raise WorktreeValidationError("external worktree HEAD does not match its reference")
         return head
 
+    def _git_common_dir(self, repository: Path) -> Path:
+        result = self._run_git(("rev-parse", "--git-common-dir"), cwd=repository)
+        raw_path = Path(result.stdout.strip())
+        candidate = raw_path if raw_path.is_absolute() else repository / raw_path
+        try:
+            common_dir = candidate.resolve(strict=True)
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise WorktreeValidationError("Git common directory cannot be resolved") from exc
+        if not common_dir.is_dir():
+            raise WorktreeValidationError("Git common directory is not a directory")
+        return common_dir
+
     def _ensure_branch_absent(self, branch: str) -> None:
+        if self._branch_exists(branch):
+            raise WorktreeCollisionError("worktree branch already exists")
+
+    def _branch_exists(self, branch: str) -> bool:
         result = self._run_git(
             ("show-ref", "--verify", "--quiet", f"refs/heads/{branch}"),
             cwd=self.project_root,
             allowed_returncodes=(0, 1),
         )
-        if result.returncode == 0:
-            raise WorktreeCollisionError("worktree branch already exists")
+        return result.returncode == 0
 
     def _commit_parent(self, repository: Path, commit_sha: str) -> str | None:
         result = self._run_git(

@@ -262,6 +262,29 @@ Essas APIs estão recertificadas somente na branch local e não tornam o protót
 a composição automática de provider/tools/worktree e os gates pós-reversão/evidence recovery
 permanecem pendentes.
 
+## Matriz de recovery F6.6
+
+Esta matriz é o contrato operacional de retomada para os nove pontos de falha exigidos pelo plano.
+`recovered` significa que a evidência durável permite concluir a mesma operação sem repetir um efeito;
+`blocked_requires_intervention` preserva um efeito ambíguo; `known_gap_f6_7` é uma evidência negativa,
+nunca uma recuperação válida. Cleanup é sempre explícito e não forçado.
+
+| Checkpoint | Status | Estado persistido | Operação idempotente | Comportamento de `resume` | Cleanup permitido | Evidência |
+|---|---|---|---|---|---|---|
+| `CP-01-worktree-created` | `recovered` | referência `CREATING` contém identidade completa antes de `git worktree add`; `ACTIVE` contém o HEAD validado | retry aceita somente identidade/base/branch/path exatos; sem efeito continua, com branch+path íntegros publica `ACTIVE` sem segundo add | revalida checkout original, worktree, branch, HEAD e limpeza; metade do efeito ou divergência vira `blocked_requires_intervention` | nenhuma remoção automática; somente `cleanup-worktree` posterior sobre `ACTIVE` limpo | `test_create_retry_recovers_after_active_publication_interruption`, `test_create_retry_continues_creating_reference_before_git_effect` e os casos partial/base |
+| `CP-02-context-saved` | `recovered` | `context.json` content-addressed e evento `CONTEXT_EVALUATED` antecedem a transição | a mesma decisão/payload durável é reutilizada; não remonta contexto já aceito | reconcilia o contexto salvo e continua para planning; digest/evento divergente falha fechado | somente temporário gerenciado pelo storage; nunca apagar contexto canônico | `test_resume_recovers_durable_context_decision_after_interrupted_transition` |
+| `CP-03-model-response` | `blocked_requires_intervention` | intent/metadados de início e, quando concluído, outcome content-addressed no journal | outcome completo pode ser replayado; resposta observada sem outcome não autoriza segunda chamada | com outcome válido, retorna o mesmo resultado; apenas `STARTED` exige intervenção sem chamar backend | nenhum cleanup de evento ou resposta; preservar journal e payload store | `test_model_metadata_and_usage_are_journaled_only_on_node_outcome`, `test_resume_recovers_pending_outcome_without_reexecuting_completed_node`, `test_resume_started_without_outcome_requires_intervention_without_backend` |
+| `CP-04-tool-call` | `blocked_requires_intervention` | autorização/intenção `TOOL_CALLED` precede handler; outcome completo liga call ID, digest e resultado | par completo é replayado; journal falho antes do handler não produz efeito; par parcial nunca repete handler | par completo retorna resultado; intenção sem outcome bloqueia por ambiguidade | nenhum cleanup de intent/outcome; somente temporário de append comprovadamente íntegro | `test_tool_call_journal_failure_blocks_effect_before_handler`, `test_tool_record_replay_accepts_complete_pair_without_reexecution` |
+| `CP-05-candidate-commit` | `recovered` | referência `ACTIVE` conserva base e HEAD; outcome/CAS registra candidate SHA | retry reconhece o único filho limpo da base e publica o mesmo SHA, sem segundo commit | revalida original, branch, parent, árvore e limpeza antes de reconciliar record | nenhuma exclusão de commit/branch/worktree; cleanup externo continua separado | `test_candidate_outcome_before_cas_is_recovered_without_duplicate_git_effect` |
+| `CP-06-journal-append` | `recovered` | append atômico mantém o canônico anterior ou um temporário gerenciado completo | retry usa sequence/hash esperados; backend e CAS não avançam quando o append falha | promove somente temporário único, íntegro e não ambíguo; corrupção ou candidatos múltiplos bloqueiam | remover apenas temporário órfão comprovadamente inválido pela autoridade de storage | `test_atomic_failure_during_append_preserves_journal_and_removes_temp`, `test_append_failure_prevents_backend_and_cas` |
+| `CP-07-approval` | `recovered` | request e decisão ficam ligadas ao subject/digests antes do CAS do record | retry recompõe a decisão exata; não cria segunda aprovação nem aceita subject alterado | reconcilia evento/arquivo durável com CAS; ausência, expiração ou divergência bloqueia | nenhum cleanup da decisão; nova aprovação exige nova request explícita | `test_approval_event_before_cas_is_recovered_idempotently` |
+| `CP-08-promotion` | `recovered` | intent precede cherry-pick; outcome registra SHA promovido antes do CAS terminal | retry prova o efeito pelo SHA/ancestralidade e não executa segundo cherry-pick | antes do efeito pode continuar; depois do efeito reconcilia outcome/CAS; ambiguidade bloqueia | nunca resetar/reverter automaticamente; rollback é fluxo explícito aprovado | `test_interrupted_live_effect_is_recovered_without_second_cherry_pick`, `test_promotion_outcome_before_cas_is_recovered_without_duplicate_event` |
+| `CP-09-knowledge-transaction` | `known_gap_f6_7` | baseline atual pode conter apenas `PREPARED`, sem staging e sem `current.json` | **não existe operação idempotente segura na F6.6**; o código atual acrescenta falso `COMMITTED` | não tratar `RECOVERED_tx-missing` como sucesso; preservar evidência e bloquear saída da Fase 6 até a F6.7 | nenhum cleanup ou pointer swap na F6.6 | `test_f66_freezes_false_knowledge_recovery_for_f67`: `PREPARED → COMMITTED` sem staging/pointer |
+
+A F6.6 altera somente o recovery da criação de worktree. Os checkpoints 2–8 exercitam autoridades já
+promovidas; o checkpoint 9 congela o defeito que a F6.7 deve substituir por transação realmente
+atômica, com lock/fencing, staging validado, pointer swap e recovery verificável.
+
 ## Teste controlado de `init`
 
 Crie um repositório descartável e execute o binário instalado pelo ambiente do clone. Confirme os

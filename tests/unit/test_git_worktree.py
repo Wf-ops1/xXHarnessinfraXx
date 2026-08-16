@@ -102,6 +102,204 @@ def test_create_real_worktree_persists_identity_and_instantiates_guard(tmp_path:
     assert reopened.trust_boundary == provisioned.trust_boundary
 
 
+def test_create_retry_recovers_after_active_publication_interruption(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo, base_sha = _repository(tmp_path)
+    manager = _manager(repo, tmp_path)
+    real_write_reference = manager._write_reference
+    real_run_git = manager._run_git
+    add_calls = 0
+    interrupt_active = True
+
+    def recording_run_git(
+        arguments: tuple[str, ...],
+        *,
+        cwd: Path,
+        allowed_returncodes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal add_calls
+        if arguments[:2] == ("worktree", "add"):
+            add_calls += 1
+        return real_run_git(arguments, cwd=cwd, allowed_returncodes=allowed_returncodes)
+
+    def interrupted_write(reference: git_worktree_module.WorktreeReference) -> None:
+        nonlocal interrupt_active
+        if reference.status is WorktreeStatus.ACTIVE and interrupt_active:
+            interrupt_active = False
+            raise WorktreeReferenceError("injected ACTIVE publication interruption")
+        real_write_reference(reference)
+
+    monkeypatch.setattr(manager, "_run_git", recording_run_git)
+    monkeypatch.setattr(manager, "_write_reference", interrupted_write)
+
+    with pytest.raises(WorktreeReferenceError, match="injected ACTIVE"):
+        manager.create_worktree("exec-recover-after-effect")
+
+    reference_path = _reference_path(repo, "exec-recover-after-effect")
+    interrupted = json.loads(reference_path.read_text(encoding="utf-8"))
+    assert interrupted["status"] == "CREATING"
+    assert Path(interrupted["worktree_path"]).is_dir()
+    assert add_calls == 1
+
+    recovered = manager.create_worktree("exec-recover-after-effect")
+    repeated = manager.create_worktree("exec-recover-after-effect")
+
+    assert recovered.reference.status is WorktreeStatus.ACTIVE
+    assert recovered.reference.worktree_head_sha == base_sha
+    assert repeated.reference == recovered.reference
+    assert add_calls == 1
+    assert _git(repo, "rev-parse", "refs/heads/harness/exec-recover-after-effect").stdout.strip() == base_sha
+
+
+def test_create_retry_continues_creating_reference_before_git_effect(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo, base_sha = _repository(tmp_path)
+    manager = _manager(repo, tmp_path)
+    real_run_git = manager._run_git
+    interrupt_before_effect = True
+
+    def interrupted_run_git(
+        arguments: tuple[str, ...],
+        *,
+        cwd: Path,
+        allowed_returncodes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal interrupt_before_effect
+        if arguments[:2] == ("worktree", "add") and interrupt_before_effect:
+            interrupt_before_effect = False
+            raise KeyboardInterrupt
+        return real_run_git(arguments, cwd=cwd, allowed_returncodes=allowed_returncodes)
+
+    monkeypatch.setattr(manager, "_run_git", interrupted_run_git)
+
+    with pytest.raises(KeyboardInterrupt):
+        manager.create_worktree("exec-recover-before-effect")
+
+    interrupted = json.loads(
+        _reference_path(repo, "exec-recover-before-effect").read_text(encoding="utf-8")
+    )
+    assert interrupted["status"] == "CREATING"
+    assert not Path(interrupted["worktree_path"]).exists()
+
+    recovered = manager.create_worktree("exec-recover-before-effect")
+
+    assert recovered.reference.status is WorktreeStatus.ACTIVE
+    assert recovered.reference.worktree_head_sha == base_sha
+
+
+def test_create_retry_rejects_partial_creating_effect_without_cleanup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo, _ = _repository(tmp_path)
+    manager = _manager(repo, tmp_path)
+    real_write_reference = manager._write_reference
+    interrupt_active = True
+
+    def interrupted_write(reference: git_worktree_module.WorktreeReference) -> None:
+        nonlocal interrupt_active
+        if reference.status is WorktreeStatus.ACTIVE and interrupt_active:
+            interrupt_active = False
+            raise WorktreeReferenceError("injected ACTIVE publication interruption")
+        real_write_reference(reference)
+
+    monkeypatch.setattr(manager, "_write_reference", interrupted_write)
+    with pytest.raises(WorktreeReferenceError, match="injected ACTIVE"):
+        manager.create_worktree("exec-partial")
+
+    worktree_path = tmp_path / "external" / "project-1" / "exec-partial"
+    _git(repo, "worktree", "remove", str(worktree_path))
+    assert not worktree_path.exists()
+    assert _git(repo, "show-ref", "--verify", "refs/heads/harness/exec-partial").returncode == 0
+
+    with pytest.raises(WorktreeValidationError, match="partial Git effect"):
+        manager.create_worktree("exec-partial")
+
+    payload = json.loads(_reference_path(repo, "exec-partial").read_text(encoding="utf-8"))
+    assert payload["status"] == "CREATING"
+    assert _git(repo, "show-ref", "--verify", "refs/heads/harness/exec-partial").returncode == 0
+
+
+def test_create_retry_rejects_creating_reference_after_base_advances(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo, _ = _repository(tmp_path)
+    manager = _manager(repo, tmp_path)
+    real_run_git = manager._run_git
+    interrupt_before_effect = True
+
+    def interrupted_run_git(
+        arguments: tuple[str, ...],
+        *,
+        cwd: Path,
+        allowed_returncodes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal interrupt_before_effect
+        if arguments[:2] == ("worktree", "add") and interrupt_before_effect:
+            interrupt_before_effect = False
+            raise KeyboardInterrupt
+        return real_run_git(arguments, cwd=cwd, allowed_returncodes=allowed_returncodes)
+
+    monkeypatch.setattr(manager, "_run_git", interrupted_run_git)
+    with pytest.raises(KeyboardInterrupt):
+        manager.create_worktree("exec-base-advanced")
+
+    (repo / "tracked.txt").write_text("advanced\n", encoding="utf-8")
+    _git(repo, "add", "--", "tracked.txt")
+    _git(repo, "commit", "-m", "advance base")
+
+    with pytest.raises(WorktreeValidationError, match="identity no longer matches"):
+        manager.create_worktree("exec-base-advanced")
+
+    payload = json.loads(_reference_path(repo, "exec-base-advanced").read_text(encoding="utf-8"))
+    assert payload["status"] == "CREATING"
+    assert not (tmp_path / "external" / "project-1" / "exec-base-advanced").exists()
+
+
+def test_create_retry_rejects_matching_checkout_from_another_repository(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo, base_sha = _repository(tmp_path)
+    manager = _manager(repo, tmp_path)
+    real_run_git = manager._run_git
+    interrupt_before_effect = True
+
+    def interrupted_run_git(
+        arguments: tuple[str, ...],
+        *,
+        cwd: Path,
+        allowed_returncodes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal interrupt_before_effect
+        if arguments[:2] == ("worktree", "add") and interrupt_before_effect:
+            interrupt_before_effect = False
+            raise KeyboardInterrupt
+        return real_run_git(arguments, cwd=cwd, allowed_returncodes=allowed_returncodes)
+
+    monkeypatch.setattr(manager, "_run_git", interrupted_run_git)
+    with pytest.raises(KeyboardInterrupt):
+        manager.create_worktree("exec-foreign-repo")
+
+    worktree_path = tmp_path / "external" / "project-1" / "exec-foreign-repo"
+    _git(repo, "branch", "harness/exec-foreign-repo", base_sha)
+    _git(tmp_path, "clone", str(repo), str(worktree_path))
+    _git(worktree_path, "checkout", "-b", "harness/exec-foreign-repo", base_sha)
+
+    with pytest.raises(WorktreeValidationError, match="different Git repository"):
+        manager.create_worktree("exec-foreign-repo")
+
+    payload = json.loads(_reference_path(repo, "exec-foreign-repo").read_text(encoding="utf-8"))
+    assert payload["status"] == "CREATING"
+    assert worktree_path.is_dir()
+    assert _git(repo, "show-ref", "--verify", "refs/heads/harness/exec-foreign-repo").returncode == 0
+
+
 def test_cleanup_is_explicit_non_forced_and_preserves_branch(tmp_path: Path) -> None:
     repo, base_sha = _repository(tmp_path)
     manager = _manager(repo, tmp_path)

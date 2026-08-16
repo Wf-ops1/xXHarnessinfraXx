@@ -39,6 +39,38 @@ def test_readme_contains_frozen_capability_matrix() -> None:
     assert "git cherry-pick" in readme
 
 
+def test_f66_recovery_matrix_has_exactly_nine_checkpoint_contracts() -> None:
+    user_guide = _read(ROOT / "docs" / "user_guide.md")
+    checkpoints = (
+        "CP-01-worktree-created",
+        "CP-02-context-saved",
+        "CP-03-model-response",
+        "CP-04-tool-call",
+        "CP-05-candidate-commit",
+        "CP-06-journal-append",
+        "CP-07-approval",
+        "CP-08-promotion",
+        "CP-09-knowledge-transaction",
+    )
+
+    assert "## Matriz de recovery F6.6" in user_guide
+    assert user_guide.count("| `CP-") == 9
+    for checkpoint in checkpoints:
+        assert user_guide.count(checkpoint) == 1
+    for field in (
+        "Estado persistido",
+        "Operação idempotente",
+        "Comportamento de `resume`",
+        "Cleanup permitido",
+        "Evidência",
+    ):
+        assert field in user_guide
+    assert "`recovered`" in user_guide
+    assert "`blocked_requires_intervention`" in user_guide
+    assert "`known_gap_f6_7`" in user_guide
+    assert "PREPARED → COMMITTED` sem staging/pointer" in user_guide
+
+
 def test_documents_do_not_claim_current_operational_readiness() -> None:
     for document in CURRENT_CLAIM_FILES:
         content = _read(document)
