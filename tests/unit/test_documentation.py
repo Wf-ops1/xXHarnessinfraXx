@@ -216,7 +216,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
+    assert "PROMOTED / ADMIN_LOCAL_READY / PUBLICATION_PENDING" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
@@ -251,7 +251,11 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31930869377" in panel
     assert "a42ec411f1a1516336abc1c5b1de57461a03c64d" in panel
     assert "31931649225" in panel
-    assert "docs/tasks/active/F6.5.md" in panel
+    assert "docs/tasks/completed/F6.5.md" in panel
+    assert "7386638c76b3270ab9849337e6e429b8f29a9202" in panel
+    assert "31936640635" in panel
+    assert "c0491258ceab29785c97c2a4f1375d1f7d1f9645" in panel
+    assert "31953772121" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/73" in panel
     assert "31913438082" in panel
     assert "1bd095a8f7c474b554a0a0cbd0a2be62448dc9b3" in panel
