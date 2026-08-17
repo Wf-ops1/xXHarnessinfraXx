@@ -42,7 +42,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.7 estão promovidas e terminalmente reconciliadas; a F6.7 encerrou em `38849ed`/CI `31979153948` | F7.1 possui prova vertical local em promoção pendente; composição automática no lifecycle continua fora do escopo | Governança operacional integral após composição futura |
+| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.7 estão promovidas e terminalmente reconciliadas; a F7.1 possui prova vertical promovida no merge `76f43dd`/CI `31985776520` | A reconciliação administrativa F7.1 está em curso; composição automática no lifecycle continua fora do escopo | Governança operacional integral após composição futura |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `list`, `status`, `inspect`, `events`, `evidence` e doctor possuem contratos/testes | Sem backends reais, `run` falha no preflight; os comandos F6.5 são inspeção local fail-closed e estado/worktree válidos continuam necessários | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -249,11 +249,14 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   [PR #82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82) abriu no head inicial `5ee3fcc`,
   certificado 10/10 + `CI required` pela CI inicial `31978357679`, encerrou no head final `cfd97c6`
   com 11/11 no run `31978820506`, foi incorporado pelo merge `38849ed` e recebeu 11/11 na CI
-  pós-merge `31979153948`. A F7.1 concluiu localmente no produto `2ce104b` com dedicado `1/1`, E2E
+  pós-merge `31979153948`. A F7.1 concluiu no produto `2ce104b` com dedicado `1/1`, E2E
   `42 passed, 1 skipped` e full `1050 passed, 5 skipped, 6 subtests passed`, além de quality, build e
   smoke oficial offline. A prova usa composição determinística exclusiva do teste e não altera
-  `src/`. O PR #83 abriu no head `ed439a0`, certificado 10/10 + `CI required` pela CI `31984775704`;
-  a promoção ainda aguarda head documental final, nova CI e merge autorizado.
+  `src/`. O [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83) abriu no head `ed439a0`,
+  certificado por `31984775704`, encerrou no head `a26807c`, certificado 10/10 + `CI required` por
+  `31985232560`, foi incorporado pelo merge `76f43dd` e recebeu CI pós-merge `31985776520` no SHA
+  exato. A branch de produto foi preservada, nenhuma tag remota foi publicada, a reconciliação
+  administrativa está em curso e F7.2 não foi iniciada.
 
 ## Dívidas técnicas críticas
 
