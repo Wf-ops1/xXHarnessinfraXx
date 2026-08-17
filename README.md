@@ -251,8 +251,9 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   com 11/11 no run `31978820506`, foi incorporado pelo merge `38849ed` e recebeu 11/11 na CI
   pós-merge `31979153948`. A F7.1 concluiu localmente no produto `2ce104b` com dedicado `1/1`, E2E
   `42 passed, 1 skipped` e full `1050 passed, 5 skipped, 6 subtests passed`, além de quality, build e
-  smoke oficial offline. A prova usa composição determinística exclusiva do teste, não altera
-  `src/` e ainda aguarda promoção remota.
+  smoke oficial offline. A prova usa composição determinística exclusiva do teste e não altera
+  `src/`. O PR #83 abriu no head `ed439a0`, certificado 10/10 + `CI required` pela CI `31984775704`;
+  a promoção ainda aguarda head documental final, nova CI e merge autorizado.
 
 ## Dívidas técnicas críticas
 

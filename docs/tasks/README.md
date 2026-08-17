@@ -24,7 +24,8 @@ A [F7.1 — E2E em repositório Git temporário real](active/F7.1.md) está
 `COMPLETED_LOCAL / PROMOTION_PENDING` na branch `task/f7.1-external-repo-e2e`. O checkpoint
 `c55edaa` precede o produto `2ce104b`; dedicado `1/1`, E2E `42 passed, 1 skipped` e full
 `1050 passed, 5 skipped, 6 subtests passed` ficaram verdes, junto de quality, sdist/wheel e smoke
-oficial offline. Nenhum `src/` ou efeito remoto mudou; F7.2 não foi iniciada.
+oficial offline. O [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83) abriu no head
+`ed439a0`, certificado 10/10 + `CI required` pelo run `31984775704`; não houve merge e F7.2 não iniciou.
 
 A [F6.7 — corrigir knowledge transaction](completed/F6.7.md) está `PROMOTED`: o head `c4a864d` do
 [PR #81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81) passou 10/10 + `CI required` no run
