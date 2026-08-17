@@ -259,7 +259,11 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "PROMOTED / ADMIN_PR_OPEN" in panel
+    assert "| **Gate** | `READY` |" in panel
+    assert "docs/tasks/active/F7.2.md" in panel
+    assert "task/f7.2-test-matrix" in panel
+    assert "1055 testes coletáveis" in panel
+    assert "12 camadas/42 requisitos" in panel
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel
@@ -272,6 +276,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84" in panel
     assert "197eb33b0d9c33a87a51cef38b4da39afc5588c6" in panel
     assert "31998528616" in panel
+    assert "ceca850083fbbc2a6da54394054b09b6f335c9c7" in panel
+    assert "31999182890" in panel
+    assert "b46ebd9c84cacab6bd58d2fb2712879f6dabc164" in panel
+    assert "32000365336" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
@@ -362,6 +370,8 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31985776520" in readme
     assert "PR #84" in readme
     assert "31998528616" in readme
+    assert "31999182890" in readme
+    assert "32000365336" in readme
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70" in panel
     assert "aae1aea7120d68aec1ccf3861b609f1a3880590b" in panel
     assert "31888260797" in panel

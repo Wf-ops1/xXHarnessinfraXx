@@ -1075,7 +1075,25 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
+    assert "| **Gate** | `READY` |" in panel
+    assert (ACTIVE_ROOT / "F7.2.md").is_file()
+    f7_2_dossier = _read(ACTIVE_ROOT / "F7.2.md")
+    for evidence in (
+        "> **Gate:** `READY`",
+        "> **Lifecycle:** `IMPLEMENTATION_AUTHORIZED`",
+        "task/f7.2-test-matrix",
+        "b46ebd9c84cacab6bd58d2fb2712879f6dabc164",
+        "32000365336",
+        "1055 tests collected in 3.16s",
+        "12 camadas e 42 requisitos",
+        "tests/f7_2_matrix.json",
+        "tests/run_f7_2_matrix.py",
+        "tests/unit/test_f7_2_matrix.py",
+        "docs/test_matrix.md",
+        "checkpoint/f7.2-ready",
+        "Nenhum arquivo em `src/`",
+    ):
+        assert evidence in f7_2_dossier
     assert "docs/tasks/completed/F7.1.md" in panel
     assert not (ACTIVE_ROOT / "F7.1.md").exists()
     f7_1_dossier = _read(COMPLETED_ROOT / "F7.1.md")
