@@ -259,7 +259,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
+    assert "| **Gate** | `READY / AWAITING_IMPLEMENTATION_AUTHORIZATION` |" in panel
+    assert "docs/tasks/active/F7.3.md" in panel
+    assert "task/f7.3-quality-gates" in panel
     assert "docs/tasks/completed/F7.2.md" in panel
     assert "task/f7.2-test-matrix" in panel
     assert "1055 testes coletáveis" in panel
@@ -274,10 +276,14 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "32039759737" in panel
     assert "docs/promote-f7.2" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in panel
-    assert "6b0d6238fe6f6db05b25e9d7ea6834aa478693d4" in panel
-    assert "32042595719" in panel
+    assert "b40f25113362c1fe11362b69becc6c45c064b48d" in panel
+    assert "32043891060" in panel
+    assert "4e9f7a25ed47bb425eeefa3821ca2d051d4d8008" in panel
+    assert "32045181204" in panel
+    assert "85,61%" in panel
+    assert "22 arcos" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in readme
-    assert "32042595719" in readme
+    assert "32045181204" in readme
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel
