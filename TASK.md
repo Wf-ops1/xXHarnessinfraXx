@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F7.3](docs/tasks/active/F7.3.md): gate `READY`, core crítico e kernels decisórios congelados; implementação aguarda autorização.
+2. [F7.3](docs/tasks/active/F7.3.md): gate R1 `READY`; cinco arquivos strict adicionais recongelados para implementação local.
 3. [F7.2](docs/tasks/completed/F7.2.md): produto PR #85/merge `53cafa5`/pós-merge `32039759737`; reconciliação PR #86/final `b40f251`/CI `32043891060`/merge `4e9f7a25`/pós-merge `32045181204`.
 4. [F7.1](docs/tasks/completed/F7.1.md): produto PR #83/merge `76f43dd`/pós-merge `31985776520`; reconciliação PR #84/final `ceca850`/CI `31999182890`/merge `b46ebd9`/pós-merge `32000365336`.
 4. Fase 6 — [F6.7](docs/tasks/completed/F6.7.md): knowledge transaction promovida pelo PR #81; reconciliação #82 encerrada no merge `38849ed`, com CI pós-merge `31979153948` verde.
@@ -47,10 +47,10 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1, F6.1–F6.7, F7.1 e F7.2 terminalmente reconciliadas |
 | **Fase ativa** | Fase 7 — maturidade operacional |
 | **Tarefa ativa** | F7.3 — quality gates do próprio projeto; dossiê `docs/tasks/active/F7.3.md` |
-| **Gate** | `READY / AWAITING_IMPLEMENTATION_AUTHORIZATION` |
-| **Estado corrente** | Escopo, aceite e rollback congelados; nenhum arquivo de implementação alterado; implementação local ainda não autorizada |
+| **Gate** | `READY / IMPLEMENTATION_R1_AUTHORIZED` |
+| **Estado corrente** | Escopo R1 ampliado somente para corrigir os 19 erros adicionais do `mypy 2.3.0`; novo checkpoint local deve preceder essas edições |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor da preparação F7.3 |
+| **Executor ativo** | `Codex`, único escritor da implementação F7.3 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
 | **Branch** | `task/f7.3-quality-gates`, local, limpa antes da documentação e sem upstream; base `4e9f7a25ed47bb425eeefa3821ca2d051d4d8008` |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
@@ -69,13 +69,13 @@
 | **Checkpoint F6.7** | `checkpoint/f6.7-ready` → `e01d49d6b11b2a27585669280f153f1b474af0c2`; `checkpoint/f6.7-complete` aponta para o commit documental de certificação; ambos somente locais |
 | **Checkpoint F7.1** | `checkpoint/f7.1-ready` → `c55edaaaadd3137d682eb6c6175333fe924b6967`; `checkpoint/f7.1-complete` → `ed439a08b2a6b2f37b7d140aaaba2e504d1cc0aa`; ambos somente locais |
 | **Checkpoint F7.2** | `checkpoint/f7.2-ready` → `1badf4004b1670774c3fa85c3cae93b6351e49f4`; `checkpoint/f7.2-complete` → `09e0ee30e52e498b8fb8c3a128c2ffa5fc1ff6e8`; ambos somente locais |
-| **Checkpoint F7.3** | `checkpoint/f7.3-ready` será criado sobre o commit documental deste gate e permanecerá somente local |
+| **Checkpoint F7.3** | `checkpoint/f7.3-ready` → `4bbe19327c76a1d79ecd38ca306ff8670af7c18d`; `checkpoint/f7.3-r1-ready` será criado sobre o commit documental de recongelamento; ambos somente locais |
 | **Main sincronizada** | `main == origin/main == 4e9f7a25ed47bb425eeefa3821ca2d051d4d8008` depois da reconciliação F7.2 e da CI `32045181204` verde |
 | **Implementação F7.2** | branch `task/f7.2-test-matrix`; baseline de 1055 testes coletáveis; produto `bdae858861a9c5294f90a231115b3ed930030117`; matriz canônica com 12 camadas/42 requisitos/46 node IDs e runner multiplataforma estrito |
 | **Validação F7.2** | matriz `62 passed in 83.45s`; full `1062 passed, 5 skipped, 6 subtests passed in 461.12s`; Ruff/mypy/compileall/build/smoke verdes |
 | **Promoção F7.2** | [PR #85](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/85), head `09e0ee30e52e498b8fb8c3a128c2ffa5fc1ff6e8`, CI [32038804579](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/32038804579) tentativa #2 10/10 + `CI required`; merge `53cafa5134c3af5f4d0a7497b3f44e996a6581dd`; pós-merge [32039759737](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/32039759737) verde |
 | **Reconciliação F7.2** | branch `docs/promote-f7.2`; [PR #86](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86), head final `b40f25113362c1fe11362b69becc6c45c064b48d`; CI `32043891060` tentativa #2; merge `4e9f7a25ed47bb425eeefa3821ca2d051d4d8008`; pós-merge `32045181204`, 10 jobs + `CI required` verdes |
-| **Problema F7.3** | CI sem mypy strict, coverage/branches, scan de secrets e auditoria de dependências; `mypy --strict src` tem 7 erros; 23 kernels decisórios têm 22 arcos ausentes |
+| **Problema F7.3** | CI sem mypy strict, coverage/branches, scan de secrets e auditoria de dependências; os 7 erros strict congelados foram corrigidos, mas `mypy 2.3.0` revelou 19 adicionais fora do allowlist; 23 kernels decisórios têm 22 arcos ausentes |
 | **Baseline F7.3** | global 81%; seis arquivos do core crítico agregam 85,61%; probe instrumentado 1060/2/5/6, com as duas falhas ambientais recertificadas de forma confinada |
 | **Implementação F6.6** | produto `1d5467457cf99c4ee34d69000630de1b1aa0900b`; retry de worktree idempotente/fail-closed; nove checkpoints públicos; knowledge preservada como `known_gap_f6_7` |
 | **Validação F6.6** | worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed in 765.28s`; quality, build e smoke verdes |
@@ -249,24 +249,24 @@ iniciar sua implementação local na branch exclusiva. O produto foi promovido p
 `docs/promote-f6.6` e preparar a reconciliação local. A autorização posterior `AUTORIZO` cobriu o
 fechamento integral da F6.6, com parada obrigatória antes da F6.7. A branch foi publicada sem force,
 o PR #80 aberto e o head inicial `06abef0` certificado 11/11 pelo run `31967211097`.
-Autorizações posteriores encerraram F6.6/F6.7, produziram/promoveram F7.1 e abriram o PR #84. Sua cadeia encerrou no head `ceca850`, CI `31999182890`, merge `b46ebd9` e pós-merge `32000365336`, sem remover refs. Em `2026-08-17T03:21:29-03:00`, o usuário autorizou continuar a Fase 7; a cadeia F7.2 encerrou no head `09e0ee3`, PR #85/run `32038804579`, merge `53cafa5` e pós-merge `32039759737`, sem remover refs. Autorizações seguintes encerraram o PR administrativo #86 no head `b40f251`, CI `32043891060`, merge `4e9f7a25` e pós-merge `32045181204`. Em `2026-08-17T14:01:09-03:00`, a autorização nominal seguinte foi registrada somente para preparar o gate F7.3; implementação, publicação, PR e merge não foram autorizados.
+Autorizações posteriores encerraram F6.6/F6.7, produziram/promoveram F7.1 e abriram o PR #84. Sua cadeia encerrou no head `ceca850`, CI `31999182890`, merge `b46ebd9` e pós-merge `32000365336`, sem remover refs. Em `2026-08-17T03:21:29-03:00`, o usuário autorizou continuar a Fase 7; a cadeia F7.2 encerrou no head `09e0ee3`, PR #85/run `32038804579`, merge `53cafa5` e pós-merge `32039759737`, sem remover refs. Autorizações seguintes encerraram o PR administrativo #86 no head `b40f251`, CI `32043891060`, merge `4e9f7a25` e pós-merge `32045181204`. Em `2026-08-17T14:01:09-03:00`, a autorização nominal seguinte foi registrada somente para preparar o gate F7.3. A autorização explícita posterior foi consumida para a implementação local no allowlist congelado, sem commit de produto ou efeito remoto. Em `2026-08-17T17:11:08-03:00`, `mypy 2.3.0 --strict src` revelou 19 erros adicionais fora desse allowlist; a implementação foi pausada. Em `2026-08-17T17:55:01-03:00`, o usuário autorizou recongelar os cinco arquivos, criar commit/checkpoint local R1 e retomar a implementação sem efeito remoto.
 
 ## 5. Tarefa ativa
 
-A [F7.3](docs/tasks/active/F7.3.md) está `READY_FOR_IMPLEMENTATION` na branch local exclusiva.
+A [F7.3](docs/tasks/active/F7.3.md) está `READY_FOR_IMPLEMENTATION_R1` na branch local exclusiva.
 A F7.2 permanece terminalmente `PROMOTED`; `POST_PROMOTION_BLOCKED` é apenas histórico.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico. Há uma fronteira de autorização: o gate pode receber commit/checkpoint local,
-mas nenhum arquivo de implementação, push, PR, merge, tag remota ou remoção de ref está autorizado.
+Não há bloqueio técnico local após o recongelamento. Push, PR, merge, tag remota e remoção de ref
+continuam não autorizados.
 
 ## 7. Próxima ação exata
 
 ```text
-CRIAR O COMMIT DOCUMENTAL E checkpoint/f7.3-ready SOMENTE LOCAIS.
-PARAR ANTES DA IMPLEMENTAÇÃO E AGUARDAR AUTORIZAÇÃO EXPLÍCITA.
-NÃO PUBLICAR BRANCH, ABRIR PR, ALTERAR CI/PRODUTO OU INICIAR F7.4.
+CRIAR COMMIT DOCUMENTAL E checkpoint/f7.3-r1-ready SOMENTE LOCAIS.
+CORRIGIR OS 19 ERROS STRICT NO ESCOPO R1 E RETOMAR A IMPLEMENTAÇÃO F7.3.
+NÃO PUBLICAR BRANCH, ABRIR PR, FAZER MERGE OU INICIAR F7.4.
 ```
 
 ## 8. Retomada após perda de contexto
