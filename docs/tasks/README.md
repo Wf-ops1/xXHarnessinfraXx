@@ -20,16 +20,19 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-Não há tarefa ativa de implementação durante a reconciliação DEC-014. F7.2 permanece planejada e
-não foi iniciada.
+A [F7.2 — matriz de testes](active/F7.2.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
+`task/f7.2-test-matrix`. O commit `bdae858` liga 12 camadas e 42 requisitos a 46 node IDs reais; a
+seleção passou 62/62 e a regressão integral terminou 1062/5/6. Quality, build e smoke offline estão
+verdes. Nenhum push/PR ocorreu e F7.3 não foi iniciada.
 
 A [F7.1 — E2E em repositório Git temporário real](completed/F7.1.md) está `PROMOTED`: o produto
 `2ce104b` e a certificação local permanecem preservados; o [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83)
 encerrou no head `a26807c`, certificado 10/10 + `CI required` pelo run `31985232560`, foi incorporado
 pelo merge `76f43dd` e recebeu 10/10 + `CI required` na CI pós-merge `31985776520`. A branch de
 produto foi preservada e não existem tags remotas. A reconciliação
-[PR #84](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84) abriu no head inicial `197eb33`,
-certificado 10/10 + `CI required` pela CI `31998528616`; seu novo head ainda aguarda checks.
+[PR #84](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84) abriu no head inicial `197eb33`/CI
+`31998528616`, encerrou no head `ceca850`/CI `31999182890`, foi incorporado pelo merge `b46ebd9` e
+recebeu 10/10 + `CI required` na CI pós-merge `32000365336`. O fechamento é terminal pela DEC-014.
 
 A [F6.7 — corrigir knowledge transaction](completed/F6.7.md) está `PROMOTED`: o head `c4a864d` do
 [PR #81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81) passou 10/10 + `CI required` no run
