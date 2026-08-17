@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "task_id": "F7.2",
+  "layers": [
+    {
+      "id": "contracts",
+      "requirements": {
+        "validation": [
+          "tests/unit/test_graph_contracts.py::test_missing_entrypoint_is_rejected"
+        ],
+        "compatibility": [
+          "tests/unit/test_contract_registry.py::test_structural_compatibility_rejects_missing_required_and_wrong_type"
+        ],
+        "serialization": [
+          "tests/unit/test_contracts.py::test_execution_event_serialization"
+        ]
+      }
+    },
+    {
+      "id": "compiler",
+      "requirements": {
+        "valid_graphs": [
+          "tests/unit/test_default_graphs.py::test_supported_default_graphs_compile_with_context_policy"
+        ],
+        "invalid_graphs": [
+          "tests/unit/test_compiler_unification.py::test_graphspec_failures_never_create_output"
+        ]
+      }
+    },
+    {
+      "id": "runtime",
+      "requirements": {
+        "branches": [
+          "tests/e2e/test_graph_execution.py::test_failure_branch_reaches_only_explicit_failure_terminal"
+        ],
+        "retry": [
+          "tests/e2e/test_retry_context.py::test_retry_context_survives_crash_and_corrects_on_second_attempt"
+        ],
+        "pause": [
+          "tests/unit/test_execution_lifecycle.py::test_approval_pause_approve_resume_uses_immutable_snapshot"
+        ],
+        "resume": [
+          "tests/e2e/test_execution_resume.py::test_execution_resume_recovers_pending_outcome_without_reexecuting_completed_node"
+        ],
+        "cancellation": [
+          "tests/unit/test_execution_lifecycle.py::test_cancel_paused_invalidates_approval_and_is_idempotent"
+        ]
+      }
+    },
+    {
+      "id": "persistence",
+      "requirements": {
+        "atomicity": [
+          "tests/unit/test_execution_record.py::test_atomic_failures_preserve_previous_bytes_and_remove_temp"
+        ],
+        "lock": [
+          "tests/unit/test_state_storage.py::test_lock_timeout_and_fencing_are_cross_process"
+        ],
+        "replay": [
+          "tests/e2e/test_event_sourced_execution.py::test_event_sourced_lifecycle_transitions_replay_terminal_state"
+        ],
+        "corruption": [
+          "tests/unit/test_state_storage.py::test_journal_corruption_and_legacy_format_fail_closed"
+        ]
+      }
+    },
+    {
+      "id": "models",
+      "requirements": {
+        "errors": [
+          "tests/unit/test_models.py::test_auth_error_is_redacted_and_never_retried"
+        ],
+        "timeout": [
+          "tests/unit/test_models.py::test_timeout_error_retries_only_to_configured_limit"
+        ],
+        "tokens": [
+          "tests/unit/test_models.py::test_usage_consistency_rejects_provider_and_direct_response_mismatch"
+        ],
+        "structured_output": [
+          "tests/unit/test_models.py::test_structured_output_is_requested_and_validated_locally"
+        ],
+        "tools": [
+          "tests/unit/test_models.py::test_tool_calls_are_sent_and_parsed_as_strict_typed_values"
+        ]
+      }
+    },
+    {
+      "id": "tools",
+      "requirements": {
+        "authorization": [
+          "tests/unit/test_tool_loop.py::test_policy_deny_overlap_and_human_approval_fail_closed"
+        ],
+        "path_guard": [
+          "tests/unit/test_path_guard.py::test_parent_traversal_is_rejected_before_resolution"
+        ],
+        "timeout": [
+          "tests/unit/test_terminal_adapter.py::test_timeout_kills_the_spawned_process_tree"
+        ],
+        "output_limit": [
+          "tests/unit/test_terminal_adapter.py::test_stdout_and_stderr_are_independently_bounded_and_exit_code_is_preserved"
+        ]
+      }
+    },
+    {
+      "id": "git",
+      "requirements": {
+        "worktree": [
+          "tests/unit/test_git_worktree.py::test_create_real_worktree_persists_identity_and_instantiates_guard"
+        ],
+        "commit": [
+          "tests/unit/test_promotion_manager.py::test_candidate_is_one_real_squashed_commit_without_touching_original"
+        ],
+        "divergence": [
+          "tests/unit/test_promotion_manager.py::test_base_advance_blocks_without_cherry_pick_or_fallback"
+        ],
+        "promotion": [
+          "tests/e2e/test_safe_promotion.py::test_approved_verified_candidate_is_promoted_by_one_real_cherry_pick"
+        ],
+        "revert": [
+          "tests/unit/test_rollback_manager.py::test_revert_uses_argv_and_proves_new_commit_parent"
+        ]
+      }
+    },
+    {
+      "id": "verification",
+      "requirements": {
+        "pass": [
+          "tests/unit/test_verification_resolution.py::test_gate_executes_inside_real_external_git_worktree"
+        ],
+        "fail": [
+          "tests/unit/test_verification_results.py::test_required_failure_and_error_block_completion"
+        ],
+        "missing_tool": [
+          "tests/unit/test_verification_resolution.py::test_missing_required_tool_is_error_prerequisite_before_any_gate"
+        ],
+        "empty_suite": [
+          "tests/unit/test_verification_results.py::test_suite_completion_is_not_vacuously_true"
+        ]
+      }
+    },
+    {
+      "id": "security",
+      "requirements": {
+        "secrets": [
+          "tests/e2e/test_secret_redaction.py::test_real_subprocess_receives_secret_but_public_snapshot_is_clean"
+        ],
+        "egress": [
+          "tests/unit/test_model_routing.py::test_egress_denial_happens_before_provider_creation"
+        ],
+        "trust": [
+          "tests/unit/test_security.py::test_trust_boundary_default_restricted"
+        ],
+        "command_injection": [
+          "tests/unit/test_terminal_adapter.py::test_real_argv_execution_never_interprets_shell_metacharacters"
+        ]
+      }
+    },
+    {
+      "id": "observability",
+      "requirements": {
+        "sequence": [
+          "tests/unit/test_audit.py::test_concurrent_managers_produce_contiguous_monotonic_sequence_20_of_20"
+        ],
+        "hash": [
+          "tests/unit/test_phase7.py::test_audit_trail_tamper_detection"
+        ],
+        "redaction": [
+          "tests/unit/test_event_schema.py::test_every_value_under_a_sensitive_key_is_redacted"
+        ],
+        "export": [
+          "tests/unit/test_cli_runtime.py::test_cli_audit_validates_and_exports_exact_execution_identity"
+        ]
+      }
+    },
+    {
+      "id": "e2e",
+      "requirements": {
+        "full_cycle_external_repository": [
+          "tests/e2e/test_external_repository_product.py::test_installed_wheel_delivers_promotes_audits_and_reverts_external_repository"
+        ]
+      }
+    },
+    {
+      "id": "recovery",
+      "requirements": {
+        "crash_injection_critical_checkpoints": [
+          "tests/e2e/test_event_sourced_execution.py::test_crash_recovery_pending_transition_is_idempotent_after_provider_restart",
+          "tests/unit/test_graph_executor.py::test_interrupted_execution_does_not_reexecute_backend",
+          "tests/unit/test_verification_lifecycle.py::test_open_gate_write_ahead_blocks_automatic_reexecution",
+          "tests/e2e/test_safe_promotion.py::test_interrupted_live_effect_is_recovered_without_second_cherry_pick",
+          "tests/unit/test_knowledge_transaction.py::test_crash_after_committed_append_is_already_terminal"
+        ]
+      }
+    }
+  ]
+}
