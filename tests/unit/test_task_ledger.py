@@ -1075,14 +1075,14 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_RECONCILIATION_LOCAL` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
     assert "docs/tasks/completed/F7.1.md" in panel
     assert not (ACTIVE_ROOT / "F7.1.md").exists()
     f7_1_dossier = _read(COMPLETED_ROOT / "F7.1.md")
     for evidence in (
         "> **Gate:** `COMPLETED_LOCAL`",
         "> **Lifecycle:** `PROMOTED`",
-        "> **Reconciliação administrativa:** `ADMIN_LOCAL / PR_PENDING`",
+        "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`",
         "checkpoint/f7.1-ready",
         "c55edaaaadd3137d682eb6c6175333fe924b6967",
         "2ce104b687650587fa6881a88ea281dac22a83b3",
@@ -1096,6 +1096,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "origin/task/f7.1-external-repo-e2e",
         "Tags remotas:** nenhuma",
         "docs/promote-f7.1",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84",
+        "197eb33b0d9c33a87a51cef38b4da39afc5588c6",
+        "31998528616",
         "tests/e2e/test_external_repository_product.py",
         "1 passed in 47.08s",
         "42 passed, 1 skipped in 433.13s",

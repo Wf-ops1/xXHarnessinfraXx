@@ -27,7 +27,9 @@ A [F7.1 — E2E em repositório Git temporário real](completed/F7.1.md) está `
 `2ce104b` e a certificação local permanecem preservados; o [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83)
 encerrou no head `a26807c`, certificado 10/10 + `CI required` pelo run `31985232560`, foi incorporado
 pelo merge `76f43dd` e recebeu 10/10 + `CI required` na CI pós-merge `31985776520`. A branch de
-produto foi preservada, não existem tags remotas e `docs/promote-f7.1` está em preparação.
+produto foi preservada e não existem tags remotas. A reconciliação
+[PR #84](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84) abriu no head inicial `197eb33`,
+certificado 10/10 + `CI required` pela CI `31998528616`; seu novo head ainda aguarda checks.
 
 A [F6.7 — corrigir knowledge transaction](completed/F6.7.md) está `PROMOTED`: o head `c4a864d` do
 [PR #81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81) passou 10/10 + `CI required` no run
