@@ -259,14 +259,25 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
-    assert "docs/tasks/active/F7.2.md" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
+    assert "docs/tasks/completed/F7.2.md" in panel
     assert "task/f7.2-test-matrix" in panel
     assert "1055 testes coletáveis" in panel
     assert "12 camadas/42 requisitos" in panel
     assert "bdae858861a9c5294f90a231115b3ed930030117" in panel
     assert "62 passed in 83.45s" in panel
     assert "1062 passed, 5 skipped, 6 subtests passed in 461.12s" in panel
+    assert "09e0ee30e52e498b8fb8c3a128c2ffa5fc1ff6e8" in panel
+    assert "PR #85" in panel
+    assert "32038804579" in panel
+    assert "53cafa5134c3af5f4d0a7497b3f44e996a6581dd" in panel
+    assert "32039759737" in panel
+    assert "docs/promote-f7.2" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in panel
+    assert "6b0d6238fe6f6db05b25e9d7ea6834aa478693d4" in panel
+    assert "32042595719" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in readme
+    assert "32042595719" in readme
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel

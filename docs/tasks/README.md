@@ -20,10 +20,14 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F7.2 — matriz de testes](active/F7.2.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
-`task/f7.2-test-matrix`. O commit `bdae858` liga 12 camadas e 42 requisitos a 46 node IDs reais; a
-seleção passou 62/62 e a regressão integral terminou 1062/5/6. Quality, build e smoke offline estão
-verdes. Nenhum push/PR ocorreu e F7.3 não foi iniciada.
+A [F7.2 — matriz de testes](completed/F7.2.md) está `PROMOTED`: o commit `bdae858` liga 12 camadas e
+42 requisitos a 46 node IDs reais; seleção 62/62, regressão 1062/5/6, quality, build e smoke offline
+permanecem certificados. O [PR #85](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/85) encerrou no
+head `09e0ee3`, passou 10/10 + `CI required` na tentativa #2 do run `32038804579`, foi incorporado
+pelo merge `53cafa5` e recebeu 10/10 + `CI required` na CI pós-merge `32039759737`. A reconciliação
+[PR #86](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86) abriu no head inicial `6b0d623`,
+certificado 10/10 + `CI required` na tentativa #3 do run `32042595719`; seu novo head aguarda
+checks. F7.3 não foi iniciada.
 
 A [F7.1 — E2E em repositório Git temporário real](completed/F7.1.md) está `PROMOTED`: o produto
 `2ce104b` e a certificação local permanecem preservados; o [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83)
