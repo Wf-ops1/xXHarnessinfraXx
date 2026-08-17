@@ -20,9 +20,11 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F7.1 — E2E em repositório Git temporário real](active/F7.1.md) está `READY` na branch
-`task/f7.1-external-repo-e2e`, criada da base certificada `38849ed`. O escopo inicial permite somente
-a prova vertical em wheel/repositório externo e sua documentação; F7.2 não foi iniciada.
+A [F7.1 — E2E em repositório Git temporário real](active/F7.1.md) está
+`COMPLETED_LOCAL / PROMOTION_PENDING` na branch `task/f7.1-external-repo-e2e`. O checkpoint
+`c55edaa` precede o produto `2ce104b`; dedicado `1/1`, E2E `42 passed, 1 skipped` e full
+`1050 passed, 5 skipped, 6 subtests passed` ficaram verdes, junto de quality, sdist/wheel e smoke
+oficial offline. Nenhum `src/` ou efeito remoto mudou; F7.2 não foi iniciada.
 
 A [F6.7 — corrigir knowledge transaction](completed/F6.7.md) está `PROMOTED`: o head `c4a864d` do
 [PR #81](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/81) passou 10/10 + `CI required` no run

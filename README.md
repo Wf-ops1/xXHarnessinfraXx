@@ -6,12 +6,13 @@ O AI Engineering Harness é hoje uma base Python instalável para experimentar u
 agentic local-first. O repositório já possui empacotamento reproduzível, compilador único e
 determinístico, execução dirigida pelas arestas do artefato, persistência concorrente, FSM por eventos
 e retomada canônica com aprovação, cancelamento e retry limitado por contexto real e redigido. A
-execução autônoma segura sobre um repositório externo ainda não está pronta: providers, roteamento,
-continuação de model-turn e durabilidade/policy do tool loop passaram pelo realinhamento; os
-primitivos de worktree Git, terminal por `argv` e edição confinada já são reais. O registry das tools
-é opt-in e injetável; sua ligação automática ao lifecycle e à governança operacional permanece
-incompleta. A promoção Git segura F3.7 foi promovida, mas continua disponível somente por
-composição opt-in explícita; CLI/defaults ainda não constroem automaticamente essa fronteira.
+execução autônoma segura sobre um repositório externo ainda não está pronta como composição padrão:
+providers, roteamento, continuação de model-turn e durabilidade/policy do tool loop passaram pelo
+realinhamento; os primitivos de worktree Git, terminal por `argv` e edição confinada já são reais. A
+F7.1 comprovou localmente o ciclo vertical sobre uma wheel instalada e um repositório Git externo,
+incluindo tool loop, aprovação, promoção, evidence, audit e rollback. Essa prova injeta provider,
+registry e backend determinísticos somente no teste; CLI/defaults ainda não constroem
+automaticamente essa fronteira.
 
 Não use `harness run`, `harness doctor`, `harness verify` ou `harness rollback` como garantia de segurança em um
 repositório valioso. Embora as Fases 0–4 estejam implementadas no escopo planejado, as Fases 5–7
@@ -41,7 +42,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.6 estão promovidas e reconciliadas; a F6.7 foi promovida pelo PR #81 no merge `93f7bf20`/CI `31977793119` | Reconciliação administrativa F6.7 ainda precisa ser incorporada; composição automática no lifecycle continua fora do escopo | Governança operacional integral após composição futura |
+| Configuração e governança | F5.1–F5.7, F5.C1 e F6.1–F6.7 estão promovidas e terminalmente reconciliadas; a F6.7 encerrou em `38849ed`/CI `31979153948` | F7.1 possui prova vertical local em promoção pendente; composição automática no lifecycle continua fora do escopo | Governança operacional integral após composição futura |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `list`, `status`, `inspect`, `events`, `evidence` e doctor possuem contratos/testes | Sem backends reais, `run` falha no preflight; os comandos F6.5 são inspeção local fail-closed e estado/worktree válidos continuam necessários | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -50,7 +51,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Serena, índice, contexto e planejamento | Edição confinada e Serena MCP explícito usam efeitos verificados; `PythonAstIndexer` indexa o commit exato; F4.3/F4.4 produzem contexto e plano persistidos; a F4.C1 e sua reconciliação administrativa foram incorporadas pelos PRs #40/#41 | Serena é opt-in e a indexação é Python-only/full rebuild/explícita | Backend Codebase-Memory compatível e memória semântica real |
 | Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`, e runner `0/0` falham antes de subprocessos; F6.1–F6.3 fornecem journal/audit/evidence fail-closed; F6.5 adiciona inspeção; F6.6 documenta nove checkpoints; F6.7 promoveu a transação knowledge fail-closed | Proteção sem chave é somente “tamper-evident local”; F6.7 não foi ligada automaticamente ao lifecycle | Matriz operacional integral com recovery ampliado |
 | Doctor | A F6.4 promovida faz sete componentes percorrerem seis estágios reais; texto/JSON compartilham resultado tipado, `--workflow` resolve gates sem executá-los e ambiente unhealthy retorna não zero | Provider/MCP live continuam dependentes de configuração e serviços externos; adapters não suportados falham fechados | UX adicional e novos adapters somente após contrato/testes equivalentes |
-| Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo; F5.7 R3 promovida confina Git, liga aprovação destrutiva à tentativa e falha corretamente em rollback bloqueado | Rollback não reexecuta gates pós-reversão e a composição continua opt-in | Composição operacional padrão e recovery/evidence F6 |
+| Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo; F5.7 R3 promovida confina Git, liga aprovação destrutiva à tentativa e falha corretamente em rollback bloqueado. A F7.1 atravessa esses efeitos em repositório externo descartável | Rollback não reexecuta gates pós-reversão e a composição continua opt-in/injetada no teste | Composição operacional padrão e recovery/evidence ampliado |
 | CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
 
 ## Estado do roadmap
@@ -246,7 +247,12 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   `c4a864d` do PR #81 passou no run `31977507679`, foi incorporado pelo merge `93f7bf20` e recebeu
   CI pós-merge `31977793119` 10/10 + `CI required`. A reconciliação
   [PR #82](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/82) abriu no head inicial `5ee3fcc`,
-  certificado 10/10 + `CI required` pela CI inicial `31978357679`; o head final ainda aguarda checks.
+  certificado 10/10 + `CI required` pela CI inicial `31978357679`, encerrou no head final `cfd97c6`
+  com 11/11 no run `31978820506`, foi incorporado pelo merge `38849ed` e recebeu 11/11 na CI
+  pós-merge `31979153948`. A F7.1 concluiu localmente no produto `2ce104b` com dedicado `1/1`, E2E
+  `42 passed, 1 skipped` e full `1050 passed, 5 skipped, 6 subtests passed`, além de quality, build e
+  smoke oficial offline. A prova usa composição determinística exclusiva do teste, não altera
+  `src/` e ainda aguarda promoção remota.
 
 ## Dívidas técnicas críticas
 

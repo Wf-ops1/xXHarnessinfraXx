@@ -332,18 +332,30 @@ Crie um repositório descartável e execute o binário instalado pelo ambiente d
 arquivos gerados antes de removê-los. Não aponte o protótipo para um checkout com trabalho não
 commitado.
 
+## Prova vertical controlada F7.1
+
+A F7.1 certificou localmente que os primitivos existentes podem formar um ciclo completo em um
+repositório Git Python externo e descartável. O teste constrói e instala a wheel fora do checkout,
+executa `harness init` e `harness compile`, injeta provider/backend determinísticos somente na
+fixture e atravessa tool loop, edição confinada no worktree, pausa/aprovação/retomada, quatro gates,
+candidate commit, aprovação ligada ao conteúdo, `git cherry-pick`, evidence, audit e rollback por
+`git revert`.
+
+Essa é uma prova de integração do produto, não uma receita de operação em repositório valioso. A CLI
+padrão ainda não seleciona nem injeta automaticamente provider, tools e backend, e o rollback
+corrente não reexecuta os gates depois da reversão. Até a composição operacional ser concluída,
+continue usando somente repositórios descartáveis.
+
 ## O que ainda não está disponível
 
 - instalação pública estável por `pipx`, `uv tool` ou extensão de IDE;
 - seleção/injeção automática de provider e tools pelo lifecycle padrão;
 - Serena live plug-and-play e Codebase-Memory semântica real;
 - ligação automática entre worktree Git, guard e registry operacional;
-- promoção por candidate commit e cherry-pick;
-- execução E2E autônoma que use a retomada persistida com backends operacionais;
-- gates pós-reversão e evidence/recovery abrangente;
-- doctor confiável.
-- composição automática de worktree, provider e tools no lifecycle padrão; o E2E F4.8 usa
-  dependências explicitamente injetadas.
+- promoção por candidate commit e cherry-pick acionada automaticamente pela CLI padrão;
+- execução E2E com provider/backend live selecionados pelo produto, sem injeção de teste;
+- reexecução dos gates após rollback e recovery abrangente para efeitos ambíguos;
+- doctor live plug-and-play para providers e MCP sem configuração externa.
 
 Acompanhe a ordem de implementação no
 [plano operacional](plano_implementacao_harness_operacional.md) e o estado executável no

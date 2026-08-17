@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F7.1](docs/tasks/active/F7.1.md): gate `READY` para a prova E2E vertical em wheel/repositório externo.
+2. [F7.1](docs/tasks/active/F7.1.md): `COMPLETED_LOCAL / PROMOTION_PENDING`; produto `2ce104b` sem `src/`.
 3. [F6.7](docs/tasks/completed/F6.7.md): produto PR #81/merge `93f7bf20`/CI `31977793119`; PR
    administrativo #82/head `cfd97c6`/CI `31978820506`/merge `38849ed`/pós-merge `31979153948`.
 3. [F6.6](docs/tasks/completed/F6.6.md): produto promovido pelo PR #79; reconciliação #80 encerrada
@@ -49,8 +49,8 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1 reconciliadas; F6.1–F6.7 promovidas como produto |
 | **Fase ativa** | Fase 7; somente F7.1 iniciada |
 | **Tarefa ativa** | F7.1 — E2E em repositório Git temporário real |
-| **Gate** | `READY / IMPLEMENTATION_AUTHORIZED` |
-| **Estado corrente** | Lacuna vertical comprovada; baseline E2E vigente 16/16 verde; implementação ainda não iniciada |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | Prova vertical implementada e certificada; nenhum efeito remoto executado; F7.2 não iniciada |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da F7.1 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
@@ -69,7 +69,10 @@
 | **Checkpoint F6.5** | `checkpoint/f6.5-ready` → `90212ed54c190024c366c8f7cf69320345957907`; `checkpoint/f6.5-complete` → `7386638c76b3270ab9849337e6e429b8f29a9202`; ambos somente locais e imutáveis |
 | **Checkpoint F6.6** | `checkpoint/f6.6-ready` → `2d01cca3bc14a5077a5cacc35fb2982e896ee12f`; `checkpoint/f6.6-complete` → `1ce953df5ad3db3764f44fc063cb617c18546d3c`; ambos somente locais e imutáveis |
 | **Checkpoint F6.7** | `checkpoint/f6.7-ready` → `e01d49d6b11b2a27585669280f153f1b474af0c2`; `checkpoint/f6.7-complete` aponta para o commit documental de certificação; ambos somente locais |
+| **Checkpoint F7.1** | `checkpoint/f7.1-ready` → `c55edaaaadd3137d682eb6c6175333fe924b6967`; `checkpoint/f7.1-complete` apontará para o commit documental de certificação; ambos somente locais |
 | **Main sincronizada** | `main == origin/main == 38849ed519436554b8f8c6b3e6950089a445a248` antes da branch F7.1 |
+| **Implementação F7.1** | produto `2ce104b687650587fa6881a88ea281dac22a83b3`; wheel instalada fora do checkout; init/compile, provider/tool loop, worktree, aprovação, gates, candidate, promoção, evidence/audit e revert reais |
+| **Validação F7.1** | dedicado `1 passed in 47.08s`; E2E `42 passed, 1 skipped in 433.13s`; full `1050 passed, 5 skipped, 6 subtests passed in 968.39s`; Ruff, mypy 110 arquivos, compileall, diff, build e smoke offline verdes |
 | **Implementação F6.6** | produto `1d5467457cf99c4ee34d69000630de1b1aa0900b`; retry de worktree idempotente/fail-closed; nove checkpoints públicos; knowledge preservada como `known_gap_f6_7` |
 | **Validação F6.6** | worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed in 765.28s`; quality, build e smoke verdes |
 | **PR F6.6** | [#79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79), head final `1ce953df5ad3db3764f44fc063cb617c18546d3c`; CI [31962221925](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31962221925) 11/11 success |
@@ -241,24 +244,25 @@ iniciar sua implementação local na branch exclusiva. O produto foi promovido p
 `docs/promote-f6.6` e preparar a reconciliação local. A autorização posterior `AUTORIZO` cobriu o
 fechamento integral da F6.6, com parada obrigatória antes da F6.7. A branch foi publicada sem force,
 o PR #80 aberto e o head inicial `06abef0` certificado 11/11 pelo run `31967211097`.
+Autorizações posteriores encerraram F6.6/F6.7 em `38849ed`/`31979153948` e abriram a F7.1 em `2026-08-16T20:45:51-03:00`; produziram `2ce104b` localmente, sem efeito remoto ou remoção de ref.
 
 ## 5. Tarefa ativa
 
-A [F7.1](docs/tasks/active/F7.1.md) está `READY / IMPLEMENTATION_AUTHORIZED`. O escopo inicial permite
-somente a prova E2E e documentação; qualquer necessidade de mudar `src/` reabre o gate. F7.2 não iniciou.
-`POST_PROMOTION_BLOCKED` permanece somente como autoridade histórica das correções anteriores.
+A [F7.1](docs/tasks/active/F7.1.md) está `COMPLETED_LOCAL / PROMOTION_PENDING`: `2ce104b` contém só
+a prova E2E, sem `src/`; provider/backend são injetados no teste e não pela CLI padrão. F7.2 não
+iniciou; `POST_PROMOTION_BLOCKED` permanece somente como autoridade histórica.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio externo. A fronteira é o allowlist da F7.1: nenhum produto pode mudar sem reprodução
-nova e recongelamento. Push/PR/merge seguem o lifecycle da tarefa; F7.2 permanece fora do escopo.
+Não há bloqueio técnico; push/PR/merge F7.1 não ocorreram e F7.2 está fora do escopo. A wheel antiga
+tem backup externo recuperável; o sdist antigo protegido por ACL permanece intacto em `dist/`.
 
 ## 7. Próxima ação exata
 
 ```text
-COMMITAR O GATE READY E CRIAR checkpoint/f7.1-ready SOMENTE LOCAL.
-IMPLEMENTAR A PROVA VERTICAL SOMENTE EM tests/e2e/test_external_repository_product.py.
-CERTIFICAR A F7.1 INTEGRALMENTE E PARAR ANTES DA F7.2.
+CRIAR O COMMIT DOCUMENTAL E checkpoint/f7.1-complete SOMENTE LOCAL.
+PUBLICAR A BRANCH/ABRIR PR F7.1 SOMENTE SOB A AUTORIZAÇÃO APLICÁVEL E SEM FORCE.
+EXIGIR CI INTEGRAL ANTES DE MERGE E NÃO INICIAR F7.2.
 ```
 
 ## 8. Retomada após perda de contexto
@@ -289,7 +293,8 @@ CERTIFICAR A F7.1 INTEGRALMENTE E PARAR ANTES DA F7.2.
     PR #81/head `c4a864d`/CI `31977507679`/merge `93f7bf20`/pós-merge `31977793119`.
 18. Preserve PR #82: inicial `5ee3fcc`/`31978357679`; final `cfd97c6`/`31978820506`; merge
     `38849ed`; pós-merge `31979153948` 11/11. F7.1 parte somente dessa base.
+19. Preserve F7.1: `c55edaa`/`2ce104b`, `1/1`, `42/1`, `1050/5/6`, quality/build/smoke verdes; sem `src/`.
 
 ---
 
-*Atualizado em: 2026-08-16T20:45:51-03:00 | Fonte: Fase 6 terminal + gate READY da F7.1*
+*Atualizado em: 2026-08-16T22:07:13-03:00 | Fonte: Fase 6 terminal + certificação local F7.1*

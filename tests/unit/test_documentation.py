@@ -259,8 +259,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "READY / IMPLEMENTATION_AUTHORIZED" in panel
+    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
     assert "docs/tasks/active/F7.1.md" in panel
+    assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
+    assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
@@ -343,6 +345,9 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "5b10b2d453768de62e9f64ae6d0095cfcd95cd03" in panel
     assert "31918043022" in panel
     assert "tamper-evident local" in readme
+    assert "A F7.1 comprovou localmente o ciclo vertical" in readme
+    assert "Prova vertical controlada F7.1" in user_guide
+    assert "injeção de teste" in user_guide
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70" in panel
     assert "aae1aea7120d68aec1ccf3861b609f1a3880590b" in panel
     assert "31888260797" in panel
