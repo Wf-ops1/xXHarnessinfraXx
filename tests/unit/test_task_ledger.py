@@ -1075,7 +1075,7 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `ADMIN_RECONCILIATION_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
     assert not (ACTIVE_ROOT / "F7.2.md").exists()
     assert (COMPLETED_ROOT / "F7.2.md").is_file()
     f7_2_dossier = _read(COMPLETED_ROOT / "F7.2.md")
@@ -1102,6 +1102,10 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "origin/task/f7.2-test-matrix",
         "Tags remotas:** nenhuma",
         "docs/promote-f7.2",
+        "> **Reconciliação administrativa:** `ADMIN_PR_OPEN / CHECKS_PENDING`",
+        "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86",
+        "6b0d6238fe6f6db05b25e9d7ea6834aa478693d4",
+        "32042595719",
         "46 node IDs únicos",
         "62 passed in 83.45s",
         "1062 passed, 5 skipped, 6 subtests passed in 461.12s",
@@ -1111,6 +1115,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
     ):
         assert evidence in f7_2_dossier
     assert "completed/F7.2.md" in task_index
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in task_index
+    assert "32042595719" in task_index
     assert "docs/tasks/completed/F7.1.md" in panel
     assert not (ACTIVE_ROOT / "F7.1.md").exists()
     f7_1_dossier = _read(COMPLETED_ROOT / "F7.1.md")

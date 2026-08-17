@@ -259,7 +259,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `ADMIN_RECONCILIATION_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
     assert "docs/tasks/completed/F7.2.md" in panel
     assert "task/f7.2-test-matrix" in panel
     assert "1055 testes coletáveis" in panel
@@ -273,6 +273,11 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "53cafa5134c3af5f4d0a7497b3f44e996a6581dd" in panel
     assert "32039759737" in panel
     assert "docs/promote-f7.2" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in panel
+    assert "6b0d6238fe6f6db05b25e9d7ea6834aa478693d4" in panel
+    assert "32042595719" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in readme
+    assert "32042595719" in readme
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel

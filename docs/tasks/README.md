@@ -25,7 +25,9 @@ A [F7.2 — matriz de testes](completed/F7.2.md) está `PROMOTED`: o commit `bda
 permanecem certificados. O [PR #85](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/85) encerrou no
 head `09e0ee3`, passou 10/10 + `CI required` na tentativa #2 do run `32038804579`, foi incorporado
 pelo merge `53cafa5` e recebeu 10/10 + `CI required` na CI pós-merge `32039759737`. A reconciliação
-administrativa está somente local em `docs/promote-f7.2`; F7.3 não foi iniciada.
+[PR #86](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86) abriu no head inicial `6b0d623`,
+certificado 10/10 + `CI required` na tentativa #3 do run `32042595719`; seu novo head aguarda
+checks. F7.3 não foi iniciada.
 
 A [F7.1 — E2E em repositório Git temporário real](completed/F7.1.md) está `PROMOTED`: o produto
 `2ce104b` e a certificação local permanecem preservados; o [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83)
