@@ -1075,12 +1075,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert (ACTIVE_ROOT / "F7.2.md").is_file()
     f7_2_dossier = _read(ACTIVE_ROOT / "F7.2.md")
     for evidence in (
-        "> **Gate:** `READY`",
-        "> **Lifecycle:** `IMPLEMENTATION_AUTHORIZED`",
+        "> **Gate:** `COMPLETED_LOCAL`",
+        "> **Lifecycle:** `PROMOTION_PENDING`",
         "task/f7.2-test-matrix",
         "b46ebd9c84cacab6bd58d2fb2712879f6dabc164",
         "32000365336",
@@ -1091,6 +1091,13 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "tests/unit/test_f7_2_matrix.py",
         "docs/test_matrix.md",
         "checkpoint/f7.2-ready",
+        "checkpoint/f7.2-complete",
+        "bdae858861a9c5294f90a231115b3ed930030117",
+        "46 node IDs únicos",
+        "62 passed in 83.45s",
+        "1062 passed, 5 skipped, 6 subtests passed in 461.12s",
+        "Success: no issues found in 110 source files",
+        "uv build --offline",
         "Nenhum arquivo em `src/`",
     ):
         assert evidence in f7_2_dossier

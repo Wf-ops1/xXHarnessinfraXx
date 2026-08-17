@@ -20,10 +20,10 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F7.2 — matriz de testes](active/F7.2.md) está `READY` na branch `task/f7.2-test-matrix`. A lacuna
-estrutural foi reproduzida: existem 1055 testes coletáveis, mas nenhum manifesto/runner liga as 12
-camadas e 42 requisitos do plano a node IDs pytest verificáveis. Produto, CI e dependências estão
-fora do escopo; F7.3 não foi iniciada.
+A [F7.2 — matriz de testes](active/F7.2.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch
+`task/f7.2-test-matrix`. O commit `bdae858` liga 12 camadas e 42 requisitos a 46 node IDs reais; a
+seleção passou 62/62 e a regressão integral terminou 1062/5/6. Quality, build e smoke offline estão
+verdes. Nenhum push/PR ocorreu e F7.3 não foi iniciada.
 
 A [F7.1 — E2E em repositório Git temporário real](completed/F7.1.md) está `PROMOTED`: o produto
 `2ce104b` e a certificação local permanecem preservados; o [PR #83](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/83)

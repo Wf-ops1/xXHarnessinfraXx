@@ -259,11 +259,14 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `READY` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert "docs/tasks/active/F7.2.md" in panel
     assert "task/f7.2-test-matrix" in panel
     assert "1055 testes coletáveis" in panel
     assert "12 camadas/42 requisitos" in panel
+    assert "bdae858861a9c5294f90a231115b3ed930030117" in panel
+    assert "62 passed in 83.45s" in panel
+    assert "1062 passed, 5 skipped, 6 subtests passed in 461.12s" in panel
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel

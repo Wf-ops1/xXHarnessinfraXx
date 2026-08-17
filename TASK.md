@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F7.2](docs/tasks/active/F7.2.md): matriz executável de 12 camadas e 42 requisitos; gate `READY`.
+2. [F7.2](docs/tasks/active/F7.2.md): matriz executável de 12 camadas e 42 requisitos; gate `COMPLETED_LOCAL / PROMOTION_PENDING`.
 3. [F7.1](docs/tasks/completed/F7.1.md): produto PR #83/merge `76f43dd`/pós-merge `31985776520`; reconciliação PR #84/final `ceca850`/CI `31999182890`/merge `b46ebd9`/pós-merge `32000365336`.
 4. Fase 6 — [F6.7](docs/tasks/completed/F6.7.md): knowledge transaction promovida pelo PR #81; reconciliação #82 encerrada no merge `38849ed`, com CI pós-merge `31979153948` verde.
 3. [F6.6](docs/tasks/completed/F6.6.md): produto promovido pelo PR #79; reconciliação #80 encerrada no merge `1327f299`, com CI pós-merge `31968035375` verde.
@@ -45,9 +45,9 @@
 |---|---|
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1 reconciliadas; F6.1–F6.7 e F7.1 terminalmente encerradas |
 | **Fase ativa** | Fase 7; somente F7.2 iniciada |
-| **Tarefa ativa** | F7.2 — matriz de testes |
-| **Gate** | `READY` |
-| **Estado corrente** | Lacuna reproduzida: 1055 testes coletáveis, mas sem matriz canônica; 12 camadas/42 requisitos, escopo e aceite congelados; nenhuma implementação F7.2 ainda |
+| **Tarefa ativa** | F7.2 — matriz de testes; implementação local concluída, promoção pendente |
+| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
+| **Estado corrente** | Baseline de 1055 testes coletáveis; produto `bdae858861a9c5294f90a231115b3ed930030117`; 12 camadas/42 requisitos/46 node IDs; matriz `62 passed in 83.45s`; full `1062 passed, 5 skipped, 6 subtests passed in 461.12s`; Ruff/mypy/compileall/build/smoke verdes; nenhum push/PR |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor autorizado da F7.2 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
@@ -67,6 +67,7 @@
 | **Checkpoint F6.6** | `checkpoint/f6.6-ready` → `2d01cca3bc14a5077a5cacc35fb2982e896ee12f`; `checkpoint/f6.6-complete` → `1ce953df5ad3db3764f44fc063cb617c18546d3c`; ambos somente locais e imutáveis |
 | **Checkpoint F6.7** | `checkpoint/f6.7-ready` → `e01d49d6b11b2a27585669280f153f1b474af0c2`; `checkpoint/f6.7-complete` aponta para o commit documental de certificação; ambos somente locais |
 | **Checkpoint F7.1** | `checkpoint/f7.1-ready` → `c55edaaaadd3137d682eb6c6175333fe924b6967`; `checkpoint/f7.1-complete` → `ed439a08b2a6b2f37b7d140aaaba2e504d1cc0aa`; ambos somente locais |
+| **Checkpoint F7.2** | `checkpoint/f7.2-ready` → `1badf4004b1670774c3fa85c3cae93b6351e49f4`; `checkpoint/f7.2-complete` apontará para o commit documental desta certificação; ambos somente locais |
 | **Main sincronizada** | `main == origin/main == b46ebd9c84cacab6bd58d2fb2712879f6dabc164` antes da branch F7.2 |
 | **Implementação F7.1** | produto `2ce104b687650587fa6881a88ea281dac22a83b3`; wheel instalada fora do checkout; init/compile, provider/tool loop, worktree, aprovação, gates, candidate, promoção, evidence/audit e revert reais |
 | **Validação F7.1** | dedicado `1 passed in 47.08s`; E2E `42 passed, 1 skipped in 433.13s`; full `1050 passed, 5 skipped, 6 subtests passed in 968.39s`; quality/build/smoke verdes |
@@ -248,25 +249,25 @@ Autorizações posteriores encerraram F6.6/F6.7, produziram/promoveram F7.1 e ab
 
 ## 5. Tarefa ativa
 
-A [F7.2](docs/tasks/active/F7.2.md) está `READY`: baseline e lacuna comprovados, matriz de 12 camadas/42 requisitos congelada e nenhuma implementação feita antes do checkpoint.
+A [F7.2](docs/tasks/active/F7.2.md) está `COMPLETED_LOCAL / PROMOTION_PENDING`: implementação `bdae858`, matriz 62/62 e full 1062/5/6 certificadas; nenhum efeito remoto foi executado.
 `POST_PROMOTION_BLOCKED` permanece somente como estado histórico de dossiês anteriores; não descreve o gate atual.
 
 ## 6. Bloqueios e fronteiras externas
 
-Não há bloqueio técnico. A fronteira é implementar somente manifesto, runner, teste e documento F7.2 sem alterar produto, CI ou dependências. F7.3 permanece fora do escopo.
+Não há bloqueio técnico. A fronteira é criar o checkpoint completo local e obter autorização explícita antes de push/PR; F7.3 permanece fora do escopo.
 
 ## 7. Próxima ação exata
 
 ```text
-COMMITAR O GATE READY F7.2 E CRIAR checkpoint/f7.2-ready SOMENTE LOCAL.
-IMPLEMENTAR SOMENTE A MATRIZ CANÔNICA, RUNNER, TESTE E DOCUMENTO CONGELADOS.
-EXECUTAR TODO O ACEITE; NÃO INICIAR F7.3 NEM ALTERAR PRODUTO/CI/DEPENDÊNCIAS.
+COMMITAR A CERTIFICAÇÃO F7.2 E CRIAR checkpoint/f7.2-complete SOMENTE LOCAL.
+PARAR ANTES DE PUSH/PR; PROMOÇÃO EXIGE AUTORIZAÇÃO APLICÁVEL E CI NO SHA EXATO.
+NÃO INICIAR F7.3 NEM ALTERAR PRODUTO/CI/DEPENDÊNCIAS.
 ```
 
 ## 8. Retomada após perda de contexto
 
 1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F7.2.md`, a Fase 7 e a DEC-014.
-2. Confirme `task/f7.2-test-matrix` sobre `main == origin/main == b46ebd9`; respeite o allowlist.
+2. Confirme `task/f7.2-test-matrix` em `bdae858` sobre base `b46ebd9`; preserve os checkpoints F7.2 e respeite o allowlist.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
@@ -292,8 +293,8 @@ EXECUTAR TODO O ACEITE; NÃO INICIAR F7.3 NEM ALTERAR PRODUTO/CI/DEPENDÊNCIAS.
 18. Preserve PR #82: inicial `5ee3fcc`/`31978357679`; final `cfd97c6`/`31978820506`; merge
     `38849ed`; pós-merge `31979153948` 11/11. F7.1 parte somente dessa base.
 19. Preserve F7.1: `c55edaa`/`2ce104b`, `1/1`, `42/1`, `1050/5/6`; PR #83 final `a26807c`/`31985232560`, merge `76f43dd`/pós-merge `31985776520`.
-20. Preserve PR #84: inicial `197eb33`/`31998528616`; final `ceca850`/`31999182890`; merge `b46ebd9`/pós-merge `32000365336`. F7.2 parte dessa base e F7.3 não iniciou.
+20. Preserve PR #84: inicial `197eb33`/`31998528616`; final `ceca850`/`31999182890`; merge `b46ebd9`/pós-merge `32000365336`. Preserve F7.2 `1badf40`/`bdae858`, matriz 62/62 e full 1062/5/6; F7.3 não iniciou.
 
 ---
 
-*Atualizado em: 2026-08-17T03:23:23-03:00 | Fonte: F7.1 terminal + gate READY F7.2*
+*Atualizado em: 2026-08-17T03:57:52-03:00 | Fonte: F7.1 terminal + F7.2 certificada localmente*
