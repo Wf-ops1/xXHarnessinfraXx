@@ -259,12 +259,19 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "COMPLETED_LOCAL / PROMOTION_PENDING" in panel
-    assert "docs/tasks/active/F7.1.md" in panel
+    assert "PROMOTED / ADMIN_PR_OPEN" in panel
+    assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel
     assert "PR #83" in panel
     assert "31984775704" in panel
+    assert "a26807c030c7f099c5419ed5166a17cb46f4a2e4" in panel
+    assert "31985232560" in panel
+    assert "76f43dd29923c87e00062ca65afd534b5f4f1863" in panel
+    assert "31985776520" in panel
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84" in panel
+    assert "197eb33b0d9c33a87a51cef38b4da39afc5588c6" in panel
+    assert "31998528616" in panel
     assert "checkpoint/f6.4-complete" in panel
     assert "990 passed, 5 skipped, 6 subtests passed in 937.00s" in panel
     assert "31923378762" in panel
@@ -351,6 +358,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "Prova vertical controlada F7.1" in user_guide
     assert "injeção de teste" in user_guide
     assert "PR #83" in readme
+    assert "31985232560" in readme
+    assert "31985776520" in readme
+    assert "PR #84" in readme
+    assert "31998528616" in readme
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/70" in panel
     assert "aae1aea7120d68aec1ccf3861b609f1a3880590b" in panel
     assert "31888260797" in panel
