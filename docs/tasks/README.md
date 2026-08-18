@@ -18,15 +18,16 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 - `migration-manifest.json`: origem e SHA-256 dos 19 payloads extraídos do painel legado.
 - Git, PRs e runs de CI permanecem a evidência externa autoritativa de promoção.
 
-## Tarefa ativa
+## Pausa administrativa
 
-A [F7.3 — quality gates do próprio projeto](active/F7.3.md) está `COMPLETED_LOCAL` na branch local
-`task/f7.3-quality-gates`. A certificação R2 passou 1091/5/6, elevou o core crítico de 85,61% para
-88,73% e fechou os 22 arcos ausentes nos 23 kernels. Mypy strict, coverage, secrets, dependências,
-matriz, quality, build e smoke ficaram verdes. Os checkpoints `checkpoint/f7.3-ready` e
-`checkpoint/f7.3-r1-ready` são somente locais; este snapshot certificado recebe também
-`checkpoint/f7.3-complete`. Publicação da branch, PR e demais efeitos remotos aguardam autorização
-explícita.
+Não há dossiê de implementação ativo. A [F7.3 — quality gates do próprio projeto](completed/F7.3.md)
+está `PROMOTED`: a PR [#87](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/87) encerrou no head
+`97d2606`, o run `32088471059` passou 12/12 + `CI required`, o merge foi `be17bcb` e o `push`
+`32088913196` passou no SHA exato. A falha histórica `32085923509` foi preservada e sucedida pela
+correção UTF-8 recertificada. A branch de produto remota permanece preservada, não existem tags
+remotas, e a reconciliação [#88](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/88) está aberta no
+head administrativo inicial, com a CI [32095106958](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/32095106958)
+em andamento. A F7.4 continua somente planejada e requer autorização nominal posterior.
 
 A [F7.2 — matriz de testes](completed/F7.2.md) está terminalmente `PROMOTED`: produto PR #85/merge
 `53cafa5`/CI pós-merge `32039759737`; reconciliação
@@ -210,6 +211,10 @@ checks no run `31629604755`, foi incorporado pelo merge `c46910e` e recebeu 11/1
 | F6 | F6.4 | [Doctor real](completed/F6.4.md) | PR #75 / head final `6e6ebb8` / CI `31928606331`; merge `574df7a` / pós-merge `31929031317`; administrativo #76 / head final `3c1f4d2` / CI `31930869377`; merge `a42ec411` / pós-merge `31931649225` |
 | F6 | F6.5 | [Status e inspeção operacionais](completed/F6.5.md) | PR #77 / head final `7386638` / CI `31936640635`; merge `c049125` / pós-merge `31953772121`; administrativo #78 / final `fcc927e` / `31955779575`; merge `6386816` / pós-merge `31956649961` |
 | F6 | F6.6 | [Recovery e testes de falha](completed/F6.6.md) | PR #79 / head `1ce953d` / CI `31962221925`; merge `8be6789` / pós-merge `31963338576`; `docs/promote-f6.6` no administrativo #80 / inicial `06abef0` / `31967211097`; registro final local |
+| F6 | F6.7 | [Knowledge transaction](completed/F6.7.md) | PR #81 / head `c4a864d` / merge `93f7bf20` / pós-merge `31977793119`; administrativo #82 / merge `38849ed` / pós-merge `31979153948` |
+| F7 | F7.1 | [E2E Git temporário](completed/F7.1.md) | PR #83 / head `a26807c` / merge `76f43dd` / pós-merge `31985776520`; administrativo #84 / merge `b46ebd9` / pós-merge `32000365336` |
+| F7 | F7.2 | [Matriz de testes](completed/F7.2.md) | PR #85 / head `09e0ee3` / merge `53cafa5` / pós-merge `32039759737`; administrativo #86 / merge `4e9f7a25` / pós-merge `32045181204` |
+| F7 | F7.3 | [Quality gates do projeto](completed/F7.3.md) | PR #87 / head `97d2606` / CI `32088471059`; merge `be17bcb` / pós-merge `32088913196`; administrativo #88 / CI inicial `32095106958` em andamento |
 
 Fechamentos documentais adicionais preservados no Git: PR #13 / merge `3596df3` / run
 `31211290100` e PR #15 / merge `d48151b` / run `31215944126`.

@@ -279,10 +279,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
     assert "32085923509" in panel
-    assert "docs/tasks/active/F7.3.md" in panel
-    assert "task/f7.3-quality-gates" in panel
+    assert "docs/tasks/completed/F7.3.md" in panel
+    assert all(evidence in panel for evidence in ("task/f7.3-quality-gates", "97d2606b79c427a647d8218a3fad778c176bcd60", "32088471059", "be17bcb4130ad28c882d2dd781554114e2f6badb", "32088913196", "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/88", "32095106958"))  # pragma: allowlist secret
     assert "docs/tasks/completed/F7.2.md" in panel
     assert "task/f7.2-test-matrix" in panel
     assert "1055 testes coletáveis" in panel
@@ -303,7 +303,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "32045181204" in panel
     assert "85,61%" in panel
     assert "22 arcos" in panel
-    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in readme
+    assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/87" in readme and "32088913196" in readme and "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in readme
     assert "32045181204" in readme
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
