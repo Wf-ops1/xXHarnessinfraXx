@@ -347,7 +347,7 @@ def _copy_json_value(value: object) -> JsonValue:
             sort_keys=True,
             separators=(",", ":"),
         )
-        return json.loads(serialized)
+        return cast(JsonValue, json.loads(serialized))
     except (TypeError, ValueError) as exc:
         raise ToolExecutionError("tool result must be JSON-native") from exc
 

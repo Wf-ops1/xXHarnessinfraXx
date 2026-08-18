@@ -25,6 +25,7 @@ from ai_engineering_harness.runtime import (
     ExecutionLifecycleError,
     ExecutionLifecycleService,
     ExecutionNextAction,
+    ExecutionStatusView,
     GraphExecutionError,
     GraphExecutionPausedResult,
     NodeExecutorError,
@@ -154,7 +155,7 @@ def _next_action_text(execution_id: str, action: ExecutionNextAction) -> str:
     return actions[action]
 
 
-def _add_status_rows(table: Table, view) -> None:
+def _add_status_rows(table: Table, view: ExecutionStatusView) -> None:
     table.add_row("Schema", view.status_schema_version)
     table.add_row("Execution ID", view.execution_id)
     table.add_row("Workflow", view.workflow_name)
@@ -184,11 +185,11 @@ def _get_symbol(success: bool) -> str:
 
 @click.group(help="AI-Engineering-Harness - Motor Agentic Autônomo e Instalável")
 @click.version_option(version=__version__, prog_name="harness")
-def main():
+def main() -> None:
     pass
 
 @main.command(help="Inicializa a estrutura .harness/ no repositório local.")
-def init():
+def init() -> None:
     harness_dir = Path.cwd() / ".harness"
     (harness_dir / "agents").mkdir(parents=True, exist_ok=True)
     (harness_dir / "graphs" / "specs").mkdir(parents=True, exist_ok=True)
@@ -243,7 +244,7 @@ def doctor(json_output: bool, workflow: str | None) -> None:
 @click.argument("graph_spec_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--workflow", default=None, help="Nome do workflow; deve coincidir com graph.name.")
 @click.option("--render", is_flag=True, help="Exibe o diagrama Mermaid visual do grafo.")
-def compile(graph_spec_path, workflow, render):
+def compile(graph_spec_path: Path, workflow: str | None, render: bool) -> None:
     try:
         project_root = Path.cwd()
         compiler = GraphCompiler(
@@ -261,7 +262,7 @@ def compile(graph_spec_path, workflow, render):
         console.print(f"```mermaid\n{mermaid_code}\n```")
 
 @main.command(help="Reconstrói e valida o índice estrutural Python do commit Git atual.")
-def index():
+def index() -> None:
     indexer = PythonAstIndexer(project_root=Path.cwd())
     try:
         snapshot = indexer.rebuild("HEAD")
@@ -293,7 +294,13 @@ def index():
     default=None,
     help="Objeto JSON de overrides com a maior precedência de configuração.",
 )
-def run(workflow_name, approval_required, input_json, profile_name, config_json):
+def run(
+    workflow_name: str,
+    approval_required: bool,
+    input_json: str,
+    profile_name: str,
+    config_json: str | None,
+) -> None:
     project_root = Path.cwd()
     trust_boundary = _cli_trust_boundary(project_root)
     if approval_required:
@@ -364,7 +371,7 @@ def run(workflow_name, approval_required, input_json, profile_name, config_json)
     )
 
 @main.command(name="list", help="Lista o catálogo canônico de execuções locais.")
-def list_executions():
+def list_executions() -> None:
     try:
         views = _lifecycle_service(Path.cwd()).list_executions()
     except (
@@ -395,7 +402,7 @@ def list_executions():
 @main.command(help="Consulta o status canônico de uma execução.")
 @click.argument("execution_id")
 @click.option("--json", "as_json", is_flag=True, help="Emite a projeção tipada em JSON.")
-def status(execution_id, as_json):
+def status(execution_id: str, as_json: bool) -> None:
     try:
         view = _lifecycle_service(Path.cwd()).status(execution_id)
     except (
@@ -415,7 +422,7 @@ def status(execution_id, as_json):
 
 @main.command(help="Inspeciona os detalhes e o histórico de uma execução.")
 @click.argument("execution_id")
-def inspect(execution_id):
+def inspect(execution_id: str) -> None:
     try:
         view = _lifecycle_service(Path.cwd()).inspect(execution_id)
     except (
@@ -459,7 +466,7 @@ def inspect(execution_id):
     is_flag=True,
     help="Emite somente novas sequências até a execução alcançar estado terminal.",
 )
-def events(execution_id, follow):
+def events(execution_id: str, follow: bool) -> None:
     emitted_count = 0
     try:
         service = _lifecycle_service(Path.cwd())
@@ -496,7 +503,7 @@ def events(execution_id, follow):
     is_flag=True,
     help="Exige record terminal, journal, manifesto, arquivos e digests íntegros.",
 )
-def evidence(execution_id, verify):
+def evidence(execution_id: str, verify: bool) -> None:
     if not verify:
         raise click.ClickException("--verify is required for evidence inspection")
     try:
@@ -521,7 +528,7 @@ def evidence(execution_id, verify):
 @main.command(help="Aprova manualmente a promoção de alterações em estado AWAITING_APPROVAL.")
 @click.argument("execution_id")
 @click.option("--approver", required=True, help="Identificador não vazio do aprovador.")
-def approve(execution_id, approver):
+def approve(execution_id: str, approver: str) -> None:
     try:
         record = _lifecycle_service(Path.cwd()).approve(
             execution_id,
@@ -541,7 +548,7 @@ def approve(execution_id, approver):
 
 @main.command(help="Retoma uma execução exclusivamente de seu bundle canônico.")
 @click.argument("execution_id")
-def resume(execution_id):
+def resume(execution_id: str) -> None:
     try:
         result = _lifecycle_service(Path.cwd()).resume(execution_id)
     except (
@@ -567,7 +574,7 @@ def resume(execution_id):
 
 @main.command(help="Cancela uma execução cancelável sob o lock canônico.")
 @click.argument("execution_id")
-def cancel(execution_id):
+def cancel(execution_id: str) -> None:
     try:
         record = _lifecycle_service(Path.cwd()).cancel(execution_id)
     except (

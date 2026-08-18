@@ -42,7 +42,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 |---|---|---|---|
 | Ambiente e pacote | `uv.lock`, build de wheel, metadata e toolchain reproduzível | Bootstrap ainda depende de instalar `uv` | Distribuição e instalação externa suportadas como produto |
 | Versionamento | Package version única e schemas graph/artifact/policy separados | Compatibilidade ainda é comparação exata | Migrações compatíveis e política de evolução |
-| Configuração e governança | F5.1–F5.7, F5.C1, F6.1–F6.7 e F7.1 estão terminalmente reconciliadas; o produto F7.2 foi promovido com matriz 62/62 e full 1062/5/6 | A reconciliação F7.2 abriu no PR #86; o head inicial `6b0d623` passou 10/10 + `CI required` na tentativa #3 e o novo head aguarda checks; composição automática no lifecycle continua fora do escopo | Governança operacional integral após composição futura |
+| Configuração e governança | F5.1–F5.7, F5.C1, F6.1–F6.7, F7.1 e F7.2 estão terminalmente reconciliadas; F7.2 preserva matriz 62/62 e full 1062/5/6 | F7.3 está `COMPLETED_LOCAL`: full 1091/5/6, core 88,73% e zero arco ausente nos 23 kernels; promoção ainda não autorizada | Governança operacional integral após composição futura |
 | CLI e scaffold | `--help`, `--version`, `init`, `compile`, `run`, `resume`, `approve`, `cancel`, `cleanup-worktree`, `rollback`, `list`, `status`, `inspect`, `events`, `evidence` e doctor possuem contratos/testes | Sem backends reais, `run` falha no preflight; os comandos F6.5 são inspeção local fail-closed e estado/worktree válidos continuam necessários | UX estável para CLI e IDE em repositórios externos |
 | Compilação de grafos | Um único `GraphCompiler` valida contratos/policies e publica artefato 2.0 determinístico, versionado, íntegro e atômico | Capabilities compiladas ainda são declarativas, sem provar adapter disponível ou autorização runtime | Migrações de schema e expansão segura de workflows após o MVP |
 | Runtime/FSM | `GraphExecutor` segue somente arestas compiladas; record/journal usam lock, CAS e fencing. A F5.7 promovida persiste decisão/pedido, interrompe e reapera a árvore vinculada, impede sucesso pós-cancelamento e reconcilia `CANCELLED` sob lock após quiescência | Efeito iniciado sem outcome exige intervenção; executores, tools e worktree ainda dependem de backends/providers injetados | Integração automática dos efeitos reais no lifecycle padrão e recovery F6 |
@@ -52,7 +52,7 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
 | Verificação e auditoria | F4.5 mantém a taxonomia única `typecheck/lint/unit_test/build/security_scan`, e runner `0/0` falham antes de subprocessos; F6.1–F6.3 fornecem journal/audit/evidence fail-closed; F6.5 adiciona inspeção; F6.6 documenta nove checkpoints; F6.7 promoveu a transação knowledge fail-closed | Proteção sem chave é somente “tamper-evident local”; F6.7 não foi ligada automaticamente ao lifecycle | Matriz operacional integral com recovery ampliado |
 | Doctor | A F6.4 promovida faz sete componentes percorrerem seis estágios reais; texto/JSON compartilham resultado tipado, `--workflow` resolve gates sem executá-los e ambiente unhealthy retorna não zero | Provider/MCP live continuam dependentes de configuração e serviços externos; adapters não suportados falham fechados | UX adicional e novos adapters somente após contrato/testes equivalentes |
 | Worktree, promoção e rollback | `ExternalWorktreeManager` cria candidate commit real e singular e faz cleanup explícito; F3.7 promove por `git cherry-pick`; F5.6 revalida aprovação ligada ao conteúdo; F5.7 R3 promovida confina Git, liga aprovação destrutiva à tentativa e falha corretamente em rollback bloqueado. A F7.1 atravessa esses efeitos em repositório externo descartável | Rollback não reexecuta gates pós-reversão e a composição continua opt-in/injetada no teste | Composição operacional padrão e recovery/evidence ampliado |
-| CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A CI prova o baseline técnico, não as capacidades operacionais ainda simuladas | Distribuição pública e processo de release operacional na F7 |
+| CI e release | GitHub Actions executa quality/tests/package em Windows e Linux; `main` exige `CI required`, com bloqueio e restauração comprovados | A branch F7.3 adiciona mypy strict e job obrigatório de coverage, secrets e dependências; ainda aguarda promoção | Distribuição pública e processo de release operacional na F7 |
 
 ## Estado do roadmap
 
@@ -264,9 +264,14 @@ auditável. Isso é a direção do produto, não uma descrição do estado entre
   [PR #85](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/85) encerrou no head `09e0ee3`, foi
   certificado 10/10 + `CI required` na tentativa #2 do run `32038804579`, incorporado pelo merge
   `53cafa5` e recertificado pela CI pós-merge `32039759737`. A reconciliação
-  [PR #86](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86) abriu no head inicial `6b0d623`,
-  certificado 10/10 + `CI required` na tentativa #3 do run `32042595719`; o novo head aguarda
-  checks. F7.3 não foi iniciada.
+  [PR #86](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86) encerrou no head `b40f251`,
+  certificado 10/10 + `CI required` na tentativa #2 do run `32043891060`, foi incorporado pelo merge
+  `4e9f7a25` e recebeu os dez jobs mais `CI required` verdes na CI pós-merge `32045181204`. A F7.3
+  iniciou somente depois desse fechamento terminal. Sua implementação local adiciona mypy strict,
+  coverage/branch coverage, secrets e auditoria completa de dependências à CI; a certificação R2
+  passou 1091/5/6, mediu 88,73% no core e zero arco ausente nos 23 kernels. A tarefa está
+  `COMPLETED_LOCAL`; o snapshot certificado foi versionado localmente, mas publicação e demais
+  efeitos remotos permanecem não autorizados.
 
 ## Dívidas técnicas críticas
 
@@ -332,12 +337,15 @@ Após clonar:
 uv sync --all-extras
 uv lock --check
 uv run python -m pytest
-uv run python -m mypy src
+uv run python -m mypy --strict src
 uv run python -m ruff check .
 uv run python -m compileall -q src compiler tests
 uv run python -m build
 uv run python tests/ci/smoke_wheel.py
 ```
+
+Os comandos de coverage decisório, scan de secrets e auditoria completa de dependências estão no
+[guia de quality gates](docs/quality_gates.md).
 
 Para inspecionar a superfície da CLI sem executar o runtime:
 

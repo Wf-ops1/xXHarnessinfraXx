@@ -1075,7 +1075,28 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "32085923509" in panel
+    assert (ACTIVE_ROOT / "F7.3.md").is_file()
+    f7_3_dossier = _read(ACTIVE_ROOT / "F7.3.md")
+    for evidence in (
+        "> **Gate:** `COMPLETED_LOCAL`",
+        "> **Lifecycle:** `PROMOTION_PENDING`",
+        "task/f7.3-quality-gates",
+        "4e9f7a25ed47bb425eeefa3821ca2d051d4d8008",
+        "32045181204",
+        "32085923509",
+        "1092 passed, 5 skipped, 6 subtests passed in 374.96s",
+        "reviewed_fixtures=307",
+        "mypy_strict=false",
+        "85.61%",
+        "22 arcos de branch ausentes",
+        "checkpoint/f7.3-ready",
+        "checkpoint/f7.3-complete",
+        "1091 passed, 5 skipped, 6 subtests passed in 363.16s",
+        "core=88.73%",
+    ):
+        assert evidence in f7_3_dossier
     assert not (ACTIVE_ROOT / "F7.2.md").exists()
     assert (COMPLETED_ROOT / "F7.2.md").is_file()
     f7_2_dossier = _read(COMPLETED_ROOT / "F7.2.md")
@@ -1116,7 +1137,8 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         assert evidence in f7_2_dossier
     assert "completed/F7.2.md" in task_index
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in task_index
-    assert "32042595719" in task_index
+    assert "b40f251" in task_index
+    assert "32045181204" in task_index
     assert "docs/tasks/completed/F7.1.md" in panel
     assert not (ACTIVE_ROOT / "F7.1.md").exists()
     f7_1_dossier = _read(COMPLETED_ROOT / "F7.1.md")

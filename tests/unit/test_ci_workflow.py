@@ -38,7 +38,7 @@ def test_ci_actions_are_pinned_to_reviewed_commits() -> None:
 
     assert observed == EXPECTED_ACTIONS
     assert re.search(r"uses:\s+[^\s]+@(?:main|master|v\d+)\b", text) is None
-    assert text.count("persist-credentials: false") == 3
+    assert text.count("persist-credentials: false") == 4
 
 
 def test_ci_matrices_cover_supported_boundaries_on_windows_and_linux() -> None:
@@ -55,6 +55,10 @@ def test_ci_matrices_cover_supported_boundaries_on_windows_and_linux() -> None:
     assert package_matrix["os"] == ["ubuntu-latest", "windows-latest"]
     assert jobs["package"]["env"]["UV_PYTHON"] == "3.12"
 
+    security_coverage = jobs["security-coverage"]
+    assert security_coverage["runs-on"] == "ubuntu-latest"
+    assert security_coverage["env"]["UV_PYTHON"] == "3.12"
+
 
 def test_ci_contains_all_required_gates_and_fail_closed_aggregate() -> None:
     text, workflow = _workflow()
@@ -64,11 +68,15 @@ def test_ci_contains_all_required_gates_and_fail_closed_aggregate() -> None:
         "tests/unit/test_encoding.py",
         "python -m compileall -q src compiler tests",
         "python -m ruff check .",
-        "python -m mypy src",
+        "python -m mypy --strict src",
         "python -m pytest tests/unit -q",
         "python -m pytest tests/e2e -q",
         "python -m build",
         "python tests/ci/smoke_wheel.py",
+        "--cov=ai_engineering_harness --cov-branch --cov-report=json:coverage.json",
+        "python tests/ci/check_f7_3_coverage.py coverage.json",
+        "python tests/ci/check_f7_3_security.py secrets",
+        "python tests/ci/check_f7_3_security.py dependencies",
     )
 
     for command in required_commands:
@@ -77,5 +85,5 @@ def test_ci_contains_all_required_gates_and_fail_closed_aggregate() -> None:
     aggregate = workflow["jobs"]["ci-required"]
     assert aggregate["name"] == "CI required"
     assert aggregate["if"] == "${{ always() }}"
-    assert aggregate["needs"] == ["quality", "tests", "package"]
-    assert text.count('!= "success"') == 3
+    assert aggregate["needs"] == ["quality", "tests", "package", "security-coverage"]
+    assert text.count('!= "success"') == 4

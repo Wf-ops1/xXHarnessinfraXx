@@ -5,7 +5,9 @@ from pydantic import BaseModel, Field
 
 class ArchitectureAnalysisInput(BaseModel):
     requirement_id: str = Field(description="ID do requisito em análise")
-    current_architecture: dict = Field(description="Representação do estado arquitetural atual")
+    current_architecture: dict[str, object] = Field(
+        description="Representação do estado arquitetural atual"
+    )
     affected_modules: list[str] = Field(description="Módulos potencialmente impactados")
     non_functional_requirements: list[str] = Field(
         default_factory=list, description="Requisitos não funcionais a preservar"

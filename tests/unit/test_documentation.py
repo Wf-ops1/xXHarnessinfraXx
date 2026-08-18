@@ -39,6 +39,26 @@ def test_readme_contains_frozen_capability_matrix() -> None:
     assert "git cherry-pick" in readme
 
 
+def test_f73_quality_gate_guide_documents_every_fail_closed_gate() -> None:
+    readme = _read(ROOT / "README.md")
+    guide = _read(ROOT / "docs" / "quality_gates.md")
+
+    assert "docs/quality_gates.md" in readme
+    for contract in (
+        "mypy --strict src",
+        "--cov-branch",
+        "check_f7_3_coverage.py",
+        "check_f7_3_security.py secrets",
+        "check_f7_3_security.py dependencies",
+        "23 kernels",
+        "80%",
+        "CI required",
+        "is_secret",
+        "zero vulnerabilidade",
+    ):
+        assert contract in guide
+
+
 def test_f66_recovery_matrix_has_exactly_nine_checkpoint_contracts() -> None:
     user_guide = _read(ROOT / "docs" / "user_guide.md")
     checkpoints = (
@@ -259,7 +279,10 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
+    assert "32085923509" in panel
+    assert "docs/tasks/active/F7.3.md" in panel
+    assert "task/f7.3-quality-gates" in panel
     assert "docs/tasks/completed/F7.2.md" in panel
     assert "task/f7.2-test-matrix" in panel
     assert "1055 testes coletáveis" in panel
@@ -274,10 +297,14 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "32039759737" in panel
     assert "docs/promote-f7.2" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in panel
-    assert "6b0d6238fe6f6db05b25e9d7ea6834aa478693d4" in panel
-    assert "32042595719" in panel
+    assert "b40f25113362c1fe11362b69becc6c45c064b48d" in panel
+    assert "32043891060" in panel
+    assert "4e9f7a25ed47bb425eeefa3821ca2d051d4d8008" in panel
+    assert "32045181204" in panel
+    assert "85,61%" in panel
+    assert "22 arcos" in panel
     assert "https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86" in readme
-    assert "32042595719" in readme
+    assert "32045181204" in readme
     assert "docs/tasks/completed/F7.1.md" in panel
     assert "2ce104b687650587fa6881a88ea281dac22a83b3" in panel
     assert "1050 passed, 5 skipped, 6 subtests passed in 968.39s" in panel

@@ -200,6 +200,20 @@ def test_missing_backends_and_compiled_deny_policy_fail_closed(tmp_path: Path) -
         _dispatch(router, "read_file", {"path": "x.py", "unexpected": True})
 
 
+def test_compiled_capabilities_reject_duplicates_and_trust_mismatch(
+    tmp_path: Path,
+) -> None:
+    local = LocalEditingAdapter(path_guard=PathGuard(tmp_path))
+    router = build_operational_tool_router(["read_file"], local_adapter=local)
+
+    with pytest.raises(ToolUnauthorizedError, match="allowlist contains duplicates"):
+        router.prepare(("read_file", "read_file"))
+    with pytest.raises(ToolUnauthorizedError, match="denylist contains duplicates"):
+        router.prepare((), effective_denied_tools=("read_file", "read_file"))
+    with pytest.raises(ToolUnauthorizedError, match="trust mode"):
+        router.require_trust_mode("trusted")
+
+
 def test_run_command_keeps_metacharacters_literal_and_returns_json(tmp_path: Path) -> None:
     local, terminal, _ = _adapters(tmp_path)
     router = build_operational_tool_router(

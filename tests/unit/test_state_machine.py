@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -147,6 +148,36 @@ def _append_transition(
     extra: bool = False,
     timestamp: datetime = _BASE_TIME + timedelta(seconds=1),
 ) -> ExecutionEvent:
+    return storage.append_event(
+        execution_id,
+        _transition_event(
+            execution_id,
+            event_id=event_id,
+            from_state=from_state,
+            to_state=to_state,
+            revision=revision,
+            fencing_token=fencing_token,
+            attempt=attempt,
+            reason=reason,
+            extra=extra,
+            timestamp=timestamp,
+        ),
+    )
+
+
+def _transition_event(
+    execution_id: str,
+    *,
+    event_id: str,
+    from_state: str = "INITIATED",
+    to_state: str = "EXECUTING",
+    revision: object = 1,
+    fencing_token: object = 1,
+    attempt: object = 1,
+    reason: object = "graph_execution_started",
+    extra: bool = False,
+    timestamp: datetime = _BASE_TIME + timedelta(seconds=1),
+) -> ExecutionEvent:
     payload: dict[str, object] = {
         "from_state": from_state,
         "to_state": to_state,
@@ -158,20 +189,17 @@ def _append_transition(
     }
     if extra:
         payload["unexpected"] = True
-    return storage.append_event(
-        execution_id,
-        ExecutionEvent(
-            event_id=event_id,
-            execution_id=execution_id,
-            sequence_number=0,
-            event_type="STATE_TRANSITIONED",
-            timestamp=timestamp,
-            graph_name="state-machine-test",
-            node_id="start",
-            attempt=attempt if type(attempt) is int else 1,
-            actor="state_machine_test",
-            payload=payload,
-        ),
+    return ExecutionEvent(
+        event_id=event_id,
+        execution_id=execution_id,
+        sequence_number=0,
+        event_type="STATE_TRANSITIONED",
+        timestamp=timestamp,
+        graph_name="state-machine-test",
+        node_id="start",
+        attempt=attempt if type(attempt) is int else 1,
+        actor="state_machine_test",
+        payload=payload,
     )
 
 
@@ -636,3 +664,226 @@ def test_constructor_rejects_path_and_missing_execution_without_workflow_state(
         / "exec-missing"
         / "workflow-state.json"
     ).exists()
+
+
+def test_replay_rejects_non_event_and_foreign_event_provider_values(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for suffix, returned, message in (
+        ("non-event", (object(),), "non-ExecutionEvent"),
+        (
+            "foreign",
+            (_transition_event("another-execution", event_id="foreign-event"),),
+            "another execution",
+        ),
+    ):
+        execution_id = f"exec-state-provider-{suffix}"
+        storage = AtomicFileStateStorage(tmp_path / suffix)
+        storage.create_execution(_record(execution_id))
+        monkeypatch.setattr(storage, "load_events", lambda *args, values=returned, **kwargs: values)
+
+        with pytest.raises(StateTransitionIntegrityError, match=message):
+            EventSourcedStateMachine(storage, execution_id)
+
+
+def test_replay_ignores_non_transition_events(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    execution_id = "exec-state-unrelated-event"
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(execution_id))
+    unrelated = _transition_event(execution_id, event_id="unrelated-event").model_copy(
+        update={"event_type": "NODE_STARTED"}
+    )
+    monkeypatch.setattr(storage, "load_events", lambda *args, **kwargs: (unrelated,))
+
+    replay = EventSourcedStateMachine(storage, execution_id).replay()
+
+    assert replay.current_state is ExecutionState.INITIATED
+    assert replay.transition_count == 0
+
+
+@pytest.mark.parametrize(
+    ("snapshot", "events", "message"),
+    [
+        (
+            _record("exec-placeholder"),
+            (
+                _transition_event(
+                    "exec-placeholder",
+                    event_id="timestamp-1",
+                    timestamp=_BASE_TIME + timedelta(seconds=2),
+                ),
+                _transition_event(
+                    "exec-placeholder",
+                    event_id="timestamp-2",
+                    from_state="EXECUTING",
+                    to_state="COMPLETED",
+                    revision=2,
+                    timestamp=_BASE_TIME + timedelta(seconds=1),
+                ),
+            ),
+            "timestamps cannot regress",
+        ),
+        (
+            _record("exec-placeholder"),
+            (
+                _transition_event("exec-placeholder", event_id="pending-1"),
+                _transition_event(
+                    "exec-placeholder",
+                    event_id="pending-2",
+                    from_state="EXECUTING",
+                    to_state="COMPLETED",
+                    revision=2,
+                    timestamp=_BASE_TIME + timedelta(seconds=2),
+                ),
+            ),
+            "more than one pending",
+        ),
+        (
+            _record(
+                "exec-placeholder",
+                revision=1,
+                current_state=ExecutionState.EXECUTING,
+            ),
+            (_transition_event("exec-placeholder", event_id="late-committed"),),
+            "timestamp exceeds",
+        ),
+        (
+            _record(
+                "exec-placeholder",
+                updated_at=_BASE_TIME + timedelta(seconds=2),
+            ),
+            (_transition_event("exec-placeholder", event_id="early-pending"),),
+            "timestamp precedes",
+        ),
+    ],
+)
+def test_replay_rejects_temporal_and_pending_order_corruption(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    snapshot: ExecutionRecord,
+    events: tuple[ExecutionEvent, ...],
+    message: str,
+) -> None:
+    execution_id = snapshot.execution_id.replace("placeholder", message.split()[0])
+    snapshot = snapshot.model_copy(update={"execution_id": execution_id})
+    events = tuple(event.model_copy(update={"execution_id": execution_id}) for event in events)
+    storage = AtomicFileStateStorage(tmp_path)
+    if snapshot.revision == 0:
+        storage.create_execution(snapshot)
+    else:
+        storage.create_execution(_record(execution_id))
+        lock = storage.acquire_execution_lock(
+            execution_id,
+            "snapshot-fixture",
+            timeout_seconds=1.0,
+        )
+        try:
+            storage.compare_and_set_execution(
+                execution_id,
+                0,
+                snapshot,
+                lock=lock,
+            )
+        finally:
+            storage.release_execution_lock(lock)
+    monkeypatch.setattr(storage, "load_events", lambda *args, **kwargs: events)
+
+    with pytest.raises(StateTransitionIntegrityError, match=message):
+        EventSourcedStateMachine(storage, execution_id)
+
+
+def test_replay_guards_unreachable_pending_commit_order_if_parser_is_corrupt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _CommittedAfterPendingRevision(int):
+        def __le__(self, other: object) -> bool:
+            return other == 0
+
+    execution_id = "exec-state-corrupt-parser-order"
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(execution_id))
+    machine = EventSourcedStateMachine(storage, execution_id)
+    events = (
+        _transition_event(execution_id, event_id="parser-order-1"),
+        _transition_event(execution_id, event_id="parser-order-2"),
+    )
+    transitions = iter(
+        (
+            SimpleNamespace(
+                event=events[0],
+                from_state=ExecutionState.INITIATED,
+                to_state=ExecutionState.EXECUTING,
+                record_revision=1,
+                fencing_token=1,
+            ),
+            SimpleNamespace(
+                event=events[1],
+                from_state=ExecutionState.EXECUTING,
+                to_state=ExecutionState.COMPLETED,
+                record_revision=_CommittedAfterPendingRevision(2),
+                fencing_token=2,
+            ),
+        )
+    )
+    monkeypatch.setattr(storage, "load_events", lambda *args, **kwargs: events)
+    monkeypatch.setattr(machine, "_parse_transition", lambda event: next(transitions))
+
+    with pytest.raises(StateReplayError, match="committed transition follows"):
+        machine.replay()
+
+
+def test_replay_guards_pending_snapshot_mismatch_if_parser_is_corrupt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _ChangingFromState:
+        def __init__(self) -> None:
+            self.comparisons = 0
+
+        def __ne__(self, other: object) -> bool:
+            self.comparisons += 1
+            return self.comparisons > 1
+
+    execution_id = "exec-state-corrupt-parser-source"
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(execution_id))
+    machine = EventSourcedStateMachine(storage, execution_id)
+    event = _transition_event(execution_id, event_id="parser-source")
+    transition = SimpleNamespace(
+        event=event,
+        from_state=_ChangingFromState(),
+        to_state=ExecutionState.EXECUTING,
+        record_revision=1,
+        fencing_token=1,
+    )
+    monkeypatch.setattr(storage, "load_events", lambda *args, **kwargs: (event,))
+    monkeypatch.setattr(machine, "_parse_transition", lambda candidate: transition)
+
+    with pytest.raises(StateReplayError, match="does not continue"):
+        machine.replay()
+
+
+def test_generating_evidence_completion_requires_handler(tmp_path: Path) -> None:
+    execution_id = "exec-state-missing-evidence-handler"
+    storage = AtomicFileStateStorage(tmp_path)
+    storage.create_execution(_record(execution_id))
+    machine = EventSourcedStateMachine(storage, execution_id, clock=_Clock())
+    for state, reason in (
+        (ExecutionState.EXECUTING, "execution_started"),
+        (ExecutionState.VERIFYING, "verification_started"),
+        (ExecutionState.GENERATING_EVIDENCE, "evidence_started"),
+    ):
+        machine.transition_to(state, node_id="evidence", attempt=1, reason=reason)
+
+    with pytest.raises(StateTransitionIntegrityError, match="evidence handler"):
+        machine.transition_to(
+            ExecutionState.COMPLETED,
+            node_id="evidence",
+            attempt=1,
+            reason="evidence_completed",
+        )
