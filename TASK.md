@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F7.3](docs/tasks/completed/F7.3.md): `PROMOTED`; PR #87/head `97d2606`/merge `be17bcb`/pós-merge `32088913196`; reconciliação administrativa local pendente de publicação.
+2. [F7.3](docs/tasks/completed/F7.3.md): `PROMOTED`; PR #87/head `97d2606`/merge `be17bcb`/pós-merge `32088913196`; reconciliação [#88](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/88) aberta, CI `32095106958` em andamento.
 3. [F7.2](docs/tasks/completed/F7.2.md): produto PR #85/merge `53cafa5`/pós-merge `32039759737`; reconciliação PR #86/final `b40f251`/CI `32043891060`/merge `4e9f7a25`/pós-merge `32045181204`.
 4. [F7.1](docs/tasks/completed/F7.1.md): produto PR #83/merge `76f43dd`/pós-merge `31985776520`; reconciliação PR #84/final `ceca850`/CI `31999182890`/merge `b46ebd9`/pós-merge `32000365336`.
 4. Fase 6 — [F6.7](docs/tasks/completed/F6.7.md): knowledge transaction promovida pelo PR #81; reconciliação #82 encerrada no merge `38849ed`, com CI pós-merge `31979153948` verde.
@@ -47,12 +47,12 @@
 | **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1, F6.1–F6.7, F7.1 e F7.2 terminalmente reconciliadas; produto F7.3 promovido |
 | **Fase ativa** | Fase 7 — maturidade operacional |
 | **Tarefa ativa** | Nenhuma implementação; F7.4 é somente planejada |
-| **Gate** | `PROMOTED / ADMIN_LOCAL_CERTIFIED` |
-| **Estado corrente** | PR #87 encerrou no head `97d2606`, CI `32088471059` 12/12 + `CI required`, merge `be17bcb` e push `32088913196` verde; reconciliação `docs/promote-f7.3` local aguarda publicação/PR/CI |
+| **Gate** | `PROMOTED / ADMIN_PR_OPEN` |
+| **Estado corrente** | PR #87 encerrou no head `97d2606`, CI `32088471059` 12/12 + `CI required`, merge `be17bcb` e push `32088913196` verde; reconciliação [#88](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/88) aberta, CI `32095106958` em andamento |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
 | **Executor ativo** | `Codex`, único escritor da reconciliação documental F7.3 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `docs/promote-f7.3`, local, criada de `main == origin/main == be17bcb4130ad28c882d2dd781554114e2f6badb`; produto `task/f7.3-quality-gates` remoto e preservado |
+| **Branch** | `docs/promote-f7.3`, remota e criada de `main == origin/main == be17bcb4130ad28c882d2dd781554114e2f6badb`; produto `task/f7.3-quality-gates` remoto e preservado |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
 | **Branch de produto F6.4** | `task/f6.4-real-doctor`, remota e preservada após o merge |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
@@ -183,7 +183,7 @@
 | Evidência negativa | PR #87 inicial `2723869` / CI `32085923509` falhou apenas no scan de secrets por encoding; `CI required` bloqueou o merge e a falha permanece auditável |
 | PR de produto | [#87](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/87), head final `97d2606`, CI `32088471059`, 12/12 + `CI required` success |
 | Merge de produto | `be17bcb4130ad28c882d2dd781554114e2f6badb`; CI de `push` `32088913196`, 12/12 + `CI required` success |
-| Reconciliação administrativa | `docs/promote-f7.3` local certificada; publicação, PR e CI em `main` ainda pendentes |
+| Reconciliação administrativa | [PR #88](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/88), CI inicial `32095106958` em andamento; merge e CI em `main` pendentes |
 | Fronteira | F7.3 `PROMOTED`; F7.4 exige primeiro a conclusão desta reconciliação e nova autorização nominal |
 | Promoção anterior | F7.1 — produto `2ce104b687650587fa6881a88ea281dac22a83b3`, full `1050 passed, 5 skipped, 6 subtests passed in 968.39s`; PR #83 inicial `ed439a0`/`31984775704`, final `a26807c030c7f099c5419ed5166a17cb46f4a2e4`/`31985232560`, merge `76f43dd29923c87e00062ca65afd534b5f4f1863`/pós-merge `31985776520`; [PR #84](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84) inicial `197eb33b0d9c33a87a51cef38b4da39afc5588c6`/`31998528616`, final `ceca850083fbbc2a6da54394054b09b6f335c9c7`/`31999182890`, merge `b46ebd9c84cacab6bd58d2fb2712879f6dabc164`/pós-merge `32000365336` |
 | Promoção anterior | F6.6 — PR #79 / merge `8be6789` / pós-merge `31963338576`; reconciliação PR #80 / merge `1327f299` / pós-merge `31968035375` |
@@ -257,19 +257,19 @@ Autorizações posteriores encerraram F6.6/F6.7, produziram/promoveram F7.1 e ab
 ## 5. Tarefa ativa
 
 Não há nenhuma tarefa ativa ou dossiê de implementação ativo. A [F7.3](docs/tasks/completed/F7.3.md) está `PROMOTED`; a reconciliação
-`docs/promote-f7.3` aguarda publicação, PR, merge e CI pós-merge verde. A F7.4 é somente planejada;
+[#88](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/88) aguarda CI verde, merge e CI pós-merge. A F7.4 é somente planejada;
 o estado histórico `POST_PROMOTION_BLOCKED` da F7.2 permanece auditável e não descreve bloqueio atual.
 
 ## 6. Bloqueios e fronteiras externas
 
 O run `32085923509` permanece como evidência negativa histórica. O produto já foi promovido; a única
-fronteira é concluir a reconciliação administrativa antes de qualquer novo gate.
+fronteira é a CI em andamento `32095106958` e a conclusão da reconciliação antes de qualquer novo gate.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR `docs/promote-f7.3` SEM FORCE E ABRIR O PR ADMINISTRATIVO.
-SÓ INICIAR F7.4 APÓS MERGE, CI DE PUSH VERDE E NOVA AUTORIZAÇÃO NOMINAL.
+AGUARDAR A CI DA PR ADMINISTRATIVA #88; MERGE SOMENTE COM `CI required=success`.
+SÓ INICIAR F7.4 APÓS CI DE PUSH VERDE E NOVA AUTORIZAÇÃO NOMINAL.
 ```
 
 ## 8. Retomada após perda de contexto
