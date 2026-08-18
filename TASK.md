@@ -5,7 +5,7 @@
 ## 1. Fontes de verdade
 
 1. Este painel: fase, coordenação, gate, bloqueios e próxima ação.
-2. [F7.3](docs/tasks/active/F7.3.md): `COMPLETED_LOCAL`; correção UTF-8 da PR #87 recertificada, promoção pendente de novo head e CI verde.
+2. [F7.3](docs/tasks/completed/F7.3.md): `PROMOTED`; PR #87/head `97d2606`/merge `be17bcb`/pós-merge `32088913196`; reconciliação administrativa local pendente de publicação.
 3. [F7.2](docs/tasks/completed/F7.2.md): produto PR #85/merge `53cafa5`/pós-merge `32039759737`; reconciliação PR #86/final `b40f251`/CI `32043891060`/merge `4e9f7a25`/pós-merge `32045181204`.
 4. [F7.1](docs/tasks/completed/F7.1.md): produto PR #83/merge `76f43dd`/pós-merge `31985776520`; reconciliação PR #84/final `ceca850`/CI `31999182890`/merge `b46ebd9`/pós-merge `32000365336`.
 4. Fase 6 — [F6.7](docs/tasks/completed/F6.7.md): knowledge transaction promovida pelo PR #81; reconciliação #82 encerrada no merge `38849ed`, com CI pós-merge `31979153948` verde.
@@ -44,15 +44,15 @@
 
 | Campo | Estado observado |
 |---|---|
-| **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1, F6.1–F6.7, F7.1 e F7.2 terminalmente reconciliadas |
+| **Fases concluídas** | Fases 0–4 no escopo planejado; F5.1–F5.7 e F5.C1, F6.1–F6.7, F7.1 e F7.2 terminalmente reconciliadas; produto F7.3 promovido |
 | **Fase ativa** | Fase 7 — maturidade operacional |
-| **Tarefa ativa** | F7.3 — quality gates do próprio projeto; dossiê `docs/tasks/active/F7.3.md` |
-| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |
-| **Estado corrente** | PR #87 aberta; correção `1b8c6dc` recertificada localmente após o run negativo `32085923509`; novo head/CI ainda pendentes, sem merge |
+| **Tarefa ativa** | Nenhuma implementação; F7.4 é somente planejada |
+| **Gate** | `PROMOTED / ADMIN_LOCAL_CERTIFIED` |
+| **Estado corrente** | PR #87 encerrou no head `97d2606`, CI `32088471059` 12/12 + `CI required`, merge `be17bcb` e push `32088913196` verde; reconciliação `docs/promote-f7.3` local aguarda publicação/PR/CI |
 | **Estado F5.6** | F5.6 `PROMOTED`; aprovação de promoção permanece vinculada ao conteúdo exato |
-| **Executor ativo** | `Codex`, único escritor da implementação F7.3 |
+| **Executor ativo** | `Codex`, único escritor da reconciliação documental F7.3 |
 | **Workspace** | `C:\Users\walla\OneDrive\Desktop\ai-engineering-harness` |
-| **Branch** | `task/f7.3-quality-gates`, local, limpa antes da documentação e sem upstream; base `4e9f7a25ed47bb425eeefa3821ca2d051d4d8008` |
+| **Branch** | `docs/promote-f7.3`, local, criada de `main == origin/main == be17bcb4130ad28c882d2dd781554114e2f6badb`; produto `task/f7.3-quality-gates` remoto e preservado |
 | **Branch de produto F6.5** | `task/f6.5-status-inspection`, remota e preservada após o merge |
 | **Branch de produto F6.4** | `task/f6.4-real-doctor`, remota e preservada após o merge |
 | **Branch de produto F6.3** | `task/f6.3-evidence-manifest`, remota e preservada após o merge |
@@ -69,8 +69,8 @@
 | **Checkpoint F6.7** | `checkpoint/f6.7-ready` → `e01d49d6b11b2a27585669280f153f1b474af0c2`; `checkpoint/f6.7-complete` aponta para o commit documental de certificação; ambos somente locais |
 | **Checkpoint F7.1** | `checkpoint/f7.1-ready` → `c55edaaaadd3137d682eb6c6175333fe924b6967`; `checkpoint/f7.1-complete` → `ed439a08b2a6b2f37b7d140aaaba2e504d1cc0aa`; ambos somente locais |
 | **Checkpoint F7.2** | `checkpoint/f7.2-ready` → `1badf4004b1670774c3fa85c3cae93b6351e49f4`; `checkpoint/f7.2-complete` → `09e0ee30e52e498b8fb8c3a128c2ffa5fc1ff6e8`; ambos somente locais |
-| **Checkpoint F7.3** | `checkpoint/f7.3-ready` → `4bbe19327c76a1d79ecd38ca306ff8670af7c18d`; `checkpoint/f7.3-r1-ready` → `d5964eab73f34ae48f98b086d3f5ee5d6f6c7d41`; `checkpoint/f7.3-complete` → `2723869a4f16d44e5e76b26331b3eb6e9c567326`; `checkpoint/f7.3-r3-complete` aponta para a recertificação; todos somente locais |
-| **Main sincronizada** | `main == origin/main == 4e9f7a25ed47bb425eeefa3821ca2d051d4d8008` depois da reconciliação F7.2 e da CI `32045181204` verde |
+| **Checkpoint F7.3** | `checkpoint/f7.3-ready` → `4bbe19327c76a1d79ecd38ca306ff8670af7c18d`; `checkpoint/f7.3-r1-ready` → `d5964eab73f34ae48f98b086d3f5ee5d6f6c7d41`; `checkpoint/f7.3-complete` → `2723869a4f16d44e5e76b26331b3eb6e9c567326`; `checkpoint/f7.3-r3-complete` → `97d2606b79c427a647d8218a3fad778c176bcd60`; todos somente locais |
+| **Main sincronizada** | `main == origin/main == be17bcb4130ad28c882d2dd781554114e2f6badb` após o merge F7.3 e a CI `32088913196` verde |
 | **Implementação F7.2** | branch `task/f7.2-test-matrix`; baseline de 1055 testes coletáveis; produto `bdae858861a9c5294f90a231115b3ed930030117`; matriz canônica com 12 camadas/42 requisitos/46 node IDs e runner multiplataforma estrito |
 | **Validação F7.2** | matriz `62 passed in 83.45s`; full `1062 passed, 5 skipped, 6 subtests passed in 461.12s`; Ruff/mypy/compileall/build/smoke verdes |
 | **Promoção F7.2** | [PR #85](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/85), head `09e0ee30e52e498b8fb8c3a128c2ffa5fc1ff6e8`, CI [32038804579](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/32038804579) tentativa #2 10/10 + `CI required`; merge `53cafa5134c3af5f4d0a7497b3f44e996a6581dd`; pós-merge [32039759737](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/32039759737) verde |
@@ -78,7 +78,7 @@
 | **Problema F7.3** | CI sem mypy strict, coverage/branches, scan de secrets e auditoria de dependências; os 7 erros strict congelados foram corrigidos, mas `mypy 2.3.0` revelou 19 adicionais fora do allowlist; 23 kernels decisórios têm 22 arcos ausentes |
 | **Baseline F7.3** | global 81%; seis arquivos do core crítico agregam 85,61%; probe instrumentado 1060/2/5/6, com as duas falhas ambientais recertificadas de forma confinada |
 | **Implementação F7.3** | mypy strict; coverage/branches fail-closed em manifesto AST; secrets e dependências auditados; quatro jobs obrigatórios no agregador `CI required`; typing estrito sem mudança comportamental |
-| **Validação F7.3** | R3: contrato 47, decisões 93, full `1092 passed, 5 skipped, 6 subtests` em 374,96s, core 88,73%, 23/0, secrets 335/307/0, deps 74/0/0, matriz 62; quality/build/smoke verdes |
+| **Validação F7.3** | R2 negativo `32085923509` (encoding no scan); R3: contrato 47, decisões 93, full `1092 passed, 5 skipped, 6 subtests` em 374,96s, core 88,73%, 23/0, secrets 335/307/0, deps 74/0/0, matriz 62; PR [#87](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/87) final `97d2606b79c427a647d8218a3fad778c176bcd60`/`32088471059`, merge `be17bcb4130ad28c882d2dd781554114e2f6badb`, push `32088913196` 12/12 + `CI required`; branch remota preservada e sem tags |
 | **Implementação F6.6** | produto `1d5467457cf99c4ee34d69000630de1b1aa0900b`; retry de worktree idempotente/fail-closed; nove checkpoints públicos; knowledge preservada como `known_gap_f6_7` |
 | **Validação F6.6** | worktree `29`; matriz `24`; focado `234`; full R2 `1030 passed, 5 skipped, 6 subtests passed in 765.28s`; quality, build e smoke verdes |
 | **PR F6.6** | [#79](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/79), head final `1ce953df5ad3db3764f44fc063cb617c18546d3c`; CI [31962221925](https://github.com/Wf-ops1/xXHarnessinfraXx/actions/runs/31962221925) 11/11 success |
@@ -178,12 +178,13 @@
 
 | Evidência | Resultado observado |
 |---|---|
-| Tarefa | F7.2 — matriz de testes |
-| Produto | `bdae858`; 12 camadas/42 requisitos/46 node IDs; matriz 62/62; full 1062/5/6; quality, build e smoke verdes |
-| PR de produto | [#85](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/85), head final `09e0ee3`, CI `32038804579` tentativa #2, 10/10 + `CI required` success |
-| Merge de produto | `53cafa5134c3af5f4d0a7497b3f44e996a6581dd`; CI de `push` `32039759737`, 10/10 + `CI required` success |
-| Reconciliação administrativa | [PR #86](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/86), head final `b40f251`, CI `32043891060` tentativa #2; merge `4e9f7a25`; pós-merge `32045181204`, 10 jobs + `CI required` success |
-| Fronteira | F7.3 `COMPLETED_LOCAL / PROMOTION_PENDING`; correção `1b8c6dc` recertificada, promoção condicionada ao novo head da PR #87 e CI integralmente verde |
+| Tarefa | F7.3 — quality gates do próprio projeto |
+| Produto | `2723869` + correção UTF-8 `1b8c6dc` + recertificação `97d2606`; full R3 1092/5/6, core 88,73%, 23/0, secrets 335/307/0 e deps 74/0/0 |
+| Evidência negativa | PR #87 inicial `2723869` / CI `32085923509` falhou apenas no scan de secrets por encoding; `CI required` bloqueou o merge e a falha permanece auditável |
+| PR de produto | [#87](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/87), head final `97d2606`, CI `32088471059`, 12/12 + `CI required` success |
+| Merge de produto | `be17bcb4130ad28c882d2dd781554114e2f6badb`; CI de `push` `32088913196`, 12/12 + `CI required` success |
+| Reconciliação administrativa | `docs/promote-f7.3` local certificada; publicação, PR e CI em `main` ainda pendentes |
+| Fronteira | F7.3 `PROMOTED`; F7.4 exige primeiro a conclusão desta reconciliação e nova autorização nominal |
 | Promoção anterior | F7.1 — produto `2ce104b687650587fa6881a88ea281dac22a83b3`, full `1050 passed, 5 skipped, 6 subtests passed in 968.39s`; PR #83 inicial `ed439a0`/`31984775704`, final `a26807c030c7f099c5419ed5166a17cb46f4a2e4`/`31985232560`, merge `76f43dd29923c87e00062ca65afd534b5f4f1863`/pós-merge `31985776520`; [PR #84](https://github.com/Wf-ops1/xXHarnessinfraXx/pull/84) inicial `197eb33b0d9c33a87a51cef38b4da39afc5588c6`/`31998528616`, final `ceca850083fbbc2a6da54394054b09b6f335c9c7`/`31999182890`, merge `b46ebd9c84cacab6bd58d2fb2712879f6dabc164`/pós-merge `32000365336` |
 | Promoção anterior | F6.6 — PR #79 / merge `8be6789` / pós-merge `31963338576`; reconciliação PR #80 / merge `1327f299` / pós-merge `31968035375` |
 | Promoção anterior | F6.5 — PR #77 / merge `c049125` / pós-merge `31953772121`; reconciliação PR #78 / merge `6386816` / pós-merge `31956649961` |
@@ -251,28 +252,30 @@ iniciar sua implementação local na branch exclusiva. O produto foi promovido p
 `docs/promote-f6.6` e preparar a reconciliação local. A autorização posterior `AUTORIZO` cobriu o
 fechamento integral da F6.6, com parada obrigatória antes da F6.7. A branch foi publicada sem force,
 o PR #80 aberto e o head inicial `06abef0` certificado 11/11 pelo run `31967211097`.
-Autorizações posteriores encerraram F6.6/F6.7, produziram/promoveram F7.1 e abriram o PR #84. Sua cadeia encerrou no head `ceca850`, CI `31999182890`, merge `b46ebd9` e pós-merge `32000365336`, sem remover refs. Em `2026-08-17T03:21:29-03:00`, o usuário autorizou continuar a Fase 7; a cadeia F7.2 encerrou no head `09e0ee3`, PR #85/run `32038804579`, merge `53cafa5` e pós-merge `32039759737`, sem remover refs. Autorizações seguintes encerraram o PR administrativo #86 no head `b40f251`, CI `32043891060`, merge `4e9f7a25` e pós-merge `32045181204`. Em `2026-08-17T14:01:09-03:00`, a autorização nominal seguinte foi registrada somente para preparar o gate F7.3. A autorização explícita posterior foi consumida para a implementação local no allowlist congelado, sem commit de produto ou efeito remoto. Em `2026-08-17T17:11:08-03:00`, `mypy 2.3.0 --strict src` revelou 19 erros adicionais fora desse allowlist; a implementação foi pausada. Em `2026-08-17T17:55:01-03:00`, o usuário autorizou recongelar os cinco arquivos, criar commit/checkpoint local R1 e retomar a implementação sem efeito remoto.
+Autorizações posteriores encerraram F6.6/F6.7, produziram/promoveram F7.1 e abriram o PR #84. Sua cadeia encerrou no head `ceca850`, CI `31999182890`, merge `b46ebd9` e pós-merge `32000365336`, sem remover refs. Em `2026-08-17T03:21:29-03:00`, o usuário autorizou continuar a Fase 7; a cadeia F7.2 encerrou no head `09e0ee3`, PR #85/run `32038804579`, merge `53cafa5` e pós-merge `32039759737`, sem remover refs. Autorizações seguintes encerraram o PR administrativo #86 no head `b40f251`, CI `32043891060`, merge `4e9f7a25` e pós-merge `32045181204`. Em `2026-08-17T14:01:09-03:00`, iniciou F7.3; após a correção UTF-8, o head `97d2606` passou no run `32088471059`, foi incorporado pelo merge `be17bcb` e recebeu CI de push `32088913196` verde. A autorização atual cobre a reconciliação administrativa local em `docs/promote-f7.3`; nenhuma F7.4 foi iniciada.
 
 ## 5. Tarefa ativa
 
-A [F7.3](docs/tasks/active/F7.3.md) está `COMPLETED_LOCAL / PROMOTION_PENDING` na branch exclusiva da PR #87.
-A F7.2 permanece terminalmente `PROMOTED`; `POST_PROMOTION_BLOCKED` é apenas histórico.
+Não há nenhuma tarefa ativa ou dossiê de implementação ativo. A [F7.3](docs/tasks/completed/F7.3.md) está `PROMOTED`; a reconciliação
+`docs/promote-f7.3` aguarda publicação, PR, merge e CI pós-merge verde. A F7.4 é somente planejada;
+o estado histórico `POST_PROMOTION_BLOCKED` da F7.2 permanece auditável e não descreve bloqueio atual.
 
 ## 6. Bloqueios e fronteiras externas
 
-O run `32085923509` permanece como evidência negativa histórica; merge está bloqueado até o novo head receber CI integralmente verde.
+O run `32085923509` permanece como evidência negativa histórica. O produto já foi promovido; a única
+fronteira é concluir a reconciliação administrativa antes de qualquer novo gate.
 
 ## 7. Próxima ação exata
 
 ```text
-PUBLICAR A CORREÇÃO UTF-8 RECERTIFICADA NO PR #87 SEM FORCE.
-SÓ FAZER MERGE COM `CI required=success`; NÃO INICIAR F7.4.
+PUBLICAR `docs/promote-f7.3` SEM FORCE E ABRIR O PR ADMINISTRATIVO.
+SÓ INICIAR F7.4 APÓS MERGE, CI DE PUSH VERDE E NOVA AUTORIZAÇÃO NOMINAL.
 ```
 
 ## 8. Retomada após perda de contexto
 
-1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/active/F7.3.md`, a Fase 7 e a DEC-014.
-2. Confirme `task/f7.3-quality-gates` sobre `main == origin/main == 4e9f7a25`; preserve o checkpoint e o allowlist congelado.
+1. Leia `.agents/AGENTS.md`, este painel, `docs/tasks/completed/F7.3.md`, a Fase 7 e a DEC-014.
+2. Confirme `docs/promote-f7.3` sobre `main == origin/main == be17bcb`; preserve os checkpoints e a branch remota de produto.
 3. Preserve PR #68/merge `29e8a975`/CI `31859624571` como encerramento terminal da F5.C1.
 4. Preserve `282`/`929` e `320`/`930` como históricos; a recertificação R2 vigente é `325`/`935`.
 5. Preserve PR #69/head `4c57a33`/CI `31868906875`/merge `7d6a0e1`/pós-merge `31887143905`.
@@ -290,8 +293,7 @@ SÓ FAZER MERGE COM `CI required=success`; NÃO INICIAR F7.4.
 17. Preserve F6.7: reprodução `1/1`, baseline `7/7`, produto `3fd5565`, focado `137`, full `1049`, PR #81/head `c4a864d`/CI `31977507679`/merge `93f7bf20`/pós-merge `31977793119`.
 18. Preserve PR #82: inicial `5ee3fcc`/`31978357679`; final `cfd97c6`/`31978820506`; merge `38849ed`; pós-merge `31979153948` 11/11. F7.1 parte somente dessa base.
 19. Preserve F7.1: `c55edaa`/`2ce104b`, `1/1`, `42/1`, `1050/5/6`; PR #83 final `a26807c`/`31985232560`, merge `76f43dd`/pós-merge `31985776520`.
-20. Preserve PR #84: final `ceca850`/`31999182890`, merge `b46ebd9`/pós-merge `32000365336`; F7.2 `1badf40`/`bdae858`/`09e0ee3`, PR #85/run `32038804579`, merge `53cafa5`/pós-merge `32039759737`; PR #86 final `b40f251`/`32043891060`, merge `4e9f7a25`/pós-merge `32045181204`.
-
+20. Preserve PR #84: final `ceca850`/`31999182890`, merge `b46ebd9`/pós-merge `32000365336`; F7.2 `1badf40`/`bdae858`/`09e0ee3`, PR #85/run `32038804579`, merge `53cafa5`/pós-merge `32039759737`; PR #86 final `b40f251`/`32043891060`, merge `4e9f7a25`/pós-merge `32045181204`; F7.3 negativo `32085923509`, final `97d2606`/`32088471059`, merge `be17bcb`/pós-merge `32088913196`.
 ---
 
-*Atualizado em: 2026-08-17 | Fonte: recertificação local R3 da correção F7.3*
+*Atualizado em: 2026-08-18 | Fonte: promoção F7.3 comprovada e reconciliação administrativa local*
