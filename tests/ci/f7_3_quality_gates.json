@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "task_id": "F7.3",
+  "core_minimum_percent": 80.0,
+  "core_files": [
+    "src/ai_engineering_harness/governance/approval.py",
+    "src/ai_engineering_harness/governance/policy_engine.py",
+    "src/ai_engineering_harness/runtime/state_machine.py",
+    "src/ai_engineering_harness/security/path_guard.py",
+    "src/ai_engineering_harness/security/trust.py",
+    "src/ai_engineering_harness/tools/router.py"
+  ],
+  "decision_functions": [
+    {
+      "path": "src/ai_engineering_harness/governance/approval.py",
+      "qualname": "ApprovalRequest.validate_decision_and_binding"
+    },
+    {
+      "path": "src/ai_engineering_harness/governance/approval.py",
+      "qualname": "ApprovalRequest.approve"
+    },
+    {
+      "path": "src/ai_engineering_harness/governance/approval.py",
+      "qualname": "ApprovalRequest.expire"
+    },
+    {
+      "path": "src/ai_engineering_harness/governance/approval.py",
+      "qualname": "ApprovalRequest.invalidate"
+    },
+    {
+      "path": "src/ai_engineering_harness/governance/policy_engine.py",
+      "qualname": "PolicyEngine.evaluate"
+    },
+    {
+      "path": "src/ai_engineering_harness/governance/policy_engine.py",
+      "qualname": "PolicyEngine.require_allowed"
+    },
+    {
+      "path": "src/ai_engineering_harness/runtime/state_machine.py",
+      "qualname": "EventSourcedStateMachine.transition_to"
+    },
+    {
+      "path": "src/ai_engineering_harness/runtime/state_machine.py",
+      "qualname": "EventSourcedStateMachine._analyze_locked"
+    },
+    {
+      "path": "src/ai_engineering_harness/runtime/state_machine.py",
+      "qualname": "EventSourcedStateMachine._recover_locked"
+    },
+    {
+      "path": "src/ai_engineering_harness/runtime/state_machine.py",
+      "qualname": "EventSourcedStateMachine._handle_completed_transition"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/path_guard.py",
+      "qualname": "PathGuard.guard_read"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/path_guard.py",
+      "qualname": "PathGuard.guard_write"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/path_guard.py",
+      "qualname": "PathGuard._resolve_candidate"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/trust.py",
+      "qualname": "TrustEvaluationResult.require_root"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/trust.py",
+      "qualname": "TrustEvaluationResult.require_executable"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/trust.py",
+      "qualname": "TrustEvaluationResult.require_secret"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/trust.py",
+      "qualname": "TrustEvaluationResult.validate_hook"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/trust.py",
+      "qualname": "TrustEvaluationResult.require_promotion"
+    },
+    {
+      "path": "src/ai_engineering_harness/security/trust.py",
+      "qualname": "TrustBoundaryEvaluator.evaluate"
+    },
+    {
+      "path": "src/ai_engineering_harness/tools/router.py",
+      "qualname": "ToolRouter.require_trust_mode"
+    },
+    {
+      "path": "src/ai_engineering_harness/tools/router.py",
+      "qualname": "ToolRouter._validate_compiled_capabilities"
+    },
+    {
+      "path": "src/ai_engineering_harness/tools/router.py",
+      "qualname": "ToolRouter._require_enabled"
+    },
+    {
+      "path": "src/ai_engineering_harness/tools/router.py",
+      "qualname": "ToolRouter._require_verified_decision"
+    }
+  ]
+}

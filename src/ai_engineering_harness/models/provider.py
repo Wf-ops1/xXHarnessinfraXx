@@ -9,7 +9,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 
 import httpx
 from jsonschema import Draft202012Validator
@@ -922,10 +922,13 @@ def _strict_json_loads(raw: str) -> JsonValue:
             result[key] = value
         return result
 
-    return json.loads(
-        raw,
-        parse_constant=reject_constant,
-        object_pairs_hook=reject_duplicate_keys,
+    return cast(
+        JsonValue,
+        json.loads(
+            raw,
+            parse_constant=reject_constant,
+            object_pairs_hook=reject_duplicate_keys,
+        ),
     )
 
 

@@ -423,7 +423,7 @@ class PolicyRegistry:
 
     @staticmethod
     def _policy_payload(policy: PolicyDocument) -> dict[str, Any]:
-        return cast(dict[str, Any], policy.model_dump(mode="json", exclude=set(_ENVELOPE_FIELDS)))
+        return policy.model_dump(mode="json", exclude=set(_ENVELOPE_FIELDS))
 
     @staticmethod
     def _resolved(

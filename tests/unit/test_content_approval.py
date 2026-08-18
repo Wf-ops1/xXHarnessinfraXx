@@ -54,6 +54,12 @@ def _pending(content: ApprovalContent | None = None) -> ApprovalRequest:
     )
 
 
+def _revalidate(request: ApprovalRequest, **updates: object) -> ApprovalRequest:
+    document = request.model_dump(mode="python")
+    document.update(updates)
+    return ApprovalRequest.model_validate(document)
+
+
 def _execution_directory(root: Path) -> Path:
     directory = root / ".harness" / "state" / "executions" / "exec-content-approval"
     directory.mkdir(parents=True)
@@ -141,6 +147,77 @@ def test_expired_or_redecided_request_fails_closed() -> None:
             approver_id="late-reviewer",
             decided_at=pending.expires_at + timedelta(seconds=1),
         )
+
+    with pytest.raises(ApprovalContractError, match="live request"):
+        expired.expire(decided_at=pending.expires_at + timedelta(seconds=1))
+    with pytest.raises(ApprovalContractError, match="live request"):
+        expired.invalidate(
+            decided_at=pending.expires_at + timedelta(seconds=1),
+            reason="already_expired",
+        )
+
+
+@pytest.mark.parametrize(
+    ("updates", "message"),
+    [
+        ({"expires_at": datetime(2026, 8, 14, 12, tzinfo=UTC)}, "expiration"),
+        ({"subject_digest": "sha256:" + "0" * 64}, "subject digest"),
+        ({"approver_id": "unexpected"}, "pending approval"),
+        ({"status": ApprovalStatus.NOT_REQUIRED}, "status is not supported"),
+        (
+            {
+                "status": ApprovalStatus.APPROVED,
+                "approver_id": "reviewer",
+                "decided_at": None,
+            },
+            "ordered decision timestamp",
+        ),
+        (
+            {
+                "status": ApprovalStatus.APPROVED,
+                "approver_id": None,
+                "decided_at": datetime(2026, 8, 14, 12, 5, tzinfo=UTC),
+            },
+            "approver id",
+        ),
+        (
+            {
+                "status": ApprovalStatus.APPROVED,
+                "approver_id": "reviewer",
+                "decided_at": datetime(2026, 8, 14, 13, tzinfo=UTC),
+            },
+            "precede expiration",
+        ),
+        (
+            {
+                "status": ApprovalStatus.INVALIDATED,
+                "approver_id": "forged-reviewer",
+                "decided_at": datetime(2026, 8, 14, 12, 5, tzinfo=UTC),
+                "comment": "base_changed",
+            },
+            "cannot claim an approver",
+        ),
+    ],
+)
+def test_request_model_rejects_every_invalid_decision_shape(
+    updates: dict[str, object],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        _revalidate(_pending(), **updates)
+
+
+def test_live_request_can_be_invalidated_before_expiration() -> None:
+    pending = _pending()
+
+    invalidated = pending.invalidate(
+        decided_at=pending.requested_at + timedelta(minutes=10),
+        reason="base_changed",
+    )
+
+    assert invalidated.status is ApprovalStatus.INVALIDATED
+    assert invalidated.approver_id is None
+    assert invalidated.comment == "base_changed"
 
 
 def test_projection_tamper_is_not_silently_rewritten(tmp_path: Path) -> None:

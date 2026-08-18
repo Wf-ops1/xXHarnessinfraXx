@@ -34,7 +34,7 @@ from pydantic import (
 try:
     import tomllib
 except ImportError:  # pragma: no cover - Python 3.11+ is required by the package
-    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
+    import tomli as tomllib  # type: ignore[no-redef]
 
 from ai_engineering_harness.models.router import ModelRouter, ModelsConfiguration
 
@@ -210,7 +210,7 @@ class EffectiveConfiguration(_StrictFrozenModel):
 
     def as_json_object(self) -> dict[str, Any]:
         """Return a detached JSON-compatible object with stable container types."""
-        return cast(dict[str, Any], self.model_dump(mode="json"))
+        return self.model_dump(mode="json")
 
 
 def deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
@@ -411,7 +411,7 @@ class ConfigResolver:
             raise ConfigDocumentError(f"{label} is not valid TOML") from exc
         if type(document) is not dict:
             raise ConfigDocumentError(f"{label} must contain a TOML table")
-        return cast(dict[str, Any], document)
+        return document
 
     def _confined_project_file(self, path: Path, *, label: str) -> Path:
         try:

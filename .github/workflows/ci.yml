@@ -68,7 +68,7 @@ jobs:
       - name: Lint
         run: uv run python -m ruff check .
       - name: Type check
-        run: uv run python -m mypy src
+        run: uv run python -m mypy --strict src
 
   tests:
     name: Tests / ${{ matrix.os }} / Python ${{ matrix.python-version }}
@@ -139,6 +139,39 @@ jobs:
       - name: Inspect and smoke-test wheel
         run: uv run python tests/ci/smoke_wheel.py
 
+  security-coverage:
+    name: Security and coverage / Ubuntu / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: false
+      - name: Validate lock and synchronize
+        run: |
+          uv lock --check
+          uv sync --all-extras --locked
+      - name: Enforce critical coverage and decision branches
+        run: |
+          uv run python -m pytest tests/unit tests/e2e -q --cov=ai_engineering_harness --cov-branch --cov-report=json:coverage.json
+          uv run python tests/ci/check_f7_3_coverage.py coverage.json
+      - name: Scan tracked files for secrets
+        run: uv run python tests/ci/check_f7_3_security.py secrets
+      - name: Audit synchronized dependencies
+        run: uv run python tests/ci/check_f7_3_security.py dependencies
+
   ci-required:
     name: CI required
     if: ${{ always() }}
@@ -146,6 +179,7 @@ jobs:
       - quality
       - tests
       - package
+      - security-coverage
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -154,7 +188,8 @@ jobs:
         run: |
           if [[ "${{ needs.quality.result }}" != "success" ||
                 "${{ needs.tests.result }}" != "success" ||
-                "${{ needs.package.result }}" != "success" ]]; then
+                "${{ needs.package.result }}" != "success" ||
+                "${{ needs.security-coverage.result }}" != "success" ]]; then
             echo "A mandatory CI job failed, was cancelled, or was skipped."
             exit 1
           fi

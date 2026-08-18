@@ -1075,12 +1075,12 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `READY / AWAITING_IMPLEMENTATION_AUTHORIZATION` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PRODUCT_COMMITTED_AWAITING_PUBLICATION_AUTHORIZATION` |" in panel
     assert (ACTIVE_ROOT / "F7.3.md").is_file()
     f7_3_dossier = _read(ACTIVE_ROOT / "F7.3.md")
     for evidence in (
-        "> **Gate:** `READY`",
-        "> **Lifecycle:** `READY_FOR_IMPLEMENTATION`",
+        "> **Gate:** `COMPLETED_LOCAL`",
+        "> **Lifecycle:** `PRODUCT_COMMITTED_AWAITING_PUBLICATION_AUTHORIZATION`",
         "task/f7.3-quality-gates",
         "4e9f7a25ed47bb425eeefa3821ca2d051d4d8008",
         "32045181204",
@@ -1088,6 +1088,9 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "85.61%",
         "22 arcos de branch ausentes",
         "checkpoint/f7.3-ready",
+        "checkpoint/f7.3-complete",
+        "1091 passed, 5 skipped, 6 subtests passed in 363.16s",
+        "core=88.73%",
     ):
         assert evidence in f7_3_dossier
     assert not (ACTIVE_ROOT / "F7.2.md").exists()

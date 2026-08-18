@@ -4,7 +4,7 @@
 class LeaseManager:
     """Garante concorrência segura com trava de leitor/escritor via fencing token."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._current_lease: str | None = None
         self._token_counter: int = 0
 

@@ -20,11 +20,13 @@ em [`TASK.md`](../../TASK.md); requisitos normativos permanecem no
 
 ## Tarefa ativa
 
-A [F7.3 — quality gates do próprio projeto](active/F7.3.md) está `READY_FOR_IMPLEMENTATION` na branch
-local `task/f7.3-quality-gates`. O baseline mede 81% global e 85,61% no core crítico congelado, mas
-possui 22 arcos decisórios ausentes; a CI também não exige mypy strict, coverage/branch coverage,
-scan de secrets ou auditoria de dependências. O checkpoint `checkpoint/f7.3-ready` é somente local e
-a implementação aguarda autorização explícita.
+A [F7.3 — quality gates do próprio projeto](active/F7.3.md) está `COMPLETED_LOCAL` na branch local
+`task/f7.3-quality-gates`. A certificação R2 passou 1091/5/6, elevou o core crítico de 85,61% para
+88,73% e fechou os 22 arcos ausentes nos 23 kernels. Mypy strict, coverage, secrets, dependências,
+matriz, quality, build e smoke ficaram verdes. Os checkpoints `checkpoint/f7.3-ready` e
+`checkpoint/f7.3-r1-ready` são somente locais; este snapshot certificado recebe também
+`checkpoint/f7.3-complete`. Publicação da branch, PR e demais efeitos remotos aguardam autorização
+explícita.
 
 A [F7.2 — matriz de testes](completed/F7.2.md) está terminalmente `PROMOTED`: produto PR #85/merge
 `53cafa5`/CI pós-merge `32039759737`; reconciliação

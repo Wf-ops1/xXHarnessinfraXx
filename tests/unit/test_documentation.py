@@ -39,6 +39,26 @@ def test_readme_contains_frozen_capability_matrix() -> None:
     assert "git cherry-pick" in readme
 
 
+def test_f73_quality_gate_guide_documents_every_fail_closed_gate() -> None:
+    readme = _read(ROOT / "README.md")
+    guide = _read(ROOT / "docs" / "quality_gates.md")
+
+    assert "docs/quality_gates.md" in readme
+    for contract in (
+        "mypy --strict src",
+        "--cov-branch",
+        "check_f7_3_coverage.py",
+        "check_f7_3_security.py secrets",
+        "check_f7_3_security.py dependencies",
+        "23 kernels",
+        "80%",
+        "CI required",
+        "is_secret",
+        "zero vulnerabilidade",
+    ):
+        assert contract in guide
+
+
 def test_f66_recovery_matrix_has_exactly_nine_checkpoint_contracts() -> None:
     user_guide = _read(ROOT / "docs" / "user_guide.md")
     checkpoints = (
@@ -259,7 +279,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `READY / AWAITING_IMPLEMENTATION_AUTHORIZATION` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PRODUCT_COMMITTED_AWAITING_PUBLICATION_AUTHORIZATION` |" in panel
     assert "docs/tasks/active/F7.3.md" in panel
     assert "task/f7.3-quality-gates" in panel
     assert "docs/tasks/completed/F7.2.md" in panel

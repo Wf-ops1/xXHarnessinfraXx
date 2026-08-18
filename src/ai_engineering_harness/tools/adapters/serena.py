@@ -6,14 +6,14 @@ import asyncio
 import json
 import os
 import re
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Coroutine, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, TypeVar
 from urllib.parse import urlsplit
 
 import httpx
@@ -33,6 +33,8 @@ from ai_engineering_harness.security import (
 )
 
 from .local_editing import LocalEditingAdapter
+
+_T = TypeVar("_T")
 
 
 class SerenaAdapterError(RuntimeError):
@@ -312,7 +314,7 @@ class SerenaAdapter:
             raise SerenaConfigurationError("tool_name and arguments have invalid types")
         return self.edit(tool_name=tool_name, relative_path=file_path, arguments=arguments)
 
-    def _run(self, operation: Any) -> Any:
+    def _run(self, operation: Coroutine[Any, Any, _T]) -> _T:
         try:
             asyncio.get_running_loop()
         except RuntimeError:
@@ -325,7 +327,7 @@ class SerenaAdapter:
         operation.close()
         raise SerenaConfigurationError("synchronous SerenaAdapter cannot run inside an active event loop")
 
-    async def _run_with_timeout(self, operation: Any) -> Any:
+    async def _run_with_timeout(self, operation: Coroutine[Any, Any, _T]) -> _T:
         async with asyncio.timeout(self._configuration.timeout_seconds) as timeout_scope:
             try:
                 return await operation

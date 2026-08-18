@@ -144,6 +144,11 @@ def test_forced_restricted_mode_drops_python_and_hook_capabilities(tmp_path: Pat
     assert result.executable_aliases == ("python",)
 
 
+def test_trust_evaluator_rejects_a_non_boolean_force_flag(tmp_path: Path) -> None:
+    with pytest.raises(TrustBoundaryConfigurationError, match="explicit bool"):
+        TrustBoundaryEvaluator(tmp_path).evaluate(force_untrusted=1)  # type: ignore[arg-type]
+
+
 def test_boundary_snapshot_is_deterministic_and_tamper_evident(tmp_path: Path) -> None:
     evaluator = TrustBoundaryEvaluator(tmp_path, authorization=_authorization(tmp_path))
     first = evaluator.evaluate()
