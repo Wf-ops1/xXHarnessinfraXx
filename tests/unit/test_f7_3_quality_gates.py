@@ -217,6 +217,14 @@ def test_security_commands_are_argv_only_and_strict(tmp_path: Path) -> None:
     ]
 
 
+def test_secret_scanner_environment_forces_utf8_without_dropping_existing_values() -> None:
+    environment = SECURITY_GATE.build_utf8_environment(
+        {"PYTHONUTF8": "0", "RETAINED_SETTING": "present"}
+    )
+
+    assert environment == {"PYTHONUTF8": "1", "RETAINED_SETTING": "present"}
+
+
 def test_dependency_report_must_cover_environment_without_skips() -> None:
     report = {
         "dependencies": [

@@ -114,8 +114,20 @@ def build_dependency_command(*, audit_executable: str) -> list[str]:
     ]
 
 
+def build_utf8_environment(environ: Mapping[str, str] | None = None) -> dict[str, str]:
+    environment = dict(os.environ if environ is None else environ)
+    environment["PYTHONUTF8"] = "1"
+    return environment
+
+
 def _run(command: Sequence[str], *, root: Path = ROOT) -> None:
-    result = subprocess.run(list(command), cwd=root, check=False, shell=False)
+    result = subprocess.run(
+        list(command),
+        cwd=root,
+        check=False,
+        shell=False,
+        env=build_utf8_environment(),
+    )
     if result.returncode != 0:
         raise SecurityGateError(f"scanner returned non-zero exit code {result.returncode}")
 

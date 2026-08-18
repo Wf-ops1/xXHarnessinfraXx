@@ -1075,15 +1075,17 @@ def test_f5_7_promotion_preserves_r3_negative_evidence_and_certification() -> No
         "914 passed, 5 skipped, 6 subtests passed em 328.79s",
     ):
         assert result in f5_c1_dossier
-    assert "| **Gate** | `COMPLETED_LOCAL / PRODUCT_COMMITTED_AWAITING_PUBLICATION_AUTHORIZATION` |" in panel
+    assert "| **Gate** | `REPAIR_ACTIVE / PR_OPEN_PROMOTION_BLOCKED` |" in panel
+    assert "32085923509" in panel
     assert (ACTIVE_ROOT / "F7.3.md").is_file()
     f7_3_dossier = _read(ACTIVE_ROOT / "F7.3.md")
     for evidence in (
-        "> **Gate:** `COMPLETED_LOCAL`",
-        "> **Lifecycle:** `PRODUCT_COMMITTED_AWAITING_PUBLICATION_AUTHORIZATION`",
+        "> **Gate:** `REPAIR_ACTIVE`",
+        "> **Lifecycle:** `PR_OPEN_PROMOTION_BLOCKED`",
         "task/f7.3-quality-gates",
         "4e9f7a25ed47bb425eeefa3821ca2d051d4d8008",
         "32045181204",
+        "32085923509",
         "mypy_strict=false",
         "85.61%",
         "22 arcos de branch ausentes",
