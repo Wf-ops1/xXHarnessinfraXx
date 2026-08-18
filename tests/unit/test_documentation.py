@@ -279,7 +279,7 @@ def test_public_state_docs_distinguish_real_primitives_from_missing_composition(
     assert "31868906875" in panel
     assert "7d6a0e179f30008a7a67275da94878a179f0aba9" in panel
     assert "31887143905" in panel
-    assert "| **Gate** | `REPAIR_ACTIVE / PR_OPEN_PROMOTION_BLOCKED` |" in panel
+    assert "| **Gate** | `COMPLETED_LOCAL / PROMOTION_PENDING` |" in panel
     assert "32085923509" in panel
     assert "docs/tasks/active/F7.3.md" in panel
     assert "task/f7.3-quality-gates" in panel
